@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vanilla JS SPA</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Basic styling for active link */
+            .nav-link.active {
+                font-weight: bold;
+                text-decoration: underline;
+                color: #3b82f6; /* Tailwind blue-500 */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 text-gray-800">
+        <div class="container mx-auto p-4">
+            <header class="bg-blue-600 text-white p-4 rounded-t-lg shadow-md">
+                <h1 class="text-3xl font-bold">My Modular SPA</h1>
+                <nav class="mt-2">
+                    <a
+                        href="#/"
+                        class="nav-link text-lg mr-4 hover:text-blue-200"
+                        >Home</a
+                    >
+                    <a
+                        href="#/data-analyzer"
+                        class="nav-link text-lg mr-4 hover:text-blue-200"
+                        >Data Analyzer</a
+                    >
+                    <a
+                        href="#/settings"
+                        class="nav-link text-lg hover:text-blue-200"
+                        >Settings</a
+                    >
+                </nav>
+            </header>
+
+            <main
+                id="content-area"
+                class="bg-white p-6 rounded-b-lg shadow-md min-h-[300px]"
+            >
+                <!-- Components will be rendered here -->
+            </main>
+
+            <footer class="text-center text-gray-500 mt-8">
+                <p>© 2025 My Vanilla SPA</p>
+            </footer>
+        </div>
+
+        <script type="module" src="app.js"></script>
+    </body>
+</html>
