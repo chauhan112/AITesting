@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ghibli-Inspired Portfolio</title>
+        <style>
+            /* Ghibli-inspired color palette */
+            :root {
+                --ghibli-blue: #527899; /* Darkened slightly for better contrast with white */
+                --ghibli-light-blue: #a0cfe6; /* Darkened slightly */
+                --ghibli-green: #6f9a61; /* Darkened slightly for better contrast with white */
+                --ghibli-yellow: #f9d56e;
+                --ghibli-cream: #f5e6ca;
+                --ghibli-red: #e98973;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: "Arial", sans-serif;
+            }
+
+            body {
+                background-color: var(--ghibli-cream);
+                color: #333;
+                line-height: 1.6;
+                position: relative;
+                overflow-x: hidden;
+            }
+
+            /* Cloud animations */
+            .cloud {
+                position: absolute;
+                background: white;
+                border-radius: 50%;
+                opacity: 0.7; /* Reduced slightly for subtlety in header */
+                z-index: 0; /* Below header content (1 & 2) but above header background */
+                animation: float 30s infinite linear;
+            }
+
+            @keyframes float {
+                0% {
+                    transform: translateX(0) translateY(0);
+                }
+                25% {
+                    transform: translateX(50px) translateY(-20px);
+                }
+                50% {
+                    transform: translateX(100px) translateY(0);
+                }
+                75% {
+                    transform: translateX(50px) translateY(20px);
+                }
+                100% {
+                    transform: translateX(0) translateY(0);
+                }
+            }
+
+            /* Header styles */
+            header {
+                background: linear-gradient(
+                    135deg,
+                    var(--ghibli-light-blue),
+                    var(--ghibli-blue)
+                );
+                color: white;
+                padding: 2rem 0;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .header-content {
+                position: relative;
+                z-index: 2;
+            }
+
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Slightly stronger shadow */
+            }
+
+            .subtitle {
+                font-size: 1.5rem;
+                margin-bottom: 1.5rem;
+                font-style: italic;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            }
+            header p:not(.subtitle) {
+                /* Target the other p tag in header for better contrast */
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            }
+
+            /* Totoro animation */
+            .totoro {
+                position: absolute;
+                width: 100px;
+                height: 120px;
+                bottom: 0;
+                left: 10%;
+                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><path d="M50 0 C30 0 15 30 15 60 C15 90 30 120 50 120 C70 120 85 90 85 60 C85 30 70 0 50 0 Z" fill="white" opacity="0.7"/><circle cx="35" cy="40" r="5" fill="black"/><circle cx="65" cy="40" r="5" fill="black"/><path d="M40 60 Q50 70 60 60" stroke="black" stroke-width="2" fill="none"/></svg>');
+                background-repeat: no-repeat;
+                z-index: 1;
+                animation: bounce 5s infinite ease-in-out;
+            }
+
+            .soot-sprite {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="black"/><circle cx="7" cy="8" r="2" fill="white"/><circle cx="13" cy="8" r="2" fill="white"/></svg>');
+                z-index: 1; /* Will be above body/section backgrounds, below sticky nav */
+                animation: float-around 15s infinite linear;
+            }
+
+            @keyframes bounce {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-20px);
+                }
+            }
+
+            @keyframes float-around {
+                0% {
+                    transform: translate(0, 0);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(100px, -50px);
+                    opacity: 0;
+                }
+            }
+
+            /* Navigation */
+            nav {
+                background-color: var(--ghibli-green);
+                padding: 1rem;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .nav-links {
+                display: flex;
+                justify-content: center;
+                list-style: none;
+            }
+
+            .nav-links li {
+                margin: 0 1.5rem;
+            }
+
+            .nav-links a {
+                color: white;
+                text-decoration: none;
+                font-size: 1.2rem;
+                font-weight: bold; /* Added for better contrast */
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                transition: all 0.3s ease;
+            }
+
+            .nav-links a:hover {
+                background-color: var(--ghibli-yellow);
+                color: #333;
+            }
+
+            /* Main content */
+            .container {
+                max-width: 1200px;
+                margin: 2rem auto;
+                padding: 0 2rem;
+            }
+
+            section {
+                margin-bottom: 3rem;
+                padding: 2rem;
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                position: relative;
+                overflow: hidden;
+                scroll-margin-top: 80px; /* Adjust to ensure nav doesn't overlap title */
+            }
+
+            section::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 10px;
+                background: linear-gradient(
+                    90deg,
+                    var(--ghibli-blue),
+                    var(--ghibli-green),
+                    var(--ghibli-yellow),
+                    var(--ghibli-red)
+                );
+            }
+
+            h2 {
+                color: var(--ghibli-blue);
+                margin-bottom: 1.5rem;
+                font-size: 2rem;
+                position: relative;
+                display: inline-block;
+            }
+
+            h2::after {
+                content: "";
+                position: absolute;
+                bottom: -5px;
+                left: 0;
+                width: 100%;
+                height: 3px;
+                background: linear-gradient(
+                    90deg,
+                    var(--ghibli-blue),
+                    transparent
+                );
+            }
+
+            /* About section */
+            .about-content {
+                display: flex;
+                align-items: center;
+                gap: 2rem;
+            }
+
+            .profile-img {
+                width: 200px;
+                height: 200px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 5px solid var(--ghibli-light-blue);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Projects grid */
+            .projects-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 2rem;
+            }
+
+            .project-card {
+                background-color: white;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                position: relative;
+            }
+
+            .project-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            }
+
+            .project-img {
+                width: 100%;
+                height: 200px;
+                object-fit: cover;
+            }
+
+            .project-info {
+                padding: 1.5rem;
+            }
+
+            .project-info h3 {
+                color: var(--ghibli-green);
+                margin-bottom: 0.5rem;
+            }
+
+            .project-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin: 1rem 0;
+            }
+
+            .tag {
+                background-color: var(--ghibli-light-blue);
+                color: #333; /* Contrast is 4.56:1, which is AA compliant */
+                padding: 0.3rem 0.8rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+            }
+
+            /* Skills section */
+            .skills-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+
+            .skill-category {
+                flex: 1;
+                min-width: 250px;
+            }
+
+            .skill-category h3 {
+                color: var(--ghibli-green);
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid var(--ghibli-light-blue);
+            }
+
+            .skill-item {
+                margin-bottom: 1rem;
+            }
+
+            .skill-name {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.3rem;
+            }
+
+            .skill-bar {
+                height: 10px;
+                background-color: #eee;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            .skill-progress {
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    var(--ghibli-blue),
+                    var(--ghibli-green)
+                );
+                border-radius: 5px;
+                width: 0; /* Start at 0 for JS animation */
+                transition: width 0.8s ease-out; /* CSS handles animation */
+            }
+
+            /* Contact form */
+            .contact-form {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+            }
+
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+
+            .form-group.full-width {
+                grid-column: span 2;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 0.5rem;
+                color: var(--ghibli-blue);
+            }
+
+            input,
+            textarea {
+                width: 100%;
+                padding: 0.8rem;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 1rem;
+                transition: border 0.3s ease;
+            }
+
+            input:focus,
+            textarea:focus {
+                outline: none;
+                border-color: var(--ghibli-blue);
+                box-shadow: 0 0 0 2px rgba(93, 138, 168, 0.2);
+            }
+
+            textarea {
+                min-height: 150px;
+                resize: vertical;
+            }
+
+            .submit-btn {
+                background: linear-gradient(
+                    135deg,
+                    var(--ghibli-blue),
+                    var(--ghibli-green)
+                );
+                color: white;
+                border: none;
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .submit-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Footer */
+            footer {
+                background: linear-gradient(
+                    135deg,
+                    var(--ghibli-green),
+                    var(--ghibli-blue)
+                );
+                color: white;
+                text-align: center;
+                padding: 2rem 0;
+                margin-top: 3rem;
+            }
+            footer p {
+                font-weight: bold; /* For better contrast */
+            }
+
+            .social-links {
+                display: flex;
+                justify-content: center;
+                gap: 1.5rem;
+                margin: 1.5rem 0;
+            }
+
+            .social-link {
+                color: white;
+                font-size: 1.5rem;
+                font-weight: normal; /* Override parent bold if desired for icons, or keep bold */
+                transition: transform 0.3s ease;
+            }
+
+            .social-link:hover {
+                transform: translateY(-5px);
+                color: var(--ghibli-yellow);
+            }
+
+            /* Responsive design */
+            @media (max-width: 768px) {
+                .about-content {
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .contact-form {
+                    grid-template-columns: 1fr;
+                }
+
+                .form-group.full-width {
+                    grid-column: span 1;
+                }
+                h1 {
+                    font-size: 2.5rem;
+                }
+                .subtitle {
+                    font-size: 1.2rem;
+                }
+            }
+
+            /* Ghibli-inspired details */
+            .leaf {
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M15 0 C5 5 0 15 5 25 C10 30 20 30 25 25 C30 20 25 5 15 0 Z" fill="%237ba46c" opacity="0.7"/></svg>');
+                z-index: -1; /* Will be above body background, behind white sections */
+                animation: falling 20s linear infinite;
+            }
+
+            @keyframes falling {
+                0% {
+                    transform: translate(0, -100px) rotate(0deg);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(100px, 100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+            .hidden-accessible {
+                /* For ARIA labels */
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                border: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <!-- Clouds will be appended here by JS -->
+            <div class="totoro"></div>
+            <div class="header-content">
+                <h1>Sophie Rivers</h1>
+                <p class="subtitle">Digital Artist & Web Developer</p>
+                <p>
+                    Creating magical digital experiences inspired by nature and
+                    imagination
+                </p>
+            </div>
+        </header>
+
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#about">About</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="container">
+            <section id="about">
+                <h2>About Me</h2>
+                <div class="about-content">
+                    <img
+                        src="https://source.unsplash.com/random/400x400/?portrait,artist"
+                        alt="Sophie Rivers, a digital artist and web developer."
+                        class="profile-img"
+                    />
+                    <div>
+                        <p>
+                            Hello! I'm Sophie, a digital artist and web
+                            developer with a passion for creating whimsical,
+                            Ghibli-inspired designs. My work blends technical
+                            skill with artistic vision to craft experiences that
+                            feel magical and alive.
+                        </p>
+                        <p>
+                            When I'm not coding or drawing, you can find me
+                            hiking in the woods, tending to my garden, or curled
+                            up with a sketchbook and a cup of tea.
+                        </p>
+                        <p>
+                            I believe in the power of technology to tell stories
+                            and create connections, and I strive to bring warmth
+                            and personality to every project I work on.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="projects">
+                <h2>Featured Projects</h2>
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <img
+                            src="https://source.unsplash.com/random/600x400/?ghibli,forest"
+                            alt="Lush green forest scene with soft lighting, representing the Spirit Forest project."
+                            class="project-img"
+                        />
+                        <div class="project-info">
+                            <h3>Spirit Forest</h3>
+                            <p>
+                                An interactive web experience featuring a
+                                mystical forest inhabited by friendly spirits.
+                            </p>
+                            <div class="project-tags">
+                                <span class="tag">HTML/CSS</span>
+                                <span class="tag">JavaScript</span>
+                                <span class="tag">Canvas API</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img
+                            src="https://source.unsplash.com/random/600x400/?ghibli,sky"
+                            alt="Whimsical airships floating in a vast blue sky, representing the Flying Machines project."
+                            class="project-img"
+                        />
+                        <div class="project-info">
+                            <h3>Flying Machines</h3>
+                            <p>
+                                A collection of steampunk airship designs
+                                inspired by Castle in the Sky.
+                            </p>
+                            <div class="project-tags">
+                                <span class="tag">Illustration</span>
+                                <span class="tag">3D Modeling</span>
+                                <span class="tag">Blender</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img
+                            src="https://source.unsplash.com/random/600x400/?ghibli,water"
+                            alt="Abstract representation of flowing ocean waves, representing the Ocean Waves project."
+                            class="project-img"
+                        />
+                        <div class="project-info">
+                            <h3>Ocean Waves</h3>
+                            <p>
+                                A generative art project that creates endless,
+                                soothing ocean wave patterns.
+                            </p>
+                            <div class="project-tags">
+                                <span class="tag">p5.js</span>
+                                <span class="tag">Creative Coding</span>
+                                <span class="tag">WebGL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="skills">
+                <h2>My Skills</h2>
+                <div class="skills-container">
+                    <div class="skill-category">
+                        <h3>Technical</h3>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-html-name">HTML/CSS</span>
+                                <span>95%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="95"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-html-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="95"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-js-name">JavaScript</span>
+                                <span>90%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="90"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-js-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="90"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-react-name">React</span>
+                                <span>85%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="85"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-react-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="85"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skill-category">
+                        <h3>Design</h3>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-uiux-name">UI/UX Design</span>
+                                <span>90%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="90"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-uiux-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="90"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-illustration-name"
+                                    >Illustration</span
+                                >
+                                <span>85%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="85"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-illustration-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="85"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-animation-name">Animation</span>
+                                <span>80%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="80"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-animation-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="80"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skill-category">
+                        <h3>Other</h3>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-storytelling-name"
+                                    >Storytelling</span
+                                >
+                                <span>95%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="95"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-storytelling-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="95"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-collab-name"
+                                    >Team Collaboration</span
+                                >
+                                <span>90%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="90"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-collab-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="90"
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-name">
+                                <span id="skill-tea-name">Tea Brewing</span>
+                                <span>100%</span>
+                            </div>
+                            <div
+                                class="skill-bar"
+                                role="progressbar"
+                                aria-valuenow="100"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-labelledby="skill-tea-name"
+                            >
+                                <div
+                                    class="skill-progress"
+                                    data-skill="100"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="contact">
+                <h2>Get In Touch</h2>
+                <form
+                    class="contact-form"
+                    action="mailto:your-email@example.com"
+                    method="POST"
+                    enctype="text/plain"
+                >
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required />
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="subject">Subject</label>
+                        <input
+                            type="text"
+                            id="subject"
+                            name="subject"
+                            required
+                        />
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="message">Message</label>
+                        <textarea
+                            id="message"
+                            name="message"
+                            required
+                        ></textarea>
+                    </div>
+                    <div
+                        class="form-group full-width"
+                        style="text-align: center"
+                    >
+                        <button type="submit" class="submit-btn">
+                            Send Message
+                        </button>
+                    </div>
+                </form>
+                <p
+                    style="
+                        text-align: center;
+                        margin-top: 1rem;
+                        font-size: 0.9rem;
+                    "
+                >
+                    Note: This is a demo form. For a functional form,
+                    server-side processing or a third-party service is required.
+                </p>
+            </section>
+        </div>
+
+        <footer>
+            <p>© 2023 Sophie Rivers. All rights reserved.</p>
+            <div class="social-links">
+                <a
+                    href="#"
+                    class="social-link"
+                    aria-label="Sophie Rivers on GitHub"
+                    >GitHub <span class="hidden-accessible">Profile</span></a
+                >
+                <a
+                    href="#"
+                    class="social-link"
+                    aria-label="Sophie Rivers on Dribbble"
+                    >Dribbble <span class="hidden-accessible">Profile</span></a
+                >
+                <a
+                    href="#"
+                    class="social-link"
+                    aria-label="Sophie Rivers on LinkedIn"
+                    >LinkedIn <span class="hidden-accessible">Profile</span></a
+                >
+                <a
+                    href="#"
+                    class="social-link"
+                    aria-label="Sophie Rivers on Instagram"
+                    >Instagram <span class="hidden-accessible">Profile</span></a
+                >
+            </div>
+            <p>Made with ♥ and a sprinkle of magic</p>
+        </footer>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const headerElement = document.querySelector("header");
+                const navElement = document.querySelector("nav"); // For nav height calculation
+
+                // Create clouds
+                for (let i = 0; i < 5; i++) {
+                    createCloud(headerElement);
+                }
+
+                // Create soot sprites
+                for (let i = 0; i < 8; i++) {
+                    createSootSprite();
+                }
+
+                // Create falling leaves
+                for (let i = 0; i < 15; i++) {
+                    createLeaf();
+                }
+
+                // Smooth scrolling for navigation
+                document.querySelectorAll("nav a").forEach((anchor) => {
+                    anchor.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute("href");
+                        const targetElement = document.querySelector(targetId);
+
+                        if (targetElement) {
+                            // The scroll-margin-top on sections should handle the offset
+                            // For more precise control if scroll-margin-top isn't enough or for older browsers:
+                            // const navHeight = navElement ? navElement.offsetHeight : 0;
+                            // let offset = navHeight + 10; // Add a little extra padding
+                            // For modern browsers, offsetTop alone with scroll-margin-top is usually sufficient
+                            window.scrollTo({
+                                top: targetElement.offsetTop, // CSS scroll-margin-top handles offset
+                                behavior: "smooth",
+                            });
+                        }
+                    });
+                });
+
+                // Animate skill bars on scroll
+                const skillSection = document.querySelector("#skills");
+                const skillProgressBars =
+                    document.querySelectorAll(".skill-progress"); // Target the inner div
+
+                function animateSkillBars() {
+                    skillProgressBars.forEach((bar) => {
+                        const skillValue = bar.dataset.skill;
+                        if (skillValue) {
+                            bar.style.width = skillValue + "%";
+                        }
+                    });
+                }
+
+                if (skillSection && skillProgressBars.length > 0) {
+                    const observer = new IntersectionObserver(
+                        (entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    animateSkillBars();
+                                    observer.unobserve(entry.target); // Animate only once
+                                }
+                            });
+                        },
+                        { threshold: 0.3 }
+                    ); // Trigger when 30% of the section is visible
+
+                    observer.observe(skillSection);
+                }
+            });
+
+            function createCloud(parentElement) {
+                const cloud = document.createElement("div");
+                cloud.classList.add("cloud");
+
+                const size = Math.random() * 100 + 50; // 50px to 150px
+                // Position clouds within the header (approx top 5% to 65% of header height)
+                const left = Math.random() * 90; // 0% to 90% to keep them from sticking to far right edge
+                const top = Math.random() * 60 + 5; // 5% to 65%
+                const animationDuration = Math.random() * 20 + 20; // 20s to 40s
+
+                cloud.style.width = `${size}px`;
+                cloud.style.height = `${size * 0.6}px`;
+                cloud.style.left = `${left}%`;
+                cloud.style.top = `${top}%`;
+                cloud.style.animationDuration = `${animationDuration}s`;
+                cloud.style.animationDelay = `${Math.random() * 5}s`; // Stagger start times
+
+                if (parentElement) {
+                    parentElement.appendChild(cloud);
+                } else {
+                    document.body.appendChild(cloud); // Fallback if header not found
+                }
+            }
+
+            function createSootSprite() {
+                const sprite = document.createElement("div");
+                sprite.classList.add("soot-sprite");
+
+                const left = Math.random() * 100;
+                const top = Math.random() * 100; // Sprites can appear anywhere on the body
+                const delay = Math.random() * 15;
+                const size = Math.random() * 10 + 15;
+
+                sprite.style.width = `${size}px`;
+                sprite.style.height = `${size}px`;
+                sprite.style.left = `${left}%`;
+                sprite.style.top = `${top}%`;
+                sprite.style.animationDelay = `${delay}s`;
+
+                document.body.appendChild(sprite);
+            }
+
+            function createLeaf() {
+                const leaf = document.createElement("div");
+                leaf.classList.add("leaf");
+
+                const left = Math.random() * 100;
+                const size = Math.random() * 20 + 10;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 10 + 15;
+                const rotationStart = Math.random() * 360;
+
+                leaf.style.width = `${size}px`;
+                leaf.style.height = `${size}px`;
+                leaf.style.left = `${left}%`;
+                leaf.style.animationDelay = `${delay}s`;
+                leaf.style.animationDuration = `${duration}s`;
+                // Initial rotation is set via keyframes now if needed, or can be set here
+                leaf.style.setProperty(
+                    "--initial-rotation",
+                    `${rotationStart}deg`
+                ); // For use in @keyframes if modified
+
+                document.body.appendChild(leaf);
+            }
+        </script>
+    </body>
+</html>
