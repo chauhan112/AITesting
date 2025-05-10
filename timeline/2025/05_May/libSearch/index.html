@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Frontend Git Clone & Search</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .loader {
+                border: 4px solid #f3f3f3; /* Light grey */
+                border-top: 4px solid #3498db; /* Blue */
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+                display: inline-block; /* Keep it inline */
+                margin-left: 8px; /* Space from text */
+                vertical-align: middle; /* Align with text */
+            }
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* Modal specific styles */
+            /* Ensure pre respects whitespace and wraps long lines */
+            #fileContent pre {
+                white-space: pre-wrap; /* CSS3 */
+                word-wrap: break-word; /* Internet Explorer 5.5+ */
+                max-height: 70vh; /* Limit height and make scrollable */
+                overflow-y: auto;
+                background-color: #f7fafc; /* bg-gray-100 */
+                padding: 1rem; /* p-4 */
+                border-radius: 0.25rem; /* rounded-sm */
+                border: 1px solid #e2e8f0; /* border-gray-300 */
+                font-family: monospace;
+                line-height: 1.4; /* Adjust for better readability */
+            }
+            /* Simple line highlight */
+            #fileContent .highlight-line {
+                background-color: #fff Cae4; /* Light yellow background */
+                display: block; /* Ensure background covers the whole line */
+                margin-left: -1rem; /* Align highlight with padding */
+                margin-right: -1rem; /* Align highlight with padding */
+                padding-left: 1rem;
+                padding-right: 1rem;
+                box-shadow: inset 3px 0 0 0 #f6ad55; /* Orange left border */
+            }
+            /* Hide scrollbar for modal overlay itself, content scrolls */
+            #fileViewModal > div:first-child {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE and Edge */
+            }
+            #fileViewModal > div:first-child::-webkit-scrollbar {
+                display: none; /* WebKit */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 font-sans">
+        <div class="mx-auto bg-white p-6 rounded-lg shadow-md">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">
+                Clone Git Repo & Search Files
+            </h1>
+
+            <!-- Repo Input -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label
+                        for="repoUrl"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Repository HTTPS URL:</label
+                    >
+                    <input
+                        type="url"
+                        id="repoUrl"
+                        placeholder="https://github.com/user/repo.git"
+                        required
+                        class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="authToken"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Auth Token (Optional):</label
+                    >
+                    <input
+                        type="password"
+                        id="authToken"
+                        placeholder="Personal Access Token (if private)"
+                        class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                        Needed for private repos. Use PAT as password/token.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mb-4">
+                <button
+                    id="loadRepoBtn"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                    <span id="loadRepoBtnText">Load/Clone Repository</span>
+                    <div id="loader" class="loader hidden"></div>
+                </button>
+            </div>
+
+            <!-- Status Display -->
+            <div
+                id="status"
+                class="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded border border-gray-200 min-h-[40px]"
+            >
+                Enter repo details and click load. Cloned data will be cached in
+                your browser's IndexedDB.
+            </div>
+
+            <!-- Search Input -->
+            <div class="mb-4">
+                <label
+                    for="searchInput"
+                    class="block text-sm font-medium text-gray-700 mb-1"
+                    >Search Term:</label
+                >
+                <input
+                    type="search"
+                    id="searchInput"
+                    placeholder="Enter search term..."
+                    disabled
+                    class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                />
+            </div>
+
+            <!-- Results Area -->
+            <div class="mt-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-700">
+                    Results:
+                </h2>
+                <!-- Add cursor-pointer indication to results container -->
+                <div
+                    id="results"
+                    class="space-y-1 max-h-96 overflow-y-auto border border-gray-200 rounded p-3 bg-gray-50"
+                >
+                    <p class="text-gray-400">
+                        Search results will appear here.
+                    </p>
+                </div>
+                <p id="resultCount" class="text-sm text-gray-600 mt-2"></p>
+            </div>
+        </div>
+
+        <!-- File View Modal -->
+        <div
+            id="fileViewModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden"
+        >
+            <!-- Modal Content -->
+            <div
+                class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+            >
+                <!-- Modal Header -->
+                <div
+                    class="flex justify-between items-center p-4 border-b border-gray-200"
+                >
+                    <h3
+                        id="modalFileName"
+                        class="text-lg font-semibold text-gray-800 break-all"
+                    >
+                        File Name
+                    </h3>
+                    <button
+                        id="closeModalBtn"
+                        class="text-gray-500 hover:text-gray-800 text-2xl font-bold"
+                    >
+                        ×
+                    </button>
+                </div>
+                <!-- Modal Body (Scrollable Content) -->
+                <div id="fileContent" class="p-4 overflow-y-auto">
+                    <pre><code id="modalFileCode" class="text-sm"></code></pre>
+                </div>
+            </div>
+        </div>
+        <!-- End File View Modal -->
+
+        <script src="https://unpkg.com/@isomorphic-git/lightning-fs"></script>
+        <script src="https://unpkg.com/isomorphic-git"></script>
+        <script type="module">
+            import http from "https://unpkg.com/isomorphic-git@beta/http/web/index.js";
+            // --- Constants --- (keep existing constants)
+            const ALLOWED_EXTENSIONS = [".css", ".js", ".ts", ".py"];
+            const VIRTUAL_DIR = "/repo";
+            const FS_NAME = "git-search-repo-fs";
+
+            // --- DOM Elements --- (keep existing elements)
+            const repoUrlInput = document.getElementById("repoUrl");
+            const authTokenInput = document.getElementById("authToken");
+            const loadRepoBtn = document.getElementById("loadRepoBtn");
+            const loadRepoBtnText = document.getElementById("loadRepoBtnText");
+            const loader = document.getElementById("loader");
+            const statusDiv = document.getElementById("status");
+            const searchInput = document.getElementById("searchInput");
+            const resultsDiv = document.getElementById("results");
+            const resultCountP = document.getElementById("resultCount");
+            // Add Modal Elements
+            const fileViewModal = document.getElementById("fileViewModal");
+            const modalFileName = document.getElementById("modalFileName");
+            const modalFileCode = document.getElementById("modalFileCode");
+            const closeModalBtn = document.getElementById("closeModalBtn");
+            const fileContentDiv = document.getElementById("fileContent"); // The div containing the <pre>
+
+            // --- State --- (keep existing state)
+            let projectFiles = [];
+            let fs = null;
+            let pfs = null;
+            let isBusy = false;
+
+            // --- Initialization, setBusy, updateStatus --- (keep existing functions)
+            function initializeFS() {
+                if (!fs) {
+                    // Initialize the virtual filesystem backed by IndexedDB
+                    fs = new LightningFS(FS_NAME);
+                    pfs = fs.promises; // Use the Promise-based API
+                }
+            }
+
+            function setBusy(busy, message = "Loading...") {
+                isBusy = busy;
+                loadRepoBtn.disabled = busy;
+                searchInput.disabled = busy || projectFiles.length === 0; // Disable search if busy or no files
+                loader.classList.toggle("hidden", !busy);
+                if (busy) {
+                    loadRepoBtnText.textContent = message;
+                } else {
+                    loadRepoBtnText.textContent = "Load/Clone Repository";
+                }
+            }
+
+            function updateStatus(message, isError = false) {
+                console.log(message); // Log status to console too
+                statusDiv.textContent = message;
+                statusDiv.className = `mb-4 text-sm p-3 rounded border ${
+                    isError
+                        ? "bg-red-100 border-red-300 text-red-800"
+                        : "bg-gray-50 border-gray-200 text-gray-600"
+                } min-h-[40px]`;
+            }
+
+            // --- Core Logic ---
+
+            // handleLoadRepo, listFilesRecursive, getFileExtension (keep existing functions)
+
+            async function handleLoadRepo() {
+                if (isBusy) return;
+
+                const repoUrl = repoUrlInput.value.trim();
+                const token = authTokenInput.value.trim(); // Keep password field value as is
+
+                if (!repoUrl) {
+                    updateStatus("Please enter a repository URL.", true);
+                    return;
+                }
+
+                setBusy(true, "Initializing...");
+                updateStatus("Initializing filesystem...");
+                initializeFS(); // Ensure FS is ready
+
+                projectFiles = []; // Clear previous results
+                resultsDiv.innerHTML =
+                    '<p class="text-gray-400">Loading repository...</p>';
+                resultCountP.textContent = "";
+                searchInput.value = "";
+                searchInput.disabled = true;
+
+                try {
+                    // Ensure base directory exists in virtual FS
+                    await pfs.mkdir(VIRTUAL_DIR).catch((err) => {
+                        // Ignore EEXIST error (directory already exists)
+                        if (err.code !== "EEXIST") throw err;
+                    });
+
+                    // Check if the repo seems to be cloned already (e.g., check for .git/HEAD)
+                    let needsClone = false;
+                    try {
+                        await pfs.stat(`${VIRTUAL_DIR}/.git/HEAD`);
+                        updateStatus(
+                            `Repository found in cache for ${repoUrl}. Verifying...`
+                        );
+                        // Optionally, you could add a 'git pull' here to update if needed
+                        // For simplicity, we'll just use the cached version.
+                        // await git.pull({ fs, http, dir: VIRTUAL_DIR, singleBranch: true, author: { name: 'FrontendSearch' }, onAuth: () => token ? { username: token } : undefined });
+                        // updateStatus(`Repository cache updated for ${repoUrl}. Indexing files...`);
+                    } catch (error) {
+                        // If stat fails (ENOENT), it likely needs cloning
+                        if (error.code === "ENOENT") {
+                            needsClone = true;
+                            updateStatus(
+                                `Cloning repository (shallow): ${repoUrl}...`
+                            );
+                            // Clean directory before clone if it exists but is incomplete/corrupt
+                            try {
+                                await pfs.rmdir(VIRTUAL_DIR, {
+                                    recursive: true,
+                                });
+                            } catch {
+                                /* ignore */
+                            }
+                            await pfs.mkdir(VIRTUAL_DIR); // Recreate after rm
+                        } else {
+                            throw error; // Re-throw other errors
+                        }
+                    }
+
+                    if (needsClone) {
+                        await git.clone({
+                            fs,
+                            http, // Required for HTTP(S) transport
+                            dir: VIRTUAL_DIR,
+                            url: repoUrl,
+                            depth: 1, // Shallow clone
+                            singleBranch: true, // Fetch only the default branch
+                            corsProxy: "https://cors.isomorphic-git.org", // Public CORS proxy (use your own for production!)
+                            onAuth: (url) => {
+                                // Handle authentication
+                                if (token) {
+                                    // GitHub/GitLab PATs often used as username OR password.
+                                    // Using it as username is common for basic auth over HTTPS.
+                                    // Adjust if your provider needs it differently.
+                                    return { username: token };
+                                }
+                                // No token provided, proceed without auth (for public repos)
+                                return;
+                            },
+                            onAuthFailure: (url) => {
+                                throw new Error(
+                                    `Authentication failed for ${url}. Check your token.`
+                                );
+                            },
+                            onProgress: (evt) => {
+                                if (
+                                    evt.phase === "Counting objects" ||
+                                    evt.phase === "Compressing objects" ||
+                                    evt.phase === "Receiving objects"
+                                ) {
+                                    if (evt.total) {
+                                        const percent = Math.round(
+                                            (evt.loaded / evt.total) * 100
+                                        );
+                                        updateStatus(
+                                            `Cloning: ${evt.phase} (${percent}%)...`
+                                        );
+                                    } else {
+                                        updateStatus(
+                                            `Cloning: ${evt.phase}...`
+                                        );
+                                    }
+                                }
+                            },
+                        });
+                        updateStatus("Clone successful. Indexing files...");
+                    } else {
+                        updateStatus(
+                            "Using cached repository. Indexing files..."
+                        );
+                    }
+
+                    // --- Index Files ---
+                    setBusy(true, "Indexing..."); // Keep busy state for indexing
+                    const fileList = await listFilesRecursive(VIRTUAL_DIR);
+
+                    const readPromises = [];
+                    let processedCount = 0;
+                    const totalToProcess = fileList.length;
+
+                    for (const relativePath of fileList) {
+                        const lowerCasePath = relativePath.toLowerCase();
+                        const extension = getFileExtension(lowerCasePath);
+
+                        if (ALLOWED_EXTENSIONS.includes(extension)) {
+                            const fullPath = `${VIRTUAL_DIR}/${relativePath}`;
+                            readPromises.push(
+                                pfs
+                                    .readFile(fullPath, { encoding: "utf8" })
+                                    .then((content) => {
+                                        projectFiles.push({
+                                            path: relativePath,
+                                            content: content,
+                                        });
+                                        processedCount++;
+                                        if (
+                                            processedCount % 50 === 0 ||
+                                            processedCount === totalToProcess
+                                        ) {
+                                            updateStatus(
+                                                `Indexing files... (${processedCount}/${totalToProcess})`
+                                            );
+                                        }
+                                    })
+                                    .catch((err) => {
+                                        console.warn(
+                                            `Could not read file ${fullPath}:`,
+                                            err
+                                        );
+                                        // Optionally skip the file or handle error
+                                    })
+                            );
+                        }
+                    }
+
+                    await Promise.all(readPromises);
+
+                    updateStatus(
+                        `Indexed ${projectFiles.length} relevant files. Ready to search.`
+                    );
+                    searchInput.disabled = false;
+                    resultsDiv.innerHTML =
+                        '<p class="text-gray-400">Enter a term to search.</p>';
+                    searchInput.focus();
+                } catch (error) {
+                    console.error("Error loading/cloning repository:", error);
+                    updateStatus(
+                        `Error: ${
+                            error.message || "An unknown error occurred."
+                        }`,
+                        true
+                    );
+                    resultsDiv.innerHTML =
+                        '<p class="text-red-500">Failed to load repository.</p>';
+                } finally {
+                    setBusy(false);
+                }
+            }
+
+            async function listFilesRecursive(baseDir) {
+                const allFiles = [];
+                const queue = [""]; // Start with relative path root
+
+                while (queue.length > 0) {
+                    const currentRelativeDir = queue.shift();
+                    const currentFullDir = currentRelativeDir
+                        ? `${baseDir}/${currentRelativeDir}`
+                        : baseDir;
+
+                    try {
+                        const entries = await pfs.readdir(currentFullDir);
+
+                        for (const entry of entries) {
+                            // IMPORTANT: Skip the .git directory!
+                            if (entry === ".git") {
+                                continue;
+                            }
+
+                            const entryRelativePath = currentRelativeDir
+                                ? `${currentRelativeDir}/${entry}`
+                                : entry;
+                            const entryFullPath = `${baseDir}/${entryRelativePath}`;
+                            const stats = await pfs.stat(entryFullPath);
+
+                            if (stats.isFile()) {
+                                allFiles.push(entryRelativePath);
+                            } else if (stats.isDirectory()) {
+                                queue.push(entryRelativePath); // Add directory to queue for processing
+                            }
+                        }
+                    } catch (err) {
+                        console.error(
+                            `Error reading directory ${currentFullDir}:`,
+                            err
+                        );
+                        // Continue if possible, maybe log error to status
+                    }
+                }
+                return allFiles;
+            }
+
+            function getFileExtension(filename) {
+                const lastDotIndex = filename.lastIndexOf(".");
+                if (lastDotIndex === -1 || lastDotIndex === 0) return "";
+                return filename.substring(lastDotIndex).toLowerCase();
+            }
+
+            // --- Search and Result Handling (Modified) ---
+            function handleSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                resultsDiv.innerHTML = ""; // Clear previous results
+                resultCountP.textContent = "";
+
+                if (projectFiles.length === 0) {
+                    resultsDiv.innerHTML =
+                        '<p class="text-gray-400">No files indexed. Load a repository first.</p>';
+                    return;
+                }
+
+                if (!searchTerm) {
+                    resultsDiv.innerHTML =
+                        '<p class="text-gray-400">Enter a term to search.</p>';
+                    return;
+                }
+
+                let matchCount = 0;
+                const fragment = document.createDocumentFragment();
+
+                projectFiles.forEach((file) => {
+                    // Case-insensitive search within content
+                    if (file.content.toLowerCase().includes(searchTerm)) {
+                        matchCount++;
+                        const resultEl = document.createElement("div");
+                        // Add cursor-pointer and hover effect for better UX
+                        resultEl.className =
+                            "p-2 border-b border-gray-100 bg-white hover:bg-indigo-50 text-sm cursor-pointer rounded";
+                        resultEl.textContent = file.path; // Display file path
+                        resultEl.setAttribute("data-path", file.path); // Store path for click handler
+                        resultEl.setAttribute("role", "button"); // Accessibility
+                        resultEl.setAttribute("tabindex", "0"); // Make it focusable
+
+                        fragment.appendChild(resultEl);
+                    }
+                });
+
+                if (matchCount > 0) {
+                    resultsDiv.appendChild(fragment);
+                    resultCountP.textContent = `Found ${matchCount} matching file(s).`;
+                } else {
+                    resultsDiv.innerHTML =
+                        '<p class="text-gray-500">No matches found.</p>';
+                }
+            }
+
+            // --- File View Modal Logic (New Functions) ---
+
+            function escapeHtml(unsafe) {
+                if (!unsafe) return "";
+                return unsafe
+                    .replace(/&/g, "&")
+                    .replace(/</g, "<")
+                    .replace(/>/g, ">")
+                    .replace(/"/g, '"')
+                    .replace(/'/g, "'");
+            }
+
+            function findFirstOccurrenceLine(content, searchTerm) {
+                if (!searchTerm || !content) return -1;
+
+                const lowerContent = content.toLowerCase();
+                const lowerSearchTerm = searchTerm.toLowerCase();
+                const index = lowerContent.indexOf(lowerSearchTerm);
+
+                if (index === -1) return -1;
+
+                // Count newline characters before the index + 1 (for 1-based line number)
+                const lineNumber =
+                    (content.substring(0, index).match(/\n/g) || []).length + 1;
+                return lineNumber;
+            }
+
+            function showFileContent(filePath, searchTerm) {
+                const file = projectFiles.find((f) => f.path === filePath);
+                if (!file) {
+                    console.error("File not found in cache:", filePath);
+                    updateStatus(
+                        `Error: Could not find content for ${filePath}`,
+                        true
+                    );
+                    return;
+                }
+
+                modalFileName.textContent = file.path;
+
+                // --- Line Numbering and Highlighting ---
+                const lines = escapeHtml(file.content).split("\n");
+                const targetLine = findFirstOccurrenceLine(
+                    file.content,
+                    searchTerm
+                );
+                let contentHtml = "";
+                let targetElementId = null;
+
+                lines.forEach((line, index) => {
+                    const currentLineNumber = index + 1; // 1-based line number
+                    const lineId = `line-${currentLineNumber}`;
+                    let lineClass = "";
+                    // Highlight the line if it's the target line
+                    if (currentLineNumber === targetLine) {
+                        lineClass = "highlight-line";
+                        targetElementId = lineId; // Store the ID of the line to scroll to
+                    }
+                    // Wrap each line in a span with an ID and potential highlight class
+                    contentHtml += `<span id="${lineId}" class="${lineClass}">${
+                        line || " "
+                    }</span>\n`; // Use   for empty lines to maintain height
+                });
+
+                modalFileCode.innerHTML = contentHtml; // Use innerHTML because we added spans
+
+                // --- Show Modal ---
+                fileViewModal.classList.remove("hidden");
+                document.body.style.overflow = "hidden"; // Prevent background scrolling
+
+                // --- Scroll to Line ---
+                // Use requestAnimationFrame to ensure the DOM is updated and element exists before scrolling
+                requestAnimationFrame(() => {
+                    const lineElement = targetElementId
+                        ? document.getElementById(targetElementId)
+                        : null;
+                    if (lineElement) {
+                        // Scroll the specific line into the middle of the view
+                        lineElement.scrollIntoView({
+                            behavior: "auto", // 'smooth' can be slow for large files, 'auto' is instant
+                            block: "center", // Tries to place it in the vertical center
+                            inline: "nearest",
+                        });
+                        console.log(`Scrolled to line ${targetLine}`);
+                    } else if (targetLine > 0) {
+                        console.warn(
+                            `Could not find element for line ${targetLine} to scroll to.`
+                        );
+                        // Fallback: scroll to top if target element not found unexpectedly
+                        fileContentDiv.querySelector("pre").scrollTop = 0;
+                    } else {
+                        // No search term match or no term provided, just scroll to top
+                        fileContentDiv.querySelector("pre").scrollTop = 0;
+                    }
+                });
+            }
+
+            function hideFileContent() {
+                fileViewModal.classList.add("hidden");
+                document.body.style.overflow = ""; // Restore background scrolling
+                modalFileName.textContent = ""; // Clear content
+                modalFileCode.innerHTML = ""; // Clear content
+            }
+
+            // --- Event Listeners ---
+
+            loadRepoBtn.addEventListener("click", handleLoadRepo);
+            searchInput.addEventListener("input", handleSearch);
+
+            // Event delegation for clicking on results
+            resultsDiv.addEventListener("click", (event) => {
+                // Check if the clicked element OR its parent has the 'data-path' attribute
+                const targetElement = event.target.closest("[data-path]");
+                if (targetElement) {
+                    const filePath = targetElement.getAttribute("data-path");
+                    const currentSearchTerm = searchInput.value.trim(); // Get current search term
+                    showFileContent(filePath, currentSearchTerm);
+                }
+            });
+
+            // Add keyboard accessibility for results (Enter key)
+            resultsDiv.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    const targetElement = event.target.closest("[data-path]");
+                    if (targetElement) {
+                        event.preventDefault(); // Prevent any default form submission/etc.
+                        const filePath =
+                            targetElement.getAttribute("data-path");
+                        const currentSearchTerm = searchInput.value.trim();
+                        showFileContent(filePath, currentSearchTerm);
+                    }
+                }
+            });
+
+            // Modal Close Listeners
+            closeModalBtn.addEventListener("click", hideFileContent);
+            fileViewModal.addEventListener("click", (event) => {
+                // Close if clicked on the background overlay itself, not the content
+                if (event.target === fileViewModal) {
+                    hideFileContent();
+                }
+            });
+            // Close modal on Escape key
+            document.addEventListener("keydown", (event) => {
+                if (
+                    event.key === "Escape" &&
+                    !fileViewModal.classList.contains("hidden")
+                ) {
+                    hideFileContent();
+                }
+            });
+
+            // --- Initial Status ---
+            updateStatus("Enter repo details and click load.");
+            initializeFS(); // Initialize FS on script load
+        </script>
+    </body>
+</html>
