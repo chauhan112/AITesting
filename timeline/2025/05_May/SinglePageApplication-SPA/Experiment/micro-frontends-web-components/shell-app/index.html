@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Web Components MFE Shell</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                transition: background-color 0.5s;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-200 text-gray-900">
+        <div class="container mx-auto p-6">
+            <header
+                class="bg-purple-700 text-white p-6 rounded-lg shadow-xl mb-8"
+            >
+                <h1 class="text-4xl font-bold">
+                    Micro-Frontends with Web Components
+                </h1>
+                <p class="mt-2 text-purple-200">
+                    The shell application hosts independently developed
+                    components.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <section
+                    id="tool-a-section"
+                    class="bg-white p-6 rounded-lg shadow-lg"
+                >
+                    <h2 class="text-2xl font-semibold text-purple-600 mb-4">
+                        Section for Tool A
+                    </h2>
+                    <!--
+                    IMPORTANT: The src paths below assume you will serve mfe-tool-a
+                    and mfe-tool-b from different ports or paths relative to the shell.
+                    For this example, we'll serve them from http://localhost:8001 and http://localhost:8002
+                -->
+                    <script
+                        src="http://localhost:8001/tool-a-widget.js"
+                        defer
+                    ></script>
+                    <tool-a-widget
+                        name="Interactive Analysis Widget"
+                        background-color="#fee2e2"
+                    ></tool-a-widget>
+                    <tool-a-widget
+                        name="Secondary Tool A Instance"
+                    ></tool-a-widget>
+                </section>
+
+                <section
+                    id="tool-b-section"
+                    class="bg-white p-6 rounded-lg shadow-lg"
+                >
+                    <h2 class="text-2xl font-semibold text-purple-600 mb-4">
+                        Section for Tool B
+                    </h2>
+                    <script
+                        src="http://localhost:8002/tool-b-display.js"
+                        defer
+                    ></script>
+                    <tool-b-display title="Live Data Counter"></tool-b-display>
+                </section>
+            </div>
+
+            <div class="mt-8 p-4 bg-gray-100 rounded-lg shadow">
+                <h3 class="text-lg font-medium text-gray-700">Shell Actions</h3>
+                <button
+                    id="changeToolAAttr"
+                    class="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+                >
+                    Change Tool A Name
+                </button>
+                <p class="mt-2 text-sm text-gray-600">
+                    Listening for 'counterIncremented' event from Tool B:
+                    <span id="toolBEventMessage" class="font-semibold"
+                        >No events yet.</span
+                    >
+                </p>
+            </div>
+
+            <footer
+                class="text-center text-gray-600 mt-12 py-4 border-t border-gray-300"
+            >
+                <p>© 2025 Web Components MFE Demo</p>
+            </footer>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const firstToolA = document.querySelector(
+                    'tool-a-widget[name="Interactive Analysis Widget"]'
+                );
+                document
+                    .getElementById("changeToolAAttr")
+                    .addEventListener("click", () => {
+                        if (firstToolA) {
+                            const newName =
+                                "Updated Analysis Widget " +
+                                Math.floor(Math.random() * 100);
+                            firstToolA.setAttribute("name", newName);
+                            firstToolA.setAttribute(
+                                "background-color",
+                                "#dbeafe"
+                            ); // blue-100
+                        }
+                    });
+
+                // Listen for the custom event from tool-b-display
+                document.body.addEventListener(
+                    "counterIncremented",
+                    (event) => {
+                        console.log(
+                            "Custom event received from Tool B:",
+                            event.detail
+                        );
+                        document.getElementById(
+                            "toolBEventMessage"
+                        ).textContent = `Tool B counter is now ${event.detail.count}!`;
+                    }
+                );
+            });
+        </script>
+    </body>
+</html>
