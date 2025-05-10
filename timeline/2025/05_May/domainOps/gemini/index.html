@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Domain Logger - Ghibli Style</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom scrollbar (optional, for aesthetics) */
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f4e8c3;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #d8a847;
+                border-radius: 3px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #c09331;
+            }
+
+            body {
+                background-color: #f4e8c3; /* Main BG color */
+                overflow-x: hidden; /* Prevent horizontal scroll on body due to sidebar transitions */
+            }
+
+            /* Ghibli-esque Animations */
+            @keyframes gentleBob {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-3px);
+                }
+            }
+            .animate-gentle-bob {
+                animation: gentleBob 3s ease-in-out infinite;
+            }
+
+            @keyframes subtleWobble {
+                0% {
+                    transform: rotate(0deg) scale(1);
+                }
+                25% {
+                    transform: rotate(-0.5deg) scale(1.01);
+                }
+                50% {
+                    transform: rotate(0deg) scale(1);
+                }
+                75% {
+                    transform: rotate(0.5deg) scale(1.01);
+                }
+                100% {
+                    transform: rotate(0deg) scale(1);
+                }
+            }
+            .interactive-wobble:hover {
+                animation: subtleWobble 0.7s ease-in-out;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .fade-in-item {
+                opacity: 0; /* Start hidden */
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+
+            /* Sidebar Transitions */
+            .sidebar-transition {
+                transition: transform 0.3s ease-in-out;
+            }
+            .left-sidebar-closed {
+                transform: translateX(-100%);
+            }
+            .left-sidebar-open {
+                transform: translateX(0);
+            }
+            .right-sidebar-closed {
+                transform: translateX(100%);
+            }
+            .right-sidebar-open {
+                transform: translateX(0);
+            }
+
+            /* Backdrop for open sidebars on mobile */
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.3);
+                z-index: 15; /* Below sidebars, above main content */
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease-in-out,
+                    visibility 0.3s ease-in-out;
+            }
+            .sidebar-backdrop.active {
+                opacity: 1;
+                visibility: visible;
+            }
+        </style>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            "custom-teal-dark": "#2B7871",
+                            "custom-teal-darker": "#215A55",
+                            "custom-yellow-nav": "#D8A847",
+                            "custom-yellow-main-bg": "#F4E8C3",
+                            "custom-yellow-search": "#EBC97A",
+                            "custom-brown-header": "#5D514A",
+                            "custom-green-row": "#E1E6C3",
+                            "custom-cat-green": "#5E6E54",
+                            "custom-line-green": "#8DB08B",
+                        },
+                        animation: {
+                            "gentle-bob": "gentleBob 3s ease-in-out infinite",
+                            "subtle-wobble": "subtleWobble 0.7s ease-in-out",
+                            "fade-in": "fadeIn 0.5s ease-out forwards",
+                        },
+                        keyframes: {
+                            gentleBob: {
+                                "0%, 100%": { transform: "translateY(0)" },
+                                "50%": { transform: "translateY(-3px)" },
+                            },
+                            subtleWobble: {
+                                "0%": { transform: "rotate(0deg) scale(1)" },
+                                "25%": {
+                                    transform: "rotate(-0.5deg) scale(1.01)",
+                                },
+                                "50%": { transform: "rotate(0deg) scale(1)" },
+                                "75%": {
+                                    transform: "rotate(0.5deg) scale(1.01)",
+                                },
+                                "100%": { transform: "rotate(0deg) scale(1)" },
+                            },
+                            fadeIn: {
+                                from: {
+                                    opacity: 0,
+                                    transform: "translateY(10px)",
+                                },
+                                to: { opacity: 1, transform: "translateY(0)" },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body class="font-sans antialiased">
+        <div class="relative flex min-h-screen">
+            <!-- Changed h-screen to min-h-screen for content overflow -->
+
+            <!-- Backdrop for Sidebars on Mobile -->
+            <div id="sidebarBackdrop" class="sidebar-backdrop md:hidden"></div>
+
+            <!-- Left Sidebar -->
+            <aside
+                id="leftSidebar"
+                class="fixed inset-y-0 left-0 z-20 w-64 flex flex-col bg-custom-teal-dark text-white shadow-lg sidebar-transition left-sidebar-closed md:relative md:translate-x-0 md:shadow-none"
+            >
+                <!-- Logo and Title -->
+                <div
+                    class="pt-6 pb-4 px-6 text-center fade-in-item"
+                    style="animation-delay: 0.1s"
+                >
+                    <svg
+                        viewBox="0 0 100 100"
+                        class="w-16 h-16 mx-auto text-custom-cat-green fill-current mb-3 animate-gentle-bob"
+                    >
+                        <path d="M30,5 L20,25 L40,25 Z" />
+                        <path d="M70,5 L60,25 L80,25 Z" />
+                        <path
+                            d="M50,20 C20,20 5,40 5,60 C5,85 25,95 50,95 C75,95 95,85 95,60 C95,40 80,20 50,20 Z"
+                        />
+                        <circle cx="38" cy="52" r="4" fill="#374151" />
+                        <circle cx="62" cy="52" r="4" fill="#374151" />
+                        <path d="M48,62 L52,62 L50,67 Z" fill="#374151" />
+                        <line
+                            x1="15"
+                            y1="55"
+                            x2="30"
+                            y2="58"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                        <line
+                            x1="15"
+                            y1="62"
+                            x2="30"
+                            y2="62"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                        <line
+                            x1="15"
+                            y1="69"
+                            x2="30"
+                            y2="66"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                        <line
+                            x1="85"
+                            y1="55"
+                            x2="70"
+                            y2="58"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                        <line
+                            x1="85"
+                            y1="62"
+                            x2="70"
+                            y2="62"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                        <line
+                            x1="85"
+                            y1="69"
+                            x2="70"
+                            y2="66"
+                            stroke="#374151"
+                            stroke-width="1.5"
+                        />
+                    </svg>
+                    <h1
+                        class="text-xl font-semibold text-gray-800 uppercase tracking-wider"
+                    >
+                        Domain Logger
+                    </h1>
+                </div>
+                <!-- Navigation -->
+                <nav class="flex-grow">
+                    <div
+                        class="bg-custom-yellow-nav py-3.5 px-6 fade-in-item interactive-wobble"
+                        style="animation-delay: 0.2s"
+                    >
+                        <a
+                            href="#"
+                            class="flex items-center text-gray-800 font-semibold"
+                        >
+                            <span
+                                class="w-3.5 h-3.5 border-2 border-gray-800 rounded-full mr-3 flex-shrink-0"
+                            ></span>
+                            Domain
+                        </a>
+                    </div>
+                    <a
+                        href="#"
+                        class="flex items-center py-3.5 px-6 hover:bg-custom-teal-darker hover:bg-opacity-75 text-gray-200 font-medium fade-in-item interactive-wobble"
+                        style="animation-delay: 0.3s"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 mr-3 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h8M4 18h12"
+                            />
+                        </svg>
+                        Operation
+                    </a>
+                    <a
+                        href="#"
+                        class="flex items-center py-3.5 px-6 bg-custom-teal-darker text-white font-semibold fade-in-item interactive-wobble"
+                        style="animation-delay: 0.4s"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 mr-3 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h8M4 18h12"
+                            />
+                        </svg>
+                        Activity
+                    </a>
+                </nav>
+                <div class="p-6 h-20"></div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main
+                class="flex-1 flex flex-col bg-custom-yellow-main-bg overflow-y-auto"
+            >
+                <!-- Mobile Header / Main Header part -->
+                <header
+                    class="sticky top-0 z-10 bg-custom-yellow-main-bg md:bg-transparent p-4 md:p-6 shadow md:shadow-none"
+                >
+                    <div class="flex items-center justify-between">
+                        <!-- Hamburger Menu for Left Sidebar (Mobile) -->
+                        <button
+                            id="leftSidebarToggle"
+                            class="md:hidden p-2 text-gray-700 hover:text-gray-900 interactive-wobble"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 6h16M4 12h16m-7 6h7"
+                                />
+                            </svg>
+                        </button>
+                        <!-- Breadcrumb (visible on larger screens here, or could be below hamburger) -->
+                        <div
+                            class="hidden md:block text-sm text-gray-500 fade-in-item"
+                            style="animation-delay: 0.2s"
+                        >
+                            Root/logger
+                        </div>
+                        <!-- Main Search and Menu (Part of existing layout) -->
+                        <div class="flex items-center space-x-3">
+                            <div
+                                class="hidden md:flex items-center bg-custom-yellow-search p-2.5 rounded-md shadow-sm fade-in-item"
+                                style="animation-delay: 0.3s"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-5 w-5 text-gray-600 mr-2 flex-shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Search"
+                                    class="bg-transparent focus:outline-none text-gray-700 placeholder-gray-600 text-sm w-40"
+                                />
+                            </div>
+                            <button
+                                class="hidden md:block p-2 text-gray-700 hover:text-gray-900 interactive-wobble fade-in-item"
+                                style="animation-delay: 0.4s"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 6h16M4 12h16M4 18h16"
+                                    />
+                                </svg>
+                            </button>
+                            <!-- Placeholder for right sidebar toggle on mobile, if not using the existing search icon in right sidebar header -->
+                        </div>
+                    </div>
+                    <!-- Breadcrumb (visible on mobile here) -->
+                    <div
+                        class="md:hidden text-sm text-gray-500 mt-2 fade-in-item"
+                        style="animation-delay: 0.25s"
+                    >
+                        Root/logger
+                    </div>
+                </header>
+
+                <div class="p-4 md:p-6 flex-grow">
+                    <!-- Header: Title and Search (Adjusted for mobile) -->
+                    <div
+                        class="flex flex-col md:flex-row justify-between md:items-center mb-6"
+                    >
+                        <h2
+                            class="text-2xl md:text-3xl font-bold text-gray-800 fade-in-item"
+                            style="animation-delay: 0.5s"
+                        >
+                            Activity_name
+                        </h2>
+                        <!-- Main Search visible on mobile, if not using the one in header -->
+                        <div
+                            class="mt-4 md:mt-0 flex md:hidden items-center bg-custom-yellow-search p-2.5 rounded-md shadow-sm fade-in-item"
+                            style="animation-delay: 0.55s"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5 text-gray-600 mr-2 flex-shrink-0"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search Activities"
+                                class="bg-transparent focus:outline-none text-gray-700 placeholder-gray-600 text-sm w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Table Container for Horizontal Scroll -->
+                    <div
+                        class="overflow-x-auto bg-white shadow-md rounded-lg fade-in-item"
+                        style="animation-delay: 0.6s"
+                    >
+                        <table class="min-w-full">
+                            <thead class="bg-custom-brown-header text-gray-100">
+                                <tr>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider w-12"
+                                    ></th>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider"
+                                    >
+                                        Column_name
+                                    </th>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider"
+                                    >
+                                        Activity_name
+                                    </th>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider"
+                                    >
+                                        Status
+                                    </th>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider"
+                                    >
+                                        Date
+                                    </th>
+                                    <th
+                                        class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider w-28"
+                                    ></th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityTableBody">
+                                <!-- Rows will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Question Mark Button -->
+                <div class="p-4 pt-0 flex justify-start">
+                    <button
+                        class="bg-custom-yellow-nav text-gray-800 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-md hover:bg-opacity-80 transition interactive-wobble fade-in-item"
+                        style="animation-delay: 0.7s"
+                    >
+                        ?
+                    </button>
+                </div>
+            </main>
+
+            <!-- Right Sidebar -->
+            <aside
+                id="rightSidebar"
+                class="fixed inset-y-0 right-0 z-20 w-72 flex flex-col bg-custom-teal-darker text-white shadow-lg sidebar-transition right-sidebar-closed md:relative md:translate-x-0 md:shadow-none"
+            >
+                <div class="p-6 flex-grow">
+                    <div
+                        class="flex justify-between items-center mb-6 fade-in-item"
+                        style="animation-delay: 0.2s"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-200">
+                            Attributes
+                        </h3>
+                        <button
+                            id="rightSidebarToggle"
+                            class="text-gray-300 hover:text-white interactive-wobble"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span class="md:hidden ml-1 text-xs">Toggle</span>
+                            <!-- Text for mobile clarity -->
+                        </button>
+                    </div>
+                    <div
+                        class="flex items-center bg-custom-yellow-main-bg p-2.5 rounded-md shadow-sm fade-in-item"
+                        style="animation-delay: 0.3s"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 text-gray-600 mr-2 flex-shrink-0"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                        <input
+                            type="text"
+                            class="bg-transparent focus:outline-none text-gray-700 text-sm w-full placeholder-gray-600"
+                            placeholder="Search Attributes"
+                        />
+                    </div>
+                    <div
+                        class="mt-4 text-sm text-gray-400 italic fade-in-item"
+                        style="animation-delay: 0.4s"
+                    >
+                        (Attributes content here)
+                    </div>
+                </div>
+                <div class="p-4 pt-0 flex justify-end">
+                    <button
+                        class="bg-custom-yellow-nav text-gray-800 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-md hover:bg-opacity-80 transition interactive-wobble fade-in-item"
+                        style="animation-delay: 0.5s"
+                    >
+                        +
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const leftSidebar = document.getElementById("leftSidebar");
+                const rightSidebar = document.getElementById("rightSidebar");
+                const leftSidebarToggle =
+                    document.getElementById("leftSidebarToggle");
+                const rightSidebarToggle =
+                    document.getElementById("rightSidebarToggle"); // The search icon in Attributes header
+                const sidebarBackdrop =
+                    document.getElementById("sidebarBackdrop");
+                const tableBody = document.getElementById("activityTableBody");
+
+                // Function to toggle sidebar
+                function toggleSidebar(sidebar, openClass, closeClass) {
+                    const isOpen = sidebar.classList.contains(openClass);
+                    sidebar.classList.toggle(openClass);
+                    sidebar.classList.toggle(closeClass);
+
+                    // Manage backdrop for mobile sidebars
+                    if (window.innerWidth < 768) {
+                        // md breakpoint
+                        if (!isOpen) {
+                            // If it's about to open
+                            sidebarBackdrop.classList.add("active");
+                        } else {
+                            // If it's about to close, check if other sidebar is open
+                            const otherSidebarIsOpen =
+                                sidebar === leftSidebar
+                                    ? rightSidebar.classList.contains(
+                                          "right-sidebar-open"
+                                      )
+                                    : leftSidebar.classList.contains(
+                                          "left-sidebar-open"
+                                      );
+                            if (!otherSidebarIsOpen) {
+                                sidebarBackdrop.classList.remove("active");
+                            }
+                        }
+                    }
+                    return !isOpen; // Return new state (true if open)
+                }
+
+                // Left Sidebar Toggle
+                if (leftSidebarToggle && leftSidebar) {
+                    leftSidebarToggle.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        toggleSidebar(
+                            leftSidebar,
+                            "left-sidebar-open",
+                            "left-sidebar-closed"
+                        );
+                    });
+                }
+
+                // Right Sidebar Toggle
+                if (rightSidebarToggle && rightSidebar) {
+                    rightSidebarToggle.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        // On md screens and up, this button might just be a search, not a toggle.
+                        // For this example, it always toggles.
+                        toggleSidebar(
+                            rightSidebar,
+                            "right-sidebar-open",
+                            "right-sidebar-closed"
+                        );
+                    });
+                }
+
+                // Close sidebars when backdrop is clicked
+                sidebarBackdrop.addEventListener("click", () => {
+                    if (leftSidebar.classList.contains("left-sidebar-open")) {
+                        toggleSidebar(
+                            leftSidebar,
+                            "left-sidebar-open",
+                            "left-sidebar-closed"
+                        );
+                    }
+                    if (rightSidebar.classList.contains("right-sidebar-open")) {
+                        toggleSidebar(
+                            rightSidebar,
+                            "right-sidebar-open",
+                            "right-sidebar-closed"
+                        );
+                    }
+                    sidebarBackdrop.classList.remove("active");
+                });
+
+                // Close sidebars on Escape key
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") {
+                        let backdropActive = false;
+                        if (
+                            leftSidebar.classList.contains("left-sidebar-open")
+                        ) {
+                            toggleSidebar(
+                                leftSidebar,
+                                "left-sidebar-open",
+                                "left-sidebar-closed"
+                            );
+                            backdropActive = true;
+                        }
+                        if (
+                            rightSidebar.classList.contains(
+                                "right-sidebar-open"
+                            )
+                        ) {
+                            toggleSidebar(
+                                rightSidebar,
+                                "right-sidebar-open",
+                                "right-sidebar-closed"
+                            );
+                            backdropActive = true;
+                        }
+                        if (backdropActive)
+                            sidebarBackdrop.classList.remove("active");
+                    }
+                });
+
+                // Populate table (same as before, but now targets the new ID)
+                let tableRowsHtml = "";
+                for (let index = 0; index < 7; index++) {
+                    const animationDelay = 0.8 + index * 0.05; // Stagger row animations
+                    tableRowsHtml += `
+                    <tr class="${
+                        index % 2 === 0
+                            ? "bg-custom-green-row"
+                            : "bg-custom-yellow-main-bg"
+                    } hover:bg-opacity-70 transition-colors duration-150 fade-in-item" style="animation-delay: ${animationDelay}s;">
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap">${
+                            index + 1
+                        }.</td>
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap">
+                            <div class="w-10 h-1.5 bg-custom-line-green rounded-full"></div>
+                        </td>
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap">Activity_name</td>
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap">Created_on</td>
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap"></td>
+                        <td class="py-3.5 px-4 text-sm text-gray-700 whitespace-nowrap">
+                            <div class="flex items-center space-x-1 md:space-x-2 text-custom-teal-darker">
+                                <button title="User" class="p-1 hover:text-custom-teal-dark transition-colors interactive-wobble"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></button>
+                                <button title="Edit" class="p-1 hover:text-custom-teal-dark transition-colors interactive-wobble"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
+                                ${
+                                    index === 0
+                                        ? `
+                                <button title="Refresh" class="p-1 hover:text-custom-teal-dark transition-colors interactive-wobble"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg></button>
+                                `
+                                        : `
+                                <button title="Delete" class="p-1 hover:text-custom-teal-dark transition-colors interactive-wobble"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                                `
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                }
+                if (tableBody) {
+                    tableBody.innerHTML = tableRowsHtml;
+                }
+
+                // Apply fade-in to elements that might be added dynamically or need it
+                // For this example, it's mostly handled by inline styles, but you could
+                // querySelectorAll('.needs-fade-in') and add class/delay in JS too.
+            });
+        </script>
+    </body>
+</html>
