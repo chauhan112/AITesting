@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ghibli Dreams | Portfolio</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Fredoka+One&family=Itim&display=swap");
+
+            :root {
+                --ghibli-blue: #7bb7d0;
+                --ghibli-green: #a8e6cf;
+                --ghibli-yellow: #ffd3b6;
+                --ghibli-red: #ffaaa5;
+                --ghibli-dark: #3a506b;
+            }
+
+            body {
+                font-family: "Itim", cursive;
+                background-color: #f9f7f0;
+                color: var(--ghibli-dark);
+                overflow-x: hidden;
+            }
+
+            .ghibli-font {
+                font-family: "Fredoka One", cursive;
+            }
+
+            .cloud {
+                position: absolute;
+                background: white;
+                border-radius: 50%;
+                opacity: 0.8;
+                z-index: -1;
+                animation: float 15s infinite linear;
+            }
+
+            @keyframes float {
+                0% {
+                    transform: translateX(0) translateY(0);
+                }
+                50% {
+                    transform: translateX(50px) translateY(-20px);
+                }
+                100% {
+                    transform: translateX(0) translateY(0);
+                }
+            }
+
+            .totoro {
+                transition: all 0.3s ease;
+            }
+
+            .totoro:hover {
+                transform: scale(1.05) rotate(-5deg);
+            }
+
+            .project-card {
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .project-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 15px 20px rgba(0, 0, 0, 0.15);
+            }
+
+            .sparkle {
+                position: absolute;
+                background: white;
+                border-radius: 50%;
+                pointer-events: none;
+                opacity: 0;
+            }
+
+            .nav-link {
+                position: relative;
+            }
+
+            .nav-link::after {
+                content: "";
+                position: absolute;
+                width: 0;
+                height: 2px;
+                bottom: 0;
+                left: 0;
+                background-color: var(--ghibli-blue);
+                transition: width 0.3s ease;
+            }
+
+            .nav-link:hover::after {
+                width: 100%;
+            }
+
+            .floating {
+                animation: floating 3s ease-in-out infinite;
+            }
+
+            @keyframes floating {
+                0% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+                100% {
+                    transform: translateY(0px);
+                }
+            }
+        </style>
+    </head>
+    <body class="min-h-screen relative overflow-x-hidden">
+        <!-- Background elements -->
+        <div id="clouds-container"></div>
+        <div id="sparkles-container"></div>
+
+        <!-- Navigation -->
+        <nav
+            class="fixed w-full z-50 bg-white bg-opacity-90 backdrop-blur-sm shadow-sm"
+        >
+            <div
+                class="container mx-auto px-6 py-4 flex justify-between items-center"
+            >
+                <a
+                    href="#"
+                    class="text-2xl font-bold ghibli-font text-[#3a506b] flex items-center"
+                >
+                    <i class="fas fa-cloud-moon mr-2 text-[#7bb7d0]"></i> Ghibli
+                    Dreams
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="nav-link text-lg">Home</a>
+                    <a href="#about" class="nav-link text-lg">About</a>
+                    <a href="#projects" class="nav-link text-lg">Projects</a>
+                    <a href="#contact" class="nav-link text-lg">Contact</a>
+                </div>
+                <button class="md:hidden focus:outline-none">
+                    <i class="fas fa-bars text-2xl text-[#3a506b]"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section
+            id="home"
+            class="min-h-screen flex items-center justify-center pt-20 px-4"
+        >
+            <div
+                class="container mx-auto flex flex-col md:flex-row items-center justify-between"
+            >
+                <div class="md:w-1/2 mb-10 md:mb-0">
+                    <h1
+                        class="text-5xl md:text-7xl font-bold ghibli-font mb-6 text-[#3a506b]"
+                    >
+                        Hello, I'm <span class="text-[#ffaaa5]">Luna</span>
+                    </h1>
+                    <p class="text-xl mb-8 text-[#3a506b]">
+                        A dreamer & creator inspired by Studio Ghibli's magical
+                        worlds. I craft digital experiences that spark joy and
+                        wonder.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a
+                            href="#projects"
+                            class="px-6 py-3 bg-[#7bb7d0] text-white rounded-full font-medium hover:bg-[#5a9cb8] transition"
+                        >
+                            View My Work
+                        </a>
+                        <a
+                            href="#contact"
+                            class="px-6 py-3 border-2 border-[#7bb7d0] text-[#3a506b] rounded-full font-medium hover:bg-[#7bb7d0] hover:text-white transition"
+                        >
+                            Say Hello
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 flex justify-center">
+                    <img
+                        src="https://i.imgur.com/Q9qFt3n.png"
+                        alt="Totoro character"
+                        class="w-64 md:w-96 totoro floating"
+                    />
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-20 bg-[#a8e6cf] bg-opacity-30">
+            <div class="container mx-auto px-4">
+                <h2
+                    class="text-4xl font-bold ghibli-font mb-16 text-center text-[#3a506b]"
+                >
+                    <i class="fas fa-magic mr-3 text-[#ffaaa5]"></i> About Me
+                </h2>
+
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/3 mb-10 md:mb-0 flex justify-center">
+                        <div class="relative">
+                            <img
+                                src="https://i.imgur.com/JDVdQ1e.png"
+                                alt="Studio Ghibli style portrait"
+                                class="w-64 h-64 object-cover rounded-full border-8 border-white shadow-xl"
+                            />
+                            <div
+                                class="absolute -bottom-5 -right-5 bg-[#ffd3b6] p-3 rounded-full shadow-lg"
+                            >
+                                <i
+                                    class="fas fa-paint-brush text-3xl text-[#3a506b]"
+                                ></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:w-2/3 md:pl-16">
+                        <p class="text-lg mb-6">
+                            Like the characters in a Miyazaki film, I believe in
+                            the magic of imagination and the power of
+                            storytelling. My journey began when I first watched
+                            "Spirited Away" and realized that digital
+                            experiences could transport people to other worlds.
+                        </p>
+                        <p class="text-lg mb-6">
+                            With 5 years of experience in web development and
+                            design, I specialize in creating interfaces that
+                            feel alive, whimsical, and full of personality -
+                            just like your favorite Ghibli characters.
+                        </p>
+                        <p class="text-lg mb-8">
+                            When I'm not coding, you can find me painting
+                            watercolor landscapes, tending to my plant
+                            collection, or rewatching "Howl's Moving Castle" for
+                            the hundredth time.
+                        </p>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div
+                                class="bg-white p-4 rounded-lg shadow text-center"
+                            >
+                                <i
+                                    class="fas fa-code text-3xl mb-2 text-[#7bb7d0]"
+                                ></i>
+                                <h3 class="font-bold">Web Dev</h3>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded-lg shadow text-center"
+                            >
+                                <i
+                                    class="fas fa-palette text-3xl mb-2 text-[#ffaaa5]"
+                                ></i>
+                                <h3 class="font-bold">UI/UX Design</h3>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded-lg shadow text-center"
+                            >
+                                <i
+                                    class="fas fa-mobile-alt text-3xl mb-2 text-[#ffd3b6]"
+                                ></i>
+                                <h3 class="font-bold">Responsive</h3>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded-lg shadow text-center"
+                            >
+                                <i
+                                    class="fas fa-fairy text-3xl mb-2 text-[#a8e6cf]"
+                                ></i>
+                                <h3 class="font-bold">Animation</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="py-20">
+            <div class="container mx-auto px-4">
+                <h2
+                    class="text-4xl font-bold ghibli-font mb-16 text-center text-[#3a506b]"
+                >
+                    <i class="fas fa-star mr-3 text-[#ffd3b6]"></i> My Projects
+                </h2>
+
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Project 1 -->
+                    <div
+                        class="project-card bg-white rounded-xl overflow-hidden"
+                    >
+                        <div
+                            class="h-48 bg-[#7bb7d0] flex items-center justify-center"
+                        >
+                            <i
+                                class="fas fa-ghost text-8xl text-white opacity-30"
+                            ></i>
+                        </div>
+                        <div class="p-6">
+                            <h3
+                                class="text-2xl font-bold ghibli-font mb-2 text-[#3a506b]"
+                            >
+                                Spirit Realm
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                An interactive gallery showcasing mythical
+                                creatures from around the world, with parallax
+                                scrolling effects.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="px-3 py-1 bg-[#a8e6cf] bg-opacity-30 rounded-full text-sm"
+                                    >HTML/CSS</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#ffd3b6] bg-opacity-30 rounded-full text-sm"
+                                    >JavaScript</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#ffaaa5] bg-opacity-30 rounded-full text-sm"
+                                    >GSAP</span
+                                >
+                            </div>
+                            <a
+                                href="#"
+                                class="text-[#7bb7d0] font-medium hover:underline"
+                                >View Project →</a
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Project 2 -->
+                    <div
+                        class="project-card bg-white rounded-xl overflow-hidden"
+                    >
+                        <div
+                            class="h-48 bg-[#ffaaa5] flex items-center justify-center"
+                        >
+                            <i
+                                class="fas fa-seedling text-8xl text-white opacity-30"
+                            ></i>
+                        </div>
+                        <div class="p-6">
+                            <h3
+                                class="text-2xl font-bold ghibli-font mb-2 text-[#3a506b]"
+                            >
+                                Garden Planner
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                A whimsical app that helps you design your dream
+                                garden with drag-and-drop plant elements.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="px-3 py-1 bg-[#a8e6cf] bg-opacity-30 rounded-full text-sm"
+                                    >React</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#ffd3b6] bg-opacity-30 rounded-full text-sm"
+                                    >Firebase</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#7bb7d0] bg-opacity-30 rounded-full text-sm"
+                                    >D3.js</span
+                                >
+                            </div>
+                            <a
+                                href="#"
+                                class="text-[#7bb7d0] font-medium hover:underline"
+                                >View Project →</a
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Project 3 -->
+                    <div
+                        class="project-card bg-white rounded-xl overflow-hidden"
+                    >
+                        <div
+                            class="h-48 bg-[#ffd3b6] flex items-center justify-center"
+                        >
+                            <i
+                                class="fas fa-cloud-moon text-8xl text-white opacity-30"
+                            ></i>
+                        </div>
+                        <div class="p-6">
+                            <h3
+                                class="text-2xl font-bold ghibli-font mb-2 text-[#3a506b]"
+                            >
+                                Dream Journal
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                A beautifully animated journal app for recording
+                                and analyzing your dreams with mood tracking.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span
+                                    class="px-3 py-1 bg-[#a8e6cf] bg-opacity-30 rounded-full text-sm"
+                                    >Vue.js</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#ffaaa5] bg-opacity-30 rounded-full text-sm"
+                                    >Node.js</span
+                                >
+                                <span
+                                    class="px-3 py-1 bg-[#7bb7d0] bg-opacity-30 rounded-full text-sm"
+                                    >MongoDB</span
+                                >
+                            </div>
+                            <a
+                                href="#"
+                                class="text-[#7bb7d0] font-medium hover:underline"
+                                >View Project →</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-12">
+                    <a
+                        href="#"
+                        class="inline-block px-8 py-3 bg-[#3a506b] text-white rounded-full font-medium hover:bg-[#2c3e50] transition"
+                    >
+                        See More Projects
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-[#3a506b] text-white">
+            <div class="container mx-auto px-4">
+                <h2 class="text-4xl font-bold ghibli-font mb-16 text-center">
+                    <i class="fas fa-paper-plane mr-3 text-[#ffd3b6]"></i> Let's
+                    Connect
+                </h2>
+
+                <div class="flex flex-col md:flex-row gap-12">
+                    <div class="md:w-1/2">
+                        <p class="text-xl mb-8">
+                            Have a project in mind or just want to chat about
+                            Studio Ghibli films? Send me a message through the
+                            spirit forest (aka this form) and I'll get back to
+                            you soon!
+                        </p>
+
+                        <div class="space-y-6">
+                            <div class="flex items-center">
+                                <div class="bg-[#7bb7d0] p-3 rounded-full mr-4">
+                                    <i class="fas fa-envelope text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold">Email</p>
+                                    <p>hello@ghiblidreams.com</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center">
+                                <div class="bg-[#ffaaa5] p-3 rounded-full mr-4">
+                                    <i
+                                        class="fas fa-map-marker-alt text-xl"
+                                    ></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold">Location</p>
+                                    <p>Tokyo, Japan (but really everywhere)</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center">
+                                <div class="bg-[#a8e6cf] p-3 rounded-full mr-4">
+                                    <i class="fas fa-heart text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold">Social</p>
+                                    <div class="flex space-x-4 mt-2">
+                                        <a
+                                            href="#"
+                                            class="text-2xl hover:text-[#ffd3b6]"
+                                            ><i class="fab fa-twitter"></i
+                                        ></a>
+                                        <a
+                                            href="#"
+                                            class="text-2xl hover:text-[#ffd3b6]"
+                                            ><i class="fab fa-instagram"></i
+                                        ></a>
+                                        <a
+                                            href="#"
+                                            class="text-2xl hover:text-[#ffd3b6]"
+                                            ><i class="fab fa-github"></i
+                                        ></a>
+                                        <a
+                                            href="#"
+                                            class="text-2xl hover:text-[#ffd3b6]"
+                                            ><i class="fab fa-dribbble"></i
+                                        ></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:w-1/2">
+                        <form class="space-y-6">
+                            <div>
+                                <label for="name" class="block mb-2 font-medium"
+                                    >Your Name</label
+                                >
+                                <input
+                                    type="text"
+                                    id="name"
+                                    class="w-full px-4 py-3 rounded-lg bg-[#2c3e50] border border-[#7bb7d0] focus:outline-none focus:ring-2 focus:ring-[#ffd3b6]"
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    for="email"
+                                    class="block mb-2 font-medium"
+                                    >Your Email</label
+                                >
+                                <input
+                                    type="email"
+                                    id="email"
+                                    class="w-full px-4 py-3 rounded-lg bg-[#2c3e50] border border-[#7bb7d0] focus:outline-none focus:ring-2 focus:ring-[#ffd3b6]"
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    for="message"
+                                    class="block mb-2 font-medium"
+                                    >Your Message</label
+                                >
+                                <textarea
+                                    id="message"
+                                    rows="5"
+                                    class="w-full px-4 py-3 rounded-lg bg-[#2c3e50] border border-[#7bb7d0] focus:outline-none focus:ring-2 focus:ring-[#ffd3b6]"
+                                ></textarea>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="w-full py-3 bg-[#ffaaa5] hover:bg-[#ff8a84] text-white font-medium rounded-lg transition flex items-center justify-center"
+                            >
+                                <i class="fas fa-paper-plane mr-2"></i> Send
+                                Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-8 bg-[#2c3e50] text-white text-center">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-center space-x-6 mb-6">
+                    <a href="#" class="text-xl hover:text-[#ffd3b6]"
+                        ><i class="fab fa-twitter"></i
+                    ></a>
+                    <a href="#" class="text-xl hover:text-[#ffd3b6]"
+                        ><i class="fab fa-instagram"></i
+                    ></a>
+                    <a href="#" class="text-xl hover:text-[#ffd3b6]"
+                        ><i class="fab fa-github"></i
+                    ></a>
+                    <a href="#" class="text-xl hover:text-[#ffd3b6]"
+                        ><i class="fab fa-dribbble"></i
+                    ></a>
+                </div>
+                <p class="mb-4">
+                    Made with <i class="fas fa-heart text-[#ffaaa5]"></i> and
+                    Studio Ghibli magic
+                </p>
+                <p class="text-sm opacity-70">
+                    © 2023 Ghibli Dreams. All rights reserved.
+                </p>
+            </div>
+        </footer>
+
+        <script>
+            // Create floating clouds
+            document.addEventListener("DOMContentLoaded", function () {
+                const cloudsContainer =
+                    document.getElementById("clouds-container");
+                const colors = ["#7bb7d0", "#a8e6cf", "#ffd3b6", "#ffaaa5"];
+
+                for (let i = 0; i < 15; i++) {
+                    const cloud = document.createElement("div");
+                    cloud.classList.add("cloud");
+
+                    // Random properties
+                    const size = Math.random() * 100 + 50;
+                    const posX = Math.random() * window.innerWidth;
+                    const posY = Math.random() * window.innerHeight;
+                    const opacity = Math.random() * 0.5 + 0.3;
+                    const delay = Math.random() * 15;
+                    const color =
+                        colors[Math.floor(Math.random() * colors.length)];
+
+                    cloud.style.width = `${size}px`;
+                    cloud.style.height = `${size}px`;
+                    cloud.style.left = `${posX}px`;
+                    cloud.style.top = `${posY}px`;
+                    cloud.style.opacity = opacity;
+                    cloud.style.animationDelay = `${delay}s`;
+                    cloud.style.backgroundColor = color;
+
+                    cloudsContainer.appendChild(cloud);
+                }
+
+                // Create sparkles on click
+                document.addEventListener("click", function (e) {
+                    const sparklesContainer =
+                        document.getElementById("sparkles-container");
+
+                    for (let i = 0; i < 5; i++) {
+                        const sparkle = document.createElement("div");
+                        sparkle.classList.add("sparkle");
+
+                        const size = Math.random() * 10 + 5;
+                        const posX = e.clientX + (Math.random() - 0.5) * 50;
+                        const posY = e.clientY + (Math.random() - 0.5) * 50;
+                        const duration = Math.random() * 1 + 0.5;
+
+                        sparkle.style.width = `${size}px`;
+                        sparkle.style.height = `${size}px`;
+                        sparkle.style.left = `${posX}px`;
+                        sparkle.style.top = `${posY}px`;
+                        sparkle.style.animation = `sparkleAnim ${duration}s forwards`;
+
+                        // Add animation
+                        const keyframes = `
+                        @keyframes sparkleAnim {
+                            0% { transform: scale(0); opacity: 0; }
+                            50% { transform: scale(1); opacity: 0.8; }
+                            100% { transform: scale(0); opacity: 0; }
+                        }
+                    `;
+
+                        const styleEl = document.createElement("style");
+                        styleEl.innerHTML = keyframes;
+                        document.head.appendChild(styleEl);
+
+                        sparklesContainer.appendChild(sparkle);
+
+                        // Remove after animation
+                        setTimeout(() => {
+                            sparkle.remove();
+                        }, duration * 1000);
+                    }
+                });
+
+                // Smooth scrolling for navigation
+                document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                    anchor.addEventListener("click", function (e) {
+                        e.preventDefault();
+
+                        const targetId = this.getAttribute("href");
+                        const targetElement = document.querySelector(targetId);
+
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: "smooth",
+                        });
+                    });
+                });
+
+                // Scroll reveal animation
+                const animateOnScroll = function () {
+                    const elements = document.querySelectorAll(
+                        ".project-card, .totoro, #about, #projects, #contact"
+                    );
+
+                    elements.forEach((element) => {
+                        const elementPosition =
+                            element.getBoundingClientRect().top;
+                        const screenPosition = window.innerHeight / 1.3;
+
+                        if (elementPosition < screenPosition) {
+                            element.style.opacity = "1";
+                            element.style.transform = "translateY(0)";
+                        }
+                    });
+                };
+
+                // Set initial state
+                document
+                    .querySelectorAll(
+                        ".project-card, .totoro, #about, #projects, #contact"
+                    )
+                    .forEach((el) => {
+                        el.style.opacity = "0";
+                        el.style.transform = "translateY(20px)";
+                        el.style.transition = "all 0.6s ease";
+                    });
+
+                window.addEventListener("scroll", animateOnScroll);
+                animateOnScroll(); // Run once on load
+            });
+        </script>
+    </body>
+</html>
