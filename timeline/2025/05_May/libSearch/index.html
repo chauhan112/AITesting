@@ -303,13 +303,9 @@
                                 `Cloning repository (shallow): ${repoUrl}...`
                             );
                             // Clean directory before clone if it exists but is incomplete/corrupt
-                            try {
-                                await pfs.rmdir(VIRTUAL_DIR, {
-                                    recursive: true,
-                                });
-                            } catch {
-                                /* ignore */
-                            }
+                            await pfs.rmdir(VIRTUAL_DIR, {
+                                recursive: true,
+                            });
                             await pfs.mkdir(VIRTUAL_DIR); // Recreate after rm
                         } else {
                             throw error; // Re-throw other errors
