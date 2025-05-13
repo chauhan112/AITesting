@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Project Hub</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Optional: Custom styles or overrides */
+            /* Example: Smooth scroll behavior */
+            html {
+                scroll-behavior: smooth;
+            }
+            /* Basic styling for modal overlay */
+            .modal-overlay {
+                transition: opacity 0.3s ease-in-out;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 text-gray-800 font-sans">
+        <!-- Header / Navigation -->
+        <header class="bg-slate-800 text-white shadow-md sticky top-0 z-50">
+            <div
+                class="container mx-auto px-6 py-4 flex justify-between items-center"
+            >
+                <a
+                    href="#"
+                    class="text-2xl font-bold hover:text-teal-400 transition-colors"
+                    >Project Hub</a
+                >
+                <nav>
+                    <ul class="flex space-x-6">
+                        <li>
+                            <a href="#hero" class="hover:text-teal-300">Home</a>
+                        </li>
+                        <li>
+                            <a href="#tools" class="hover:text-teal-300"
+                                >Tools</a
+                            >
+                        </li>
+                        <li>
+                            <a href="#experiments" class="hover:text-teal-300"
+                                >Experiments</a
+                            >
+                        </li>
+                        <li>
+                            <a href="#about" class="hover:text-teal-300"
+                                >About</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section id="hero" class="bg-slate-700 text-white py-20">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-5xl font-bold mb-4">
+                    Welcome to Your Project Playground!
+                </h1>
+                <p class="text-xl mb-8 text-slate-300">
+                    A collection of useful tools, nifty utilities, and exciting
+                    experiments.
+                </p>
+                <a
+                    href="#tools"
+                    class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors"
+                >
+                    Explore Tools
+                </a>
+            </div>
+        </section>
+
+        <!-- Tools Section -->
+        <section id="tools" class="py-16">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-12 text-slate-700">
+                    Handy Tools & Utilities
+                </h2>
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Tool Card 1 -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-teal-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 6V4m0 16v-2m0-8v-2m0 16V4m6 8h2m-16 0h2m10-4l1.414-1.414M5.586 5.586L4.172 4.172m14.142 14.142L17.828 17.828m-12.728 0l1.414-1.414M12 18a6 6 0 100-12 6 6 0 000 12z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Search in Git Repo files
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            You have alot of files in a git repo and u want to
+                            search in them and view the results
+                        </p>
+                        <a
+                            href="/timeline/2025/05_May/libSearch/index.html"
+                            class="block w-full text-center bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                        >
+                            Use Tool
+                        </a>
+                    </div>
+
+                    <!-- Tool Card 2 -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-teal-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Links Opener
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            You have a group of links you want to open them
+                            together. Do CRUD ops on them
+                        </p>
+                        <a
+                            href="/timeline/2025/05_May/linksOpener/index.html"
+                            class="block w-full text-center bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                        >
+                            Use Tool
+                        </a>
+                    </div>
+
+                    <!-- Tool Card 3 (Add more as needed) -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-teal-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Placeholder Tool
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            Description for another awesome tool you'll build.
+                        </p>
+                        <a
+                            href="#"
+                            class="block w-full text-center bg-gray-400 cursor-not-allowed text-white font-semibold py-2 px-4 rounded-md"
+                        >
+                            Coming Soon
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experiments Section -->
+        <section id="experiments" class="bg-slate-200 py-16">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-12 text-slate-700">
+                    Creative Experiments
+                </h2>
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Experiment Card 1: Vibe Coding -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-indigo-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Vibe Coding
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            An experimental interface for coding with ambient
+                            sounds and visuals.
+                        </p>
+                        <button
+                            id="openVibeCodingModal"
+                            class="block w-full text-center bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                        >
+                            Explore Vibe
+                        </button>
+                    </div>
+
+                    <!-- Experiment Card 2 -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-indigo-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.539 1.118l-3.975-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Idea Tester X
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            A sandbox for rapidly prototyping and testing out
+                            new UI concepts.
+                        </p>
+                        <a
+                            href="#"
+                            class="block w-full text-center bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                        >
+                            Try It Out
+                        </a>
+                    </div>
+
+                    <!-- Experiment Card 3 (Add more as needed) -->
+                    <div
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:-translate-y-1"
+                    >
+                        <div class="mb-4">
+                            <svg
+                                class="w-12 h-12 text-indigo-500 mx-auto"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7.014A8.003 8.003 0 0122 12c0 3-1 7-6.343 6.657z"
+                                ></path>
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold mb-2 text-center text-slate-700"
+                        >
+                            Another Experiment
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            Description for another cool experiment you are
+                            working on.
+                        </p>
+                        <a
+                            href="#"
+                            class="block w-full text-center bg-gray-400 cursor-not-allowed text-white font-semibold py-2 px-4 rounded-md"
+                        >
+                            In Progress
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section (Optional) -->
+        <section id="about" class="py-16">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-3xl font-bold mb-6 text-slate-700">
+                    About This Project
+                </h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    This project is a personal collection of small web-based
+                    tools, utilities, and experimental ideas. It serves as a
+                    playground for learning, trying new things, and hopefully
+                    creating some useful stuff along the way!
+                </p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-8 text-center">
+            <div class="container mx-auto px-6">
+                <p>
+                    © <span id="currentYear"></span> Your Name/Project Name. All
+                    rights reserved.
+                </p>
+                <p class="text-sm mt-1">
+                    Built with Tailwind CSS & Vanilla JavaScript.
+                </p>
+            </div>
+        </footer>
+
+        <!-- Vibe Coding Modal -->
+        <div
+            id="vibeCodingModal"
+            class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0"
+        >
+            <div
+                class="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full transform scale-95 transition-transform duration-300 ease-in-out"
+            >
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-semibold text-slate-700">
+                        Vibe Coding Experience
+                    </h3>
+                    <button
+                        id="closeVibeCodingModal"
+                        class="text-gray-500 hover:text-gray-700 text-2xl"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div class="text-gray-600">
+                    <p class="mb-4">Welcome to the Vibe Coding experiment!</p>
+                    <p class="mb-4">
+                        Imagine an environment that changes based on your coding
+                        flow, with adaptive music and visuals. This is just a
+                        conceptual modal. The actual functionality would be
+                        built out separately.
+                    </p>
+                    <div class="bg-slate-100 p-4 rounded-md">
+                        <h4 class="font-semibold text-slate-600 mb-2">
+                            Features to explore:
+                        </h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Ambient background music</li>
+                            <li>Dynamic color schemes</li>
+                            <li>Focus mode timer</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-6 text-right">
+                    <button
+                        id="closeVibeCodingModalButton"
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+                    >
+                        Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- Smooth Scrolling for Nav Links ---
+                // (Handled by `scroll-behavior: smooth;` in CSS, but this is an alternative JS way)
+                // const navLinks = document.querySelectorAll('header nav a[href^="#"]');
+                // navLinks.forEach(link => {
+                //     link.addEventListener('click', function(e) {
+                //         e.preventDefault();
+                //         const targetId = this.getAttribute('href');
+                //         const targetElement = document.querySelector(targetId);
+                //         if (targetElement) {
+                //             targetElement.scrollIntoView({ behavior: 'smooth' });
+                //         }
+                //     });
+                // });
+
+                // --- Update Footer Year ---
+                const currentYearElement =
+                    document.getElementById("currentYear");
+                if (currentYearElement) {
+                    currentYearElement.textContent = new Date().getFullYear();
+                }
+
+                // --- Vibe Coding Modal Logic ---
+                const vibeModal = document.getElementById("vibeCodingModal");
+                const openVibeModalButton = document.getElementById(
+                    "openVibeCodingModal"
+                );
+                const closeVibeModalButton = document.getElementById(
+                    "closeVibeCodingModal"
+                );
+                const closeVibeModalButtonBottom = document.getElementById(
+                    "closeVibeCodingModalButton"
+                );
+
+                function openModal() {
+                    if (vibeModal) {
+                        vibeModal.classList.remove("hidden");
+                        setTimeout(() => {
+                            // For transition
+                            vibeModal.classList.remove("opacity-0");
+                            vibeModal
+                                .querySelector(".transform")
+                                .classList.remove("scale-95");
+                            vibeModal
+                                .querySelector(".transform")
+                                .classList.add("scale-100");
+                        }, 10);
+                        document.body.style.overflow = "hidden"; // Prevent background scroll
+                    }
+                }
+
+                function closeModal() {
+                    if (vibeModal) {
+                        vibeModal.classList.add("opacity-0");
+                        vibeModal
+                            .querySelector(".transform")
+                            .classList.remove("scale-100");
+                        vibeModal
+                            .querySelector(".transform")
+                            .classList.add("scale-95");
+                        setTimeout(() => {
+                            // For transition
+                            vibeModal.classList.add("hidden");
+                            document.body.style.overflow = ""; // Restore background scroll
+                        }, 300);
+                    }
+                }
+
+                if (openVibeModalButton) {
+                    openVibeModalButton.addEventListener("click", openModal);
+                }
+                if (closeVibeModalButton) {
+                    closeVibeModalButton.addEventListener("click", closeModal);
+                }
+                if (closeVibeModalButtonBottom) {
+                    closeVibeModalButtonBottom.addEventListener(
+                        "click",
+                        closeModal
+                    );
+                }
+
+                // Close modal on Escape key press
+                document.addEventListener("keydown", (event) => {
+                    if (
+                        event.key === "Escape" &&
+                        !vibeModal.classList.contains("hidden")
+                    ) {
+                        closeModal();
+                    }
+                });
+
+                // Close modal on overlay click
+                if (vibeModal) {
+                    vibeModal.addEventListener("click", (event) => {
+                        if (event.target === vibeModal) {
+                            // Check if the click is on the overlay itself
+                            closeModal();
+                        }
+                    });
+                }
+
+                // --- Example: Log when a tool card is hovered ---
+                // You can expand this to do more complex things
+                const toolCards = document.querySelectorAll("#tools .bg-white");
+                toolCards.forEach((card) => {
+                    card.addEventListener("mouseenter", () => {
+                        // console.log('Hovered over tool:', card.querySelector('h3').textContent);
+                    });
+                });
+
+                console.log("Project Hub Page Loaded!");
+            });
+        </script>
+    </body>
+</html>
