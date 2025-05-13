@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Link Collections</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            // Optional: If you had custom configurations in tailwind.config.js,
+            // you can add them here. For this project, the defaults are fine.
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        // Example:
+                        // colors: {
+                        //   clifford: '#da373d',
+                        // }
+                    },
+                },
+                // plugins: [
+                //    require('@tailwindcss/forms'), // Example if you were using official plugins
+                // ]
+            };
+        </script>
+        <style>
+            /* You can add any custom CSS here that isn't easily achievable with Tailwind utilities,
+           or if you prefer to define some base styles manually. */
+            body {
+                /* Example: Add a default font if Tailwind's default isn't explicitly set or you want an override */
+                /* font-family: 'Inter', sans-serif; (You'd need to import Inter font separately) */
+            }
+            /* Fix for modal backdrop clicks when modal content is clicked */
+            .modal-content {
+                pointer-events: auto;
+            }
+            .fixed.inset-0 {
+                pointer-events: none; /* Allow clicks through backdrop unless on modal content */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 font-sans">
+        <div class="container mx-auto p-4 md:p-8">
+            <header class="mb-8 text-center">
+                <h1 class="text-4xl font-bold text-blue-600">
+                    Link Collections
+                </h1>
+            </header>
+
+            <div class="mb-6">
+                <button
+                    id="addCollectionBtn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow-md transition duration-150 ease-in-out"
+                >
+                    + Add New Collection
+                </button>
+            </div>
+
+            <!-- Collections Container -->
+            <div
+                id="collectionsContainer"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+                <!-- Collection cards will be injected here by JS -->
+                <p class="text-gray-500 col-span-full text-center">
+                    Loading collections...
+                </p>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- Add/Edit Collection Modal -->
+        <div
+            id="collectionModal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50"
+        >
+            <div
+                class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-md mx-4 modal-content"
+            >
+                <h2
+                    id="collectionModalTitle"
+                    class="text-2xl font-semibold mb-4 text-gray-800"
+                >
+                    Add Collection
+                </h2>
+                <form id="collectionForm">
+                    <input type="hidden" id="collectionIdInput" />
+                    <div>
+                        <label
+                            for="collectionTitleInput"
+                            class="block text-sm font-medium text-gray-700 mb-1"
+                            >Collection Title:</label
+                        >
+                        <input
+                            type="text"
+                            id="collectionTitleInput"
+                            required
+                            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            id="cancelCollectionModal"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Save Collection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add/Edit Link Modal -->
+        <div
+            id="linkModal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50"
+        >
+            <div
+                class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-md mx-4 modal-content"
+            >
+                <h2
+                    id="linkModalTitle"
+                    class="text-2xl font-semibold mb-4 text-gray-800"
+                >
+                    Add Link
+                </h2>
+                <form id="linkForm">
+                    <input type="hidden" id="linkCollectionIdInput" />
+                    <!-- To know which collection this link belongs to -->
+                    <input type="hidden" id="linkIdInput" />
+                    <div class="mb-4">
+                        <label
+                            for="linkTitleInput"
+                            class="block text-sm font-medium text-gray-700 mb-1"
+                            >Link Title (Key):</label
+                        >
+                        <input
+                            type="text"
+                            id="linkTitleInput"
+                            required
+                            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            for="linkUrlInput"
+                            class="block text-sm font-medium text-gray-700 mb-1"
+                            >Link URL (Value):</label
+                        >
+                        <input
+                            type="url"
+                            id="linkUrlInput"
+                            required
+                            placeholder="https://example.com"
+                            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            id="cancelLinkModal"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+                        >
+                            Save Link
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            // Content from js/store.js
+            const STORE_KEY = "linkCollectionsApp";
+
+            function getCollections() {
+                const collections = localStorage.getItem(STORE_KEY);
+                return collections ? JSON.parse(collections) : [];
+            }
+
+            function saveCollections(collections) {
+                localStorage.setItem(STORE_KEY, JSON.stringify(collections));
+            }
+
+            function generateId() {
+                return "_" + Math.random().toString(36).substr(2, 9);
+            }
+        </script>
+
+        <script>
+            // Content from js/ui.js
+
+            // --- Modal Helpers ---
+            function showModal(modalId) {
+                document.getElementById(modalId).classList.remove("hidden");
+            }
+
+            function hideModal(modalId) {
+                document.getElementById(modalId).classList.add("hidden");
+                // Clear forms when hiding (optional, but good practice)
+                if (modalId === "collectionModal")
+                    document.getElementById("collectionForm").reset();
+                if (modalId === "linkModal")
+                    document.getElementById("linkForm").reset();
+            }
+
+            // --- Render Functions ---
+            function renderCollections(collections) {
+                const container = document.getElementById(
+                    "collectionsContainer"
+                );
+                container.innerHTML = ""; // Clear existing content
+
+                if (collections.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 col-span-full text-center">No collections yet. Click "Add New Collection" to get started!</p>`;
+                    return;
+                }
+
+                collections.forEach((collection) => {
+                    const collectionCard = document.createElement("div");
+                    collectionCard.className =
+                        "bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200";
+                    collectionCard.dataset.collectionId = collection.id;
+
+                    let linksHtml =
+                        '<p class="text-sm text-gray-500 mb-3">No links in this collection yet.</p>';
+                    if (collection.links && collection.links.length > 0) {
+                        linksHtml = `
+                    <ul class="space-y-2 mb-3 max-h-60 overflow-y-auto border p-2 rounded-md">
+                        ${collection.links
+                            .map(
+                                (link) => `
+                            <li class="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100" data-link-id="${link.id}">
+                                <div class="w-full mr-2">
+                                    <strong class="text-gray-700 block truncate" title="${link.title}">${link.title}</strong>
+                                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 hover:underline break-all text-sm" title="${link.url}">${link.url}</a>
+                                </div>
+                                <div class="flex space-x-1 flex-shrink-0">
+                                    <button class="edit-link-btn text-xs text-yellow-500 hover:text-yellow-700 p-1" title="Edit Link">✏️</button>
+                                    <button class="delete-link-btn text-xs text-red-500 hover:text-red-700 p-1" title="Delete Link">🗑️</button>
+                                </div>
+                            </li>
+                        `
+                            )
+                            .join("")}
+                    </ul>
+                `;
+                    }
+
+                    collectionCard.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-2xl font-semibold text-gray-800 truncate" title="${
+                        collection.title
+                    }">${collection.title}</h3>
+                    <div class="flex space-x-2 flex-shrink-0">
+                        <button class="edit-collection-btn text-yellow-500 hover:text-yellow-700 p-1" title="Edit Collection Title">✏️</button>
+                        <button class="delete-collection-btn text-red-500 hover:text-red-700 p-1" title="Delete Collection">🗑️</button>
+                    </div>
+                </div>
+
+                ${linksHtml}
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button class="open-all-links-btn bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-2 px-3 rounded shadow transition duration-150 ease-in-out ${
+                        collection.links && collection.links.length > 0
+                            ? ""
+                            : "opacity-50 cursor-not-allowed"
+                    }"
+                            ${
+                                collection.links && collection.links.length > 0
+                                    ? ""
+                                    : "disabled"
+                            }>
+                        Open All (${
+                            collection.links ? collection.links.length : 0
+                        })
+                    </button>
+                    <button class="add-link-to-collection-btn bg-teal-500 hover:bg-teal-600 text-white text-sm py-2 px-3 rounded shadow transition duration-150 ease-in-out">
+                        + Add Link
+                    </button>
+                </div>
+            `;
+                    container.appendChild(collectionCard);
+                });
+            }
+
+            // --- Populate Modal Forms ---
+            function populateCollectionForm(collection) {
+                document.getElementById("collectionModalTitle").textContent =
+                    "Edit Collection";
+                document.getElementById("collectionIdInput").value =
+                    collection.id;
+                document.getElementById("collectionTitleInput").value =
+                    collection.title;
+            }
+
+            function populateLinkForm(collectionId, link = null) {
+                document.getElementById("linkCollectionIdInput").value =
+                    collectionId;
+                if (link) {
+                    document.getElementById("linkModalTitle").textContent =
+                        "Edit Link";
+                    document.getElementById("linkIdInput").value = link.id;
+                    document.getElementById("linkTitleInput").value =
+                        link.title;
+                    document.getElementById("linkUrlInput").value = link.url;
+                } else {
+                    document.getElementById("linkModalTitle").textContent =
+                        "Add Link to Collection";
+                    document.getElementById("linkIdInput").value = ""; // Clear for new link
+                    document.getElementById("linkTitleInput").value = "";
+                    document.getElementById("linkUrlInput").value = "";
+                }
+            }
+        </script>
+
+        <script>
+            // Content from js/app.js
+            document.addEventListener("DOMContentLoaded", () => {
+                let collections = getCollections(); // From store.js content above
+
+                const addCollectionBtn =
+                    document.getElementById("addCollectionBtn");
+                const collectionModalEl =
+                    document.getElementById("collectionModal"); // Renamed for clarity
+                const collectionForm =
+                    document.getElementById("collectionForm");
+                const cancelCollectionModalBtn = document.getElementById(
+                    "cancelCollectionModal"
+                );
+
+                const linkModalEl = document.getElementById("linkModal"); // Renamed for clarity
+                const linkForm = document.getElementById("linkForm");
+                const cancelLinkModalBtn =
+                    document.getElementById("cancelLinkModal");
+
+                const collectionsContainer = document.getElementById(
+                    "collectionsContainer"
+                );
+
+                // --- Initial Render ---
+                renderUI();
+
+                function renderUI() {
+                    renderCollections(collections); // From ui.js content above
+                }
+
+                // --- Event Listeners ---
+
+                // Show Add Collection Modal
+                addCollectionBtn.addEventListener("click", () => {
+                    document.getElementById(
+                        "collectionModalTitle"
+                    ).textContent = "Add New Collection";
+                    document.getElementById("collectionIdInput").value = ""; // Clear ID for new collection
+                    collectionForm.reset();
+                    showModal("collectionModal");
+                    document.getElementById("collectionTitleInput").focus();
+                });
+
+                // Cancel Collection Modal
+                cancelCollectionModalBtn.addEventListener("click", () =>
+                    hideModal("collectionModal")
+                );
+                collectionModalEl.addEventListener("click", (e) => {
+                    // Close on backdrop click
+                    if (e.target === collectionModalEl)
+                        hideModal("collectionModal");
+                });
+
+                // Handle Collection Form Submit (Add/Edit)
+                collectionForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const id =
+                        document.getElementById("collectionIdInput").value;
+                    const title = document
+                        .getElementById("collectionTitleInput")
+                        .value.trim();
+
+                    if (!title) {
+                        alert("Collection title cannot be empty.");
+                        return;
+                    }
+
+                    if (id) {
+                        // Editing existing collection
+                        const collection = collections.find((c) => c.id === id);
+                        if (collection) {
+                            collection.title = title;
+                        }
+                    } else {
+                        // Adding new collection
+                        const newCollection = {
+                            id: generateId(), // From store.js content above
+                            title: title,
+                            links: [],
+                        };
+                        collections.push(newCollection);
+                    }
+                    saveCollections(collections);
+                    renderUI();
+                    hideModal("collectionModal");
+                });
+
+                // Cancel Link Modal
+                cancelLinkModalBtn.addEventListener("click", () =>
+                    hideModal("linkModal")
+                );
+                linkModalEl.addEventListener("click", (e) => {
+                    // Close on backdrop click
+                    if (e.target === linkModalEl) hideModal("linkModal");
+                });
+
+                // Handle Link Form Submit (Add/Edit)
+                linkForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const collectionId = document.getElementById(
+                        "linkCollectionIdInput"
+                    ).value;
+                    const linkId = document.getElementById("linkIdInput").value;
+                    const title = document
+                        .getElementById("linkTitleInput")
+                        .value.trim();
+                    const url = document
+                        .getElementById("linkUrlInput")
+                        .value.trim();
+
+                    if (!title || !url) {
+                        alert("Link title and URL cannot be empty.");
+                        return;
+                    }
+                    try {
+                        new URL(url); // Basic URL validation
+                    } catch (_) {
+                        alert(
+                            "Please enter a valid URL (e.g., https://example.com)"
+                        );
+                        return;
+                    }
+
+                    const collection = collections.find(
+                        (c) => c.id === collectionId
+                    );
+                    if (!collection) return; // Should not happen generally
+
+                    if (linkId) {
+                        // Editing existing link
+                        const link = collection.links.find(
+                            (l) => l.id === linkId
+                        );
+                        if (link) {
+                            link.title = title;
+                            link.url = url;
+                        }
+                    } else {
+                        // Adding new link
+                        const newLink = {
+                            id: generateId(),
+                            title: title,
+                            url: url,
+                        };
+                        if (!collection.links) collection.links = []; // Ensure links array exists
+                        collection.links.push(newLink);
+                    }
+                    saveCollections(collections);
+                    renderUI();
+                    hideModal("linkModal");
+                });
+
+                // Event Delegation for actions on collection cards
+                collectionsContainer.addEventListener("click", (e) => {
+                    const target = e.target;
+                    const collectionCard = target.closest(
+                        "div[data-collection-id]"
+                    );
+                    if (!collectionCard) return;
+
+                    const collectionId = collectionCard.dataset.collectionId;
+                    const collection = collections.find(
+                        (c) => c.id === collectionId
+                    );
+                    if (!collection) return;
+
+                    // Edit Collection
+                    if (
+                        target.classList.contains("edit-collection-btn") ||
+                        target.closest(".edit-collection-btn")
+                    ) {
+                        populateCollectionForm(collection); // From ui.js content above
+                        showModal("collectionModal");
+                        document.getElementById("collectionTitleInput").focus();
+                    }
+
+                    // Delete Collection
+                    else if (
+                        target.classList.contains("delete-collection-btn") ||
+                        target.closest(".delete-collection-btn")
+                    ) {
+                        if (
+                            confirm(
+                                `Are you sure you want to delete the collection "${collection.title}"?`
+                            )
+                        ) {
+                            collections = collections.filter(
+                                (c) => c.id !== collectionId
+                            );
+                            saveCollections(collections);
+                            renderUI();
+                        }
+                    }
+
+                    // Add Link to Collection
+                    else if (
+                        target.classList.contains(
+                            "add-link-to-collection-btn"
+                        ) ||
+                        target.closest(".add-link-to-collection-btn")
+                    ) {
+                        populateLinkForm(collectionId); // From ui.js content above
+                        showModal("linkModal");
+                        document.getElementById("linkTitleInput").focus();
+                    }
+
+                    // Open All Links
+                    else if (
+                        target.classList.contains("open-all-links-btn") ||
+                        target.closest(".open-all-links-btn")
+                    ) {
+                        if (collection.links && collection.links.length > 0) {
+                            collection.links.forEach((link) => {
+                                // Add try-catch for potentially invalid URLs from user input
+                                const validUrl = new URL(link.url); // This also helps ensure it's a full URL
+                                window.open(validUrl.href, "_blank");
+                            });
+                        }
+                    }
+
+                    // --- Link specific actions (within a collection card) ---
+                    const linkItem = target.closest("li[data-link-id]");
+                    if (linkItem) {
+                        const linkId = linkItem.dataset.linkId;
+                        const link = collection.links.find(
+                            (l) => l.id === linkId
+                        );
+                        if (!link) return;
+
+                        // Edit Link
+                        if (
+                            target.classList.contains("edit-link-btn") ||
+                            target.closest(".edit-link-btn")
+                        ) {
+                            populateLinkForm(collectionId, link); // from ui.js content above
+                            showModal("linkModal");
+                            document.getElementById("linkTitleInput").focus();
+                        }
+                        // Delete Link
+                        else if (
+                            target.classList.contains("delete-link-btn") ||
+                            target.closest(".delete-link-btn")
+                        ) {
+                            if (
+                                confirm(
+                                    `Are you sure you want to delete the link "${link.title}"?`
+                                )
+                            ) {
+                                collection.links = collection.links.filter(
+                                    (l) => l.id !== linkId
+                                );
+                                saveCollections(collections);
+                                renderUI();
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
