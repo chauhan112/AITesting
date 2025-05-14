@@ -1,0 +1,10 @@
+export const SVG_NS = "http://www.w3.org/2000/svg";
+export const NODE_WIDTH = 120;
+export const NODE_HEIGHT = 50;
+export const H_SPACING = 60; // Increased horizontal spacing
+export const V_SPACING = 100;
+export const DEFAULT_COLOR = "#3B82F6";
+export const DEFAULT_FONT_SIZE = 14;
+export const SIBLING_SEPARATION = 1.2; // Multiplier for spacing between siblings (related to node width)
+export const SUBTREE_SEPARATION = 1.5; // Multiplier for spacing between subtrees of siblings
+export const LEVEL_SEPARATION = 1.5; // Multiplier for V_SPACING

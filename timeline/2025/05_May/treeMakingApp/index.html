@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tree Maker App</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom styles if needed, e.g., for SVG text selection */
+            svg text::selection {
+                background: none;
+            }
+            .tooltip {
+                position: absolute;
+                background-color: #333;
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 0.875rem;
+                z-index: 100;
+                pointer-events: none; /* Important so it doesn't interfere with mouse events on nodes */
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            .node-group:hover .node-actions {
+                display: flex;
+            }
+            .node-actions {
+                display: none; /* Hidden by default, shown on hover via group hover */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-900 text-gray-100 flex h-screen overflow-hidden">
+        <!-- Sidebar / Explorer -->
+        <aside class="w-64 bg-gray-800 p-4 space-y-4 overflow-y-auto">
+            <h2 class="text-xl font-semibold mb-2">Explorer</h2>
+            <div id="explorer" class="space-y-1 text-sm">
+                <!-- Explorer items will be populated here -->
+            </div>
+            <hr class="border-gray-700 my-4" />
+            <h2 class="text-xl font-semibold mb-2">Global Controls</h2>
+            <button
+                id="addRootNode"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded mb-2"
+            >
+                Add Root Node
+            </button>
+            <button
+                id="saveTree"
+                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded mb-2"
+            >
+                Save Tree
+            </button>
+            <button
+                id="loadTree"
+                class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded mb-2"
+            >
+                Load Tree
+            </button>
+            <button
+                id="clearTree"
+                class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded mb-2"
+            >
+                Clear Tree
+            </button>
+
+            <div>
+                <label for="layoutDirection" class="block text-sm font-medium"
+                    >Layout Direction:</label
+                >
+                <select
+                    id="layoutDirection"
+                    class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                >
+                    <option value="top-to-bottom">Top to Bottom</option>
+                    <option value="left-to-right">Left to Right</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="flex-1 bg-gray-900 p-4 relative overflow-auto">
+            <svg
+                id="treeCanvas"
+                width="2000"
+                height="2000"
+                class="bg-gray-800 rounded-md"
+            >
+                <g id="treeContainer">
+                    <!-- Tree will be rendered here -->
+                </g>
+            </svg>
+            <div id="tooltip" class="tooltip"></div>
+        </main>
+
+        <!-- Node Context / Edit Panel (Initially Hidden or dynamic) -->
+        <aside
+            id="nodeEditPanel"
+            class="w-72 bg-gray-800 p-4 space-y-3 overflow-y-auto hidden"
+        >
+            <h2 class="text-lg font-semibold">Edit Node</h2>
+            <div id="selectedNodeInfo" class="text-sm text-gray-400 mb-2">
+                No node selected.
+            </div>
+            <div>
+                <label for="nodeText" class="block text-sm font-medium"
+                    >Text:</label
+                >
+                <input
+                    type="text"
+                    id="nodeText"
+                    class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm p-2 text-sm"
+                />
+            </div>
+            <div>
+                <label for="nodeColor" class="block text-sm font-medium"
+                    >Color:</label
+                >
+                <input
+                    type="color"
+                    id="nodeColor"
+                    value="#3B82F6"
+                    class="mt-1 block w-full h-10 bg-gray-700 border-gray-600 rounded-md shadow-sm"
+                />
+            </div>
+            <button
+                id="applyColorToChildren"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded text-sm"
+            >
+                Apply Color to Children
+            </button>
+            <div>
+                <label for="nodeFontSize" class="block text-sm font-medium"
+                    >Font Size (px):</label
+                >
+                <input
+                    type="number"
+                    id="nodeFontSize"
+                    value="14"
+                    min="8"
+                    max="72"
+                    class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm p-2 text-sm"
+                />
+            </div>
+            <div>
+                <label for="nodeNote" class="block text-sm font-medium"
+                    >Note (hover to see):</label
+                >
+                <textarea
+                    id="nodeNote"
+                    rows="3"
+                    class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm p-2 text-sm"
+                ></textarea>
+            </div>
+            <hr class="border-gray-700 my-3" />
+            <button
+                id="addChildNode"
+                class="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded mb-2"
+            >
+                Add Child
+            </button>
+            <button
+                id="deleteNode"
+                class="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded"
+            >
+                Delete Node
+            </button>
+        </aside>
+
+        <script type="module" src="js/main.js"></script>
+    </body>
+</html>
