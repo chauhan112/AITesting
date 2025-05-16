@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ace Editor CDN Example</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+            }
+            #editor-container {
+                border: 1px solid #ccc;
+                height: 400px;
+                margin-bottom: 10px;
+                /* Ace requires explicit width/height */
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Ace Editor CDN Example</h1>
+
+        <div id="editor-container"></div>
+
+        <button id="load-content">Load Example Content</button>
+        <button id="goto-line-btn">Go to Line 5</button>
+        <button id="toggle-read-only">Toggle Read Only</button>
+
+        <!-- Ace Editor Core -->
+        <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.22.0/src-min-noconflict/ace.js"></script>
+        <!-- Ace Language Mode (JavaScript) -->
+        <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.22.0/src-min-noconflict/mode-javascript.js"></script>
+        <!-- Ace Theme (Monokai) -->
+        <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.22.0/src-min-noconflict/theme-monokai.js"></script>
+        <!-- Ace Extension: Language Tools (for Autocompletion) -->
+        <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.22.0/src-min-noconflict/ext-language_tools.js"></script>
+
+        <script>
+            // Ace makes its API available globally under the 'ace' variable
+
+            // --- Your Custom Completion Source (Ace Completer) ---
+            // Ace uses a 'completer' object with a getCompletions method
+            const myCustomCompleter = {
+                // The getCompletions method is called by Ace when suggestions are needed
+                // editor: the current editor instance
+                // session: the editor's session object
+                // pos: {row, column} cursor position
+                // prefix: the word fragment being typed before the cursor
+                getCompletions: function (
+                    editor,
+                    session,
+                    pos,
+                    prefix,
+                    callback
+                ) {
+                    const customWords = [
+                        {
+                            value: "myFeatureToggle",
+                            caption: "myFeatureToggle",
+                            meta: "variable",
+                            type: "variable",
+                            score: 1000,
+                        },
+                        {
+                            value: "calculateResult",
+                            caption: "calculateResult()",
+                            meta: "function",
+                            type: "function",
+                            score: 1000,
+                        },
+                        {
+                            value: "UserPreferences",
+                            caption: "UserPreferences",
+                            meta: "class",
+                            type: "class",
+                            score: 1000,
+                        },
+                    ];
+
+                    // Filter based on the prefix
+                    const completions = customWords.filter((word) =>
+                        word.value
+                            .toLowerCase()
+                            .startsWith(prefix.toLowerCase())
+                    );
+
+                    // Call the callback function with null for error and the array of completions
+                    callback(null, completions);
+                },
+            };
+            // --- End Custom Completion Source ---
+
+            const initialContent = `function sayHello() {
+  // This is an example file.
+  // Type 'myF' or 'calc' or 'User' to see custom suggestions.
+  const greeting = "Hello, world!";
+  console.log(greeting);
+  // Add custom data here: myFeatureToggle
+  calculateResult(); // Example usage of custom function
+}
+
+sayHello();
+`;
+
+            const editorContainer = document.getElementById("editor-container");
+            let editor; // Declare variable to hold the editor instance
+
+            // Initialize Ace editor
+            editor = ace.edit("editor-container");
+
+            // Configure editor
+            editor.setTheme("ace/theme/monokai"); // Set theme
+            editor.getSession().setMode("ace/mode/javascript"); // Set language mode
+            editor.setValue(initialContent, -1); // Set initial content, -1 moves cursor to start
+
+            // Enable autocompletion
+            editor.setOptions({
+                enableBasicAutocompletion: true, // Enable Ace's default completions
+                enableLiveAutocompletion: true, // Enable autocompletion while typing
+            });
+
+            // Add your custom completer
+            ace.require("ace/ext/language_tools").addCompleter(
+                myCustomCompleter
+            );
+
+            // --- Implement Requested Features ---
+
+            // Read-only mode
+            function setEditorReadOnly(readOnlyStatus) {
+                editor.setReadOnly(readOnlyStatus);
+            }
+
+            // Go to line number
+            function gotoLine(lineNumber) {
+                editor.gotoLine(lineNumber, 0, true); // lineNumber (1-based), column (0-based), animate (true/false)
+                editor.focus(); // Focus the editor
+            }
+
+            // --- Button Event Listeners ---
+
+            document
+                .getElementById("load-content")
+                .addEventListener("click", () => {
+                    const newContent = `// This is new content loaded dynamically.\nconsole.log("Loading complete.");\nUserPreferences.load(); // Example custom class`;
+                    editor.setValue(newContent, -1); // -1 puts cursor at the start
+                });
+
+            document
+                .getElementById("goto-line-btn")
+                .addEventListener("click", () => {
+                    gotoLine(5); // Ace line numbers are 1-based
+                });
+
+            let isReadOnly = false;
+            document
+                .getElementById("toggle-read-only")
+                .addEventListener("click", () => {
+                    isReadOnly = !isReadOnly;
+                    setEditorReadOnly(isReadOnly);
+                    document.getElementById("toggle-read-only").textContent =
+                        isReadOnly ? "Set Editable" : "Toggle Read Only";
+                });
+        </script>
+    </body>
+</html>

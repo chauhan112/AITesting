@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CodeMirror v6 CDN Example</title>
+        <!-- CodeMirror CSS -->
+        <!-- basic-setup includes basic editor styles -->
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/@codemirror/basic-setup@6.0.1/dist/basic-setup.min.css"
+        />
+        <!-- You might need styles for specific themes if not included in basic-setup -->
+        <style>
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+            }
+            #editor-container {
+                border: 1px solid #ccc;
+                height: 400px;
+                overflow-y: auto;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>CodeMirror v6 CDN Example</h1>
+
+        <div id="editor-container"></div>
+
+        <button id="load-content">Load Example Content</button>
+        <button id="goto-line-btn">Go to Line 5</button>
+        <button id="toggle-read-only">Toggle Read Only</button>
+
+        <!-- CodeMirror Core and Basic Setup Bundle -->
+        <!-- Ensure correct order: state -> view -> others -->
+        <script src="https://unpkg.com/@codemirror/state@6.2.1/dist/state.min.js"></script>
+        <script src="https://unpkg.com/@codemirror/view@6.14.1/dist/view.min.js"></script>
+        <script src="https://unpkg.com/@codemirror/basic-setup@6.0.1/dist/basic-setup.min.js"></script>
+
+        <!-- Language Support (JavaScript) -->
+        <script src="https://unpkg.com/@codemirror/lang-javascript@6.1.2/dist/lang-javascript.min.js"></script>
+
+        <!-- Autocompletion -->
+        <script src="https://unpkg.com/@codemirror/autocomplete@6.8.1/dist/autocomplete.min.js"></script>
+
+        <script>
+            // The CodeMirror modules are now available globally directly under window
+            // e.g., window.EditorView, window.EditorState, window.basicSetup etc.
+
+            // --- Accessing Modules Correctly ---
+            const EditorState = window.EditorState;
+            const EditorView = window.EditorView;
+            const basicSetup = window.basicSetup;
+            // window.javascript holds the LanguageSupport object itself, NOT the function
+            const javascript = window.javascript;
+            // window.autocompletion holds the autocompletion function
+            const autocompletion = window.autocompletion;
+            // --- End Accessing Modules ---
+
+            // --- Your Custom Completion Source ---
+            // This function needs to be compatible with the CodeMirror autocompletion API
+            function myCustomCompletionSource(context) {
+                let word = context.matchBefore(/\w*/);
+                if (!word || (word.from == word.to && !context.explicit)) {
+                    return null;
+                }
+
+                let options = [
+                    {
+                        label: "myFeatureToggle",
+                        type: "variable",
+                        info: "A custom feature flag variable",
+                    },
+                    {
+                        label: "calculateResult",
+                        type: "function",
+                        info: "Calls the result calculation function",
+                    },
+                    {
+                        label: "UserPreferences",
+                        type: "class",
+                        info: "Handles user settings",
+                    },
+                ];
+
+                let completions = options.filter((option) =>
+                    option.label
+                        .toLowerCase()
+                        .startsWith(word.text.toLowerCase())
+                );
+
+                if (completions.length === 0 && !context.explicit) {
+                    return null;
+                }
+
+                return {
+                    from: word.from,
+                    options: completions,
+                };
+            }
+            // --- End Custom Completion Source ---
+
+            const initialContent = `function sayHello() {
+      // This is an example file.
+      // Type 'myF' or 'calc' to see custom suggestions.
+      const greeting = "Hello, world!";
+      console.log(greeting);
+      // Add custom data here: myFeatureToggle
+      calculateResult(); // Example usage of custom function
+    }
+    
+    sayHello();
+    `;
+
+            const editorContainer = document.getElementById("editor-container");
+            let editorView; // Declare variable to hold the editor instance
+
+            function createEditor(content, readOnly = false) {
+                // If an editor already exists, destroy it first
+                if (editorView) {
+                    editorView.destroy();
+                }
+
+                const extensions = [
+                    basicSetup, // Includes many common features
+                    javascript, // *** Use the javascript object directly here ***
+                    autocompletion({
+                        // Combine language-specific completions with our custom source
+                        override: [
+                            // Get JS built-in completions from the javascript object (which is LanguageSupport)
+                            javascript.language.data.of(autocompletion)[0], // *** Corrected access ***
+                            myCustomCompletionSource, // Add our custom source
+                        ].filter(Boolean), // Filter out nulls if a source isn't found
+                    }),
+                    EditorState.readOnly.of(readOnly), // Set read-only state
+                    // Add more extensions here if loaded via CDN (e.g., themes)
+                ];
+
+                const startState = EditorState.create({
+                    doc: content,
+                    extensions: extensions,
+                });
+
+                editorView = new EditorView({
+                    state: startState,
+                    parent: editorContainer,
+                });
+
+                return editorView;
+            }
+
+            // Create the initial editor
+            editorView = createEditor(initialContent, false); // Start in edit mode
+
+            // --- Button Event Listeners ---
+
+            document
+                .getElementById("load-content")
+                .addEventListener("click", () => {
+                    const newContent = `// This is new content loaded dynamically.\nconsole.log("Loading complete.");\nUserPreferences.load(); // Example custom class`;
+                    editorView.dispatch({
+                        changes: {
+                            from: 0,
+                            to: editorView.state.doc.length,
+                            insert: newContent,
+                        },
+                        selection: { anchor: 0 },
+                    });
+                    editorView.focus();
+                });
+
+            document
+                .getElementById("goto-line-btn")
+                .addEventListener("click", () => {
+                    const lineNumber = 5; // CodeMirror line numbers are 1-based
+                    const line = editorView.state.doc.line(lineNumber);
+                    if (line) {
+                        editorView.dispatch({
+                            selection: { anchor: line.from },
+                            scrollIntoView: true,
+                        });
+                        editorView.focus();
+                    } else {
+                        console.warn(
+                            `Line number ${lineNumber} does not exist.`
+                        );
+                    }
+                });
+
+            document
+                .getElementById("toggle-read-only")
+                .addEventListener("click", () => {
+                    const currentReadOnly = editorView.state.facet(
+                        EditorState.readOnly
+                    );
+                    const newReadOnlyStatus = !currentReadOnly;
+
+                    // CodeMirror v6 recommends setting facets via state transactions
+                    editorView.dispatch({
+                        effects: EditorState.setFacet(
+                            EditorState.readOnly,
+                            newReadOnlyStatus
+                        ),
+                    });
+
+                    document.getElementById("toggle-read-only").textContent =
+                        newReadOnlyStatus ? "Set Editable" : "Toggle Read Only";
+                });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Monaco Editor CDN Example</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+            }
+            #editor-container {
+                border: 1px solid #ccc;
+                height: 400px;
+                margin-bottom: 10px;
+                /* Monaco requires explicit width/height */
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Monaco Editor CDN Example</h1>
+
+        <div id="editor-container"></div>
+
+        <button id="load-content">Load Example Content</button>
+        <button id="goto-line-btn">Go to Line 5</button>
+        <button id="toggle-read-only">Toggle Read Only</button>
+
+        <!-- Monaco Editor Loader -->
+        <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+
+        <script>
+            // --- Your Custom Completion Source (Monaco Provider) ---
+            // Monaco uses a CompletionItemProvider interface
+            const myCustomCompletionProvider = {
+                // This provider applies to the 'javascript' language
+                language: "javascript",
+                // provideCompletionItems is the core method
+                // model: the text model (content)
+                // position: { lineNumber, column } cursor position
+                // context: additional context (e.g., if triggered by a character)
+                // token: cancellation token
+                provideCompletionItems: function (
+                    model,
+                    position,
+                    context,
+                    token
+                ) {
+                    const textUntilPosition = model.getValueInRange({
+                        startLineNumber: 1,
+                        startColumn: 1,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column,
+                    });
+                    const word = model.getWordUntilPosition(position);
+                    const range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn,
+                    };
+
+                    const customSuggestions = [
+                        {
+                            label: "myFeatureToggle",
+                            kind: monaco.languages.CompletionItemKind.Variable,
+                            documentation: "A custom feature flag variable",
+                            insertText: "myFeatureToggle",
+                            range: range,
+                        },
+                        {
+                            label: "calculateResult",
+                            kind: monaco.languages.CompletionItemKind.Function,
+                            documentation:
+                                "Calls the result calculation function",
+                            insertText: "calculateResult()", // Or 'calculateResult($1)' if you want snippet support
+                            range: range,
+                        },
+                        {
+                            label: "UserPreferences",
+                            kind: monaco.languages.CompletionItemKind.Class,
+                            documentation: "Handles user settings",
+                            insertText: "UserPreferences",
+                            range: range,
+                        },
+                        // Add more custom suggestions here
+                    ];
+
+                    // Monaco's filter logic is quite good; we just return the full list
+                    // It will automatically filter based on the word before the cursor (using 'range')
+                    return {
+                        suggestions: customSuggestions,
+                    };
+                },
+            };
+            // --- End Custom Completion Source ---
+
+            const initialContent = `function sayHello() {
+  // This is an example file.
+  // Type 'myF' or 'calc' or 'User' to see custom suggestions.
+  const greeting = "Hello, world!";
+  console.log(greeting);
+  // Add custom data here: myFeatureToggle
+  calculateResult(); // Example usage of custom function
+}
+
+sayHello();
+`;
+
+            const editorContainer = document.getElementById("editor-container");
+            let editor; // Declare variable to hold the editor instance
+
+            // Configure the base path for Monaco Editor
+            // This tells the loader where to find the 'vs' directory containing editor files
+            require.config({
+                paths: {
+                    vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs",
+                },
+            });
+
+            // Use require to load the editor module
+            require(["vs/editor/editor.main"], function (monaco) {
+                // Create the editor instance
+                editor = monaco.editor.create(editorContainer, {
+                    value: initialContent,
+                    language: "javascript", // Set language mode
+                    theme: "vs-dark", // Set theme (e.g., 'vs', 'vs-dark', 'hc-black')
+                    readOnly: false, // Set initial read-only state
+                    automaticLayout: true, // Auto-resize editor when container changes size
+                });
+
+                // Register your custom completion provider
+                monaco.languages.registerCompletionItemProvider(
+                    "javascript",
+                    myCustomCompletionProvider
+                );
+
+                // --- Implement Requested Features ---
+
+                // Read-only mode (Monaco updateOptions)
+                function setEditorReadOnly(readOnlyStatus) {
+                    editor.updateOptions({ readOnly: readOnlyStatus });
+                }
+
+                // Go to line number (Monaco revealLine)
+                function gotoLine(lineNumber) {
+                    editor.revealLine(lineNumber); // Scrolls to the line
+                    editor.setPosition({ lineNumber: lineNumber, column: 1 }); // Moves cursor to the start of the line
+                    editor.focus(); // Focus the editor
+                }
+
+                // --- Button Event Listeners ---
+
+                document
+                    .getElementById("load-content")
+                    .addEventListener("click", () => {
+                        const newContent = `// This is new content loaded dynamically.\nconsole.log("Loading complete.");\nUserPreferences.load(); // Example custom class`;
+                        editor.setValue(newContent); // Set new content
+                        gotoLine(1); // Go to the first line of the new content
+                    });
+
+                document
+                    .getElementById("goto-line-btn")
+                    .addEventListener("click", () => {
+                        gotoLine(5); // Monaco line numbers are 1-based
+                    });
+
+                let isReadOnly = false;
+                document
+                    .getElementById("toggle-read-only")
+                    .addEventListener("click", () => {
+                        isReadOnly = !isReadOnly;
+                        setEditorReadOnly(isReadOnly);
+                        document.getElementById(
+                            "toggle-read-readOnly"
+                        ).textContent = isReadOnly
+                            ? "Set Editable"
+                            : "Toggle Read Only";
+                    });
+
+                // Note: These event listeners are inside the require callback
+                // to ensure the 'editor' instance is created.
+            }); // End require callback
+        </script>
+    </body>
+</html>
