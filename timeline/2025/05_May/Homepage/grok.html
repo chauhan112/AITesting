@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Homepage Skeleton</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-100">
+        <div class="min-h-screen flex flex-col">
+            <!-- Header -->
+            <header
+                class="bg-blue-600 text-white p-4 flex justify-between items-center"
+            >
+                <h1 class="text-2xl">Website Title</h1>
+                <nav>
+                    <ul class="flex space-x-4">
+                        <li><a href="#" class="hover:underline">Home</a></li>
+                        <li><a href="#" class="hover:underline">About</a></li>
+                        <li>
+                            <a href="#" class="hover:underline">Services</a>
+                        </li>
+                        <li><a href="#" class="hover:underline">Contact</a></li>
+                    </ul>
+                </nav>
+            </header>
+
+            <!-- Main content area with sidebars -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+                <!-- Left Sidebar -->
+                <aside class="bg-white p-4 rounded shadow md:col-span-1">
+                    <h2 class="text-xl mb-4">Navigation</h2>
+                    <ul>
+                        <li><a href="#" class="block py-2">Home</a></li>
+                        <li><a href="#" class="block py-2">About</a></li>
+                        <li><a href="#" class="block py-2">Services</a></li>
+                        <li><a href="#" class="block py-2">Contact</a></li>
+                    </ul>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="bg-white p-4 rounded shadow md:col-span-2">
+                    <h2 class="text-xl mb-4">Main Content</h2>
+                    <p class="mb-4">
+                        This is the main content area. Here you can put the
+                        primary information or articles.
+                    </p>
+                    <p class="mb-4">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        Sed do eiusmod tempor incididunt ut labore et dolore
+                        magna aliqua.
+                    </p>
+                    <p>
+                        Ut enim ad minim veniam, quis nostrud exercitation
+                        ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    </p>
+                </main>
+
+                <!-- Right Sidebar -->
+                <aside class="bg-white p-4 rounded shadow md:col-span-1">
+                    <h2 class="text-xl mb-4">Widgets</h2>
+                    <div class="mb-4">
+                        <h3 class="text-lg">Widget 1</h3>
+                        <p>Some information here.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg">Widget 2</h3>
+                        <p>More information here.</p>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Footer -->
+            <footer class="bg-blue-600 text-white p-4 text-center">
+                <p>&copy; 2025 Website Name. All rights reserved.</p>
+            </footer>
+        </div>
+    </body>
+</html>

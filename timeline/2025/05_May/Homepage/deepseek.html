@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Homepage</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom styles to complement Tailwind */
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .sidebar-collapsed {
+                transform: translateX(-100%);
+            }
+            .right-sidebar-collapsed {
+                transform: translateX(100%);
+            }
+            @media (min-width: 768px) {
+                .sidebar-collapsed {
+                    transform: translateX(0);
+                }
+                .right-sidebar-collapsed {
+                    transform: translateX(0);
+                }
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 font-sans">
+        <!-- Mobile Menu Buttons (fixed) -->
+        <div class="md:hidden fixed top-2 left-2 z-50">
+            <button
+                id="mobileMenuButton"
+                class="p-2 rounded-md bg-gray-800 text-white shadow-lg"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16"
+                    />
+                </svg>
+            </button>
+        </div>
+        <div class="md:hidden fixed top-2 right-2 z-50">
+            <button
+                id="mobileRightMenuButton"
+                class="p-2 rounded-md bg-gray-800 text-white shadow-lg"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 5h7m-7 7h7m-7 7h7M4 5h7m-7 7h7m-7 7h7"
+                    />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Main Layout Container -->
+        <div class="flex flex-col min-h-screen">
+            <!-- Header -->
+            <header class="bg-blue-600 text-white shadow-md z-40">
+                <div
+                    class="container mx-auto px-4 py-3 flex justify-between items-center"
+                >
+                    <h1 class="text-2xl font-bold">My Website</h1>
+                    <nav class="hidden md:block">
+                        <ul class="flex space-x-6">
+                            <li>
+                                <a href="#" class="hover:underline">Home</a>
+                            </li>
+                            <li>
+                                <a href="#" class="hover:underline">About</a>
+                            </li>
+                            <li>
+                                <a href="#" class="hover:underline">Services</a>
+                            </li>
+                            <li>
+                                <a href="#" class="hover:underline">Contact</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <button class="md:hidden p-1">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content Area with Sidebars -->
+            <div class="flex flex-1">
+                <!-- Left Sidebar -->
+                <aside
+                    id="leftSidebar"
+                    class="w-64 bg-gray-800 text-white fixed md:relative h-full sidebar-collapsed md:translate-x-0 transition-all-300 z-30"
+                >
+                    <div class="p-4">
+                        <h2 class="text-xl font-semibold mb-4 border-b pb-2">
+                            Menu
+                        </h2>
+                        <nav>
+                            <ul class="space-y-2">
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="block px-4 py-2 rounded hover:bg-blue-700 transition-all-300"
+                                        >Dashboard</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="block px-4 py-2 rounded hover:bg-blue-700 transition-all-300"
+                                        >Profile</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="block px-4 py-2 rounded hover:bg-blue-700 transition-all-300"
+                                        >Messages</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="block px-4 py-2 rounded hover:bg-blue-700 transition-all-300"
+                                        >Settings</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="block px-4 py-2 rounded hover:bg-blue-700 transition-all-300"
+                                        >Reports</a
+                                    >
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="flex-1 p-4 md:p-6 mt-16 md:mt-0">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-2xl font-bold mb-4">
+                            Welcome to Our Website
+                        </h2>
+                        <p class="mb-4">
+                            This is the main content area. Resize the browser
+                            window to see how the layout responds to different
+                            screen sizes.
+                        </p>
+
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
+                        >
+                            <div class="bg-blue-100 p-4 rounded-lg">
+                                <h3 class="font-semibold mb-2">Feature 1</h3>
+                                <p>
+                                    Lorem ipsum dolor sit amet, consectetur
+                                    adipiscing elit.
+                                </p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded-lg">
+                                <h3 class="font-semibold mb-2">Feature 2</h3>
+                                <p>
+                                    Sed do eiusmod tempor incididunt ut labore
+                                    et dolore magna aliqua.
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 p-4 rounded-lg">
+                                <h3 class="font-semibold mb-2">Feature 3</h3>
+                                <p>
+                                    Ut enim ad minim veniam, quis nostrud
+                                    exercitation ullamco.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p>
+                            More content can go here. The layout will adjust
+                            automatically based on the available space.
+                        </p>
+                    </div>
+                </main>
+
+                <!-- Right Sidebar -->
+                <aside
+                    id="rightSidebar"
+                    class="w-64 bg-gray-200 fixed right-0 h-full right-sidebar-collapsed md:translate-x-0 transition-all-300 z-30"
+                >
+                    <div class="p-4">
+                        <h2 class="text-xl font-semibold mb-4 border-b pb-2">
+                            Notifications
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="bg-white p-3 rounded shadow">
+                                <p class="text-sm font-medium">
+                                    New message received
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    5 minutes ago
+                                </p>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow">
+                                <p class="text-sm font-medium">System update</p>
+                                <p class="text-xs text-gray-500">2 hours ago</p>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow">
+                                <p class="text-sm font-medium">
+                                    New user registered
+                                </p>
+                                <p class="text-xs text-gray-500">Yesterday</p>
+                            </div>
+                        </div>
+
+                        <h2
+                            class="text-xl font-semibold mt-6 mb-4 border-b pb-2"
+                        >
+                            Quick Actions
+                        </h2>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                class="bg-blue-500 text-white p-2 rounded text-sm hover:bg-blue-600 transition-all-300"
+                            >
+                                Add User
+                            </button>
+                            <button
+                                class="bg-green-500 text-white p-2 rounded text-sm hover:bg-green-600 transition-all-300"
+                            >
+                                Settings
+                            </button>
+                            <button
+                                class="bg-purple-500 text-white p-2 rounded text-sm hover:bg-purple-600 transition-all-300"
+                            >
+                                Reports
+                            </button>
+                            <button
+                                class="bg-red-500 text-white p-2 rounded text-sm hover:bg-red-600 transition-all-300"
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Footer -->
+            <footer class="bg-gray-800 text-white py-6">
+                <div class="container mx-auto px-4">
+                    <div
+                        class="flex flex-col md:flex-row justify-between items-center"
+                    >
+                        <div class="mb-4 md:mb-0">
+                            <h2 class="text-xl font-bold">My Website</h2>
+                            <p class="text-gray-400 text-sm">
+                                © 2023 All rights reserved.
+                            </p>
+                        </div>
+                        <div class="flex space-x-4">
+                            <a
+                                href="#"
+                                class="hover:text-blue-400 transition-all-300"
+                                >Privacy Policy</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:text-blue-400 transition-all-300"
+                                >Terms of Service</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:text-blue-400 transition-all-300"
+                                >Contact Us</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Overlay for mobile menus -->
+        <div
+            id="overlay"
+            class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden"
+        ></div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const leftSidebar = document.getElementById("leftSidebar");
+                const rightSidebar = document.getElementById("rightSidebar");
+                const mobileMenuButton =
+                    document.getElementById("mobileMenuButton");
+                const mobileRightMenuButton = document.getElementById(
+                    "mobileRightMenuButton"
+                );
+                const overlay = document.getElementById("overlay");
+
+                // Toggle left sidebar on mobile
+                mobileMenuButton.addEventListener("click", function () {
+                    leftSidebar.classList.toggle("sidebar-collapsed");
+                    overlay.classList.toggle("hidden");
+                    // Close right sidebar if open
+                    if (
+                        !rightSidebar.classList.contains(
+                            "right-sidebar-collapsed"
+                        )
+                    ) {
+                        rightSidebar.classList.add("right-sidebar-collapsed");
+                    }
+                });
+
+                // Toggle right sidebar on mobile
+                mobileRightMenuButton.addEventListener("click", function () {
+                    rightSidebar.classList.toggle("right-sidebar-collapsed");
+                    overlay.classList.toggle("hidden");
+                    // Close left sidebar if open
+                    if (!leftSidebar.classList.contains("sidebar-collapsed")) {
+                        leftSidebar.classList.add("sidebar-collapsed");
+                    }
+                });
+
+                // Close both sidebars when clicking overlay
+                overlay.addEventListener("click", function () {
+                    leftSidebar.classList.add("sidebar-collapsed");
+                    rightSidebar.classList.add("right-sidebar-collapsed");
+                    overlay.classList.add("hidden");
+                });
+
+                // Close sidebars when clicking outside on desktop (if needed)
+                document.addEventListener("click", function (event) {
+                    if (window.innerWidth >= 768) return;
+
+                    const isLeftSidebarClick = leftSidebar.contains(
+                        event.target
+                    );
+                    const isRightSidebarClick = rightSidebar.contains(
+                        event.target
+                    );
+                    const isMenuButtonClick =
+                        mobileMenuButton.contains(event.target) ||
+                        mobileRightMenuButton.contains(event.target);
+
+                    if (
+                        !isLeftSidebarClick &&
+                        !isMenuButtonClick &&
+                        !leftSidebar.classList.contains("sidebar-collapsed")
+                    ) {
+                        leftSidebar.classList.add("sidebar-collapsed");
+                        overlay.classList.add("hidden");
+                    }
+
+                    if (
+                        !isRightSidebarClick &&
+                        !isMenuButtonClick &&
+                        !rightSidebar.classList.contains(
+                            "right-sidebar-collapsed"
+                        )
+                    ) {
+                        rightSidebar.classList.add("right-sidebar-collapsed");
+                        overlay.classList.add("hidden");
+                    }
+                });
+
+                // Handle window resize
+                window.addEventListener("resize", function () {
+                    if (window.innerWidth >= 768) {
+                        // On desktop, ensure sidebars are visible
+                        leftSidebar.classList.remove("sidebar-collapsed");
+                        rightSidebar.classList.remove(
+                            "right-sidebar-collapsed"
+                        );
+                        overlay.classList.add("hidden");
+                    } else {
+                        // On mobile, ensure sidebars are hidden by default
+                        leftSidebar.classList.add("sidebar-collapsed");
+                        rightSidebar.classList.add("right-sidebar-collapsed");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

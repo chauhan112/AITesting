@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Homepage Skeleton</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom scrollbar for webkit browsers (optional) */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+            /* Simple transition for sidebar visibility */
+            .sidebar-transition {
+                transition: transform 0.3s ease-in-out;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gray-100 text-gray-800 font-sans flex flex-col min-h-screen"
+    >
+        <!-- Overlay for mobile menus -->
+        <div
+            id="overlay"
+            class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"
+        ></div>
+
+        <!-- Header -->
+        <header
+            class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-20"
+        >
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">MySite</h1>
+                <div class="md:hidden flex items-center space-x-2">
+                    <!-- Right Sidebar Toggle (Mobile) -->
+                    <button
+                        id="rightSidebarToggleMobile"
+                        aria-label="Toggle right sidebar"
+                        class="p-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h8m-8 6h16"
+                            ></path>
+                        </svg>
+                    </button>
+                    <!-- Left Sidebar Toggle (Mobile - Hamburger Menu) -->
+                    <button
+                        id="leftSidebarToggleMobile"
+                        aria-label="Toggle navigation menu"
+                        class="p-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area with Sidebars -->
+        <div class="container mx-auto flex flex-grow pt-4 px-2 sm:px-4 pb-4">
+            <!-- Left Sidebar -->
+            <aside
+                id="left-sidebar"
+                class="sidebar-transition fixed md:relative top-0 left-0 h-full md:h-auto w-64 md:w-1/4 lg:w-1/5 bg-gray-800 text-white p-5 shadow-lg md:shadow-none transform -translate-x-full md:translate-x-0 z-40 md:z-10 md:mr-4 rounded-r-lg md:rounded-lg overflow-y-auto"
+            >
+                <div class="flex justify-between items-center md:hidden mb-4">
+                    <h2 class="text-xl font-semibold">Navigation</h2>
+                    <button
+                        id="closeLeftSidebar"
+                        class="p-1 text-gray-300 hover:text-white"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+                <nav>
+                    <ul>
+                        <li class="mb-3">
+                            <a
+                                href="#"
+                                class="block py-2 px-3 rounded hover:bg-indigo-500 hover:text-white transition-colors"
+                                >Home</a
+                            >
+                        </li>
+                        <li class="mb-3">
+                            <a
+                                href="#"
+                                class="block py-2 px-3 rounded hover:bg-indigo-500 hover:text-white transition-colors"
+                                >About</a
+                            >
+                        </li>
+                        <li class="mb-3">
+                            <a
+                                href="#"
+                                class="block py-2 px-3 rounded hover:bg-indigo-500 hover:text-white transition-colors"
+                                >Services</a
+                            >
+                        </li>
+                        <li class="mb-3">
+                            <a
+                                href="#"
+                                class="block py-2 px-3 rounded hover:bg-indigo-500 hover:text-white transition-colors"
+                                >Portfolio</a
+                            >
+                        </li>
+                        <li class="mb-3">
+                            <a
+                                href="#"
+                                class="block py-2 px-3 rounded hover:bg-indigo-500 hover:text-white transition-colors"
+                                >Contact</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+                <div class="mt-auto pt-4 border-t border-gray-700">
+                    <p class="text-sm text-gray-400">Left Sidebar Footer</p>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main
+                id="main-content"
+                class="flex-grow bg-white p-6 shadow-lg rounded-lg w-full md:w-auto overflow-y-auto"
+            >
+                <h2 class="text-3xl font-semibold mb-6 text-gray-700">
+                    Main Content Area
+                </h2>
+                <p class="mb-4">
+                    Welcome to the main content section. This area will hold the
+                    primary information for each page. It is designed to be
+                    flexible and responsive.
+                </p>
+                <div class="space-y-4">
+                    <div
+                        class="bg-gray-50 p-4 rounded-md border border-gray-200"
+                    >
+                        <h3 class="font-semibold text-lg mb-2">
+                            Content Block 1
+                        </h3>
+                        <p>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing
+                            elit. Sed do eiusmod tempor incididunt ut labore et
+                            dolore magna aliqua. Ut enim ad minim veniam, quis
+                            nostrud exercitation ullamco laboris nisi ut aliquip
+                            ex ea commodo consequat.
+                        </p>
+                    </div>
+                    <div
+                        class="bg-gray-50 p-4 rounded-md border border-gray-200"
+                    >
+                        <h3 class="font-semibold text-lg mb-2">
+                            Content Block 2
+                        </h3>
+                        <p>
+                            Duis aute irure dolor in reprehenderit in voluptate
+                            velit esse cillum dolore eu fugiat nulla pariatur.
+                            Excepteur sint occaecat cupidatat non proident, sunt
+                            in culpa qui officia deserunt mollit anim id est
+                            laborum.
+                        </p>
+                    </div>
+                    <div
+                        class="bg-gray-50 p-4 rounded-md border border-gray-200"
+                    >
+                        <h3 class="font-semibold text-lg mb-2">
+                            Content Block 3
+                        </h3>
+                        <p>
+                            Sed ut perspiciatis unde omnis iste natus error sit
+                            voluptatem accusantium doloremque laudantium, totam
+                            rem aperiam, eaque ipsa quae ab illo inventore
+                            veritatis et quasi architecto beatae vitae dicta
+                            sunt explicabo.
+                        </p>
+                    </div>
+                    <!-- Add more content to test scrolling -->
+                    <div
+                        class="bg-gray-50 p-4 rounded-md border border-gray-200 h-96"
+                    >
+                        <h3 class="font-semibold text-lg mb-2">
+                            Tall Content Block
+                        </h3>
+                        <p>
+                            This block is intentionally tall to demonstrate
+                            scrolling within the main content area if needed.
+                        </p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Sidebar -->
+            <aside
+                id="right-sidebar"
+                class="sidebar-transition fixed md:relative top-0 right-0 h-full md:h-auto w-56 md:w-1/4 lg:w-1/6 bg-gray-200 p-5 shadow-lg md:shadow-none transform translate-x-full md:translate-x-0 z-40 md:z-10 md:ml-4 rounded-l-lg md:rounded-lg overflow-y-auto"
+            >
+                <div class="flex justify-between items-center md:hidden mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700">Details</h2>
+                    <button
+                        id="closeRightSidebar"
+                        class="p-1 text-gray-600 hover:text-gray-800"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">
+                    Quick Links
+                </h3>
+                <ul>
+                    <li class="mb-2">
+                        <a href="#" class="text-indigo-600 hover:underline"
+                            >Profile</a
+                        >
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-indigo-600 hover:underline"
+                            >Settings</a
+                        >
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-indigo-600 hover:underline"
+                            >Notifications</a
+                        >
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-indigo-600 hover:underline"
+                            >Logout</a
+                        >
+                    </li>
+                </ul>
+                <div class="mt-6 border-t pt-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Ad/Promo</h4>
+                    <div
+                        class="bg-gray-300 h-32 rounded flex items-center justify-center text-gray-500"
+                    >
+                        Ad Space
+                    </div>
+                </div>
+                <div class="mt-auto pt-4 border-t border-gray-300">
+                    <p class="text-sm text-gray-500">Right Sidebar Footer</p>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white p-6 text-center mt-auto">
+            <p>© <span id="currentYear"></span> MySite. All rights reserved.</p>
+            <p class="text-sm text-gray-400">
+                Built with HTML, Tailwind CSS, and Vanilla JS
+            </p>
+        </footer>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const leftSidebarToggleMobile = document.getElementById(
+                    "leftSidebarToggleMobile"
+                );
+                const rightSidebarToggleMobile = document.getElementById(
+                    "rightSidebarToggleMobile"
+                );
+                const leftSidebar = document.getElementById("left-sidebar");
+                const rightSidebar = document.getElementById("right-sidebar");
+                const closeLeftSidebar =
+                    document.getElementById("closeLeftSidebar");
+                const closeRightSidebar =
+                    document.getElementById("closeRightSidebar");
+                const overlay = document.getElementById("overlay");
+                const mainContent = document.getElementById("main-content"); // To prevent body scroll
+
+                function openLeftSidebar() {
+                    leftSidebar.classList.remove("-translate-x-full");
+                    leftSidebar.classList.add("translate-x-0");
+                    overlay.classList.remove("hidden");
+                    document.body.classList.add("overflow-hidden"); // Prevent body scroll on mobile
+                }
+
+                function closeLeftSidebarFunc() {
+                    leftSidebar.classList.add("-translate-x-full");
+                    leftSidebar.classList.remove("translate-x-0");
+                    if (rightSidebar.classList.contains("translate-x-full")) {
+                        // Only hide overlay if other sidebar is also closed
+                        overlay.classList.add("hidden");
+                        document.body.classList.remove("overflow-hidden");
+                    }
+                }
+
+                function openRightSidebar() {
+                    rightSidebar.classList.remove("translate-x-full");
+                    rightSidebar.classList.add("translate-x-0");
+                    overlay.classList.remove("hidden");
+                    document.body.classList.add("overflow-hidden");
+                }
+
+                function closeRightSidebarFunc() {
+                    rightSidebar.classList.add("translate-x-full");
+                    rightSidebar.classList.remove("translate-x-0");
+                    if (leftSidebar.classList.contains("-translate-x-full")) {
+                        // Only hide overlay if other sidebar is also closed
+                        overlay.classList.add("hidden");
+                        document.body.classList.remove("overflow-hidden");
+                    }
+                }
+
+                if (leftSidebarToggleMobile) {
+                    leftSidebarToggleMobile.addEventListener(
+                        "click",
+                        function (e) {
+                            e.stopPropagation();
+                            openLeftSidebar();
+                        }
+                    );
+                }
+
+                if (rightSidebarToggleMobile) {
+                    rightSidebarToggleMobile.addEventListener(
+                        "click",
+                        function (e) {
+                            e.stopPropagation();
+                            openRightSidebar();
+                        }
+                    );
+                }
+
+                if (closeLeftSidebar) {
+                    closeLeftSidebar.addEventListener("click", function () {
+                        closeLeftSidebarFunc();
+                    });
+                }
+
+                if (closeRightSidebar) {
+                    closeRightSidebar.addEventListener("click", function () {
+                        closeRightSidebarFunc();
+                    });
+                }
+
+                if (overlay) {
+                    overlay.addEventListener("click", function () {
+                        closeLeftSidebarFunc();
+                        closeRightSidebarFunc();
+                    });
+                }
+
+                // Set current year in footer
+                const currentYearElement =
+                    document.getElementById("currentYear");
+                if (currentYearElement) {
+                    currentYearElement.textContent = new Date().getFullYear();
+                }
+
+                // Ensure sidebars are correctly positioned on resize from mobile to desktop
+                window.addEventListener("resize", () => {
+                    if (window.innerWidth >= 768) {
+                        // Tailwind's 'md' breakpoint
+                        // Close mobile-specific states if screen becomes large
+                        if (
+                            !leftSidebar.classList.contains("-translate-x-full")
+                        ) {
+                            leftSidebar.classList.add("-translate-x-full"); // Reset mobile state
+                            leftSidebar.classList.remove("translate-x-0");
+                        }
+                        if (
+                            !rightSidebar.classList.contains("translate-x-full")
+                        ) {
+                            rightSidebar.classList.add("translate-x-full"); // Reset mobile state
+                            rightSidebar.classList.remove("translate-x-0");
+                        }
+                        overlay.classList.add("hidden");
+                        document.body.classList.remove("overflow-hidden");
+
+                        // Ensure desktop classes are applied (Tailwind usually handles this, but for transform it's good to be explicit)
+                        leftSidebar.classList.add("md:translate-x-0");
+                        rightSidebar.classList.add("md:translate-x-0");
+                    } else {
+                        // On mobile, if sidebars were open due to JS, they might need transform explicitly removed for md: to take over hiding them
+                        // However, the default state is -translate-x-full / translate-x-full, so this should be fine.
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
