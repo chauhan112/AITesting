@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BlogSphere - Simple Blog App</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <style>
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+            /* Animation for cards */
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .fade-in {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+
+            /* Markdown-like content styling */
+            .blog-content h1 {
+                font-size: 2rem;
+                font-weight: bold;
+                margin: 1.5rem 0;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 0.5rem;
+            }
+
+            .blog-content h2 {
+                font-size: 1.5rem;
+                font-weight: bold;
+                margin: 1.25rem 0;
+            }
+
+            .blog-content p {
+                margin: 1rem 0;
+                line-height: 1.6;
+            }
+
+            .blog-content ul,
+            .blog-content ol {
+                margin: 1rem 0;
+                padding-left: 2rem;
+            }
+
+            .blog-content blockquote {
+                border-left: 4px solid #cbd5e0;
+                padding-left: 1rem;
+                color: #4a5568;
+                margin: 1rem 0;
+            }
+
+            .blog-content pre {
+                background: #f7fafc;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                overflow-x: auto;
+                margin: 1rem 0;
+            }
+
+            .blog-content code {
+                background: #f7fafc;
+                padding: 0.2rem 0.4rem;
+                border-radius: 0.25rem;
+                font-family: monospace;
+            }
+
+            /* Tag styling */
+            .tag {
+                transition: all 0.2s ease;
+            }
+
+            .tag:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    </head>
+    <body class="bg-gray-50 min-h-screen">
+        <!-- Header -->
+        <header
+            class="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg"
+        >
+            <div class="container mx-auto px-4 py-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-pen-nib text-white text-2xl"></i>
+                        <h1 class="text-white text-2xl font-bold">
+                            BlogSphere
+                        </h1>
+                    </div>
+                    <nav>
+                        <ul class="flex space-x-6">
+                            <li>
+                                <button
+                                    id="homeBtn"
+                                    class="text-white hover:text-indigo-200 font-medium"
+                                >
+                                    Home
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    id="createBtn"
+                                    class="text-white hover:text-indigo-200 font-medium"
+                                >
+                                    Create Post
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    id="aboutBtn"
+                                    class="text-white hover:text-indigo-200 font-medium"
+                                >
+                                    About
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Home View (Posts List) -->
+            <div id="homeView" class="space-y-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        Latest Posts
+                    </h2>
+                    <div class="relative w-64">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Search posts..."
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <i
+                            class="fas fa-search absolute right-3 top-3 text-gray-400"
+                        ></i>
+                    </div>
+                </div>
+
+                <div
+                    id="postsContainer"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                    <!-- Posts will be dynamically inserted here -->
+                </div>
+
+                <div id="noPostsMessage" class="text-center py-12 hidden">
+                    <i class="fas fa-book-open text-5xl text-gray-300 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-gray-600">
+                        No posts yet
+                    </h3>
+                    <p class="text-gray-500 mt-2">
+                        Create your first post by clicking the "Create Post"
+                        button above
+                    </p>
+                    <button
+                        id="createFirstPostBtn"
+                        class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200"
+                    >
+                        Create Post
+                    </button>
+                </div>
+            </div>
+
+            <!-- Create/Edit Post View -->
+            <div id="createView" class="hidden max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                    <h2
+                        class="text-2xl font-bold text-gray-800 mb-6"
+                        id="formTitle"
+                    >
+                        Create New Post
+                    </h2>
+
+                    <form id="postForm">
+                        <input type="hidden" id="postId" />
+
+                        <div class="mb-6">
+                            <label
+                                for="postTitle"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Title</label
+                            >
+                            <input
+                                type="text"
+                                id="postTitle"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            />
+                        </div>
+
+                        <div class="mb-6">
+                            <label
+                                for="postAuthor"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Author</label
+                            >
+                            <input
+                                type="text"
+                                id="postAuthor"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            />
+                        </div>
+
+                        <div class="mb-6">
+                            <label
+                                for="postTags"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Tags (comma separated)</label
+                            >
+                            <input
+                                type="text"
+                                id="postTags"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                placeholder="e.g. technology, programming, web"
+                            />
+                        </div>
+
+                        <div class="mb-6">
+                            <label
+                                for="postContent"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Content</label
+                            >
+                            <textarea
+                                id="postContent"
+                                rows="12"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            ></textarea>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Supports Markdown-like formatting (headings,
+                                lists, code blocks, etc.)
+                            </p>
+                        </div>
+
+                        <div class="flex justify-end space-x-4">
+                            <button
+                                type="button"
+                                id="cancelBtn"
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200"
+                            >
+                                Save Post
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Post Detail View -->
+            <div id="postDetailView" class="hidden max-w-4xl mx-auto">
+                <button
+                    id="backBtn"
+                    class="mb-6 flex items-center text-indigo-600 hover:text-indigo-800"
+                >
+                    <i class="fas fa-arrow-left mr-2"></i> Back to all posts
+                </button>
+
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h2
+                                    id="detailTitle"
+                                    class="text-3xl font-bold text-gray-800 mb-2"
+                                ></h2>
+                                <div class="flex items-center text-gray-500">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span id="detailAuthor" class="mr-4"></span>
+                                    <i class="fas fa-calendar-alt mr-2"></i>
+                                    <span id="detailDate"></span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    id="editPostBtn"
+                                    class="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-50"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button
+                                    id="deletePostBtn"
+                                    class="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50"
+                                >
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="detailTags" class="flex flex-wrap gap-2 mb-6">
+                            <!-- Tags will be inserted here -->
+                        </div>
+
+                        <div
+                            id="detailContent"
+                            class="blog-content text-gray-700"
+                        >
+                            <!-- Content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-8 bg-white rounded-xl shadow-md overflow-hidden p-6"
+                >
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        Comments
+                    </h3>
+
+                    <div id="commentsContainer" class="space-y-4 mb-6">
+                        <!-- Comments will be inserted here -->
+                    </div>
+
+                    <form id="commentForm" class="mt-6">
+                        <div class="mb-4">
+                            <label
+                                for="commentName"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Name</label
+                            >
+                            <input
+                                type="text"
+                                id="commentName"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            />
+                        </div>
+
+                        <div class="mb-4">
+                            <label
+                                for="commentText"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Comment</label
+                            >
+                            <textarea
+                                id="commentText"
+                                rows="3"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200"
+                        >
+                            Post Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- About View -->
+            <div id="aboutView" class="hidden max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        About BlogSphere
+                    </h2>
+
+                    <div class="blog-content text-gray-700 space-y-4">
+                        <p>
+                            Welcome to BlogSphere, a simple yet powerful
+                            blogging application built with vanilla JavaScript
+                            and TailwindCSS.
+                        </p>
+
+                        <h3>Features</h3>
+                        <ul>
+                            <li>Create, read, update, and delete blog posts</li>
+                            <li>Markdown-like formatting support</li>
+                            <li>Tagging system for organizing posts</li>
+                            <li>Commenting system</li>
+                            <li>Search functionality</li>
+                            <li>Responsive design that works on all devices</li>
+                        </ul>
+
+                        <h3>How to Use</h3>
+                        <p>
+                            To create a new post, click on the "Create Post"
+                            button in the navigation bar. Fill in the title,
+                            author, tags, and content, then click "Save Post".
+                        </p>
+
+                        <p>
+                            You can edit or delete your posts by clicking the
+                            respective buttons when viewing a post.
+                        </p>
+
+                        <h3>Formatting Tips</h3>
+                        <p>The editor supports simple formatting:</p>
+                        <pre>
+# Heading 1
+## Heading 2
+
+- List item
+- Another item
+
+1. Ordered list
+2. Second item
+
+> Blockquote
+
+`inline code`
+
+```javascript
+// Code block
+function hello() {
+    console.log("Hello world!");
+}
+```</pre
+                        >
+
+                        <div
+                            class="mt-8 p-4 bg-indigo-50 rounded-lg border border-indigo-100"
+                        >
+                            <h3
+                                class="text-xl font-semibold text-indigo-800 mb-2"
+                            >
+                                Technical Details
+                            </h3>
+                            <p>This application uses:</p>
+                            <ul class="list-disc pl-5 mt-2">
+                                <li>
+                                    Vanilla JavaScript for all functionality
+                                </li>
+                                <li>TailwindCSS for styling</li>
+                                <li>Font Awesome for icons</li>
+                                <li>LocalStorage for data persistence</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-8 mt-12">
+            <div class="container mx-auto px-4">
+                <div
+                    class="flex flex-col md:flex-row justify-between items-center"
+                >
+                    <div class="mb-4 md:mb-0">
+                        <div class="flex items-center space-x-2">
+                            <i
+                                class="fas fa-pen-nib text-2xl text-indigo-300"
+                            ></i>
+                            <span class="text-xl font-bold">BlogSphere</span>
+                        </div>
+                        <p class="text-gray-400 mt-2">
+                            A simple blogging application
+                        </p>
+                    </div>
+
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-gray-300 hover:text-white"
+                            ><i class="fab fa-twitter"></i
+                        ></a>
+                        <a href="#" class="text-gray-300 hover:text-white"
+                            ><i class="fab fa-github"></i
+                        ></a>
+                        <a href="#" class="text-gray-300 hover:text-white"
+                            ><i class="fab fa-linkedin"></i
+                        ></a>
+                    </div>
+                </div>
+
+                <div
+                    class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm"
+                >
+                    <p>&copy; 2023 BlogSphere. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // DOM Elements
+            const homeView = document.getElementById("homeView");
+            const createView = document.getElementById("createView");
+            const postDetailView = document.getElementById("postDetailView");
+            const aboutView = document.getElementById("aboutView");
+
+            const postsContainer = document.getElementById("postsContainer");
+            const noPostsMessage = document.getElementById("noPostsMessage");
+            const searchInput = document.getElementById("searchInput");
+
+            const postForm = document.getElementById("postForm");
+            const postIdInput = document.getElementById("postId");
+            const postTitleInput = document.getElementById("postTitle");
+            const postAuthorInput = document.getElementById("postAuthor");
+            const postTagsInput = document.getElementById("postTags");
+            const postContentInput = document.getElementById("postContent");
+            const formTitle = document.getElementById("formTitle");
+
+            const detailTitle = document.getElementById("detailTitle");
+            const detailAuthor = document.getElementById("detailAuthor");
+            const detailDate = document.getElementById("detailDate");
+            const detailTags = document.getElementById("detailTags");
+            const detailContent = document.getElementById("detailContent");
+            const commentsContainer =
+                document.getElementById("commentsContainer");
+            const commentForm = document.getElementById("commentForm");
+
+            // Navigation buttons
+            const homeBtn = document.getElementById("homeBtn");
+            const createBtn = document.getElementById("createBtn");
+            const aboutBtn = document.getElementById("aboutBtn");
+            const backBtn = document.getElementById("backBtn");
+            const cancelBtn = document.getElementById("cancelBtn");
+            const editPostBtn = document.getElementById("editPostBtn");
+            const deletePostBtn = document.getElementById("deletePostBtn");
+            const createFirstPostBtn =
+                document.getElementById("createFirstPostBtn");
+
+            // State
+            let currentView = "home";
+            let currentPostId = null;
+
+            // Initialize the app
+            document.addEventListener("DOMContentLoaded", () => {
+                // Load posts from localStorage
+                loadPosts();
+
+                // Set up event listeners
+                setupEventListeners();
+            });
+
+            function setupEventListeners() {
+                // Navigation
+                homeBtn.addEventListener("click", () => showView("home"));
+                createBtn.addEventListener("click", () => showCreateView());
+                aboutBtn.addEventListener("click", () => showView("about"));
+                backBtn.addEventListener("click", () => showView("home"));
+                cancelBtn.addEventListener("click", () => showView("home"));
+                createFirstPostBtn.addEventListener("click", () =>
+                    showCreateView()
+                );
+
+                // Form submissions
+                postForm.addEventListener("submit", handlePostSubmit);
+                commentForm.addEventListener("submit", handleCommentSubmit);
+
+                // Post actions
+                editPostBtn.addEventListener("click", handleEditPost);
+                deletePostBtn.addEventListener("click", handleDeletePost);
+
+                // Search
+                searchInput.addEventListener("input", handleSearch);
+            }
+
+            function showView(view) {
+                // Hide all views
+                homeView.classList.add("hidden");
+                createView.classList.add("hidden");
+                postDetailView.classList.add("hidden");
+                aboutView.classList.add("hidden");
+
+                // Show the selected view
+                currentView = view;
+
+                switch (view) {
+                    case "home":
+                        homeView.classList.remove("hidden");
+                        loadPosts();
+                        break;
+                    case "create":
+                        createView.classList.remove("hidden");
+                        break;
+                    case "post":
+                        postDetailView.classList.remove("hidden");
+                        break;
+                    case "about":
+                        aboutView.classList.remove("hidden");
+                        break;
+                }
+            }
+
+            function showCreateView(postId = null) {
+                if (postId) {
+                    // Editing an existing post
+                    const post = getPostById(postId);
+                    if (post) {
+                        postIdInput.value = post.id;
+                        postTitleInput.value = post.title;
+                        postAuthorInput.value = post.author;
+                        postTagsInput.value = post.tags.join(", ");
+                        postContentInput.value = post.content;
+                        formTitle.textContent = "Edit Post";
+                    }
+                } else {
+                    // Creating a new post
+                    postIdInput.value = "";
+                    postTitleInput.value = "";
+                    postAuthorInput.value = "";
+                    postTagsInput.value = "";
+                    postContentInput.value = "";
+                    formTitle.textContent = "Create New Post";
+                }
+
+                showView("create");
+            }
+
+            function showPostDetail(postId) {
+                const post = getPostById(postId);
+                if (!post) {
+                    showView("home");
+                    return;
+                }
+
+                currentPostId = postId;
+
+                // Set post details
+                detailTitle.textContent = post.title;
+                detailAuthor.textContent = post.author;
+                detailDate.textContent = new Date(post.date).toLocaleDateString(
+                    "en-US",
+                    {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                    }
+                );
+
+                // Set tags
+                detailTags.innerHTML = "";
+                post.tags.forEach((tag) => {
+                    const tagElement = document.createElement("span");
+                    tagElement.className =
+                        "tag px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm";
+                    tagElement.textContent = tag;
+                    detailTags.appendChild(tagElement);
+                });
+
+                // Set content (with simple markdown parsing)
+                detailContent.innerHTML = parseMarkdown(post.content);
+
+                // Load comments
+                loadComments(postId);
+
+                showView("post");
+            }
+
+            function loadPosts(searchTerm = "") {
+                const posts = getAllPosts();
+
+                // Filter posts if there's a search term
+                const filteredPosts = searchTerm
+                    ? posts.filter(
+                          (post) =>
+                              post.title
+                                  .toLowerCase()
+                                  .includes(searchTerm.toLowerCase()) ||
+                              post.content
+                                  .toLowerCase()
+                                  .includes(searchTerm.toLowerCase()) ||
+                              post.tags.some((tag) =>
+                                  tag
+                                      .toLowerCase()
+                                      .includes(searchTerm.toLowerCase())
+                              )
+                      )
+                    : posts;
+
+                postsContainer.innerHTML = "";
+
+                if (filteredPosts.length === 0) {
+                    noPostsMessage.classList.remove("hidden");
+                    return;
+                }
+
+                noPostsMessage.classList.add("hidden");
+
+                filteredPosts.forEach((post, index) => {
+                    const postElement = document.createElement("div");
+                    postElement.className =
+                        "bg-white rounded-xl shadow-md overflow-hidden fade-in";
+                    postElement.style.animationDelay = `${index * 0.1}s`;
+
+                    postElement.innerHTML = `
+                    <div class="h-full flex flex-col">
+                        <div class="p-6 flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xl font-bold text-gray-800">${
+                                    post.title
+                                }</h3>
+                                <span class="text-xs text-gray-500">${new Date(
+                                    post.date
+                                ).toLocaleDateString()}</span>
+                            </div>
+                            <p class="text-gray-600 mb-4 line-clamp-3">${post.content.substring(
+                                0,
+                                200
+                            )}${post.content.length > 200 ? "..." : ""}</p>
+                            <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <i class="fas fa-user mr-1"></i>
+                                <span>${post.author}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${post.tags
+                                    .map(
+                                        (tag) =>
+                                            `<span class="tag px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">${tag}</span>`
+                                    )
+                                    .join("")}
+                            </div>
+                        </div>
+                        <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">
+                            <button class="view-post-btn px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 w-full" data-id="${
+                                post.id
+                            }">
+                                Read More
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                    postsContainer.appendChild(postElement);
+                });
+
+                // Add event listeners to the new buttons
+                document
+                    .querySelectorAll(".view-post-btn")
+                    .forEach((button) => {
+                        button.addEventListener("click", (e) => {
+                            const postId = e.target.getAttribute("data-id");
+                            showPostDetail(postId);
+                        });
+                    });
+            }
+
+            function loadComments(postId) {
+                const post = getPostById(postId);
+                if (!post || !post.comments) {
+                    commentsContainer.innerHTML =
+                        '<p class="text-gray-500">No comments yet. Be the first to comment!</p>';
+                    return;
+                }
+
+                commentsContainer.innerHTML = "";
+
+                if (post.comments.length === 0) {
+                    commentsContainer.innerHTML =
+                        '<p class="text-gray-500">No comments yet. Be the first to comment!</p>';
+                    return;
+                }
+
+                post.comments.forEach((comment) => {
+                    const commentElement = document.createElement("div");
+                    commentElement.className = "bg-gray-50 p-4 rounded-lg";
+                    commentElement.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-800">${
+                            comment.name
+                        }</h4>
+                        <span class="text-xs text-gray-500">${new Date(
+                            comment.date
+                        ).toLocaleDateString()}</span>
+                    </div>
+                    <p class="text-gray-600">${comment.text}</p>
+                `;
+                    commentsContainer.appendChild(commentElement);
+                });
+            }
+
+            function handlePostSubmit(e) {
+                e.preventDefault();
+
+                const id = postIdInput.value || Date.now().toString();
+                const title = postTitleInput.value;
+                const author = postAuthorInput.value;
+                const tags = postTagsInput.value
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag !== "");
+                const content = postContentInput.value;
+                const date = postIdInput.value
+                    ? getPostById(id).date
+                    : new Date().toISOString();
+                const comments = postIdInput.value
+                    ? getPostById(id).comments || []
+                    : [];
+
+                const post = {
+                    id,
+                    title,
+                    author,
+                    tags,
+                    content,
+                    date,
+                    comments,
+                };
+
+                savePost(post);
+                showView("home");
+            }
+
+            function handleCommentSubmit(e) {
+                e.preventDefault();
+
+                const name = document.getElementById("commentName").value;
+                const text = document.getElementById("commentText").value;
+
+                if (!name || !text || !currentPostId) return;
+
+                const comment = {
+                    name,
+                    text,
+                    date: new Date().toISOString(),
+                };
+
+                const post = getPostById(currentPostId);
+                if (!post) return;
+
+                post.comments = post.comments || [];
+                post.comments.push(comment);
+
+                savePost(post);
+
+                // Reset form and reload comments
+                commentForm.reset();
+                loadComments(currentPostId);
+            }
+
+            function handleEditPost() {
+                if (!currentPostId) return;
+                showCreateView(currentPostId);
+            }
+
+            function handleDeletePost() {
+                if (!currentPostId) return;
+
+                if (confirm("Are you sure you want to delete this post?")) {
+                    deletePost(currentPostId);
+                    showView("home");
+                }
+            }
+
+            function handleSearch(e) {
+                loadPosts(e.target.value);
+            }
+
+            // Data storage functions
+            function getAllPosts() {
+                const postsJson = localStorage.getItem("blogPosts");
+                return postsJson ? JSON.parse(postsJson) : [];
+            }
+
+            function getPostById(id) {
+                const posts = getAllPosts();
+                return posts.find((post) => post.id === id);
+            }
+
+            function savePost(post) {
+                const posts = getAllPosts();
+                const existingIndex = posts.findIndex((p) => p.id === post.id);
+
+                if (existingIndex >= 0) {
+                    posts[existingIndex] = post;
+                } else {
+                    posts.unshift(post); // Add new posts at the beginning
+                }
+
+                localStorage.setItem("blogPosts", JSON.stringify(posts));
+                loadPosts(searchInput.value);
+            }
+
+            function deletePost(id) {
+                const posts = getAllPosts().filter((post) => post.id !== id);
+                localStorage.setItem("blogPosts", JSON.stringify(posts));
+                loadPosts(searchInput.value);
+            }
+
+            // Simple markdown parser for display
+            function parseMarkdown(text) {
+                // Headers
+                text = text.replace(/^# (.*$)/gm, "<h1>$1</h1>");
+                text = text.replace(/^## (.*$)/gm, "<h2>$1</h2>");
+
+                // Lists
+                text = text.replace(/^\* (.*$)/gm, "<li>$1</li>");
+                text = text.replace(/^\- (.*$)/gm, "<li>$1</li>");
+                text = text.replace(/^\+ (.*$)/gm, "<li>$1</li>");
+                text = text.replace(/^\d+\. (.*$)/gm, "<li>$1</li>");
+
+                // Blockquotes
+                text = text.replace(
+                    /^> (.*$)/gm,
+                    "<blockquote>$1</blockquote>"
+                );
+
+                // Code blocks
+                text = text.replace(
+                    /```([\s\S]*?)```/g,
+                    "<pre><code>$1</code></pre>"
+                );
+
+                // Inline code
+                text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+                // Paragraphs
+                text = text.replace(/([^\n])\n([^\n])/g, "$1<br>$2");
+
+                // Split into paragraphs where there are double newlines
+                const paragraphs = text.split(/\n\s*\n/);
+
+                return paragraphs
+                    .map((p) => {
+                        if (!p.startsWith("<") || p.startsWith("<li>")) {
+                            return `<p>${p}</p>`;
+                        }
+                        return p;
+                    })
+                    .join("");
+            }
+        </script>
+    </body>
+</html>
