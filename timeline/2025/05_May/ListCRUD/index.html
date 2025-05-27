@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CRUD List with Search, Sort & Pagination</title>
+        <!-- Tailwind CSS CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+        />
+    </head>
+    <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+            <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+                My Awesome List
+            </h1>
+
+            <!-- Add/Edit Item Form -->
+            <div class="mb-6 flex space-x-2">
+                <input
+                    type="text"
+                    id="itemInput"
+                    placeholder="Enter item name..."
+                    class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button
+                    id="addItemBtn"
+                    class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 transition duration-200"
+                >
+                    Add Item
+                </button>
+                <button
+                    id="cancelEditBtn"
+                    class="bg-gray-400 text-white px-5 py-3 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-75 transition duration-200 hidden"
+                >
+                    Cancel
+                </button>
+            </div>
+
+            <!-- Search & Sort Controls -->
+            <div
+                class="mb-6 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4"
+            >
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search items..."
+                    class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+                <div class="flex space-x-2">
+                    <button
+                        id="sortNameAscBtn"
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 transition duration-200 text-sm"
+                    >
+                        Sort A-Z
+                    </button>
+                    <button
+                        id="sortNameDescBtn"
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 transition duration-200 text-sm"
+                    >
+                        Sort Z-A
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pagination Controls (Items per page) -->
+            <div class="mb-6 flex justify-end">
+                <label for="itemsPerPageSelect" class="mr-2 text-gray-700"
+                    >Items per page:</label
+                >
+                <select
+                    id="itemsPerPageSelect"
+                    class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <!-- Item List -->
+            <ul id="itemList" class="space-y-3 mb-6">
+                <!-- Items will be dynamically added here by JavaScript -->
+            </ul>
+
+            <!-- Pagination Buttons -->
+            <div id="paginationContainer" class="flex justify-center space-x-2">
+                <!-- Pagination buttons will be dynamically added here -->
+            </div>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
