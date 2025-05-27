@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Nested Modals</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom CSS variables for Z-index, though Tailwind's z-index utility could also work */
+            :root {
+                --modal-z-index: 50; /* Base z-index for modals */
+            }
+            .modal-overlay {
+                z-index: var(--modal-z-index);
+            }
+            .modal-overlay.opacity-0 {
+                pointer-events: none; /* Disable clicks when fully transparent */
+            }
+            .modal-overlay.hidden-true {
+                visibility: hidden; /* Fully remove from screen reader tree and layout */
+            }
+            /* Inner modal content transition */
+            .modal-content {
+                transition: transform 0.3s ease-out;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+        <button
+            id="open-first-modal-btn"
+            class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-xl"
+        >
+            Open First Modal
+        </button>
+
+        <script src="script.js"></script>
+    </body>
+</html>
