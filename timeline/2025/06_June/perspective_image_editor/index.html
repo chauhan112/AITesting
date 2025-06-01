@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Paper Photo Rectifier</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .point {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background-color: #3b82f6;
+                border: 2px solid white;
+                border-radius: 50%;
+                cursor: move;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+            }
+            .point:hover {
+                background-color: #2563eb;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            #originalCanvas {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            #correctedCanvas {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                /* Background for transparency */
+                background-image: linear-gradient(
+                        45deg,
+                        #f0f0f0 25%,
+                        transparent 25%
+                    ),
+                    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+                background-size: 20px 20px;
+                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                    Paper Photo Rectifier
+                </h1>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Upload photos of non-rectangular paper documents and
+                    transform them into perfectly rectangular images. Drag the
+                    blue points to match the corners of your document.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Upload and Original Image Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        Upload & Adjust
+                    </h2>
+
+                    <div class="mb-6">
+                        <label
+                            class="block text-sm font-medium text-gray-700 mb-2"
+                            >Upload your paper photo</label
+                        >
+                        <div class="flex items-center">
+                            <input
+                                type="file"
+                                id="fileInput"
+                                accept="image/*"
+                                class="hidden"
+                            />
+                            <button
+                                id="uploadBtn"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-l-md hover:bg-blue-600 transition"
+                            >
+                                Choose File
+                            </button>
+                            <span
+                                id="fileName"
+                                class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md text-gray-500 flex-grow"
+                            >
+                                No file selected
+                            </span>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Supported formats: JPG, PNG, WEBP
+                        </p>
+                    </div>
+
+                    <div
+                        id="imageContainer"
+                        class="relative bg-gray-200 rounded-lg overflow-hidden hidden"
+                    >
+                        <canvas id="originalCanvas" class="max-w-full"></canvas>
+                        <div
+                            class="absolute top-0 left-0 w-full h-full"
+                            id="pointsContainer"
+                        ></div>
+                    </div>
+
+                    <div
+                        id="instructions"
+                        class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
+                    >
+                        <h3 class="font-medium text-blue-800 mb-2">
+                            How to use:
+                        </h3>
+                        <ol class="list-decimal pl-5 space-y-1 text-blue-700">
+                            <li>Upload your paper photo</li>
+                            <li>
+                                Drag the blue points to match the corners of
+                                your document
+                            </li>
+                            <li>Click "Transform to Rectangle" when ready</li>
+                            <li>Download your corrected image</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Result Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        Result
+                    </h2>
+
+                    <div class="mb-4 flex flex-wrap gap-2">
+                        <button
+                            id="transformBtn"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            Transform to Rectangle
+                        </button>
+                        <button
+                            id="downloadBtn"
+                            class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            Download Result
+                        </button>
+                        <button
+                            id="resetBtn"
+                            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
+                        >
+                            Reset Points
+                        </button>
+                    </div>
+
+                    <div
+                        class="bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center min-h-[300px]"
+                    >
+                        <canvas
+                            id="correctedCanvas"
+                            class="max-w-full"
+                        ></canvas>
+                        <div
+                            id="placeholder"
+                            class="text-center p-6 text-gray-500"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-16 w-16 mx-auto mb-3 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                            </svg>
+                            <p>Your transformed image will appear here</p>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                        <h3 class="font-medium text-gray-800 mb-2">
+                            Tips for best results:
+                        </h3>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                            <li>Ensure good lighting when taking photos</li>
+                            <li>
+                                Position the camera directly above the document
+                            </li>
+                            <li>Make sure all four corners are visible</li>
+                            <li>
+                                Adjust points as close to corners as possible
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="mt-12 text-center text-gray-600 text-sm">
+                <p>
+                    Made with ❤️ - Drag the blue points to match the corners of
+                    your document
+                </p>
+            </footer>
+        </div>
+
+        <script>
+            // DOM Elements
+            const fileInput = document.getElementById("fileInput");
+            const uploadBtn = document.getElementById("uploadBtn");
+            const fileName = document.getElementById("fileName");
+            const imageContainer = document.getElementById("imageContainer");
+            const originalCanvas = document.getElementById("originalCanvas");
+            const originalCtx = originalCanvas.getContext("2d");
+            const pointsContainer = document.getElementById("pointsContainer");
+            const transformBtn = document.getElementById("transformBtn");
+            const downloadBtn = document.getElementById("downloadBtn");
+            const resetBtn = document.getElementById("resetBtn");
+            const correctedCanvas = document.getElementById("correctedCanvas");
+            const correctedCtx = correctedCanvas.getContext("2d");
+            const placeholder = document.getElementById("placeholder");
+            const instructions = document.getElementById("instructions");
+
+            // State
+            let originalImage = null;
+            let points = []; // Store points as normalized (0-1) coordinates
+            let activePoint = null;
+            let canvasScale = 1; // Scale factor from original image pixels to displayed canvas pixels
+
+            // Initialize points
+            function initPoints() {
+                // Default points: Top-left, Top-right, Bottom-right, Bottom-left
+                points = [
+                    { x: 0.2, y: 0.2 }, // Top-left
+                    { x: 0.8, y: 0.2 }, // Top-right
+                    { x: 0.8, y: 0.8 }, // Bottom-right
+                    { x: 0.2, y: 0.8 }, // Bottom-left
+                ];
+                renderPoints();
+            }
+
+            // Render draggable points on the original image canvas
+            function renderPoints() {
+                pointsContainer.innerHTML = "";
+
+                points.forEach((point, index) => {
+                    const pointElement = document.createElement("div");
+                    pointElement.className = "point";
+                    pointElement.style.left = `${point.x * 100}%`;
+                    pointElement.style.top = `${point.y * 100}%`;
+
+                    pointElement.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        activePoint = index;
+                    });
+
+                    pointsContainer.appendChild(pointElement);
+                });
+                // Re-draw guidelines after points move
+                drawOriginalImage();
+            }
+
+            // Handle mouse move for dragging points
+            function handleMouseMove(e) {
+                if (activePoint === null) return;
+
+                const rect = originalCanvas.getBoundingClientRect();
+                // Calculate normalized coordinates (0-1) relative to the original canvas's display size
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+
+                // Keep points within canvas bounds (with a small margin)
+                points[activePoint].x = Math.max(0.01, Math.min(0.99, x));
+                points[activePoint].y = Math.max(0.01, Math.min(0.99, y));
+
+                renderPoints();
+            }
+
+            // Handle mouse up to stop dragging
+            function handleMouseUp() {
+                activePoint = null;
+            }
+
+            // Draw original image on canvas and its guidelines
+            function drawOriginalImage() {
+                if (!originalImage) return;
+
+                // Calculate dimensions to fit image within container while maintaining aspect ratio
+                const containerWidth = imageContainer.clientWidth;
+                const maxHeight = window.innerHeight * 0.6; // Max height for responsiveness
+
+                const aspectRatio = originalImage.width / originalImage.height;
+                let drawWidth = containerWidth;
+                let drawHeight = containerWidth / aspectRatio;
+
+                if (drawHeight > maxHeight) {
+                    drawHeight = maxHeight;
+                    drawWidth = maxHeight * aspectRatio;
+                }
+
+                originalCanvas.width = drawWidth;
+                originalCanvas.height = drawHeight;
+
+                // Calculate scale factor from original image pixels to displayed canvas pixels
+                canvasScale = originalImage.width / drawWidth;
+
+                originalCtx.clearRect(0, 0, drawWidth, drawHeight);
+                originalCtx.drawImage(
+                    originalImage,
+                    0,
+                    0,
+                    drawWidth,
+                    drawHeight
+                );
+
+                // Draw guidelines connecting the points
+                originalCtx.strokeStyle = "rgba(59, 130, 246, 0.7)"; // Blue with transparency
+                originalCtx.lineWidth = 3;
+                originalCtx.setLineDash([5, 5]); // Dashed line
+                originalCtx.beginPath();
+                originalCtx.moveTo(
+                    points[0].x * drawWidth,
+                    points[0].y * drawHeight
+                );
+                for (let i = 1; i < points.length; i++) {
+                    originalCtx.lineTo(
+                        points[i].x * drawWidth,
+                        points[i].y * drawHeight
+                    );
+                }
+                originalCtx.closePath();
+                originalCtx.stroke();
+                originalCtx.setLineDash([]); // Reset line dash
+
+                // Enable transform button
+                transformBtn.disabled = false;
+            }
+
+            // --- Start of Perspective Transformation Math (adapted from Chris Veness gist) ---
+            // Source: https://gist.github.com/chrisveness/ee38a8e1003774843948
+
+            const m3 = {}; // Mat3 library for 3x3 matrix operations
+
+            m3.identity = function () {
+                return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+            };
+
+            m3.multiply = function (a, b) {
+                const c = m3.identity();
+
+                const a0 = a[0],
+                    a1 = a[1],
+                    a2 = a[2];
+                const a3 = a[3],
+                    a4 = a[4],
+                    a5 = a[5];
+                const a6 = a[6],
+                    a7 = a[7],
+                    a8 = a[8];
+
+                const b0 = b[0],
+                    b1 = b[1],
+                    b2 = b[2];
+                const b3 = b[3],
+                    b4 = b[4],
+                    b5 = b[5];
+                const b6 = b[6],
+                    b7 = b[7],
+                    b8 = b[8];
+
+                c[0] = a0 * b0 + a3 * b1 + a6 * b2;
+                c[1] = a1 * b0 + a4 * b1 + a7 * b2;
+                c[2] = a2 * b0 + a5 * b1 + a8 * b2;
+
+                c[3] = a0 * b3 + a3 * b4 + a6 * b5;
+                c[4] = a1 * b3 + a4 * b4 + a7 * b5;
+                c[5] = a2 * b3 + a5 * b4 + a8 * b5;
+
+                c[6] = a0 * b6 + a3 * b7 + a6 * b8;
+                c[7] = a1 * b6 + a4 * b7 + a7 * b8;
+                c[8] = a2 * b6 + a5 * b7 + a8 * b8;
+
+                return c;
+            };
+
+            m3.inverse = function (m) {
+                const inv = m3.identity();
+
+                const m0 = m[0],
+                    m1 = m[1],
+                    m2 = m[2];
+                const m3 = m[3],
+                    m4 = m[4],
+                    m5 = m[5];
+                const m6 = m[6],
+                    m7 = m[7],
+                    m8 = m[8];
+
+                inv[0] = m4 * m8 - m5 * m7;
+                inv[1] = m2 * m7 - m1 * m8;
+                inv[2] = m1 * m5 - m2 * m4;
+                inv[3] = m5 * m6 - m3 * m8;
+                inv[4] = m0 * m8 - m2 * m6;
+                inv[5] = m2 * m3 - m0 * m5;
+                inv[6] = m3 * m7 - m4 * m6;
+                inv[7] = m1 * m6 - m0 * m7;
+                inv[8] = m0 * m4 - m1 * m3;
+
+                const det = m0 * inv[0] + m1 * inv[3] + m2 * inv[6];
+                if (det === 0) return null; // No inverse exists
+
+                const idet = 1 / det;
+                for (let i = 0; i < 9; i++) {
+                    inv[i] *= idet;
+                }
+
+                return inv;
+            };
+
+            // Computes the homography matrix from 4 source points to 4 destination points
+            function getMatrix(
+                s0x,
+                s0y,
+                s1x,
+                s1y,
+                s2x,
+                s2y,
+                s3x,
+                s3y,
+                d0x,
+                d0y,
+                d1x,
+                d1y,
+                d2x,
+                d2y,
+                d3x,
+                d3y
+            ) {
+                // A and B matrices for solving homography (8-point algorithm)
+                const A = [
+                    [s0x, s0y, 1, 0, 0, 0, -s0x * d0x, -s0y * d0x],
+                    [0, 0, 0, s0x, s0y, 1, -s0x * d0y, -s0y * d0y],
+                    [s1x, s1y, 1, 0, 0, 0, -s1x * d1x, -s1y * d1x],
+                    [0, 0, 0, s1x, s1y, 1, -s1x * d1y, -s1y * d1y],
+                    [s2x, s2y, 1, 0, 0, 0, -s2x * d2x, -s2y * d2x],
+                    [0, 0, 0, s2x, s2y, 1, -s2x * d2y, -s2y * d2y],
+                    [s3x, s3y, 1, 0, 0, 0, -s3x * d3x, -s3y * d3x],
+                    [0, 0, 0, s3x, s3y, 1, -s3x * d3y, -s3y * d3y],
+                ];
+                const B = [d0x, d0y, d1x, d1y, d2x, d2y, d3x, d3y];
+
+                // Solve for h using Gaussian elimination
+                const M = [];
+                for (let i = 0; i < 8; i++) {
+                    M[i] = A[i].concat(B[i]);
+                }
+
+                // Forward elimination
+                for (let k = 0; k < 8; k++) {
+                    let i_max = k;
+                    let v_max = M[i_max][k];
+                    for (let i = k + 1; i < 8; i++) {
+                        if (Math.abs(M[i][k]) > Math.abs(v_max)) {
+                            v_max = M[i][k];
+                            i_max = i;
+                        }
+                    }
+                    if (i_max !== k) {
+                        const temp = M[k];
+                        M[k] = M[i_max];
+                        M[i_max] = temp;
+                    }
+
+                    if (M[k][k] === 0) {
+                        // Handle singular matrix (can happen if points are collinear)
+                        console.warn(
+                            "Singular matrix encountered, cannot perform homography."
+                        );
+                        return null;
+                    }
+
+                    for (let i = k + 1; i < 8; i++) {
+                        const f = M[i][k] / M[k][k];
+                        for (let j = k; j < 9; j++) {
+                            M[i][j] -= M[k][j] * f;
+                        }
+                    }
+                }
+
+                // Back substitution
+                const h = new Array(8);
+                for (let i = 7; i >= 0; i--) {
+                    let sum = 0;
+                    for (let j = i + 1; j < 8; j++) {
+                        sum += M[i][j] * h[j];
+                    }
+                    h[i] = (M[i][8] - sum) / M[i][i];
+                }
+
+                // Homography matrix (3x3, last element is 1)
+                return [h[0], h[3], h[6], h[1], h[4], h[7], h[2], h[5], 1];
+            }
+
+            // Function to draw a 4-point perspective transformed image
+            function fourPointTransform(ctx, img, s_points, d_points) {
+                const H = getMatrix(
+                    s_points[0].x,
+                    s_points[0].y, // s0 (source top-left)
+                    s_points[1].x,
+                    s_points[1].y, // s1 (source top-right)
+                    s_points[2].x,
+                    s_points[2].y, // s2 (source bottom-right)
+                    s_points[3].x,
+                    s_points[3].y, // s3 (source bottom-left)
+                    d_points[0].x,
+                    d_points[0].y, // d0 (dest top-left)
+                    d_points[1].x,
+                    d_points[1].y, // d1 (dest top-right)
+                    d_points[2].x,
+                    d_points[2].y, // d2 (dest bottom-right)
+                    d_points[3].x,
+                    d_points[3].y // d3 (dest bottom-left)
+                );
+
+                if (!H) {
+                    // If getMatrix returned null (singular matrix), clear canvas and return
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    console.error(
+                        "Transformation failed: Cannot compute homography for the given points."
+                    );
+                    return;
+                }
+
+                const H_inv = m3.inverse(H); // Get inverse matrix to map destination to source pixels
+
+                if (!H_inv) {
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    console.error(
+                        "Transformation failed: Could not calculate inverse homography matrix."
+                    );
+                    return;
+                }
+
+                const dWidth = ctx.canvas.width;
+                const dHeight = ctx.canvas.height;
+                const precision = 1; // 1 means iterate every pixel, higher values mean fewer iterations but faster (more blocky)
+
+                // Create a temporary canvas to get source image data
+                const imgCanvas = document.createElement("canvas");
+                imgCanvas.width = img.width;
+                imgCanvas.height = img.height;
+                const imgCtx = imgCanvas.getContext("2d");
+                imgCtx.drawImage(img, 0, 0);
+                const imgData = imgCtx.getImageData(
+                    0,
+                    0,
+                    img.width,
+                    img.height
+                ).data;
+
+                // Create a temporary canvas for destination image data
+                const destCanvas = document.createElement("canvas");
+                destCanvas.width = dWidth;
+                destCanvas.height = dHeight;
+                const destCtx = destCanvas.getContext("2d");
+                const destImageData = destCtx.createImageData(dWidth, dHeight);
+                const destData = destImageData.data;
+
+                // Fill destination with white initially
+                for (let i = 0; i < destData.length; i += 4) {
+                    destData[i] = 255;
+                    destData[i + 1] = 255;
+                    destData[i + 2] = 255;
+                    destData[i + 3] = 255;
+                }
+
+                // Iterate through destination pixels
+                for (let y = 0; y < dHeight; y += precision) {
+                    for (let x = 0; x < dWidth; x += precision) {
+                        // Apply inverse homography to get source coordinates
+                        const sx_numerator =
+                            H_inv[0] * x + H_inv[3] * y + H_inv[6];
+                        const sy_numerator =
+                            H_inv[1] * x + H_inv[4] * y + H_inv[7];
+                        const w_denominator =
+                            H_inv[2] * x + H_inv[5] * y + H_inv[8];
+
+                        const sx = sx_numerator / w_denominator;
+                        const sy = sy_numerator / w_denominator;
+
+                        // Check if source coordinates are within image bounds
+                        if (
+                            sx >= 0 &&
+                            sx < img.width &&
+                            sy >= 0 &&
+                            sy < img.height
+                        ) {
+                            // Get pixel color from source image (nearest neighbor for simplicity)
+                            const imgX = Math.floor(sx);
+                            const imgY = Math.floor(sy);
+                            const imgIndex = (imgY * img.width + imgX) * 4;
+
+                            const r = imgData[imgIndex];
+                            const g = imgData[imgIndex + 1];
+                            const b = imgData[imgIndex + 2];
+                            const a = imgData[imgIndex + 3];
+
+                            // Set pixel color in destination image
+                            for (
+                                let dy = 0;
+                                dy < precision && y + dy < dHeight;
+                                dy++
+                            ) {
+                                for (
+                                    let dx = 0;
+                                    dx < precision && x + dx < dWidth;
+                                    dx++
+                                ) {
+                                    const destIndex =
+                                        ((y + dy) * dWidth + (x + dx)) * 4;
+                                    destData[destIndex] = r;
+                                    destData[destIndex + 1] = g;
+                                    destData[destIndex + 2] = b;
+                                    destData[destIndex + 3] = a;
+                                }
+                            }
+                        } else {
+                            // Pixels outside source bounds remain white (or transparent if not pre-filled)
+                        }
+                    }
+                }
+                destCtx.putImageData(destImageData, 0, 0);
+                ctx.drawImage(destCanvas, 0, 0); // Draw result from temporary canvas to main corrected canvas
+            }
+            // --- End of Perspective Transformation Math ---
+
+            // Transform image to rectangle
+            function transformImage() {
+                if (!originalImage) return;
+
+                // Get absolute point coordinates in original image pixel space
+                // The `points` array is already ordered: top-left, top-right, bottom-right, bottom-left
+                const sourcePoints = points.map((point) => ({
+                    x: point.x * originalImage.width,
+                    y: point.y * originalImage.height,
+                }));
+
+                // Determine destination dimensions by calculating average side lengths of the quadrilateral
+                // This provides a more natural output dimension for the rectified document.
+                // Horizontal lengths
+                const topLength = Math.sqrt(
+                    Math.pow(sourcePoints[1].x - sourcePoints[0].x, 2) +
+                        Math.pow(sourcePoints[1].y - sourcePoints[0].y, 2)
+                );
+                const bottomLength = Math.sqrt(
+                    Math.pow(sourcePoints[2].x - sourcePoints[3].x, 2) +
+                        Math.pow(sourcePoints[2].y - sourcePoints[3].y, 2)
+                );
+                const avgWidth = (topLength + bottomLength) / 2;
+
+                // Vertical lengths
+                const leftLength = Math.sqrt(
+                    Math.pow(sourcePoints[3].x - sourcePoints[0].x, 2) +
+                        Math.pow(sourcePoints[3].y - sourcePoints[0].y, 2)
+                );
+                const rightLength = Math.sqrt(
+                    Math.pow(sourcePoints[2].x - sourcePoints[1].x, 2) +
+                        Math.pow(sourcePoints[2].y - sourcePoints[1].y, 2)
+                );
+                const avgHeight = (leftLength + rightLength) / 2;
+
+                // Set corrected canvas dimensions (round to nearest integer for pixel clarity)
+                const correctedWidth = Math.round(avgWidth);
+                const correctedHeight = Math.round(avgHeight);
+
+                // Set a maximum dimension to prevent excessively large canvases/slow processing
+                const MAX_CANVAS_DIMENSION = 2000;
+                correctedCanvas.width = Math.min(
+                    correctedWidth,
+                    MAX_CANVAS_DIMENSION
+                );
+                correctedCanvas.height = Math.min(
+                    correctedHeight,
+                    MAX_CANVAS_DIMENSION
+                );
+
+                placeholder.classList.add("hidden");
+
+                // Destination points for the perfect rectangle (top-left, top-right, bottom-right, bottom-left)
+                const destPoints = [
+                    { x: 0, y: 0 },
+                    { x: correctedCanvas.width, y: 0 },
+                    { x: correctedCanvas.width, y: correctedCanvas.height },
+                    { x: 0, y: correctedCanvas.height },
+                ];
+
+                correctedCtx.clearRect(
+                    0,
+                    0,
+                    correctedCanvas.width,
+                    correctedCanvas.height
+                );
+
+                // Perform the 4-point perspective transform using the calculated matrix
+                fourPointTransform(
+                    correctedCtx,
+                    originalImage,
+                    sourcePoints,
+                    destPoints
+                );
+
+                // Draw a subtle border around the result
+                correctedCtx.strokeStyle = "#e5e7eb";
+                correctedCtx.lineWidth = 2;
+                correctedCtx.strokeRect(
+                    0,
+                    0,
+                    correctedCanvas.width,
+                    correctedCanvas.height
+                );
+
+                // Enable download button
+                downloadBtn.disabled = false;
+            }
+
+            // Download corrected image
+            function downloadImage() {
+                const link = document.createElement("a");
+                link.download = "rectified-document.png";
+                link.href = correctedCanvas.toDataURL("image/png");
+                link.click();
+            }
+
+            // Event Listeners
+            uploadBtn.addEventListener("click", () => fileInput.click());
+
+            fileInput.addEventListener("change", (e) => {
+                if (e.target.files.length === 0) return;
+
+                const file = e.target.files[0];
+                fileName.textContent = file.name;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        imageContainer.classList.remove("hidden");
+                        drawOriginalImage(); // Draw image and initial guidelines
+                        renderPoints(); // Re-render points on top
+                        instructions.classList.remove("hidden");
+                    };
+                    originalImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            transformBtn.addEventListener("click", transformImage);
+            downloadBtn.addEventListener("click", downloadImage);
+            resetBtn.addEventListener("click", initPoints);
+
+            // Mouse events for dragging points (on the document to ensure global listener)
+            document.addEventListener("mousemove", handleMouseMove);
+            document.addEventListener("mouseup", handleMouseUp);
+
+            // Initialize points when window loads
+            window.addEventListener("load", () => {
+                initPoints();
+
+                // Adjust canvas on resize (e.g., responsive layout changes)
+                window.addEventListener("resize", () => {
+                    if (originalImage) {
+                        drawOriginalImage();
+                        renderPoints(); // Ensure points stay correctly positioned
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

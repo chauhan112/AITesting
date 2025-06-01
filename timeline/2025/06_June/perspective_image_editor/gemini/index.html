@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Paper Un-warper</title>
+        <!-- Tailwind CSS CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            /* Custom styles if needed */
+            canvas {
+                border: 1px solid #ccc;
+                background-color: #f0f0f0; /* Light background for empty canvas */
+                cursor: crosshair; /* Indicate clickable area */
+            }
+            .point-marker {
+                position: absolute;
+                width: 16px; /* Size of the marker */
+                height: 16px;
+                background-color: red; /* Color of the marker */
+                border-radius: 50%; /* Make it circular */
+                transform: translate(
+                    -50%,
+                    -50%
+                ); /* Center the marker on the click point */
+                pointer-events: none; /* Make sure it doesn't block clicks on the canvas */
+                z-index: 10;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-6xl">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+                Paper Perspective Corrector
+            </h1>
+
+            <div class="mb-6">
+                <label
+                    for="imageUpload"
+                    class="block text-gray-700 text-sm font-bold mb-2"
+                    >Upload your paper photograph:</label
+                >
+                <input
+                    type="file"
+                    id="imageUpload"
+                    accept="image/*"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+            </div>
+
+            <div
+                id="instructions"
+                class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6"
+                role="alert"
+            >
+                <p class="font-bold">Instructions:</p>
+                <p>1. Upload an image.</p>
+                <p>
+                    2. Click on the
+                    <strong>four corners of the paper</strong> on the image,
+                    ideally in a clockwise order (e.g., Top-Left, Top-Right,
+                    Bottom-Right, Bottom-Left) for best results.
+                </p>
+                <p>3. Click "Process Image" to see the rectangular output.</p>
+                <p>4. Click "Download Processed Image" to save your result.</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-6 mb-6">
+                <div
+                    class="relative flex-1 bg-gray-50 p-2 rounded-md shadow-inner flex flex-col items-center"
+                >
+                    <h2 class="text-lg font-semibold mb-2">
+                        Original Image (Click Corners)
+                    </h2>
+                    <canvas
+                        id="inputCanvas"
+                        class="max-w-full h-auto"
+                        width="800"
+                        height="600"
+                    ></canvas>
+                    <div
+                        id="pointMarkersContainer"
+                        class="absolute inset-0 pointer-events-none"
+                    ></div>
+                </div>
+
+                <div
+                    class="flex-1 bg-gray-50 p-2 rounded-md shadow-inner flex flex-col items-center"
+                >
+                    <h2 class="text-lg font-semibold mb-2">
+                        Rectangular Output
+                    </h2>
+                    <canvas
+                        id="outputCanvas"
+                        class="max-w-full h-auto"
+                        width="800"
+                        height="600"
+                    ></canvas>
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button
+                    id="processBtn"
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full disabled:opacity-50"
+                    disabled
+                >
+                    Process Image
+                </button>
+                <button
+                    id="downloadBtn"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full disabled:opacity-50"
+                    disabled
+                >
+                    Download Processed Image
+                </button>
+                <button
+                    id="resetBtn"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
+                >
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Link to your external JavaScript file -->
+        <script src="js/main.js" defer></script>
+    </body>
+</html>

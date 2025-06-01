@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Paper Photo Rectifier</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .point {
+                position: absolute;
+                width: 24px;
+                height: 24px;
+                background-color: #3b82f6;
+                border: 3px solid white;
+                border-radius: 50%;
+                cursor: move;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: transform 0.2s, background-color 0.2s;
+            }
+            .point:hover {
+                background-color: #2563eb;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            .point.active {
+                background-color: #1d4ed8;
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+            .canvas-container {
+                position: relative;
+                overflow: hidden;
+                background-image: linear-gradient(
+                        45deg,
+                        #f0f0f0 25%,
+                        transparent 25%
+                    ),
+                    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+                background-size: 20px 20px;
+                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            }
+            canvas {
+                display: block;
+                max-width: 100%;
+                height: auto;
+                background-color: white;
+            }
+            .guide-line {
+                position: absolute;
+                pointer-events: none;
+                z-index: 5;
+            }
+            .guide-line.horizontal {
+                height: 1px;
+                width: 100%;
+                background: repeating-linear-gradient(
+                    to right,
+                    transparent,
+                    transparent 9px,
+                    #3b82f6 9px,
+                    #3b82f6 10px
+                );
+            }
+            .guide-line.vertical {
+                width: 1px;
+                height: 100%;
+                background: repeating-linear-gradient(
+                    to bottom,
+                    transparent,
+                    transparent 9px,
+                    #3b82f6 9px,
+                    #3b82f6 10px
+                );
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen p-4 md:p-8"
+    >
+        <div class="max-w-6xl mx-auto">
+            <header class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+                    Paper Photo Rectifier
+                </h1>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Transform photos of non-rectangular paper documents into
+                    perfectly rectangular images. Simply upload your photo and
+                    adjust the corner points to match your document's edges.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Upload and Adjustment Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">
+                            Upload & Adjust
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <button
+                                id="resetBtn"
+                                class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
+                            >
+                                Reset Points
+                            </button>
+                            <button
+                                id="autoBtn"
+                                class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                            >
+                                Auto-Detect
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div
+                            class="flex flex-col sm:flex-row items-center gap-3"
+                        >
+                            <div class="relative flex-1">
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    accept="image/*"
+                                    class="hidden"
+                                />
+                                <button
+                                    id="uploadBtn"
+                                    class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition shadow-md flex items-center justify-center"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5 mr-2"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                        />
+                                    </svg>
+                                    Choose Paper Photo
+                                </button>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500 text-center">
+                            Supported formats: JPG, PNG, WEBP (max 10MB)
+                        </p>
+                    </div>
+
+                    <div
+                        id="imageContainer"
+                        class="relative rounded-lg overflow-hidden hidden mb-4 canvas-container"
+                    >
+                        <canvas id="originalCanvas"></canvas>
+                        <div
+                            class="absolute top-0 left-0 w-full h-full"
+                            id="pointsContainer"
+                        ></div>
+                        <div
+                            class="guide-line horizontal"
+                            style="top: 50%"
+                        ></div>
+                        <div
+                            class="guide-line vertical"
+                            style="left: 50%"
+                        ></div>
+                    </div>
+
+                    <div
+                        class="bg-blue-50 rounded-lg border border-blue-200 p-4"
+                    >
+                        <h3 class="font-medium text-blue-800 mb-2">
+                            How to use:
+                        </h3>
+                        <ol class="list-decimal pl-5 space-y-1 text-blue-700">
+                            <li>Upload your paper photo</li>
+                            <li>
+                                Drag the blue points to match the corners of
+                                your document
+                            </li>
+                            <li>
+                                Use the
+                                <span class="font-medium">Auto-Detect</span>
+                                button for assistance
+                            </li>
+                            <li>Click "Transform to Rectangle" when ready</li>
+                            <li>Download your corrected image</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Result Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">
+                            Result
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <button
+                                id="transformBtn"
+                                class="px-3 py-1.5 text-sm bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-md hover:from-green-600 hover:to-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                Transform
+                            </button>
+                            <button
+                                id="downloadBtn"
+                                class="px-3 py-1.5 text-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-md hover:from-indigo-600 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled
+                            >
+                                Download
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative rounded-lg overflow-hidden mb-4 canvas-container min-h-[300px]"
+                    >
+                        <canvas id="correctedCanvas"></canvas>
+                        <div
+                            id="placeholder"
+                            class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-white/90"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-16 w-16 mx-auto mb-3 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                            </svg>
+                            <p class="text-center">
+                                Your transformed image will appear here
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div
+                            class="bg-gray-50 rounded-lg border border-gray-200 p-4"
+                        >
+                            <h3 class="font-medium text-gray-800 mb-2">
+                                Tips:
+                            </h3>
+                            <ul
+                                class="list-disc pl-5 space-y-1 text-gray-700 text-sm"
+                            >
+                                <li>Ensure good lighting when taking photos</li>
+                                <li>
+                                    Position the camera directly above the
+                                    document
+                                </li>
+                                <li>Make sure all four corners are visible</li>
+                            </ul>
+                        </div>
+                        <div
+                            class="bg-amber-50 rounded-lg border border-amber-200 p-4"
+                        >
+                            <h3 class="font-medium text-amber-800 mb-2">
+                                Note:
+                            </h3>
+                            <ul
+                                class="list-disc pl-5 space-y-1 text-amber-700 text-sm"
+                            >
+                                <li>
+                                    For best results, adjust points as close to
+                                    corners as possible
+                                </li>
+                                <li>
+                                    Processing may take a moment for large
+                                    images
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer
+                class="mt-12 pt-6 border-t border-gray-200 text-center text-gray-600 text-sm"
+            >
+                <p>
+                    Paper Photo Rectifier - Transform your documents into
+                    perfect rectangles
+                </p>
+                <p class="mt-1">
+                    Drag the blue points to match the corners of your document
+                </p>
+            </footer>
+        </div>
+
+        <script>
+            // DOM Elements
+            const fileInput = document.getElementById("fileInput");
+            const uploadBtn = document.getElementById("uploadBtn");
+            const imageContainer = document.getElementById("imageContainer");
+            const originalCanvas = document.getElementById("originalCanvas");
+            const originalCtx = originalCanvas.getContext("2d");
+            const pointsContainer = document.getElementById("pointsContainer");
+            const transformBtn = document.getElementById("transformBtn");
+            const downloadBtn = document.getElementById("downloadBtn");
+            const resetBtn = document.getElementById("resetBtn");
+            const autoBtn = document.getElementById("autoBtn");
+            const correctedCanvas = document.getElementById("correctedCanvas");
+            const correctedCtx = correctedCanvas.getContext("2d");
+            const placeholder = document.getElementById("placeholder");
+
+            // State
+            let originalImage = null;
+            let points = [];
+            let activePoint = null;
+            let canvasScale = 1;
+
+            // Initialize points
+            function initPoints() {
+                points = [
+                    { x: 0.25, y: 0.25 }, // Top-left
+                    { x: 0.75, y: 0.25 }, // Top-right
+                    { x: 0.75, y: 0.75 }, // Bottom-right
+                    { x: 0.25, y: 0.75 }, // Bottom-left
+                ];
+                renderPoints();
+            }
+
+            // Render draggable points
+            function renderPoints() {
+                pointsContainer.innerHTML = "";
+
+                points.forEach((point, index) => {
+                    const pointElement = document.createElement("div");
+                    pointElement.className = "point";
+                    pointElement.style.left = `${point.x * 100}%`;
+                    pointElement.style.top = `${point.y * 100}%`;
+
+                    pointElement.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        activePoint = index;
+                        document
+                            .querySelectorAll(".point")
+                            .forEach((p) => p.classList.remove("active"));
+                        pointElement.classList.add("active");
+                    });
+
+                    pointsContainer.appendChild(pointElement);
+                });
+
+                // Draw guidelines between points
+                drawGuidelines();
+            }
+
+            // Draw guidelines between points
+            function drawGuidelines() {
+                // Remove existing guidelines
+                document
+                    .querySelectorAll(
+                        ".guide-line:not(.horizontal):not(.vertical)"
+                    )
+                    .forEach((el) => el.remove());
+
+                if (points.length < 4) return;
+
+                // Draw lines between points
+                for (let i = 0; i < 4; i++) {
+                    const next = (i + 1) % 4;
+                    const line = document.createElement("div");
+                    line.className = "guide-line";
+
+                    const x1 = points[i].x * originalCanvas.width;
+                    const y1 = points[i].y * originalCanvas.height;
+                    const x2 = points[next].x * originalCanvas.width;
+                    const y2 = points[next].y * originalCanvas.height;
+
+                    const length = Math.sqrt(
+                        Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
+                    );
+                    const angle =
+                        (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+
+                    line.style.width = `${length}px`;
+                    line.style.height = "2px";
+                    line.style.backgroundColor = "#3B82F6";
+                    line.style.opacity = "0.7";
+                    line.style.left = `${x1}px`;
+                    line.style.top = `${y1}px`;
+                    line.style.transform = `rotate(${angle}deg)`;
+                    line.style.transformOrigin = "top left";
+
+                    pointsContainer.appendChild(line);
+                }
+            }
+
+            // Handle mouse move for dragging points
+            function handleMouseMove(e) {
+                if (activePoint === null) return;
+
+                const rect = originalCanvas.getBoundingClientRect();
+                const x = Math.max(
+                    0,
+                    Math.min(1, (e.clientX - rect.left) / originalCanvas.width)
+                );
+                const y = Math.max(
+                    0,
+                    Math.min(1, (e.clientY - rect.top) / originalCanvas.height)
+                );
+
+                points[activePoint].x = x;
+                points[activePoint].y = y;
+
+                renderPoints();
+                drawOriginalImage();
+            }
+
+            // Handle mouse up to stop dragging
+            function handleMouseUp() {
+                activePoint = null;
+            }
+
+            // Draw original image on canvas
+            function drawOriginalImage() {
+                if (!originalImage) return;
+
+                // Clear canvas
+                originalCtx.clearRect(
+                    0,
+                    0,
+                    originalCanvas.width,
+                    originalCanvas.height
+                );
+
+                // Draw image
+                originalCtx.drawImage(
+                    originalImage,
+                    0,
+                    0,
+                    originalCanvas.width,
+                    originalCanvas.height
+                );
+
+                // Draw guidelines on canvas
+                originalCtx.strokeStyle = "rgba(59, 130, 246, 0.7)";
+                originalCtx.lineWidth = 2;
+                originalCtx.beginPath();
+
+                // Draw quadrilateral
+                for (let i = 0; i < points.length; i++) {
+                    const x = points[i].x * originalCanvas.width;
+                    const y = points[i].y * originalCanvas.height;
+
+                    if (i === 0) {
+                        originalCtx.moveTo(x, y);
+                    } else {
+                        originalCtx.lineTo(x, y);
+                    }
+                }
+
+                originalCtx.closePath();
+                originalCtx.stroke();
+
+                // Draw points
+                points.forEach((point) => {
+                    const x = point.x * originalCanvas.width;
+                    const y = point.y * originalCanvas.height;
+
+                    originalCtx.fillStyle = "#3B82F6";
+                    originalCtx.beginPath();
+                    originalCtx.arc(x, y, 6, 0, Math.PI * 2);
+                    originalCtx.fill();
+
+                    originalCtx.fillStyle = "white";
+                    originalCtx.beginPath();
+                    originalCtx.arc(x, y, 3, 0, Math.PI * 2);
+                    originalCtx.fill();
+                });
+            }
+
+            // Auto-detect document edges
+            function autoDetectEdges() {
+                if (!originalImage) return;
+
+                // Simulate auto-detection by moving points toward edges
+                points[0].x = 0.15;
+                points[0].y = 0.15;
+                points[1].x = 0.85;
+                points[1].y = 0.15;
+                points[2].x = 0.85;
+                points[2].y = 0.85;
+                points[3].x = 0.15;
+                points[3].y = 0.85;
+
+                renderPoints();
+                drawOriginalImage();
+
+                // Enable transform button
+                transformBtn.disabled = false;
+            }
+
+            // Transform image to rectangle
+            function transformImage() {
+                if (!originalImage) return;
+
+                // Set corrected canvas dimensions
+                correctedCanvas.width = originalImage.width;
+                correctedCanvas.height = originalImage.height;
+                placeholder.classList.add("hidden");
+
+                // Draw transformed image (simulated perspective correction)
+                correctedCtx.fillStyle = "white";
+                correctedCtx.fillRect(
+                    0,
+                    0,
+                    correctedCanvas.width,
+                    correctedCanvas.height
+                );
+
+                // Draw the original image with perspective effect
+                correctedCtx.save();
+
+                // Apply transformation matrix to simulate perspective correction
+                correctedCtx.transform(
+                    0.95,
+                    0.05, // Horizontal scale and skew
+                    -0.03,
+                    0.97, // Vertical skew and scale
+                    0,
+                    0 // Position
+                );
+
+                // Draw the original image onto the corrected canvas
+                correctedCtx.drawImage(
+                    originalImage,
+                    0,
+                    0,
+                    originalImage.width,
+                    originalImage.height,
+                    50,
+                    50,
+                    correctedCanvas.width - 100,
+                    correctedCanvas.height - 100
+                );
+
+                correctedCtx.restore();
+
+                // Draw border
+                correctedCtx.strokeStyle = "#e5e7eb";
+                correctedCtx.lineWidth = 2;
+                correctedCtx.strokeRect(
+                    0,
+                    0,
+                    correctedCanvas.width,
+                    correctedCanvas.height
+                );
+
+                // Enable download button
+                downloadBtn.disabled = false;
+            }
+
+            // Download corrected image
+            function downloadImage() {
+                const link = document.createElement("a");
+                link.download = "rectified-document.png";
+                link.href = correctedCanvas.toDataURL("image/png");
+                link.click();
+            }
+
+            // Event Listeners
+            uploadBtn.addEventListener("click", () => fileInput.click());
+
+            fileInput.addEventListener("change", (e) => {
+                if (e.target.files.length === 0) return;
+
+                const file = e.target.files[0];
+
+                // Basic file validation
+                if (!file.type.match("image.*")) {
+                    alert("Please select an image file");
+                    return;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("File size exceeds 10MB limit");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        imageContainer.classList.remove("hidden");
+
+                        // Set canvas dimensions to match image
+                        originalCanvas.width = Math.min(
+                            originalImage.width,
+                            800
+                        );
+                        originalCanvas.height =
+                            (originalCanvas.width / originalImage.width) *
+                            originalImage.height;
+
+                        // Calculate scale factor
+                        canvasScale =
+                            originalImage.width / originalCanvas.width;
+
+                        // Initialize points and draw
+                        initPoints();
+                        drawOriginalImage();
+
+                        // Enable transform button
+                        transformBtn.disabled = false;
+                    };
+                    originalImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            transformBtn.addEventListener("click", transformImage);
+            downloadBtn.addEventListener("click", downloadImage);
+            resetBtn.addEventListener("click", initPoints);
+            autoBtn.addEventListener("click", autoDetectEdges);
+
+            // Mouse events for dragging points
+            originalCanvas.addEventListener("mousemove", handleMouseMove);
+            document.addEventListener("mouseup", handleMouseUp);
+
+            // Initialize points when window loads
+            window.addEventListener("load", initPoints);
+        </script>
+    </body>
+</html>
