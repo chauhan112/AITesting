@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Discord Clone</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+            rel="stylesheet"
+        />
+        <script type="module">
+            module.exports = {
+                theme: {
+                    extend: {
+                        colors: {
+                            "gray-750": "#36393f",
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body class="bg-gray-900 text-white flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-20 bg-gray-800 flex flex-col items-center py-4 space-y-4">
+            <div
+                class="server-icon bg-gray-600 w-12 h-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-500"
+            >
+                <i class="fab fa-discord text-white text-2xl"></i>
+            </div>
+            <div
+                class="server-icon bg-gray-700 w-12 h-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-500"
+            >
+                <i class="fas fa-plus text-green-400"></i>
+            </div>
+        </div>
+
+        <!-- Channels List -->
+        <div class="w-60 bg-gray-750 border-r border-gray-800">
+            <div class="p-4 border-b border-gray-800">
+                <h2 class="text-white font-bold">Outlier Community</h2>
+            </div>
+            <div class="channels-list p-2">
+                <div class="channel-category mb-2">
+                    <h3 class="text-gray-400 uppercase text-xs font-bold mb-2">
+                        Text Channels
+                    </h3>
+                    <div id="channelList" class="space-y-1">
+                        <div
+                            class="channel-item flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer"
+                            data-channel="general"
+                        >
+                            <i class="fas fa-hashtag mr-2 text-gray-400"></i>
+                            <span>general</span>
+                        </div>
+                        <div
+                            class="channel-item flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer"
+                            data-channel="random"
+                        >
+                            <i class="fas fa-hashtag mr-2 text-gray-400"></i>
+                            <span>random</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Channel Header -->
+            <div
+                class="channel-header bg-gray-750 p-4 border-b border-gray-800 flex items-center justify-between"
+            >
+                <div class="flex items-center">
+                    <i class="fas fa-hashtag mr-2 text-gray-400"></i>
+                    <h2 id="currentChannelName" class="text-white font-bold">
+                        general
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div
+                id="messagesContainer"
+                class="flex-1 overflow-y-auto p-4 space-y-4"
+            >
+                <!-- Messages will be dynamically added here -->
+            </div>
+
+            <!-- Message Input -->
+            <div class="message-input p-4 bg-gray-750 border-t border-gray-800">
+                <div class="flex items-center bg-gray-800 rounded-lg px-4 py-2">
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Message #general"
+                        class="w-full bg-transparent outline-none text-white"
+                    />
+                    <button
+                        id="sendMessageBtn"
+                        class="ml-2 text-gray-400 hover:text-white"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="app.js"></script>
+    </body>
+</html>
