@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Gradient Form</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body
+        class="h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-red-400 flex items-center justify-center"
+    >
+        <form class="bg-white p-8 rounded-2xl shadow-2xl space-y-6 w-80">
+            <h2 class="text-2xl font-bold text-gray-800 text-center">Login</h2>
+            <input
+                type="email"
+                placeholder="Email"
+                class="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                class="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <button
+                type="submit"
+                class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
+            >
+                Login
+            </button>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>1. The Breathing Orb</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* We define a custom animation using pure CSS */
+            @keyframes breathe {
+                0%,
+                100% {
+                    transform: scale(0.95);
+                    box-shadow: 0 0 40px 10px rgba(251, 146, 60, 0.4); /* Tailwind's orange-400 */
+                }
+                50% {
+                    transform: scale(1.05);
+                    box-shadow: 0 0 60px 20px rgba(251, 146, 60, 0.6);
+                }
+            }
+            .animate-breathe {
+                animation: breathe 5s ease-in-out infinite;
+            }
+        </style>
+    </head>
+    <body class="bg-slate-900 flex items-center justify-center h-screen">
+        <div
+            id="orb"
+            class="w-64 h-64 rounded-full cursor-pointer bg-gradient-to-br from-amber-400 to-orange-500 transition-all duration-500 ease-in-out animate-breathe"
+        ></div>
+
+        <script>
+            const orb = document.getElementById("orb");
+
+            // A few color gradients to cycle through
+            const gradients = [
+                "from-amber-400 to-orange-500",
+                "from-sky-400 to-cyan-500",
+                "from-violet-500 to-fuchsia-600",
+                "from-lime-400 to-emerald-500",
+            ];
+
+            let currentIndex = 0;
+
+            orb.addEventListener("click", () => {
+                // Remove the old gradient classes
+                orb.classList.remove(...gradients[currentIndex].split(" "));
+
+                // Move to the next index, looping back to 0 if needed
+                currentIndex = (currentIndex + 1) % gradients.length;
+
+                // Add the new gradient classes
+                orb.classList.add(...gradients[currentIndex].split(" "));
+            });
+        </script>
+    </body>
+</html>

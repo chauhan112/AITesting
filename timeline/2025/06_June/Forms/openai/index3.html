@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Animated Contact Form</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="h-screen bg-blue-100 flex items-center justify-center">
+        <div class="text-center">
+            <button
+                onclick="toggleForm()"
+                class="mb-4 px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition"
+            >
+                Toggle Contact Form
+            </button>
+            <form
+                id="contactForm"
+                class="hidden bg-white p-6 rounded-lg shadow-xl space-y-4 w-80 mx-auto transition duration-500 ease-in-out"
+            >
+                <h3 class="text-lg font-semibold text-gray-700">Contact Us</h3>
+                <input
+                    type="text"
+                    placeholder="Your Name"
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-green-400"
+                />
+                <input
+                    type="email"
+                    placeholder="Your Email"
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-green-400"
+                />
+                <textarea
+                    placeholder="Message"
+                    rows="3"
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-green-400"
+                ></textarea>
+                <button
+                    type="submit"
+                    class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+                >
+                    Send
+                </button>
+            </form>
+        </div>
+
+        <script>
+            function toggleForm() {
+                const form = document.getElementById("contactForm");
+                form.classList.toggle("hidden");
+            }
+        </script>
+    </body>
+</html>

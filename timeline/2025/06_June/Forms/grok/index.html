@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Artistic Forms</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body
+        class="bg-gray-900 min-h-screen flex flex-col items-center justify-center space-y-12 p-6"
+    >
+        <!-- Form 1: Minimalist Neon -->
+        <div class="w-full max-w-md">
+            <form
+                id="form1"
+                class="bg-gray-800 p-8 rounded-xl shadow-lg shadow-cyan-500/50 border border-cyan-500"
+            >
+                <h2 class="text-2xl font-bold text-cyan-400 mb-6 text-center">
+                    Neon Sign-In
+                </h2>
+                <div class="mb-4">
+                    <label
+                        class="block text-cyan-300 text-sm font-semibold mb-2"
+                        for="email1"
+                        >Email</label
+                    >
+                    <input
+                        type="email"
+                        id="email1"
+                        class="w-full p-3 bg-gray-700 text-white rounded-lg border border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        placeholder="Enter your email"
+                        required
+                    />
+                </div>
+                <div class="mb-6">
+                    <label
+                        class="block text-cyan-300 text-sm font-semibold mb-2"
+                        for="password1"
+                        >Password</label
+                    >
+                    <input
+                        type="password"
+                        id="password1"
+                        class="w-full p-3 bg-gray-700 text-white rounded-lg border border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        placeholder="Enter your password"
+                        required
+                    />
+                </div>
+                <button
+                    type="submit"
+                    class="w-full p-3 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition duration-300"
+                >
+                    Sign In
+                </button>
+                <p
+                    id="message1"
+                    class="text-cyan-300 text-sm mt-4 text-center"
+                ></p>
+            </form>
+        </div>
+
+        <!-- Form 2: Watercolor Contact -->
+        <div class="w-full max-w-md">
+            <form
+                id="form2"
+                class="bg-white p-8 rounded-xl shadow-lg bg-gradient-to-br from-pink-100 to-blue-100"
+            >
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+                    Watercolor Contact
+                </h2>
+                <div class="mb-4">
+                    <label
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                        for="name2"
+                        >Name</label
+                    >
+                    <input
+                        type="text"
+                        id="name2"
+                        class="w-full p-3 bg-white text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="Your name"
+                        required
+                    />
+                </div>
+                <div class="mb-4">
+                    <label
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                        for="message2"
+                        >Message</label
+                    >
+                    <textarea
+                        id="message2"
+                        class="w-full p-3 bg-white text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="Your message"
+                        rows="4"
+                        required
+                    ></textarea>
+                </div>
+                <button
+                    type="submit"
+                    class="w-full p-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300"
+                >
+                    Send
+                </button>
+                <p
+                    id="response2"
+                    class="text-gray-700 text-sm mt-4 text-center"
+                ></p>
+            </form>
+        </div>
+
+        <!-- Form 3: Retro Pixel -->
+        <div class="w-full max-w-md">
+            <form
+                id="form3"
+                class="bg-black p-8 rounded-xl shadow-lg border-4 border-green-500"
+                style="font-family: 'Press Start 2P', cursive"
+            >
+                <h2 class="text-xl text-green-500 mb-6 text-center pixel-text">
+                    Pixel Register
+                </h2>
+                <div class="mb-4">
+                    <label
+                        class="block text-green-400 text-xs mb-2"
+                        for="username3"
+                        >Username</label
+                    >
+                    <input
+                        type="text"
+                        id="username3"
+                        class="w-full p-3 bg-gray-900 text-green-400 text-sm rounded border-2 border-green-600 focus:outline-none focus:border-green-300"
+                        placeholder="Choose username"
+                        required
+                    />
+                </div>
+                <div class="mb-6">
+                    <label
+                        class="block text-green-400 text-xs mb-2"
+                        for="email3"
+                        >Email</label
+                    >
+                    <input
+                        type="email"
+                        id="email3"
+                        class="w-full p-3 bg-gray-900 text-green-400 text-sm rounded border-2 border-green-600 focus:outline-none focus:border-green-300"
+                        placeholder="Your email"
+                        required
+                    />
+                </div>
+                <button
+                    type="submit"
+                    class="w-full p-3 bg-green-600 text-black text-sm font-bold rounded hover:bg-green-500 transition duration-300"
+                >
+                    Register
+                </button>
+                <p
+                    id="output3"
+                    class="text-green-400 text-xs mt-4 text-center"
+                ></p>
+            </form>
+        </div>
+
+        <script>
+            // Form 1: Neon Sign-In
+            document
+                .getElementById("form1")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const email = document.getElementById("email1").value;
+                    document.getElementById(
+                        "message1"
+                    ).textContent = `Welcome, ${email}!`;
+                    this.reset();
+                });
+
+            // Form 2: Watercolor Contact
+            document
+                .getElementById("form2")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const name = document.getElementById("name2").value;
+                    document.getElementById(
+                        "response2"
+                    ).textContent = `Thank you, ${name}! Your message has been sent.`;
+                    this.reset();
+                });
+
+            // Form 3: Retro Pixel
+            document
+                .getElementById("form3")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const username = document.getElementById("username3").value;
+                    document.getElementById(
+                        "output3"
+                    ).textContent = `Player ${username} registered!`;
+                    this.reset();
+                });
+        </script>
+    </body>
+</html>
