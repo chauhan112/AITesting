@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <!-- Tailwind CSS CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            /* Custom CSS Grid for the overall layout */
+            /* This is explicitly setting up the grid areas and column/row templates */
+            .grid-container {
+                display: grid;
+                min-height: 100vh; /* Ensures the container takes at least full viewport height */
+                grid-template-rows: auto 1fr auto; /* Header (auto), Content Area (1fr), Footer (auto) */
+                grid-template-columns: 1fr; /* Default to single column for mobile */
+                gap: 1rem; /* Gap between grid items */
+            }
+
+            /* Default (mobile) layout for grid areas */
+            .grid-container > header {
+                grid-area: header;
+            }
+            .grid-container > #left-nav {
+                grid-area: left-nav;
+            }
+            .grid-container > main {
+                grid-area: main-content;
+            }
+            .grid-container > #right-nav {
+                grid-area: right-nav;
+            }
+            .grid-container > footer {
+                grid-area: footer;
+            }
+
+            /* Mobile specific grid areas (stacking) */
+            .grid-container {
+                grid-template-areas:
+                    "header"
+                    "left-nav"
+                    "main-content"
+                    "right-nav"
+                    "footer";
+            }
+
+            /* Medium screens (md breakpoint) - still stacking, but perhaps different appearance */
+            @media (min-width: 768px) {
+                .grid-container {
+                    grid-template-areas:
+                        "header"
+                        "left-nav"
+                        "main-content"
+                        "right-nav"
+                        "footer";
+                }
+            }
+
+            /* Large screens (lg breakpoint) - Desktop layout */
+            @media (min-width: 1024px) {
+                .grid-container {
+                    grid-template-areas:
+                        "header header header"
+                        "left-nav main-content right-nav"
+                        "footer footer footer";
+                    grid-template-columns: 200px 1fr 200px; /* Specific widths for sidebars, main content takes remaining */
+                }
+            }
+        </style>
+    </head>
+    <body class="font-sans text-gray-800 bg-gray-100">
+        <div id="app" class="grid-container">
+            <!-- Header -->
+            <header
+                class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md z-10"
+            >
+                <h1 class="text-2xl font-bold">My Awesome Site</h1>
+                <!-- Mobile Menu Toggle Button -->
+                <button
+                    id="menu-toggle"
+                    class="lg:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"
+                        ></path>
+                    </svg>
+                </button>
+                <!-- Desktop Nav Links (hidden on mobile, shown on large screens) -->
+                <nav class="hidden lg:block">
+                    <ul class="flex space-x-4">
+                        <li>
+                            <a href="#" class="hover:text-blue-200">Home</a>
+                        </li>
+                        <li>
+                            <a href="#" class="hover:text-blue-200">About</a>
+                        </li>
+                        <li>
+                            <a href="#" class="hover:text-blue-200">Services</a>
+                        </li>
+                        <li>
+                            <a href="#" class="hover:text-blue-200">Contact</a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+
+            <!-- Left Navigation -->
+            <nav
+                id="left-nav"
+                class="bg-gray-800 text-white p-4 hidden lg:block shadow-lg"
+            >
+                <h2 class="text-xl font-semibold mb-4">Categories</h2>
+                <ul class="space-y-2">
+                    <li>
+                        <a
+                            href="#"
+                            class="block py-1 hover:bg-gray-700 rounded px-2"
+                            >Category 1</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="block py-1 hover:bg-gray-700 rounded px-2"
+                            >Category 2</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="block py-1 hover:bg-gray-700 rounded px-2"
+                            >Category 3</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="block py-1 hover:bg-gray-700 rounded px-2"
+                            >Category 4</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="block py-1 hover:bg-gray-700 rounded px-2"
+                            >Category 5</a
+                        >
+                    </li>
+                </ul>
+                <div class="mt-8">
+                    <h2 class="text-xl font-semibold mb-4">Quick Links</h2>
+                    <ul class="space-y-2">
+                        <li>
+                            <a
+                                href="#"
+                                class="block py-1 hover:bg-gray-700 rounded px-2"
+                                >Link A</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="block py-1 hover:bg-gray-700 rounded px-2"
+                                >Link B</a
+                            >
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="bg-white p-6 rounded-lg shadow-md overflow-y-auto">
+                <h2 class="text-3xl font-bold mb-4 text-blue-700">
+                    Welcome to Our Responsive Site!
+                </h2>
+                <p class="mb-4 text-lg">
+                    This page demonstrates a fully responsive layout using CSS
+                    Grid and Tailwind CSS. Resize your browser window to see how
+                    the layout adapts from mobile to desktop sizes.
+                </p>
+
+                <section class="mb-6 border-b pb-4">
+                    <h3 class="text-2xl font-semibold mb-2 text-blue-600">
+                        Key Features:
+                    </h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>
+                            Generic Header with Site Title and Mobile Toggle.
+                        </li>
+                        <li>Left Navigation (Categories, Quick Links).</li>
+                        <li>Main Content Area for your primary information.</li>
+                        <li>
+                            Right Navigation/Sidebar for related content or ads.
+                        </li>
+                        <li>Generic Footer with copyright info.</li>
+                        <li>Vanilla JavaScript for mobile menu toggle.</li>
+                    </ul>
+                </section>
+
+                <section class="mb-6 border-b pb-4">
+                    <h3 class="text-2xl font-semibold mb-2 text-blue-600">
+                        Responsive Behavior:
+                    </h3>
+                    <p class="mb-2">
+                        On <strong>mobile and tablet (below 1024px)</strong>,
+                        all sections stack vertically. The left navigation is
+                        hidden by default and can be toggled open using the menu
+                        icon in the header.
+                    </p>
+                    <p class="mb-2">
+                        On <strong>desktop (1024px and above)</strong>, the
+                        layout transforms into a three-column structure: Left
+                        Nav, Main Content, and Right Nav, flanked by the
+                        full-width Header and Footer.
+                    </p>
+                    <p class="mb-2">
+                        The columns are defined with specific widths for the
+                        sidebars (200px) and a flexible width for the main
+                        content (`1fr`), ensuring the main content always takes
+                        the remaining available space.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-semibold mb-2 text-blue-600">
+                        More Content to Demonstrate Scrolling
+                    </h3>
+                    <p class="mb-2">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        Sed do eiusmod tempor incididunt ut labore et dolore
+                        magna aliqua. Ut enim ad minim veniam, quis nostrud
+                        exercitation ullamco laboris nisi ut aliquip ex ea
+                        commodo consequat.
+                    </p>
+                    <p class="mb-2">
+                        Duis aute irure dolor in reprehenderit in voluptate
+                        velit esse cillum dolore eu fugiat nulla pariatur.
+                        Excepteur sint occaecat cupidatat non proident, sunt in
+                        culpa qui officia deserunt mollit anim id est laborum.
+                    </p>
+                    <p class="mb-2">
+                        Curabitur pretium tincidunt lacus, in porttitor mi
+                        fermentum sit amet. Aliquam erat volutpat. Proin eget
+                        nisl nec nunc sollicitudin egestas. Sed ut perspiciatis
+                        unde omnis iste natus error sit voluptatem accusantium
+                        doloremque laudantium, totam rem aperiam, eaque ipsa
+                        quae ab illo inventore veritatis et quasi architecto
+                        beatae vitae dicta sunt explicabo.
+                    </p>
+                    <p class="mb-2">
+                        Nemo enim ipsam voluptatem quia voluptas sit aspernatur
+                        aut odit aut fugit, sed quia consequuntur magni dolores
+                        eos qui ratione voluptatem sequi nesciunt. Neque porro
+                        quisquam est, qui dolorem ipsum quia dolor sit amet,
+                        consectetur, adipisci velit, sed quia non numquam eius
+                        modi tempora incidunt ut labore et dolore magnam aliquam
+                        quaerat voluptatem.
+                    </p>
+                    <p class="mb-2">
+                        Ut enim ad minima veniam, quis nostrum exercitationem
+                        ullam corporis suscipit laboriosam, nisi ut aliquid ex
+                        ea commodi consequatur? Quis autem vel eum iure
+                        reprehenderit qui in ea voluptate velit esse quam nihil
+                        molestiae consequatur, vel illum qui dolorem eum fugiat
+                        quo voluptas nulla pariatur?
+                    </p>
+                    <p class="mb-2">
+                        At vero eos et accusamus et iusto odio dignissimos
+                        ducimus qui blanditiis praesentium voluptatum deleniti
+                        atque corrupti quos dolores et quas molestias excepturi
+                        sint occaecati cupiditate non provident, similique sunt
+                        in culpa qui officia deserunt mollitia animi, id est
+                        laborum et dolorum fuga.
+                    </p>
+                    <p class="mb-2">
+                        Et harum quidem rerum facilis est et expedita
+                        distinctio. Nam libero tempore, cum soluta nobis est
+                        eligendi optio cumque nihil impedit quo minus id quod
+                        maxime placeat facere possimus, omnis voluptas assumenda
+                        est, omnis dolor repellendus.
+                    </p>
+                </section>
+            </main>
+
+            <!-- Right Navigation / Sidebar -->
+            <nav id="right-nav" class="bg-gray-200 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">
+                    Related Articles
+                </h2>
+                <ul class="space-y-2 mb-6">
+                    <li>
+                        <a href="#" class="block text-blue-600 hover:underline"
+                            >Article Title 1</a
+                        >
+                    </li>
+                    <li>
+                        <a href="#" class="block text-blue-600 hover:underline"
+                            >Article Title 2</a
+                        >
+                    </li>
+                    <li>
+                        <a href="#" class="block text-blue-600 hover:underline"
+                            >Article Title 3</a
+                        >
+                    </li>
+                </ul>
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">
+                    Advertisements
+                </h2>
+                <div
+                    class="bg-blue-100 p-4 rounded-md text-center border border-blue-300"
+                >
+                    <p class="text-blue-800 font-bold">Your Ad Here!</p>
+                    <p class="text-sm text-blue-700">
+                        Reach millions of users.
+                    </p>
+                </div>
+            </nav>
+
+            <!-- Footer -->
+            <footer
+                class="bg-blue-600 text-white p-4 text-center shadow-inner mt-auto"
+            >
+                <p>© 2023 My Awesome Site. All rights reserved.</p>
+                <p>Designed with ❤️ using HTML, Tailwind CSS, and CSS Grid.</p>
+            </footer>
+        </div>
+
+        <!-- Vanilla JavaScript for Mobile Menu Toggle -->
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const menuToggle = document.getElementById("menu-toggle");
+                const leftNav = document.getElementById("left-nav");
+
+                menuToggle.addEventListener("click", () => {
+                    leftNav.classList.toggle("hidden"); // Toggle hidden class for mobile
+                    // For a more advanced off-canvas, you might toggle classes on body
+                    // to prevent scroll, apply transitions, etc.
+                });
+
+                // Optional: Hide menu when resizing to desktop
+                window.addEventListener("resize", () => {
+                    if (window.innerWidth >= 1024) {
+                        // Matches Tailwind's 'lg' breakpoint
+                        leftNav.classList.remove("hidden");
+                    } else {
+                        // You might want to keep it hidden on resize if it was hidden before
+                        // or re-apply hidden based on a state variable. For this example,
+                        // we'll just ensure it becomes block on desktop.
+                        // If you want it to revert to hidden on smaller screens after resize,
+                        // you'd need more complex state management.
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

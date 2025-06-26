@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for clarity */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            @import url("https://rsms.me/inter/inter.css");
+        </style>
+    </head>
+    <body class="bg-slate-100 text-slate-800">
+        <!-- 
+      MAIN PAGE CONTAINER
+      - We use the <body> tag as our main grid container.
+      - min-h-screen ensures the layout takes up at least the full height of the viewport.
+      - `grid` activates CSS Grid.
+      - `grid-rows-[auto_1fr_auto]` defines three rows:
+        1. `auto`: The header's height is determined by its content.
+        2. `1fr`: The middle section (navs and main) takes up all remaining available space.
+        3. `auto`: The footer's height is determined by its content.
+    -->
+        <div
+            id="app-container"
+            class="min-h-screen grid grid-rows-[auto_1fr_auto]"
+        >
+            <!-- HEADER -->
+            <header class="bg-slate-800 text-white p-4 shadow-lg z-10">
+                <div
+                    class="container mx-auto flex justify-between items-center"
+                >
+                    <h1 class="text-2xl font-bold">MyWebsite</h1>
+                    <!-- Mobile Menu Button (Hamburger) -->
+                    <!-- `md:hidden` makes this button only appear on screens smaller than the `md` breakpoint -->
+                    <button
+                        id="menu-button"
+                        class="md:hidden p-2 rounded-md hover:bg-slate-700"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 
+            MIDDLE CONTENT AREA (WRAPS NAVS AND MAIN)
+            - This is where the core responsive grid logic lives.
+            - By default (mobile), it's a standard block-level container, so items stack.
+            - `md:grid` activates grid layout on medium screens and up.
+            - `md:grid-cols-6` creates a 6-column grid for tablets.
+            - `lg:grid-cols-12` creates a more granular 12-column grid for desktops.
+            - `gap-4` adds space between grid items.
+            - `p-4` adds padding around the entire middle section.
+        -->
+            <div
+                class="container mx-auto grid md:grid-cols-6 lg:grid-cols-12 gap-4 p-4"
+            >
+                <!-- LEFT NAV -->
+                <!-- 
+                - `hidden` hides the nav on mobile by default.
+                - `md:block` makes it visible again on medium screens and up.
+                - `md:col-span-1` makes it take up 1 of the 6 columns on medium screens.
+                - `lg:col-span-2` makes it take up 2 of the 12 columns on large screens.
+            -->
+                <aside
+                    id="left-nav"
+                    class="hidden md:block md:col-span-1 lg:col-span-2 bg-white p-4 rounded-lg shadow"
+                >
+                    <h2 class="font-bold text-lg mb-4 border-b pb-2">
+                        Left Nav
+                    </h2>
+                    <nav>
+                        <ul>
+                            <li class="mb-2">
+                                <a
+                                    href="#"
+                                    class="block p-2 rounded hover:bg-slate-200"
+                                    >Home</a
+                                >
+                            </li>
+                            <li class="mb-2">
+                                <a
+                                    href="#"
+                                    class="block p-2 rounded hover:bg-slate-200"
+                                    >Profile</a
+                                >
+                            </li>
+                            <li class="mb-2">
+                                <a
+                                    href="#"
+                                    class="block p-2 rounded hover:bg-slate-200"
+                                    >Messages</a
+                                >
+                            </li>
+                            <li class="mb-2">
+                                <a
+                                    href="#"
+                                    class="block p-2 rounded hover:bg-slate-200"
+                                    >Settings</a
+                                >
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <!-- MAIN CONTENT -->
+                <!-- 
+                - `md:col-span-4` makes it take up 4 of the 6 columns on medium screens (the main area).
+                - `lg:col-span-8` makes it take up 8 of the 12 columns on large screens.
+            -->
+                <main
+                    class="md:col-span-4 lg:col-span-8 bg-white p-6 rounded-lg shadow"
+                >
+                    <h2 class="text-3xl font-bold mb-4 border-b pb-2">
+                        Main Content Area
+                    </h2>
+                    <p class="mb-4">
+                        Welcome to the main content section. This area is
+                        designed to be the primary focus of the page. On larger
+                        screens, it takes up the most horizontal space to
+                        provide a great reading experience.
+                    </p>
+                    <p class="mb-4">
+                        Resize your browser window to see the layout change. On
+                        mobile, the navigation menus will collapse into a single
+                        column and can be toggled with the hamburger menu icon
+                        in the header.
+                    </p>
+                    <div
+                        class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded"
+                    >
+                        <h3 class="font-semibold text-lg mb-2">
+                            Grid Explained:
+                        </h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li>
+                                <strong>Mobile (Smallest):</strong> Single
+                                column. Navs are hidden.
+                            </li>
+                            <li>
+                                <strong>Tablet (`md` - 768px+):</strong> 3
+                                columns using a 6-unit grid (`1 | 4 | 1`).
+                            </li>
+                            <li>
+                                <strong>Desktop (`lg` - 1024px+):</strong> 3
+                                columns using a 12-unit grid (`2 | 8 | 2`).
+                            </li>
+                        </ul>
+                    </div>
+                </main>
+
+                <!-- RIGHT NAV / ASIDE -->
+                <!-- 
+                - Same logic as the left nav for visibility and column spanning.
+            -->
+                <aside
+                    id="right-nav"
+                    class="hidden md:block md:col-span-1 lg:col-span-2 bg-white p-4 rounded-lg shadow"
+                >
+                    <h2 class="font-bold text-lg mb-4 border-b pb-2">
+                        Right Nav
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="bg-slate-200 p-3 rounded">
+                            <h4 class="font-semibold">Widget 1</h4>
+                            <p class="text-sm">
+                                Some extra information or ads can go here.
+                            </p>
+                        </div>
+                        <div class="bg-slate-200 p-3 rounded">
+                            <h4 class="font-semibold">Widget 2</h4>
+                            <p class="text-sm">
+                                Another useful piece of content.
+                            </p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="bg-slate-800 text-white text-center p-4">
+                <p>© 2024 MyWebsite. All rights reserved.</p>
+            </footer>
+        </div>
+
+        <!-- VANILLA JAVASCRIPT -->
+        <script>
+            // Get the elements from the DOM
+            const menuButton = document.getElementById("menu-button");
+            const leftNav = document.getElementById("left-nav");
+            const rightNav = document.getElementById("right-nav");
+
+            // Add a click event listener to the menu button
+            menuButton.addEventListener("click", () => {
+                // The `toggle` method adds the class if it's not there, and removes it if it is.
+                // Tailwind's `hidden` class sets `display: none;`, so this effectively shows/hides the navs.
+                leftNav.classList.toggle("hidden");
+                rightNav.classList.toggle("hidden");
+            });
+        </script>
+    </body>
+</html>

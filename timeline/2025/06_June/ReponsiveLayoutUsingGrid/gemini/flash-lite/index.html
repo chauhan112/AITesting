@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="font-sans antialiased text-gray-800 bg-gray-100">
+        <!-- Grid Container -->
+        <div class="grid grid-rows-layout min-h-screen w-full">
+            <!-- Header -->
+            <header
+                class="bg-blue-600 text-white p-4 flex items-center justify-between"
+            >
+                <div class="text-xl font-bold">My Website Logo</div>
+                <nav class="hidden md:flex space-x-4">
+                    <a href="#" class="hover:underline">Home</a>
+                    <a href="#" class="hover:underline">About</a>
+                    <a href="#" class="hover:underline">Services</a>
+                    <a href="#" class="hover:underline">Contact</a>
+                </nav>
+                <!-- Mobile Menu Button (optional) -->
+                <button
+                    id="mobile-menu-button"
+                    class="md:hidden focus:outline-none"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 6h16M4 12h16m-7 6h7"
+                        ></path>
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Left Navigation -->
+            <aside id="left-nav" class="bg-gray-200 p-4 hidden md:block">
+                <h3 class="font-semibold mb-3">Navigation</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="hover:text-blue-500">Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="#" class="hover:text-blue-500">Settings</a>
+                    </li>
+                    <li><a href="#" class="hover:text-blue-500">Profile</a></li>
+                    <li>
+                        <a href="#" class="hover:text-blue-500">Messages</a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="bg-white p-6">
+                <h1 class="text-3xl font-bold mb-4">Main Content Area</h1>
+                <p>
+                    This is the main content of the page. It will take up the
+                    available space.
+                </p>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-100 p-4 rounded shadow">Box 1</div>
+                    <div class="bg-gray-100 p-4 rounded shadow">Box 2</div>
+                    <div class="bg-gray-100 p-4 rounded shadow">Box 3</div>
+                    <div class="bg-gray-100 p-4 rounded shadow">Box 4</div>
+                </div>
+            </main>
+
+            <!-- Right Navigation -->
+            <aside id="right-nav" class="bg-gray-200 p-4 hidden md:block">
+                <h3 class="font-semibold mb-3">Widgets</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="hover:text-blue-500">News Feed</a>
+                    </li>
+                    <li><a href="#" class="hover:text-blue-500">Events</a></li>
+                    <li><a href="#" class="hover:text-blue-500">Trends</a></li>
+                </ul>
+            </aside>
+
+            <!-- Footer -->
+            <footer class="bg-gray-800 text-white p-4 text-center">
+                © 2023 Your Website. All rights reserved.
+            </footer>
+        </div>
+
+        <!-- Optional JavaScript for Mobile Menu Toggle -->
+        <script>
+            const mobileMenuButton =
+                document.getElementById("mobile-menu-button");
+            const leftNav = document.getElementById("left-nav");
+
+            mobileMenuButton.addEventListener("click", () => {
+                // Toggle visibility for left navigation and possibly header nav
+                const isLeftNavVisible = leftNav.classList.toggle("hidden");
+                // You might want to toggle a mobile menu for the header nav as well
+                // For this example, we'll just focus on the left nav appearing on mobile
+                if (isLeftNavVisible) {
+                    mobileMenuButton.classList.add("text-gray-800"); // Indicate open state
+                } else {
+                    mobileMenuButton.classList.remove("text-gray-800"); // Indicate closed state
+                }
+            });
+        </script>
+    </body>
+</html>
