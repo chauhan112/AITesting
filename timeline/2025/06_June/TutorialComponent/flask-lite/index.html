@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tutorial Example</title>
+        <!-- Link to Tailwind CSS (replace with your CDN or local file) -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Basic overlay styles (can be managed by Tailwind too) */
+            .tutorial-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(
+                    0,
+                    0,
+                    0,
+                    0.7
+                ); /* Semi-transparent black */
+                z-index: 10000; /* High z-index to ensure it's on top */
+                pointer-events: none; /* Allow clicks to pass through initially */
+            }
+
+            .tutorial-step-highlight {
+                position: relative; /* For z-index stacking */
+                z-index: 10001; /* Higher than overlay */
+                outline: 3px solid #3b82f6; /* Tailwind's blue-500 */
+                outline-offset: 5px;
+                cursor: pointer; /* Indicate it's interactive */
+            }
+
+            .tutorial-step-content {
+                position: absolute;
+                background-color: white;
+                border-radius: 8px;
+                padding: 16px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                z-index: 10002; /* Higher than highlight */
+                color: #111827; /* Tailwind's gray-900 */
+                max-width: 300px;
+                text-align: center;
+                font-family: sans-serif;
+            }
+
+            /* Custom classes for positioning tutorial content */
+            .top-center {
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .bottom-center {
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .left-center {
+                top: 50%;
+                left: 10px;
+                transform: translateY(-50%);
+            }
+            .right-center {
+                top: 50%;
+                right: 10px;
+                transform: translateY(-50%);
+            }
+            .top-left {
+                top: 10px;
+                left: 10px;
+            }
+            .top-right {
+                top: 10px;
+                right: 10px;
+            }
+            .bottom-left {
+                bottom: 10px;
+                left: 10px;
+            }
+            .bottom-right {
+                bottom: 10px;
+                right: 10px;
+            }
+            .center-center {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        </style>
+    </head>
+    <body class="font-sans bg-gray-100 p-4">
+        <h1 class="text-3xl font-bold mb-6">My Awesome Page</h1>
+
+        <!-- Example Components -->
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <button
+                id="start-tutorial-btn"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+                Start Tutorial
+            </button>
+            <button
+                id="action-button-1"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+                Action Button 1
+            </button>
+            <button
+                id="action-button-2"
+                class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+                Action Button 2
+            </button>
+        </div>
+
+        <div class="border p-4 rounded shadow bg-white mb-4">
+            <h2 class="text-xl font-semibold mb-2">Important Section</h2>
+            <p>
+                This is some important information. You might want to know where
+                to find more details.
+            </p>
+            <a href="#" id="details-link" class="text-blue-500 hover:underline"
+                >Learn More</a
+            >
+        </div>
+
+        <div class="border p-4 rounded shadow bg-white">
+            <h2 class="text-xl font-semibold mb-2">Another Feature</h2>
+            <p>Here's another feature to interact with.</p>
+        </div>
+
+        <!-- The Tutorial Container will be injected here -->
+        <div id="tutorial-container"></div>
+
+        <script src="tutorial.js"></script>
+        <script>
+            // Initialize the tutorial when the page loads or when the button is clicked
+            document
+                .getElementById("start-tutorial-btn")
+                .addEventListener("click", () => {
+                    const tutorialSteps = [
+                        {
+                            targetId: "start-tutorial-btn",
+                            text: "Welcome! Click this button to start the tour.",
+                            position: "bottom-center",
+                            title: "Getting Started",
+                        },
+                        {
+                            targetId: "action-button-1",
+                            text: "This is where you can perform your first action.",
+                            position: "right-center",
+                            title: "First Action",
+                        },
+                        {
+                            targetId: "action-button-2",
+                            text: "Here's another action button. Try clicking it!",
+                            position: "bottom-center",
+                            title: "Second Action",
+                        },
+                        {
+                            targetId: "details-link",
+                            text: "Find more information here. Don't forget to explore!",
+                            position: "top-right",
+                            title: "More Details",
+                        },
+                    ];
+
+                    // Ensure the tutorial-container is present
+                    const tutorialContainer =
+                        document.getElementById("tutorial-container");
+                    if (!tutorialContainer) {
+                        console.error(
+                            "Tutorial container with id 'tutorial-container' not found."
+                        );
+                        return;
+                    }
+
+                    const tutorial = new PageTutorial(
+                        tutorialContainer,
+                        tutorialSteps
+                    );
+                    tutorial.start();
+                });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Guided Tutorial Example</title>
+        <!-- Link to Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Link to our custom CSS for the tutorial -->
+        <style>
+            .tutorial-highlight {
+                position: relative; /* Necessary for z-index to work */
+                z-index: 1001; /* Must be higher than the overlay's z-index */
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75); /* The "magic" overlay effect */
+                border-radius: 4px; /* Optional: adds a nice rounded corner to the highlight */
+            }
+            .tutorial-highlight-target {
+                position: relative; /* Required for z-index to take effect */
+                z-index: 1001; /* This brings the element above the overlay */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 font-sans">
+        <!-- =================================== -->
+        <!--      YOUR REGULAR PAGE CONTENT      -->
+        <!-- =================================== -->
+        <header
+            id="main-header"
+            class="bg-white shadow-md p-4 flex justify-between items-center"
+        >
+            <h1 class="text-2xl font-bold text-gray-800">My Awesome App</h1>
+            <button
+                id="profile-button"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full"
+            >
+                Profile
+            </button>
+        </header>
+
+        <div class="flex">
+            <aside
+                id="main-sidebar"
+                class="w-1/4 bg-gray-800 text-white p-6 h-screen"
+            >
+                <h2 class="font-semibold text-lg mb-4">Navigation</h2>
+                <ul>
+                    <li
+                        class="py-2 px-3 rounded hover:bg-gray-700 cursor-pointer"
+                    >
+                        Dashboard
+                    </li>
+                    <li
+                        class="py-2 px-3 rounded hover:bg-gray-700 cursor-pointer"
+                    >
+                        Analytics
+                    </li>
+                    <li
+                        class="py-2 px-3 rounded hover:bg-gray-700 cursor-pointer"
+                    >
+                        Settings
+                    </li>
+                </ul>
+            </aside>
+
+            <main id="main-content" class="w-3/4 p-8">
+                <h2 class="text-3xl mb-4">Welcome to the Dashboard!</h2>
+                <p class="text-gray-600 mb-6">
+                    This is where the main content of your application will be
+                    displayed.
+                </p>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="font-bold text-xl mb-2">Create New Project</h3>
+                    <p class="mb-4">
+                        Click the button below to start a new project and bring
+                        your ideas to life.
+                    </p>
+                    <button
+                        id="create-project-btn"
+                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                    >
+                        + New Project
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- For testing: a button to reset the tutorial -->
+        <button
+            id="reset-tutorial"
+            class="fixed bottom-4 right-4 bg-red-500 text-white p-3 rounded-full shadow-lg"
+        >
+            Reset Tutorial
+        </button>
+
+        <!-- =================================== -->
+        <!--       TUTORIAL MODULE HTML        -->
+        <!-- =================================== -->
+        <div id="tutorial-container" class="hidden">
+            <!-- The semi-transparent overlay -->
+            <div
+                id="tutorial-overlay"
+                class="fixed inset-0 bg-black bg-opacity-75 z-[1000]"
+            ></div>
+
+            <!-- The tooltip that will be positioned by JavaScript -->
+            <div
+                id="tutorial-tooltip"
+                class="absolute bg-white p-5 rounded-lg shadow-2xl z-[1001] w-80"
+            >
+                <h3
+                    id="tooltip-title"
+                    class="text-lg font-bold mb-2 text-gray-800"
+                ></h3>
+                <p
+                    id="tooltip-description"
+                    class="text-sm text-gray-600 mb-4"
+                ></p>
+                <div class="flex justify-between items-center">
+                    <button
+                        id="tutorial-skip"
+                        class="text-xs text-gray-500 hover:text-gray-800"
+                    >
+                        Skip Tour
+                    </button>
+                    <div>
+                        <button
+                            id="tutorial-prev"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded mr-2"
+                        >
+                            Prev
+                        </button>
+                        <button
+                            id="tutorial-next"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Link to our main application and tutorial JS files -->
+        <script src="tutorial.js"></script>
+        <script>
+            // main.js
+
+            document.addEventListener("DOMContentLoaded", () => {
+                // 1. Define the steps for your tutorial
+                const tutorialSteps = [
+                    {
+                        elementId: "main-header",
+                        title: "Welcome to the App!",
+                        description:
+                            "This is the main header. It contains the app title and your profile button.",
+                        position: "bottom", // 'top', 'bottom', 'left', 'right'
+                    },
+                    {
+                        elementId: "profile-button",
+                        title: "Your Profile",
+                        description:
+                            "Click here to access your profile settings and log out.",
+                        position: "bottom",
+                    },
+                    {
+                        elementId: "main-sidebar",
+                        title: "Main Navigation",
+                        description:
+                            "Use this sidebar to navigate between different sections of the application.",
+                        position: "right",
+                    },
+                    {
+                        elementId: "create-project-btn",
+                        title: "Create a New Project",
+                        description:
+                            "This is the most important button! Click it to start a new project.",
+                        position: "top",
+                    },
+                ];
+
+                // 2. Create a new instance of the Tutorial
+                const myTutorial = new Tutorial(tutorialSteps);
+
+                // 3. Start the tutorial
+                // It will automatically check if the user has seen it before.
+                myTutorial.start();
+
+                // --- Logic for the "Reset Tutorial" button (for testing) ---
+                const resetButton = document.getElementById("reset-tutorial");
+                resetButton.addEventListener("click", () => {
+                    // Clear the flag from localStorage
+                    localStorage.removeItem("tutorialSeen");
+                    alert(
+                        "Tutorial has been reset. Please refresh the page to see it again."
+                    );
+                });
+            });
+        </script>
+    </body>
+</html>

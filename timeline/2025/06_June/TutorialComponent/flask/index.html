@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Page Tutorial Example</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Optional: Basic styling for page content to make it scrollable */
+            body {
+                font-family: sans-serif;
+                min-height: 200vh; /* Make page long enough to scroll */
+                padding-bottom: 200px; /* Add some space at the bottom */
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+            .section {
+                background-color: #f0f0f0;
+                padding: 2rem;
+                margin-bottom: 2rem;
+                border-radius: 8px;
+            }
+            .long-content {
+                margin-top: 100vh; /* Push this section far down */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 text-gray-900">
+        <div class="container">
+            <header
+                class="py-6 flex justify-between items-center bg-white shadow rounded-lg px-6 mb-8"
+            >
+                <h1 class="text-3xl font-bold">My Awesome Page</h1>
+                <nav>
+                    <ul class="flex space-x-6">
+                        <li>
+                            <a
+                                href="#"
+                                class="text-blue-600 hover:underline"
+                                id="nav-home"
+                                >Home</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="text-blue-600 hover:underline"
+                                id="nav-about"
+                                >About</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="text-blue-600 hover:underline"
+                                id="nav-contact"
+                                >Contact</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+
+            <section class="section">
+                <h2 class="text-2xl font-semibold mb-4" id="main-title">
+                    Welcome to Our Platform!
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    This is the main content area of our page. We've designed it
+                    to be intuitive and user-friendly. Use the navigation above
+                    to explore different sections. You can also find more
+                    details in the feature cards below.
+                </p>
+                <button
+                    id="start-tutorial-btn"
+                    class="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300"
+                >
+                    Start Page Tutorial
+                </button>
+            </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="section bg-white shadow" id="feature-dashboard">
+                    <h3 class="text-xl font-semibold mb-2">Your Dashboard</h3>
+                    <p class="text-gray-700">
+                        Access all your important metrics and quick links from
+                        here. This is your central hub.
+                    </p>
+                    <button
+                        class="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                    >
+                        View Dashboard
+                    </button>
+                </div>
+                <div class="section bg-white shadow" id="feature-settings">
+                    <h3 class="text-xl font-semibold mb-2">
+                        Settings & Profile
+                    </h3>
+                    <p class="text-gray-700">
+                        Manage your account settings, update your profile, and
+                        personalize your experience.
+                    </p>
+                    <button
+                        class="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                        Go to Settings
+                    </button>
+                </div>
+            </div>
+
+            <section class="section long-content" id="footer-info">
+                <h2 class="text-2xl font-semibold mb-4">
+                    Important Information
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p>
+                <div class="flex justify-end mt-4">
+                    <button
+                        class="px-5 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        id="important-button"
+                    >
+                        Learn More
+                    </button>
+                </div>
+            </section>
+
+            <footer class="py-6 text-center text-gray-600 text-sm">
+                © 2023 My Awesome Page. All rights reserved.
+            </footer>
+        </div>
+
+        <!-- Your tutorial.js script -->
+        <script src="tutorial.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const tutorialSteps = [
+                    {
+                        id: "main-title",
+                        title: "Welcome to the Page!",
+                        description:
+                            "This tour will guide you through the key areas of our website.",
+                        position: "bottom", // Options: 'top', 'bottom', 'left', 'right'
+                    },
+                    {
+                        id: "nav-home",
+                        title: "Navigation Bar",
+                        description:
+                            "These links help you navigate quickly between different sections of the site.",
+                        position: "bottom",
+                    },
+                    {
+                        id: "feature-dashboard",
+                        title: "Your Dashboard",
+                        description:
+                            "This card represents your personal dashboard where you can see all your activity at a glance.",
+                        position: "right",
+                    },
+                    {
+                        id: "feature-settings",
+                        title: "Settings & Profile",
+                        description:
+                            "Here you can update your account details and preferences.",
+                        position: "left",
+                    },
+                    {
+                        id: "footer-info",
+                        title: "Important Information",
+                        description:
+                            "Scroll down to find essential details, terms, and conditions.",
+                        position: "top",
+                    },
+                    {
+                        id: "important-button",
+                        title: "Learn More Button",
+                        description:
+                            "Click this button to dive deeper into our services and offerings.",
+                        position: "top",
+                    },
+                ];
+
+                // Instantiate the tutorial manager
+                const pageTutorial = new TutorialManager(tutorialSteps, {
+                    // You can customize options here
+                    // startText: "Begin Guide",
+                    // skipText: "No Thanks",
+                    // highlightBorder: "border-purple-600",
+                    // tooltipBg: "bg-blue-100",
+                    // tooltipTextColor: "text-blue-800",
+                    // buttonBg: "bg-green-500",
+                    // buttonHoverBg: "hover:bg-green-600"
+                });
+
+                // Start the tutorial when the button is clicked
+                const startTutorialButton =
+                    document.getElementById("start-tutorial-btn");
+                if (startTutorialButton) {
+                    startTutorialButton.addEventListener("click", () => {
+                        pageTutorial.startTutorial();
+                    });
+                }
+
+                // Example: Automatically start tutorial on first visit (using localStorage)
+                // if (!localStorage.getItem('tutorialCompleted')) {
+                //     setTimeout(() => { // Small delay to ensure page elements are rendered
+                //         pageTutorial.startTutorial();
+                //     }, 500);
+                // }
+                // pageTutorial.elements.skipBtn.addEventListener('click', () => {
+                //     localStorage.setItem('tutorialCompleted', 'true');
+                // });
+                // pageTutorial.elements.nextBtn.addEventListener('click', () => {
+                //     if (pageTutorial.currentStepIndex === tutorialSteps.length - 1) {
+                //         localStorage.setItem('tutorialCompleted', 'true');
+                //     }
+                // });
+            });
+        </script>
+    </body>
+</html>
