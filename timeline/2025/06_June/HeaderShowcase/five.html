@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for clarity */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            @import url("https://rsms.me/inter/inter.css");
+        </style>
+    </head>
+    <body>
+        <header class="bg-white border-b border-gray-200">
+            <div
+                class="container mx-auto px-6 py-3 flex justify-between items-center"
+            >
+                <!-- Logo -->
+                <a
+                    href="#"
+                    class="text-2xl font-bold text-gray-800 hover:text-blue-600 transition duration-300"
+                    >Logo</a
+                >
+
+                <!-- Navigation -->
+                <nav class="flex items-center space-x-6">
+                    <a
+                        href="#"
+                        class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                        >Discover</a
+                    >
+                    <a
+                        href="#"
+                        class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                        >Explore</a
+                    >
+                    <a
+                        href="#"
+                        class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                        >Create</a
+                    >
+                    <a
+                        href="#"
+                        class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                        >Community</a
+                    >
+                </nav>
+
+                <!-- Action Button -->
+                <div class="flex items-center">
+                    <button
+                        class="text-blue-500 border border-blue-500 hover:bg-blue-500 hover:text-white py-1 px-3 rounded-md transition duration-300 font-medium"
+                    >
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+        </header>
+    </body>
+</html>

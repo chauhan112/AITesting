@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for clarity */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            @import url("https://rsms.me/inter/inter.css");
+        </style>
+    </head>
+    <body>
+        <header class="bg-gray-800 text-white p-4 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <!-- Logo/Brand -->
+                <div class="flex items-center">
+                    <a href="#" class="text-xl font-bold">MyAwesomeSite</a>
+                </div>
+
+                <!-- Navigation -->
+                <nav>
+                    <ul class="flex space-x-4">
+                        <li>
+                            <a
+                                href="#"
+                                class="hover:text-gray-300 transition duration-300"
+                                >Home</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="hover:text-gray-300 transition duration-300"
+                                >About</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="hover:text-gray-300 transition duration-300"
+                                >Services</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="#"
+                                class="hover:text-gray-300 transition duration-300"
+                                >Contact</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+    </body>
+</html>

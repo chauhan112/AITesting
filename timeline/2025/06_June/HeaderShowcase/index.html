@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dynamic Headers</title>
+        <!-- Link to your Tailwind CSS CDN or build process -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Basic transition for the header swap if needed,
+       though direct class toggling is usually enough. */
+            .header-container > div {
+                transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Tab/Button Controls -->
+        <div class="p-4 bg-gray-200 text-center">
+            <button
+                data-header-target="header1"
+                class="tab-button bg-blue-500 text-white px-4 py-2 rounded-l-md hover:bg-blue-600 transition duration-300 m-1"
+            >
+                Header 1 (Basic)
+            </button>
+            <button
+                data-header-target="header2"
+                class="tab-button bg-green-500 text-white px-4 py-2 hover:bg-green-600 transition duration-300 m-1"
+            >
+                Header 2 (CTA)
+            </button>
+            <button
+                data-header-target="header3"
+                class="tab-button bg-purple-500 text-white px-4 py-2 hover:bg-purple-600 transition duration-300 m-1"
+            >
+                Header 3 (Sticky/Mobile)
+            </button>
+            <button
+                data-header-target="header4"
+                class="tab-button bg-red-500 text-white px-4 py-2 hover:bg-red-600 transition duration-300 m-1"
+            >
+                Header 4 (Search)
+            </button>
+            <button
+                data-header-target="header5"
+                class="tab-button bg-yellow-700 text-white px-4 py-2 rounded-r-md hover:bg-yellow-800 transition duration-300 m-1"
+            >
+                Header 5 (Minimalist)
+            </button>
+        </div>
+
+        <div class="header-container p-4 min-h-screen">
+            <!-- Header 1: Basic -->
+            <div id="header1" class="header-content">
+                <header class="bg-gray-800 text-white p-4 shadow-md">
+                    <div
+                        class="container mx-auto flex justify-between items-center"
+                    >
+                        <div class="flex items-center">
+                            <a href="#" class="text-xl font-bold"
+                                >MyAwesomeSite</a
+                            >
+                        </div>
+                        <nav>
+                            <ul class="flex space-x-4">
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="hover:text-gray-300 transition duration-300"
+                                        >Home</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="hover:text-gray-300 transition duration-300"
+                                        >About</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="hover:text-gray-300 transition duration-300"
+                                        >Services</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="#"
+                                        class="hover:text-gray-300 transition duration-300"
+                                        >Contact</a
+                                    >
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </header>
+            </div>
+
+            <!-- Header 2: CTA -->
+            <div id="header2" class="header-content hidden">
+                <header class="bg-blue-600 text-white p-4 shadow-lg">
+                    <div
+                        class="container mx-auto flex justify-between items-center"
+                    >
+                        <div class="flex items-center">
+                            <a href="#" class="text-2xl font-extrabold"
+                                >BrandName</a
+                            >
+                        </div>
+                        <nav class="hidden md:flex space-x-6">
+                            <a
+                                href="#"
+                                class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                                >Features</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                                >Pricing</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                                >Blog</a
+                            >
+                        </nav>
+                        <div>
+                            <button
+                                class="bg-yellow-400 text-blue-800 font-semibold py-2 px-4 rounded-lg shadow hover:bg-yellow-300 transition duration-300"
+                            >
+                                Get Started
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            <!-- Header 3: Sticky/Mobile -->
+            <div id="header3" class="header-content hidden">
+                <header
+                    id="main-header-dynamic"
+                    class="bg-white text-gray-700 p-4 shadow-sm sticky top-0 z-50"
+                >
+                    <div
+                        class="container mx-auto flex justify-between items-center"
+                    >
+                        <div class="flex items-center">
+                            <a href="#" class="text-xl font-bold"
+                                >ResponsiveBrand</a
+                            >
+                        </div>
+                        <nav class="hidden md:flex space-x-4">
+                            <a
+                                href="#"
+                                class="hover:text-blue-600 transition duration-300"
+                                >Home</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:text-blue-600 transition duration-300"
+                                >About</a
+                            >
+                            <a
+                                href="#"
+                                class="hover:text-blue-600 transition duration-300"
+                                >Services</a
+                            >
+                        </nav>
+                        <div class="md:hidden">
+                            <button
+                                id="mobile-menu-button-dynamic"
+                                class="focus:outline-none"
+                            >
+                                <svg
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 6h16M4 12h16m-7 6h7"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <nav
+                        id="mobile-menu-dynamic"
+                        class="md:hidden hidden flex flex-col space-y-2 mt-2 p-2 bg-white shadow-md rounded"
+                    >
+                        <a
+                            href="#"
+                            class="hover:bg-gray-100 p-2 rounded transition duration-300"
+                            >Home</a
+                        >
+                        <a
+                            href="#"
+                            class="hover:bg-gray-100 p-2 rounded transition duration-300"
+                            >About</a
+                        >
+                        <a
+                            href="#"
+                            class="hover:bg-gray-100 p-2 rounded transition duration-300"
+                            >Services</a
+                        >
+                    </nav>
+                </header>
+            </div>
+
+            <!-- Header 4: Search -->
+            <div id="header4" class="header-content hidden">
+                <header class="bg-gray-100 text-gray-800 p-4 shadow-md">
+                    <div
+                        class="container mx-auto flex justify-between items-center"
+                    >
+                        <div class="flex items-center">
+                            <a href="#" class="text-xl font-bold">AppUI</a>
+                        </div>
+                        <div class="flex items-center w-1/2 max-w-sm relative">
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                class="w-full py-2 px-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <button
+                                class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 transition duration-300"
+                            >
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button
+                                class="hover:text-blue-600 transition duration-300"
+                            >
+                                <svg
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 17h5l-1.5-1.5a3 3 0 00-4.5-4.5c-1.359.879-2.255 2.404-2.255 4.004v.501C15 17 15 17 15 17zm0-12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <div
+                                class="w-10 h-10 rounded-full bg-cover bg-center"
+                                style="
+                                    background-image: url('https://via.placeholder.com/40');
+                                "
+                            ></div>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            <!-- Header 5: Minimalist -->
+            <div id="header5" class="header-content hidden">
+                <header class="bg-white border-b border-gray-200">
+                    <div
+                        class="container mx-auto px-6 py-3 flex justify-between items-center"
+                    >
+                        <a
+                            href="#"
+                            class="text-2xl font-bold text-gray-800 hover:text-blue-600 transition duration-300"
+                            >Logo</a
+                        >
+                        <nav class="flex items-center space-x-6">
+                            <a
+                                href="#"
+                                class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                                >Discover</a
+                            >
+                            <a
+                                href="#"
+                                class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                                >Explore</a
+                            >
+                            <a
+                                href="#"
+                                class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                                >Create</a
+                            >
+                            <a
+                                href="#"
+                                class="text-gray-600 hover:text-blue-600 transition duration-300 font-medium"
+                                >Community</a
+                            >
+                        </nav>
+                        <div class="flex items-center">
+                            <button
+                                class="text-blue-500 border border-blue-500 hover:bg-blue-500 hover:text-white py-1 px-3 rounded-md transition duration-300 font-medium"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            </div>
+        </div>
+
+        <script>
+            // Get all the tab buttons and header content divs
+            const tabButtons = document.querySelectorAll(".tab-button");
+            const headerContents = document.querySelectorAll(".header-content");
+
+            // Add event listeners to each tab button
+            tabButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    // Get the target header ID from the data-header-target attribute
+                    const targetHeaderId =
+                        button.getAttribute("data-header-target");
+
+                    // Hide all header contents
+                    headerContents.forEach((content) => {
+                        content.classList.add("hidden");
+                    });
+
+                    // Show the target header content
+                    const targetHeader =
+                        document.getElementById(targetHeaderId);
+                    if (targetHeader) {
+                        targetHeader.classList.remove("hidden");
+                    }
+
+                    // --- Mobile Menu Toggle Logic (specific to Header 3) ---
+                    // We need to re-initialize or ensure the mobile menu functionality
+                    // is correctly handled or reset when a new header is displayed.
+                    // For this example, we'll just ensure the mobile menu state is reset.
+                    const mobileMenu = document.getElementById(
+                        "mobile-menu-dynamic"
+                    );
+                    if (
+                        mobileMenu &&
+                        !mobileMenu.classList.contains("hidden")
+                    ) {
+                        mobileMenu.classList.add("hidden"); // Hide it if it was open
+                    }
+                    // If header 3 is shown, ensure its mobile menu button is re-attached if needed
+                    // (though in this setup, it's always present, just the menu is toggled)
+                });
+            });
+
+            // --- Specific JavaScript for Header 3's Mobile Menu ---
+            // This needs to be attached to the correct mobile menu button.
+            // Since we are swapping headers, we need to find the *current* mobile menu button.
+            // A better approach for more complex scenarios might involve delegating events.
+            // For this example, we'll ensure it works when Header 3 is visible.
+
+            // Function to setup mobile menu listener
+            function setupMobileMenuListener() {
+                const mobileMenuButton = document.getElementById(
+                    "mobile-menu-button-dynamic"
+                );
+                const mobileMenu = document.getElementById(
+                    "mobile-menu-dynamic"
+                );
+
+                // Remove existing listener to prevent duplicates if toggling rapidly
+                // This is a simple approach; more robust solutions might involve event delegation
+                if (mobileMenuButton && mobileMenuButton._clickListener) {
+                    mobileMenuButton.removeEventListener(
+                        "click",
+                        mobileMenuButton._clickListener
+                    );
+                }
+
+                if (
+                    mobileMenuButton &&
+                    mobileMenu &&
+                    mobileMenuButton.closest("div").offsetParent !== null
+                ) {
+                    // Attach the listener only if the mobile menu button is actually visible
+                    mobileMenuButton._clickListener = () => {
+                        mobileMenu.classList.toggle("hidden");
+                    };
+                    mobileMenuButton.addEventListener(
+                        "click",
+                        mobileMenuButton._clickListener
+                    );
+                }
+            }
+
+            // Initial setup for Header 3 when page loads (if it's the default)
+            // Or call this whenever Header 3 is made visible.
+            // For simplicity, let's call it when a tab is clicked AND the target is header3
+            tabButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetHeaderId =
+                        button.getAttribute("data-header-target");
+                    if (targetHeaderId === "header3") {
+                        // Use setTimeout to ensure the header element is rendered and ready
+                        setTimeout(setupMobileMenuListener, 0);
+                    }
+                });
+            });
+
+            // Initial call to set up the listener if header 1 is shown initially
+            // and we want to pre-bind for when header3 becomes visible.
+            // For this setup, it's probably fine to just rely on the click handler.
+            // If header3 is your default, you'd call setupMobileMenuListener() once at the end.
+
+            // Let's make Header 1 visible by default
+            document.getElementById("header1").classList.remove("hidden");
+
+            // If you want Header 3 to be the default, uncomment below and hide Header 1:
+            // document.getElementById('header1').classList.add('hidden');
+            // document.getElementById('header3').classList.remove('hidden');
+            // setTimeout(setupMobileMenuListener, 0); // Ensure listener is attached if header3 is default
+        </script>
+    </body>
+</html>

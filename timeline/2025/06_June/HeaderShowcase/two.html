@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Responsive Grid Layout</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for clarity */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            @import url("https://rsms.me/inter/inter.css");
+        </style>
+    </head>
+    <body>
+        <header class="bg-blue-600 text-white p-4 shadow-lg">
+            <div class="container mx-auto flex justify-between items-center">
+                <!-- Logo/Brand -->
+                <div class="flex items-center">
+                    <a href="#" class="text-2xl font-extrabold">BrandName</a>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden md:flex space-x-6">
+                    <a
+                        href="#"
+                        class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                        >Features</a
+                    >
+                    <a
+                        href="#"
+                        class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                        >Pricing</a
+                    >
+                    <a
+                        href="#"
+                        class="hover:underline hover:decoration-2 hover:underline-offset-4 transition-all duration-300"
+                        >Blog</a
+                    >
+                </nav>
+
+                <!-- CTA Button -->
+                <div>
+                    <button
+                        class="bg-yellow-400 text-blue-800 font-semibold py-2 px-4 rounded-lg shadow hover:bg-yellow-300 transition duration-300"
+                    >
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </header>
+    </body>
+</html>
