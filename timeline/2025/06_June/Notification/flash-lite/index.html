@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Notification Popup</title>
+        <!-- Link to Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="style.css" />
+        <!-- We'll create this for custom styles -->
+    </head>
+    <body>
+        <!-- Container for all notifications -->
+        <div
+            id="notification-container"
+            class="fixed top-4 right-4 z-50 space-y-4 w-full max-w-sm pointer-events-none"
+        >
+            <!-- Notifications will be appended here by JavaScript -->
+        </div>
+
+        <div class="min-h-screen flex items-center justify-center bg-gray-100">
+            <div class="space-y-4 text-center">
+                <h1 class="text-4xl font-bold text-gray-800">
+                    Notification Demo
+                </h1>
+                <button
+                    id="show-info-btn"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-md transition duration-300 ease-in-out"
+                >
+                    Show Info
+                </button>
+                <button
+                    id="show-success-btn"
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-md transition duration-300 ease-in-out"
+                >
+                    Show Success
+                </button>
+                <button
+                    id="show-warning-btn"
+                    class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded shadow-md transition duration-300 ease-in-out"
+                >
+                    Show Warning
+                </button>
+                <button
+                    id="show-error-btn"
+                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow-md transition duration-300 ease-in-out"
+                >
+                    Show Error
+                </button>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>

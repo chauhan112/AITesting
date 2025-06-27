@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Notification Popups</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Optional: Custom styles for demonstration purposes */
+            body {
+                font-family: "Inter", sans-serif; /* A nice modern font */
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                background-color: #f0f2f5;
+                padding: 20px;
+            }
+            .demo-buttons button {
+                @apply px-6 py-3 rounded-lg text-white font-semibold transition duration-200 ease-in-out shadow-md hover:shadow-lg;
+            }
+            .demo-buttons button:hover {
+                transform: translateY(-2px);
+            }
+        </style>
+    </head>
+    <body class="relative">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">
+            Notification Popups Demo
+        </h1>
+
+        <div class="demo-buttons space-x-4">
+            <button id="showInfo" class="bg-blue-500 hover:bg-blue-600">
+                Show Info
+            </button>
+            <button id="showSuccess" class="bg-green-500 hover:bg-green-600">
+                Show Success
+            </button>
+            <button id="showError" class="bg-red-500 hover:bg-red-600">
+                Show Error
+            </button>
+            <button id="showWarning" class="bg-yellow-500 hover:bg-yellow-600">
+                Show Warning
+            </button>
+        </div>
+
+        <!-- Notification Container -->
+        <!-- This is where all the notification popups will be appended by JavaScript -->
+        <div
+            id="notification-container"
+            class="fixed top-4 right-4 z-[9999] flex flex-col space-y-3 pointer-events-none"
+        >
+            <!-- Notifications will be injected here -->
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
