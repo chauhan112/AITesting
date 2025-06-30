@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Properties Component</title>
+        <style>
+            /* A simple reset and basic body styling */
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background-color: #f0f2f5;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, Helvetica, Arial, sans-serif;
+            }
+
+            /* --- Properties Card --- */
+            .properties-card {
+                width: 450px;
+                max-width: 90%;
+                background-color: #fff;
+                border-radius: 8px;
+                overflow: hidden; /* Ensures the top bar and content conform to border-radius */
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .top-bar {
+                height: 10px;
+                background-color: #e5b63b; /* Mustard Yellow */
+            }
+
+            /* --- Card Header --- */
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 24px;
+                background-color: #3c4260; /* Dark Blue */
+                color: #ffffff;
+                border-bottom: 2px solid #ffffff; /* White separator line */
+            }
+
+            .card-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+            }
+
+            .add-button {
+                font-size: 2.5rem;
+                font-weight: 300;
+                cursor: pointer;
+                line-height: 1;
+                transition: transform 0.2s ease-in-out;
+            }
+
+            .add-button:hover {
+                transform: scale(1.2);
+            }
+
+            /* --- Card Body --- */
+            .card-body {
+                padding: 8px 24px 20px 24px;
+                background-color: #2db99a; /* Teal Green */
+                color: #ffffff;
+            }
+
+            /* --- Generic Row Styling --- */
+            .property-row {
+                display: flex;
+                align-items: center;
+                gap: 16px; /* Space between columns */
+                padding: 12px 0;
+                font-size: 1rem;
+            }
+
+            /* --- Column Header Row --- */
+            .header-row {
+                color: #9c7a97; /* Muted Purple */
+                font-weight: 600;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding-bottom: 8px;
+            }
+
+            /* --- Column Styling --- */
+            .property-key {
+                flex: 1;
+                min-width: 0; /* Important for flexbox to allow shrinking and ellipsis */
+            }
+
+            .property-value {
+                flex: 1;
+                min-width: 0; /* Important for flexbox to allow shrinking and ellipsis */
+            }
+
+            .property-actions {
+                flex-basis: 80px; /* Fixed width for the actions column */
+                flex-shrink: 0;
+                display: flex;
+                justify-content: flex-start;
+                gap: 20px;
+            }
+
+            .header-row .property-actions {
+                justify-content: flex-start; /* Align header text with icons */
+            }
+
+            /* --- Text Overflow and Tooltip --- */
+            .property-key,
+            .property-value {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* The title attribute in the HTML handles the hover tooltip automatically */
+
+            /* --- Action Icons --- */
+            .action-icon {
+                cursor: pointer;
+                width: 20px;
+                height: 20px;
+                fill: #ffffff;
+                transition: opacity 0.2s ease;
+            }
+
+            .action-icon:hover {
+                opacity: 0.8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="properties-card">
+            <div class="top-bar"></div>
+            <header class="card-header">
+                <h2>Properties</h2>
+                <div class="add-button" title="Add Property">+</div>
+            </header>
+            <main class="card-body">
+                <!-- Column Headers -->
+                <div class="property-row header-row">
+                    <div class="property-key">Key</div>
+                    <div class="property-value">Value</div>
+                    <div class="property-actions">Actions</div>
+                </div>
+
+                <!-- Data Rows -->
+                <div class="property-row">
+                    <div class="property-key" title="3">3</div>
+                    <div class="property-value" title="3">3</div>
+                    <div class="property-actions">
+                        <!-- Edit/Pencil Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Edit"
+                        >
+                            <path
+                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                            />
+                        </svg>
+                        <!-- Delete/Trash Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Delete"
+                        >
+                            <path
+                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                            />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="property-row">
+                    <div class="property-key" title="awd">awd</div>
+                    <div class="property-value" title="wd">wd</div>
+                    <div class="property-actions">
+                        <!-- Edit/Pencil Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Edit"
+                        >
+                            <path
+                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                            />
+                        </svg>
+                        <!-- Delete/Trash Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Delete"
+                        >
+                            <path
+                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                            />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="property-row">
+                    <div class="property-key" title="efrf">efrf</div>
+                    <div class="property-value" title="efsf">efsf</div>
+                    <div class="property-actions">
+                        <!-- Edit/Pencil Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Edit"
+                        >
+                            <path
+                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                            />
+                        </svg>
+                        <!-- Delete/Trash Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Delete"
+                        >
+                            <path
+                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                            />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Row to demonstrate text overflow -->
+                <div class="property-row">
+                    <div
+                        class="property-key"
+                        title="this-is-a-very-long-key-to-show-truncation"
+                    >
+                        this-is-a-very-long-key-to-show-truncation
+                    </div>
+                    <div
+                        class="property-value"
+                        title="this-is-a-very-long-value-that-will-be-cut-off"
+                    >
+                        this-is-a-very-long-value-that-will-be-cut-off
+                    </div>
+                    <div class="property-actions">
+                        <!-- Edit/Pencil Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Edit"
+                        >
+                            <path
+                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                            />
+                        </svg>
+                        <!-- Delete/Trash Icon -->
+                        <svg
+                            class="action-icon"
+                            viewBox="0 0 24 24"
+                            title="Delete"
+                        >
+                            <path
+                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                            />
+                        </svg>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </body>
+</html>
