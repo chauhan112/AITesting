@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>5 Tailwind & JS Pagination Components</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for clarity */
+            body {
+                background-color: #f3f4f6; /* Tailwind's gray-100 */
+            }
+            .pagination-container {
+                background-color: white;
+                padding: 2rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+                    0 2px 4px -2px rgb(0 0 0 / 0.1);
+                margin-bottom: 2rem;
+            }
+            .content-display {
+                margin-top: 1.5rem;
+                padding: 2rem;
+                border: 1px dashed #d1d5db; /* Tailwind's gray-300 */
+                border-radius: 0.5rem;
+                background-color: #f9fafb; /* Tailwind's gray-50 */
+                text-align: center;
+                font-size: 1.125rem;
+                font-weight: 500;
+                color: #4b5563; /* Tailwind's gray-600 */
+            }
+        </style>
+    </head>
+    <body class="p-8 font-sans">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl font-bold text-center text-slate-800 mb-10">
+                5 Different Pagination Components
+            </h1>
+
+            <!-- Component 1: Classic Pagination -->
+            <div class="pagination-container">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">
+                    1. Classic Pagination
+                </h2>
+                <p class="text-slate-500 mb-6">
+                    The standard pagination with page numbers, previous, and
+                    next buttons.
+                </p>
+                <nav
+                    id="pagination1-nav"
+                    class="flex justify-center items-center space-x-2"
+                ></nav>
+                <div id="content1" class="content-display"></div>
+            </div>
+
+            <!-- Component 2: Simple Counter -->
+            <div class="pagination-container">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">
+                    2. Simple Counter
+                </h2>
+                <p class="text-slate-500 mb-6">
+                    A minimalist style showing only the current page count and
+                    navigation buttons.
+                </p>
+                <nav
+                    id="pagination2-nav"
+                    class="flex justify-center items-center space-x-4"
+                ></nav>
+                <div id="content2" class="content-display"></div>
+            </div>
+
+            <!-- Component 3: Smart Pagination with Ellipsis -->
+            <div class="pagination-container">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">
+                    3. Smart Pagination with Ellipsis
+                </h2>
+                <p class="text-slate-500 mb-6">
+                    Handles large page counts gracefully by showing a subset of
+                    pages.
+                </p>
+                <nav
+                    id="pagination3-nav"
+                    class="flex justify-center items-center space-x-2"
+                ></nav>
+                <div id="content3" class="content-display"></div>
+            </div>
+
+            <!-- Component 4: "Load More" Button -->
+            <div class="pagination-container">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">
+                    4. "Load More" Button
+                </h2>
+                <p class="text-slate-500 mb-6">
+                    A common alternative for progressively loading more content.
+                </p>
+                <div
+                    id="content4"
+                    class="content-display !text-left !p-6 space-y-2"
+                >
+                    <!-- Content will be appended here -->
+                </div>
+                <div class="flex justify-center mt-6">
+                    <button
+                        id="load-more-btn"
+                        class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+                    >
+                        Load More
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 5: Direct Input Pagination -->
+            <div class="pagination-container">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">
+                    5. Direct Input Pagination
+                </h2>
+                <p class="text-slate-500 mb-6">
+                    Allows users to jump to a specific page by typing in a
+                    number.
+                </p>
+                <nav
+                    id="pagination5-nav"
+                    class="flex justify-center items-center space-x-4"
+                ></nav>
+                <div id="content5" class="content-display"></div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // Shared Tailwind classes for buttons to keep code DRY
+                const baseButtonClasses =
+                    "px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500";
+                const defaultButtonClasses =
+                    "text-gray-700 bg-white border border-gray-300 hover:bg-gray-100";
+                const activeButtonClasses =
+                    "text-white bg-blue-600 border border-blue-600 cursor-default";
+                const disabledButtonClasses =
+                    "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed";
+                const ellipsisClasses =
+                    "px-4 py-2 text-sm font-medium text-gray-500";
+
+                // --- COMPONENT 1: CLASSIC PAGINATION ---
+                const setupPagination1 = () => {
+                    let currentPage = 1;
+                    const totalPages = 10;
+                    const nav = document.getElementById("pagination1-nav");
+                    const content = document.getElementById("content1");
+
+                    const render = () => {
+                        // Update content
+                        content.textContent = `Displaying content for Page ${currentPage}`;
+
+                        // Clear previous buttons
+                        nav.innerHTML = "";
+
+                        // Previous Button
+                        const prevButton = document.createElement("button");
+                        prevButton.textContent = "Previous";
+                        prevButton.className = `${baseButtonClasses} ${defaultButtonClasses}`;
+                        if (currentPage === 1) {
+                            prevButton.disabled = true;
+                            prevButton.className = `${baseButtonClasses} ${disabledButtonClasses}`;
+                        }
+                        prevButton.addEventListener("click", () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                render();
+                            }
+                        });
+                        nav.appendChild(prevButton);
+
+                        // Page Number Buttons
+                        for (let i = 1; i <= totalPages; i++) {
+                            const pageButton = document.createElement("button");
+                            pageButton.textContent = i;
+                            pageButton.className = `${baseButtonClasses} ${
+                                i === currentPage
+                                    ? activeButtonClasses
+                                    : defaultButtonClasses
+                            }`;
+                            pageButton.addEventListener("click", () => {
+                                currentPage = i;
+                                render();
+                            });
+                            nav.appendChild(pageButton);
+                        }
+
+                        // Next Button
+                        const nextButton = document.createElement("button");
+                        nextButton.textContent = "Next";
+                        nextButton.className = `${baseButtonClasses} ${defaultButtonClasses}`;
+                        if (currentPage === totalPages) {
+                            nextButton.disabled = true;
+                            nextButton.className = `${baseButtonClasses} ${disabledButtonClasses}`;
+                        }
+                        nextButton.addEventListener("click", () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                render();
+                            }
+                        });
+                        nav.appendChild(nextButton);
+                    };
+
+                    render();
+                };
+
+                // --- COMPONENT 2: SIMPLE COUNTER ---
+                const setupPagination2 = () => {
+                    let currentPage = 1;
+                    const totalPages = 20;
+                    const nav = document.getElementById("pagination2-nav");
+                    const content = document.getElementById("content2");
+
+                    const render = () => {
+                        content.textContent = `Displaying content for Page ${currentPage}`;
+                        nav.innerHTML = ""; // Clear previous content
+
+                        // Previous Button
+                        const prevButton = document.createElement("button");
+                        prevButton.innerHTML = `← Previous`;
+                        prevButton.className = `${baseButtonClasses} ${defaultButtonClasses}`;
+                        if (currentPage === 1) {
+                            prevButton.disabled = true;
+                            prevButton.className = `${baseButtonClasses} ${disabledButtonClasses}`;
+                        }
+                        prevButton.addEventListener("click", () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                render();
+                            }
+                        });
+                        nav.appendChild(prevButton);
+
+                        // Page indicator
+                        const pageIndicator = document.createElement("span");
+                        pageIndicator.className =
+                            "text-sm font-semibold text-gray-600";
+                        pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+                        nav.appendChild(pageIndicator);
+
+                        // Next Button
+                        const nextButton = document.createElement("button");
+                        nextButton.innerHTML = `Next →`;
+                        nextButton.className = `${baseButtonClasses} ${defaultButtonClasses}`;
+                        if (currentPage === totalPages) {
+                            nextButton.disabled = true;
+                            nextButton.className = `${baseButtonClasses} ${disabledButtonClasses}`;
+                        }
+                        nextButton.addEventListener("click", () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                render();
+                            }
+                        });
+                        nav.appendChild(nextButton);
+                    };
+
+                    render();
+                };
+
+                // --- COMPONENT 3: SMART PAGINATION WITH ELLIPSIS ---
+                const setupPagination3 = () => {
+                    let currentPage = 1;
+                    const totalPages = 25; // Use a larger number to see the ellipsis effect
+                    const nav = document.getElementById("pagination3-nav");
+                    const content = document.getElementById("content3");
+
+                    // Helper to generate the page numbers array with ellipsis
+                    const getPaginationNumbers = () => {
+                        const delta = 2; // How many pages to show around the current page
+                        const range = [];
+                        for (
+                            let i = Math.max(2, currentPage - delta);
+                            i <= Math.min(totalPages - 1, currentPage + delta);
+                            i++
+                        ) {
+                            range.push(i);
+                        }
+
+                        if (currentPage - delta > 2) {
+                            range.unshift("...");
+                        }
+                        if (currentPage + delta < totalPages - 1) {
+                            range.push("...");
+                        }
+
+                        range.unshift(1);
+                        if (totalPages > 1) {
+                            range.push(totalPages);
+                        }
+
+                        // Remove duplicates that might arise from edge cases
+                        return [...new Set(range)];
+                    };
+
+                    const render = () => {
+                        content.textContent = `Displaying content for Page ${currentPage}`;
+                        nav.innerHTML = "";
+
+                        // Previous button
+                        const prevButton = document.createElement("button");
+                        prevButton.textContent = "Prev";
+                        prevButton.className = `${baseButtonClasses} ${
+                            currentPage === 1
+                                ? disabledButtonClasses
+                                : defaultButtonClasses
+                        }`;
+                        prevButton.disabled = currentPage === 1;
+                        prevButton.addEventListener("click", () => {
+                            currentPage--;
+                            render();
+                        });
+                        nav.appendChild(prevButton);
+
+                        // Page numbers and ellipsis
+                        getPaginationNumbers().forEach((pageNum) => {
+                            if (pageNum === "...") {
+                                const ellipsis = document.createElement("span");
+                                ellipsis.textContent = "...";
+                                ellipsis.className = ellipsisClasses;
+                                nav.appendChild(ellipsis);
+                            } else {
+                                const pageButton =
+                                    document.createElement("button");
+                                pageButton.textContent = pageNum;
+                                pageButton.className = `${baseButtonClasses} ${
+                                    pageNum === currentPage
+                                        ? activeButtonClasses
+                                        : defaultButtonClasses
+                                }`;
+                                pageButton.addEventListener("click", () => {
+                                    currentPage = pageNum;
+                                    render();
+                                });
+                                nav.appendChild(pageButton);
+                            }
+                        });
+
+                        // Next button
+                        const nextButton = document.createElement("button");
+                        nextButton.textContent = "Next";
+                        nextButton.className = `${baseButtonClasses} ${
+                            currentPage === totalPages
+                                ? disabledButtonClasses
+                                : defaultButtonClasses
+                        }`;
+                        nextButton.disabled = currentPage === totalPages;
+                        nextButton.addEventListener("click", () => {
+                            currentPage++;
+                            render();
+                        });
+                        nav.appendChild(nextButton);
+                    };
+
+                    render();
+                };
+
+                // --- COMPONENT 4: "LOAD MORE" BUTTON ---
+                const setupPagination4 = () => {
+                    let currentPage = 1;
+                    const totalPages = 5; // Total "pages" of content to load
+                    const contentContainer =
+                        document.getElementById("content4");
+                    const loadMoreBtn =
+                        document.getElementById("load-more-btn");
+
+                    const loadContent = () => {
+                        // Simulate fetching and appending content
+                        const newContent = document.createElement("p");
+                        newContent.textContent = `This is content block #${currentPage}. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`;
+                        newContent.className =
+                            "p-4 bg-white border rounded-md shadow-sm";
+                        contentContainer.appendChild(newContent);
+
+                        currentPage++;
+
+                        if (currentPage > totalPages) {
+                            loadMoreBtn.textContent = "All Content Loaded";
+                            loadMoreBtn.disabled = true;
+                        }
+                    };
+
+                    loadMoreBtn.addEventListener("click", () => {
+                        // Simulate network latency
+                        loadMoreBtn.textContent = "Loading...";
+                        loadMoreBtn.disabled = true;
+                        setTimeout(() => {
+                            loadContent();
+                            if (currentPage <= totalPages) {
+                                loadMoreBtn.textContent = "Load More";
+                                loadMoreBtn.disabled = false;
+                            }
+                        }, 500);
+                    });
+
+                    // Initial load
+                    loadContent();
+                };
+
+                // --- COMPONENT 5: DIRECT INPUT PAGINATION ---
+                const setupPagination5 = () => {
+                    let currentPage = 1;
+                    const totalPages = 50;
+                    const nav = document.getElementById("pagination5-nav");
+                    const content = document.getElementById("content5");
+
+                    const goToPage = (page) => {
+                        const pageNumber = parseInt(page, 10);
+                        if (
+                            !isNaN(pageNumber) &&
+                            pageNumber >= 1 &&
+                            pageNumber <= totalPages
+                        ) {
+                            currentPage = pageNumber;
+                            render();
+                        } else {
+                            // Optionally provide feedback for invalid input
+                            const input = nav.querySelector("input");
+                            if (input) {
+                                input.classList.add("ring-2", "ring-red-500");
+                                setTimeout(
+                                    () =>
+                                        input.classList.remove(
+                                            "ring-2",
+                                            "ring-red-500"
+                                        ),
+                                    1500
+                                );
+                            }
+                        }
+                    };
+
+                    const render = () => {
+                        content.textContent = `Displaying content for Page ${currentPage}`;
+                        nav.innerHTML = "";
+
+                        // Previous Button
+                        const prevButton = document.createElement("button");
+                        prevButton.innerHTML = `←`;
+                        prevButton.className = `${baseButtonClasses} ${
+                            currentPage === 1
+                                ? disabledButtonClasses
+                                : defaultButtonClasses
+                        }`;
+                        prevButton.disabled = currentPage === 1;
+                        prevButton.addEventListener("click", () => {
+                            currentPage--;
+                            render();
+                        });
+                        nav.appendChild(prevButton);
+
+                        // Input field
+                        const wrapper = document.createElement("div");
+                        wrapper.className =
+                            "flex items-center space-x-2 text-sm";
+                        wrapper.innerHTML = `
+                    <span class="text-gray-600">Page</span>
+                    <input type="number" id="page-input" min="1" max="${totalPages}" value="${currentPage}" class="w-16 text-center border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <span class="text-gray-600">of ${totalPages}</span>
+                `;
+                        nav.appendChild(wrapper);
+
+                        const pageInput = nav.querySelector("#page-input");
+                        pageInput.addEventListener("keydown", (e) => {
+                            if (e.key === "Enter") {
+                                goToPage(e.target.value);
+                            }
+                        });
+
+                        // Go Button
+                        const goButton = document.createElement("button");
+                        goButton.textContent = "Go";
+                        goButton.className = `${baseButtonClasses} ${defaultButtonClasses}`;
+                        goButton.addEventListener("click", () => {
+                            const pageVal =
+                                nav.querySelector("#page-input").value;
+                            goToPage(pageVal);
+                        });
+                        nav.appendChild(goButton);
+
+                        // Next Button
+                        const nextButton = document.createElement("button");
+                        nextButton.innerHTML = `→`;
+                        nextButton.className = `${baseButtonClasses} ${
+                            currentPage === totalPages
+                                ? disabledButtonClasses
+                                : defaultButtonClasses
+                        }`;
+                        nextButton.disabled = currentPage === totalPages;
+                        nextButton.addEventListener("click", () => {
+                            currentPage++;
+                            render();
+                        });
+                        nav.appendChild(nextButton);
+                    };
+
+                    render();
+                };
+
+                // Initialize all components
+                setupPagination1();
+                setupPagination2();
+                setupPagination3();
+                setupPagination4();
+                setupPagination5();
+            });
+        </script>
+    </body>
+</html>

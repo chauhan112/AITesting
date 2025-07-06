@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vanilla JS & Tailwind Pagination Variants</title>
+        <!-- Link to Tailwind CSS via CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            /* Optional: Add some basic styling for the layout */
+            body {
+                padding: 20px;
+                font-family: sans-serif;
+                background-color: #f3f4f6; /* gray-100 */
+            }
+            .container {
+                max-width: 800px;
+                margin: 20px auto;
+                padding: 20px;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+            .pagination-container > div {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #e5e7eb; /* gray-200 */
+            }
+            .pagination-container > div:first-child {
+                border-top: none;
+                margin-top: 0;
+                padding-top: 0;
+            }
+
+            /* Custom class for button reset - Tailwind often styles buttons differently */
+            .pagination-btn-reset {
+                background: none;
+                color: inherit;
+                border: none;
+                padding: 0;
+                font: inherit;
+                cursor: pointer;
+                outline: inherit;
+            }
+            .pagination-btn-reset:disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container pagination-container">
+            <h1 class="text-2xl font-bold mb-6 text-center">
+                Vanilla JS & Tailwind Pagination Variants
+            </h1>
+
+            <!-- Pagination 1: Basic Square Buttons -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination 1: Basic Square Buttons
+                </h2>
+                <div id="pagination1" class="flex justify-center space-x-1">
+                    <!-- Pagination buttons will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 2: Rounded Buttons with Shadow -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination 2: Rounded Buttons with Shadow
+                </h2>
+                <div id="pagination2" class="flex justify-center space-x-1">
+                    <!-- Pagination buttons will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 3: Underlined Active State -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination 3: Underlined Active State
+                </h2>
+                <div id="pagination3" class="flex justify-center space-x-2">
+                    <!-- Pagination buttons will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 4: Minimal Bordered -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination 4: Minimal Bordered
+                </h2>
+                <div
+                    id="pagination4"
+                    class="flex justify-center space-x-1 border border-gray-300 rounded-md p-1"
+                >
+                    <!-- Pagination buttons will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 5: Large Pill Style -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination 5: Large Pill Style
+                </h2>
+                <div id="pagination5" class="flex justify-center space-x-2">
+                    <!-- Pagination buttons will be rendered here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // --- Dummy Callback Function (Replace with your actual logic) ---
+            function onPageChange(pageNumber, paginationId) {
+                console.log(`[${paginationId}] Page changed to: ${pageNumber}`);
+                // In a real application, you would load data for this page here.
+            }
+
+            // --- Helper function to create buttons ---
+            function createButton(text, className, onClick, disabled = false) {
+                const button = document.createElement("button");
+                button.textContent = text;
+                button.className = `pagination-btn-reset ${className}`; // Use base reset + provided classes
+                button.disabled = disabled;
+                if (onClick) {
+                    button.addEventListener("click", onClick);
+                }
+                return button;
+            }
+
+            // --- Pagination 1: Basic Square Buttons ---
+            function initPagination1(containerId, totalPages, initialPage = 1) {
+                const container = document.getElementById(containerId);
+                let currentPage = initialPage;
+
+                function renderPagination() {
+                    container.innerHTML = ""; // Clear previous buttons
+
+                    // Previous Button
+                    const prevButton = createButton(
+                        "Previous",
+                        "px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50",
+                        () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === 1
+                    );
+                    container.appendChild(prevButton);
+
+                    // Page Buttons
+                    const maxPagesToShow = 7; // Max number of pages to display directly
+                    const pages = [];
+
+                    if (totalPages <= maxPagesToShow) {
+                        // Show all pages if total is small
+                        for (let i = 1; i <= totalPages; i++) {
+                            pages.push(i);
+                        }
+                    } else {
+                        // Logic for showing ellipsis
+                        const start = Math.max(
+                            2,
+                            currentPage - Math.floor((maxPagesToShow - 3) / 2)
+                        );
+                        const end = Math.min(
+                            totalPages - 1,
+                            currentPage + Math.ceil((maxPagesToShow - 3) / 2)
+                        );
+
+                        pages.push(1); // Always show first page
+
+                        if (start > 2) {
+                            pages.push("..."); // First ellipsis
+                        }
+
+                        for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                        }
+
+                        if (end < totalPages - 1) {
+                            pages.push("..."); // Second ellipsis
+                        }
+
+                        pages.push(totalPages); // Always show last page
+                    }
+
+                    pages.forEach((page) => {
+                        if (page === "...") {
+                            const ellipsisSpan = document.createElement("span");
+                            ellipsisSpan.textContent = "...";
+                            ellipsisSpan.className =
+                                "px-3 py-2 text-sm text-gray-700";
+                            container.appendChild(ellipsisSpan);
+                        } else {
+                            const pageButton = createButton(
+                                page,
+                                `px-3 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                                    page === currentPage
+                                        ? "bg-blue-600 text-white"
+                                        : "text-gray-700 bg-white hover:bg-gray-50"
+                                }`,
+                                () => {
+                                    currentPage = page;
+                                    onPageChange(currentPage, containerId);
+                                    renderPagination();
+                                }
+                            );
+                            container.appendChild(pageButton);
+                        }
+                    });
+
+                    // Next Button
+                    const nextButton = createButton(
+                        "Next",
+                        "px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50",
+                        () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === totalPages
+                    );
+                    container.appendChild(nextButton);
+                }
+
+                // Initial render
+                renderPagination();
+            }
+
+            // --- Pagination 2: Rounded Buttons with Shadow ---
+            function initPagination2(containerId, totalPages, initialPage = 1) {
+                const container = document.getElementById(containerId);
+                let currentPage = initialPage;
+
+                function renderPagination() {
+                    container.innerHTML = ""; // Clear previous buttons
+
+                    // Previous Button
+                    const prevButton = createButton(
+                        "Previous",
+                        "px-4 py-2 border border-gray-300 text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-100 shadow-sm",
+                        () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === 1
+                    );
+                    container.appendChild(prevButton);
+
+                    // Page Buttons (Using same ellipsis logic as Pagination 1)
+                    const maxPagesToShow = 7;
+                    const pages = [];
+
+                    if (totalPages <= maxPagesToShow) {
+                        for (let i = 1; i <= totalPages; i++) {
+                            pages.push(i);
+                        }
+                    } else {
+                        const start = Math.max(
+                            2,
+                            currentPage - Math.floor((maxPagesToShow - 3) / 2)
+                        );
+                        const end = Math.min(
+                            totalPages - 1,
+                            currentPage + Math.ceil((maxPagesToShow - 3) / 2)
+                        );
+
+                        pages.push(1);
+
+                        if (start > 2) {
+                            pages.push("...");
+                        }
+
+                        for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                        }
+
+                        if (end < totalPages - 1) {
+                            pages.push("...");
+                        }
+
+                        pages.push(totalPages);
+                    }
+
+                    pages.forEach((page) => {
+                        if (page === "...") {
+                            const ellipsisSpan = document.createElement("span");
+                            ellipsisSpan.textContent = "...";
+                            ellipsisSpan.className =
+                                "px-3 py-2 text-sm text-gray-700 flex items-center justify-center"; // Center ellipsis
+                            container.appendChild(ellipsisSpan);
+                        } else {
+                            const pageButton = createButton(
+                                page,
+                                `w-10 h-10 flex items-center justify-center border border-gray-300 text-sm font-medium rounded-full shadow-sm ${
+                                    page === currentPage
+                                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                                        : "text-gray-700 bg-white hover:bg-gray-100"
+                                }`,
+                                () => {
+                                    currentPage = page;
+                                    onPageChange(currentPage, containerId);
+                                    renderPagination();
+                                }
+                            );
+                            container.appendChild(pageButton);
+                        }
+                    });
+
+                    // Next Button
+                    const nextButton = createButton(
+                        "Next",
+                        "px-4 py-2 border border-gray-300 text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-100 shadow-sm",
+                        () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === totalPages
+                    );
+                    container.appendChild(nextButton);
+                }
+
+                // Initial render
+                renderPagination();
+            }
+
+            // --- Pagination 3: Underlined Active State ---
+            function initPagination3(containerId, totalPages, initialPage = 1) {
+                const container = document.getElementById(containerId);
+                let currentPage = initialPage;
+
+                function renderPagination() {
+                    container.innerHTML = ""; // Clear previous buttons
+
+                    // Previous Button
+                    const prevButton = createButton(
+                        "Previous",
+                        "px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent",
+                        () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === 1
+                    );
+                    container.appendChild(prevButton);
+
+                    // Page Buttons (Using same ellipsis logic as Pagination 1)
+                    const maxPagesToShow = 7;
+                    const pages = [];
+
+                    if (totalPages <= maxPagesToShow) {
+                        for (let i = 1; i <= totalPages; i++) {
+                            pages.push(i);
+                        }
+                    } else {
+                        const start = Math.max(
+                            2,
+                            currentPage - Math.floor((maxPagesToShow - 3) / 2)
+                        );
+                        const end = Math.min(
+                            totalPages - 1,
+                            currentPage + Math.ceil((maxPagesToShow - 3) / 2)
+                        );
+
+                        pages.push(1);
+
+                        if (start > 2) {
+                            pages.push("...");
+                        }
+
+                        for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                        }
+
+                        if (end < totalPages - 1) {
+                            pages.push("...");
+                        }
+
+                        pages.push(totalPages);
+                    }
+
+                    pages.forEach((page) => {
+                        if (page === "...") {
+                            const ellipsisSpan = document.createElement("span");
+                            ellipsisSpan.textContent = "...";
+                            ellipsisSpan.className =
+                                "px-3 py-2 text-sm text-gray-500 flex items-center justify-center"; // Center ellipsis
+                            container.appendChild(ellipsisSpan);
+                        } else {
+                            const pageButton = createButton(
+                                page,
+                                `px-3 py-2 text-sm font-medium ${
+                                    page === currentPage
+                                        ? "text-blue-600 border-blue-600 border-b-2"
+                                        : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                                }`,
+                                () => {
+                                    currentPage = page;
+                                    onPageChange(currentPage, containerId);
+                                    renderPagination();
+                                }
+                            );
+                            container.appendChild(pageButton);
+                        }
+                    });
+
+                    // Next Button
+                    const nextButton = createButton(
+                        "Next",
+                        "px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent",
+                        () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === totalPages
+                    );
+                    container.appendChild(nextButton);
+                }
+
+                // Initial render
+                renderPagination();
+            }
+
+            // --- Pagination 4: Minimal Bordered (Wrapper already has border) ---
+            function initPagination4(containerId, totalPages, initialPage = 1) {
+                const container = document.getElementById(containerId);
+                let currentPage = initialPage;
+
+                function renderPagination() {
+                    container.innerHTML = ""; // Clear previous buttons
+
+                    // Previous Button
+                    const prevButton = createButton(
+                        "Prev",
+                        "px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-sm",
+                        () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === 1
+                    );
+                    container.appendChild(prevButton);
+
+                    // Page Buttons (Simplified Ellipsis: shows 1, current, total, and ellipsis if needed)
+                    const pages = [];
+
+                    pages.push(1);
+
+                    if (currentPage > 3 && totalPages > 3) {
+                        // Show ellipsis if current is beyond 3 and total is large enough
+                        pages.push("...");
+                    }
+
+                    if (
+                        currentPage !== 1 &&
+                        currentPage !== totalPages &&
+                        totalPages > 2
+                    ) {
+                        if (currentPage > 3 && totalPages > 3) {
+                            /* only show current if not 1 or total and ellipsis was added */
+                        } else if (totalPages > 2) {
+                            // Always show current if not 1 or total and total pages is > 2
+                            pages.push(currentPage);
+                        }
+                    }
+
+                    if (
+                        totalPages > 1 &&
+                        currentPage < totalPages - 2 &&
+                        totalPages > 3
+                    ) {
+                        // Show ellipsis if current is far from end and total is large enough
+                        pages.push("...");
+                    }
+
+                    if (totalPages > 1) {
+                        // Always show last page if more than 1 page
+                        if (
+                            totalPages === currentPage &&
+                            totalPages > 2 &&
+                            currentPage > 3
+                        ) {
+                            /* Don't push total if it's already currentPage and was pushed */
+                        } else if (totalPages === 1 && currentPage === 1) {
+                            /* Do nothing if only 1 page */
+                        } else {
+                            pages.push(totalPages);
+                        }
+                    }
+
+                    // Refine the page list to remove duplicates and ensure 1, current, total are present correctly
+                    const finalPages = [];
+                    const added = new Set();
+
+                    pages.forEach((page) => {
+                        if (page === "...") {
+                            // Only add ellipsis if the *next* page is not sequential
+                            const lastAdded =
+                                finalPages.length > 0
+                                    ? finalPages[finalPages.length - 1]
+                                    : 0;
+                            if (
+                                typeof lastAdded === "number" &&
+                                lastAdded < totalPages &&
+                                !added.has("...")
+                            ) {
+                                // Check if the next page would be sequential without ellipsis
+                                let nextPageAfterEllipsis = null;
+                                // Find the first number after this ellipsis possibility in the original 'pages' array
+                                for (
+                                    let i = pages.indexOf(page);
+                                    i < pages.length;
+                                    i++
+                                ) {
+                                    if (typeof pages[i] === "number") {
+                                        nextPageAfterEllipsis = pages[i];
+                                        break;
+                                    }
+                                }
+                                // If the gap is large enough, add ellipsis
+                                if (
+                                    nextPageAfterEllipsis === null ||
+                                    nextPageAfterEllipsis > lastAdded + 1
+                                ) {
+                                    finalPages.push("...");
+                                    added.add("...");
+                                }
+                            } else if (
+                                typeof lastAdded !== "number" &&
+                                !added.has("...")
+                            ) {
+                                // If last wasn't a number, add ellipsis if needed
+                                finalPages.push("...");
+                                added.add("...");
+                            }
+                        } else if (
+                            typeof page === "number" &&
+                            !added.has(page)
+                        ) {
+                            // Ensure pages are added in increasing order and handle the current page being pushed correctly
+                            let addedCurrent = false;
+                            if (
+                                page === currentPage &&
+                                !added.has(currentPage)
+                            ) {
+                                // Special handling for current page to insert it correctly
+                                let inserted = false;
+                                for (let i = 0; i < finalPages.length; i++) {
+                                    if (finalPages[i] === "...") {
+                                        // Insert before ellipsis if current is before the block
+                                        // This simple logic might need refinement for complex ellipsis patterns, but works for 1 ... current ... total
+                                        if (
+                                            currentPage < totalPages &&
+                                            finalPages[i + 1] !== totalPages
+                                        ) {
+                                            finalPages.splice(
+                                                i,
+                                                0,
+                                                currentPage
+                                            );
+                                            added.add(currentPage);
+                                            inserted = true;
+                                            break;
+                                        }
+                                    } else if (finalPages[i] > currentPage) {
+                                        // Insert before the first larger number
+                                        finalPages.splice(i, 0, currentPage);
+                                        added.add(currentPage);
+                                        inserted = true;
+                                        break;
+                                    }
+                                }
+                                if (!inserted) {
+                                    finalPages.push(currentPage);
+                                    added.add(currentPage);
+                                }
+                                addedCurrent = true;
+                            }
+
+                            if (!addedCurrent && !added.has(page)) {
+                                // Add other pages if not already added (handles 1 and total)
+                                finalPages.push(page);
+                                added.add(page);
+                            }
+                        }
+                        // Ensure 1 and total are always at ends unless total is 1
+                        if (!added.has(1) && totalPages >= 1) {
+                            if (finalPages[0] !== 1) finalPages.unshift(1);
+                            added.add(1);
+                        }
+                        if (!added.has(totalPages) && totalPages > 1) {
+                            if (
+                                finalPages[finalPages.length - 1] !== totalPages
+                            )
+                                finalPages.push(totalPages);
+                            added.add(totalPages);
+                        }
+                    });
+
+                    // Simple check to remove sequential ellipsis if 1 ... 2 or 9 ... 10 etc.
+                    const simplifiedFinalPages = [];
+                    for (let i = 0; i < finalPages.length; i++) {
+                        if (finalPages[i] === "...") {
+                            const prev =
+                                simplifiedFinalPages.length > 0
+                                    ? simplifiedFinalPages[
+                                          simplifiedFinalPages.length - 1
+                                      ]
+                                    : 0;
+                            const next = finalPages[i + 1];
+                            if (
+                                typeof prev === "number" &&
+                                typeof next === "number" &&
+                                next === prev + 1
+                            ) {
+                                // Don't add ellipsis if previous and next are sequential
+                            } else {
+                                simplifiedFinalPages.push("...");
+                            }
+                        } else {
+                            simplifiedFinalPages.push(finalPages[i]);
+                        }
+                    }
+
+                    simplifiedFinalPages.forEach((page) => {
+                        if (page === "...") {
+                            const ellipsisSpan = document.createElement("span");
+                            ellipsisSpan.textContent = "...";
+                            ellipsisSpan.className =
+                                "px-2 py-1 text-xs text-gray-700 flex items-center justify-center";
+                            container.appendChild(ellipsisSpan);
+                        } else {
+                            const pageButton = createButton(
+                                page,
+                                `px-2 py-1 text-xs font-medium rounded-sm ${
+                                    page === currentPage
+                                        ? "bg-gray-200 text-blue-600"
+                                        : "text-gray-700 hover:bg-gray-100"
+                                }`,
+                                () => {
+                                    currentPage = page;
+                                    onPageChange(currentPage, containerId);
+                                    renderPagination();
+                                }
+                            );
+                            container.appendChild(pageButton);
+                        }
+                    });
+
+                    // Next Button
+                    const nextButton = createButton(
+                        "Next",
+                        "px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-sm",
+                        () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === totalPages
+                    );
+                    container.appendChild(nextButton);
+                }
+
+                // Initial render
+                renderPagination();
+            }
+
+            // --- Pagination 5: Large Pill Style ---
+            function initPagination5(containerId, totalPages, initialPage = 1) {
+                const container = document.getElementById(containerId);
+                let currentPage = initialPage;
+
+                function renderPagination() {
+                    container.innerHTML = ""; // Clear previous buttons
+
+                    // Previous Button
+                    const prevButton = createButton(
+                        "« Prev",
+                        "px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-l-full",
+                        () => {
+                            if (currentPage > 1) {
+                                currentPage--;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === 1
+                    );
+                    container.appendChild(prevButton);
+
+                    // Page Buttons (Using same ellipsis logic as Pagination 1/2/3)
+                    const maxPagesToShow = 7;
+                    const pages = [];
+
+                    if (totalPages <= maxPagesToShow) {
+                        for (let i = 1; i <= totalPages; i++) {
+                            pages.push(i);
+                        }
+                    } else {
+                        const start = Math.max(
+                            2,
+                            currentPage - Math.floor((maxPagesToShow - 3) / 2)
+                        );
+                        const end = Math.min(
+                            totalPages - 1,
+                            currentPage + Math.ceil((maxPagesToShow - 3) / 2)
+                        );
+
+                        pages.push(1);
+
+                        if (start > 2) {
+                            pages.push("...");
+                        }
+
+                        for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                        }
+
+                        if (end < totalPages - 1) {
+                            pages.push("...");
+                        }
+
+                        pages.push(totalPages);
+                    }
+
+                    pages.forEach((page) => {
+                        if (page === "...") {
+                            const ellipsisSpan = document.createElement("span");
+                            ellipsisSpan.textContent = "...";
+                            ellipsisSpan.className =
+                                "px-4 py-3 text-sm font-semibold text-gray-700 flex items-center justify-center";
+                            container.appendChild(ellipsisSpan);
+                        } else {
+                            const pageButton = createButton(
+                                page,
+                                `px-4 py-3 text-sm font-semibold ${
+                                    page === currentPage
+                                        ? "bg-red-600 text-white hover:bg-red-700"
+                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                }`,
+                                () => {
+                                    currentPage = page;
+                                    onPageChange(currentPage, containerId);
+                                    renderPagination();
+                                }
+                            );
+                            container.appendChild(pageButton);
+                        }
+                    });
+
+                    // Next Button
+                    const nextButton = createButton(
+                        "Next »",
+                        "px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-r-full",
+                        () => {
+                            if (currentPage < totalPages) {
+                                currentPage++;
+                                onPageChange(currentPage, containerId);
+                                renderPagination();
+                            }
+                        },
+                        currentPage === totalPages
+                    );
+                    container.appendChild(nextButton);
+                }
+
+                // Initial render
+                renderPagination();
+            }
+
+            // --- Initialize all pagination components when the DOM is ready ---
+            document.addEventListener("DOMContentLoaded", () => {
+                const totalPages = 20; // Example total pages for all components
+
+                // Pagination 1: Basic Square Buttons
+                initPagination1("pagination1", totalPages, 3); // Start on page 3
+
+                // Pagination 2: Rounded Buttons with Shadow
+                initPagination2("pagination2", totalPages, 7); // Start on page 7
+
+                // Pagination 3: Underlined Active State
+                initPagination3("pagination3", totalPages, 11); // Start on page 11
+
+                // Pagination 4: Minimal Bordered
+                initPagination4("pagination4", totalPages, 15); // Start on page 15
+
+                // Pagination 5: Large Pill Style
+                initPagination5("pagination5", totalPages, 18); // Start on page 18
+            });
+        </script>
+    </body>
+</html>

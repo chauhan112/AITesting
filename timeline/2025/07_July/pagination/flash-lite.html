@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pagination Components</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom styles for visual separation between components */
+            .component-separator {
+                height: 1px;
+                background-color: #e5e7eb; /* Tailwind's gray-200 */
+                margin: 3rem 0;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 p-8 font-sans">
+        <h1 class="text-3xl font-bold text-center mb-12 text-gray-800">
+            Vanilla JS Pagination Examples with Tailwind CSS
+        </h1>
+
+        <!-- Component 1: Simple Previous/Next Buttons -->
+        <section class="mb-16 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">
+                1. Simple Previous/Next Buttons
+            </h2>
+
+            <div
+                id="pagination-simple"
+                class="flex justify-center items-center space-x-4"
+            >
+                <button
+                    class="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    Previous
+                </button>
+                <span class="text-gray-700 font-medium">Page 1 of 10</span>
+                <button
+                    class="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Next
+                </button>
+            </div>
+
+            <script>
+                const simplePagination = {
+                    currentPage: 1,
+                    totalPages: 10,
+                    container: document.getElementById("pagination-simple"),
+                    prevButton: document.querySelector(
+                        "#pagination-simple button:first-child"
+                    ),
+                    nextButton: document.querySelector(
+                        "#pagination-simple button:last-child"
+                    ),
+                    pageInfoSpan: document.querySelector(
+                        "#pagination-simple span"
+                    ),
+
+                    init: function () {
+                        this.updateUI();
+                        this.prevButton.addEventListener("click", () =>
+                            this.changePage(-1)
+                        );
+                        this.nextButton.addEventListener("click", () =>
+                            this.changePage(1)
+                        );
+                    },
+
+                    updateUI: function () {
+                        this.pageInfoSpan.textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+                        this.prevButton.disabled = this.currentPage === 1;
+                        this.nextButton.disabled =
+                            this.currentPage === this.totalPages;
+                    },
+
+                    changePage: function (direction) {
+                        const newPage = this.currentPage + direction;
+                        if (newPage >= 1 && newPage <= this.totalPages) {
+                            this.currentPage = newPage;
+                            this.updateUI();
+                            // In a real app, you'd fetch data for this.currentPage here
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        }
+                    },
+                };
+                simplePagination.init();
+            </script>
+        </section>
+
+        <div class="component-separator"></div>
+
+        <!-- Component 2: Numbered Pages with Ellipses -->
+        <section class="mb-16 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">
+                2. Numbered Pages with Ellipses
+            </h2>
+
+            <div
+                id="pagination-numbered"
+                class="flex justify-center items-center space-x-2"
+            >
+                <!-- Previous Button -->
+                <button class="pagination-nav-btn" data-action="prev">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+
+                <!-- Page Numbers -->
+                <div class="flex space-x-2" id="page-number-list">
+                    <!-- Numbers will be generated by JS -->
+                </div>
+
+                <!-- Next Button -->
+                <button class="pagination-nav-btn" data-action="next">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </div>
+
+            <script>
+                const numberedPagination = {
+                    currentPage: 1,
+                    totalPages: 15,
+                    maxVisibleButtons: 5, // Max page numbers to show at once
+                    container: document.getElementById("pagination-numbered"),
+                    pageNumberList: document.getElementById("page-number-list"),
+                    prevButton: document.querySelector(
+                        '#pagination-numbered button[data-action="prev"]'
+                    ),
+                    nextButton: document.querySelector(
+                        '#pagination-numbered button[data-action="next"]'
+                    ),
+
+                    init: function () {
+                        this.updateUI();
+                        this.prevButton.addEventListener("click", () =>
+                            this.changePage(-1)
+                        );
+                        this.nextButton.addEventListener("click", () =>
+                            this.changePage(1)
+                        );
+                    },
+
+                    updateUI: function () {
+                        this.pageNumberList.innerHTML = ""; // Clear previous numbers
+                        this.renderPageNumbers();
+
+                        this.prevButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === 1
+                        );
+                        this.prevButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== 1
+                        );
+                        this.prevButton.style.cursor =
+                            this.currentPage === 1 ? "not-allowed" : "pointer";
+
+                        this.nextButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === this.totalPages
+                        );
+                        this.nextButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== this.totalPages
+                        );
+                        this.nextButton.style.cursor =
+                            this.currentPage === this.totalPages
+                                ? "not-allowed"
+                                : "pointer";
+                    },
+
+                    changePage: function (direction) {
+                        const newPage = this.currentPage + direction;
+                        if (newPage >= 1 && newPage <= this.totalPages) {
+                            this.currentPage = newPage;
+                            this.updateUI();
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        }
+                    },
+
+                    renderPageNumbers: function () {
+                        const pages = this.getVisiblePageNumbers();
+                        pages.forEach((page) => {
+                            const button = document.createElement("button");
+                            button.textContent = page;
+                            button.classList.add("pagination-page-btn");
+                            if (page === "...") {
+                                button.classList.add(
+                                    "text-gray-500",
+                                    "cursor-default"
+                                );
+                            } else {
+                                if (page === this.currentPage) {
+                                    button.classList.add(
+                                        "bg-blue-600",
+                                        "text-white",
+                                        "font-semibold"
+                                    );
+                                } else {
+                                    button.classList.add(
+                                        "text-gray-700",
+                                        "hover:bg-gray-100"
+                                    );
+                                }
+                                button.addEventListener("click", () => {
+                                    this.currentPage = page;
+                                    this.updateUI();
+                                    console.log(
+                                        `Navigated to page: ${this.currentPage}`
+                                    );
+                                });
+                            }
+                            this.pageNumberList.appendChild(button);
+                        });
+                    },
+
+                    getVisiblePageNumbers: function () {
+                        const pages = [];
+                        const half = Math.floor(this.maxVisibleButtons / 2);
+
+                        if (this.totalPages <= this.maxVisibleButtons) {
+                            for (let i = 1; i <= this.totalPages; i++) {
+                                pages.push(i);
+                            }
+                        } else if (this.currentPage <= half) {
+                            for (
+                                let i = 1;
+                                i <= this.maxVisibleButtons - 1;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                            pages.push("...");
+                            pages.push(this.totalPages);
+                        } else if (this.currentPage > this.totalPages - half) {
+                            pages.push(1);
+                            pages.push("...");
+                            for (
+                                let i =
+                                    this.totalPages -
+                                    this.maxVisibleButtons +
+                                    2;
+                                i <= this.totalPages;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                        } else {
+                            pages.push(1);
+                            pages.push("...");
+                            for (
+                                let i = this.currentPage - half + 1;
+                                i <= this.currentPage + half - 1;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                            pages.push("...");
+                            pages.push(this.totalPages);
+                        }
+                        return pages;
+                    },
+                };
+
+                // Add base styling for pagination buttons
+                document
+                    .querySelectorAll(
+                        ".pagination-nav-btn, .pagination-page-btn"
+                    )
+                    .forEach((btn) => {
+                        btn.classList.add(
+                            "px-3",
+                            "py-2",
+                            "rounded-md",
+                            "border",
+                            "border-gray-300",
+                            "text-sm",
+                            "font-medium",
+                            "focus:outline-none",
+                            "focus:ring-2",
+                            "focus:ring-offset-2",
+                            "focus:ring-blue-500"
+                        );
+                    });
+                numberedPagination.init();
+            </script>
+        </section>
+
+        <div class="component-separator"></div>
+
+        <!-- Component 3: Centered with Page Input -->
+        <section class="mb-16 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">
+                3. Centered with Page Input
+            </h2>
+
+            <div
+                id="pagination-input"
+                class="flex flex-col items-center justify-center space-y-4"
+            >
+                <div class="flex items-center space-x-4">
+                    <!-- Previous Button -->
+                    <button
+                        class="p-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-action="prev"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+
+                    <span class="text-gray-700">Page</span>
+                    <input
+                        type="number"
+                        id="current-page-input"
+                        class="w-16 text-center p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        min="1"
+                    />
+                    <span class="text-gray-700"
+                        >of <span id="total-pages-span">10</span></span
+                    >
+
+                    <!-- Next Button -->
+                    <button
+                        class="p-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-action="next"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                </div>
+                <button
+                    id="go-button"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                    Go
+                </button>
+            </div>
+
+            <script>
+                const inputPagination = {
+                    currentPage: 1,
+                    totalPages: 10,
+                    container: document.getElementById("pagination-input"),
+                    prevButton: document.querySelector(
+                        '#pagination-input button[data-action="prev"]'
+                    ),
+                    nextButton: document.querySelector(
+                        '#pagination-input button[data-action="next"]'
+                    ),
+                    pageInput: document.getElementById("current-page-input"),
+                    totalPagesSpan: document.getElementById("total-pages-span"),
+                    goButton: document.getElementById("go-button"),
+
+                    init: function () {
+                        this.totalPagesSpan.textContent = this.totalPages;
+                        this.pageInput.max = this.totalPages;
+                        this.updateUI();
+
+                        this.prevButton.addEventListener("click", () =>
+                            this.changePage(-1)
+                        );
+                        this.nextButton.addEventListener("click", () =>
+                            this.changePage(1)
+                        );
+                        this.pageInput.addEventListener("input", () =>
+                            this.validateInput()
+                        );
+                        this.goButton.addEventListener("click", () =>
+                            this.goToPage()
+                        );
+                    },
+
+                    updateUI: function () {
+                        this.pageInput.value = this.currentPage;
+                        this.prevButton.disabled = this.currentPage === 1;
+                        this.nextButton.disabled =
+                            this.currentPage === this.totalPages;
+                    },
+
+                    changePage: function (direction) {
+                        const newPage = this.currentPage + direction;
+                        if (newPage >= 1 && newPage <= this.totalPages) {
+                            this.currentPage = newPage;
+                            this.updateUI();
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        }
+                    },
+
+                    validateInput: function () {
+                        let value = parseInt(this.pageInput.value);
+                        if (isNaN(value) || value < 1) {
+                            this.pageInput.value = 1;
+                        } else if (value > this.totalPages) {
+                            this.pageInput.value = this.totalPages;
+                        }
+                    },
+
+                    goToPage: function () {
+                        let page = parseInt(this.pageInput.value);
+                        if (
+                            !isNaN(page) &&
+                            page >= 1 &&
+                            page <= this.totalPages
+                        ) {
+                            this.currentPage = page;
+                            this.updateUI();
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        } else {
+                            // Reset to current valid page if input is invalid after validation
+                            this.pageInput.value = this.currentPage;
+                        }
+                    },
+                };
+                inputPagination.init();
+            </script>
+        </section>
+
+        <div class="component-separator"></div>
+
+        <!-- Component 4: Left Aligned with Count -->
+        <section class="mb-16 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">
+                4. Left Aligned with Item Count
+            </h2>
+
+            <div id="pagination-left" class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-700"
+                        >Showing <span id="item-count-start">1</span> to
+                        <span id="item-count-end">10</span> of
+                        <span id="total-items">100</span> results</span
+                    >
+                    <span class="text-sm text-gray-600">|</span>
+                    <span class="text-sm text-gray-700"
+                        >Page <span id="current-page-display">1</span> of
+                        <span id="total-pages-display">10</span></span
+                    >
+                </div>
+                <div class="flex space-x-2">
+                    <button class="pagination-nav-btn" data-action="prev">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                    <button class="pagination-nav-btn" data-action="next">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <script>
+                const leftAlignedPagination = {
+                    currentPage: 1,
+                    itemsPerPage: 10,
+                    totalItems: 100,
+                    container: document.getElementById("pagination-left"),
+                    prevButton: document.querySelector(
+                        '#pagination-left button[data-action="prev"]'
+                    ),
+                    nextButton: document.querySelector(
+                        '#pagination-left button[data-action="next"]'
+                    ),
+                    itemCountStartSpan:
+                        document.getElementById("item-count-start"),
+                    itemCountEndSpan: document.getElementById("item-count-end"),
+                    totalItemsSpan: document.getElementById("total-items"),
+                    currentPageDisplaySpan: document.getElementById(
+                        "current-page-display"
+                    ),
+                    totalPagesDisplaySpan: document.getElementById(
+                        "total-pages-display"
+                    ),
+
+                    init: function () {
+                        this.totalItemsSpan.textContent = this.totalItems;
+                        this.updateUI();
+                        this.prevButton.addEventListener("click", () =>
+                            this.changePage(-1)
+                        );
+                        this.nextButton.addEventListener("click", () =>
+                            this.changePage(1)
+                        );
+                    },
+
+                    updateUI: function () {
+                        const totalPages = Math.ceil(
+                            this.totalItems / this.itemsPerPage
+                        );
+                        this.totalPagesDisplaySpan.textContent = totalPages;
+
+                        const startIndex =
+                            (this.currentPage - 1) * this.itemsPerPage + 1;
+                        const endIndex = Math.min(
+                            this.currentPage * this.itemsPerPage,
+                            this.totalItems
+                        );
+
+                        this.itemCountStartSpan.textContent = startIndex;
+                        this.itemCountEndSpan.textContent = endIndex;
+                        this.currentPageDisplaySpan.textContent =
+                            this.currentPage;
+
+                        this.prevButton.disabled = this.currentPage === 1;
+                        this.nextButton.disabled =
+                            this.currentPage === totalPages;
+
+                        // Toggle Tailwind classes for disabled state
+                        this.prevButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === 1
+                        );
+                        this.prevButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== 1
+                        );
+                        this.prevButton.style.cursor =
+                            this.currentPage === 1 ? "not-allowed" : "pointer";
+
+                        this.nextButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === totalPages
+                        );
+                        this.nextButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== totalPages
+                        );
+                        this.nextButton.style.cursor =
+                            this.currentPage === totalPages
+                                ? "not-allowed"
+                                : "pointer";
+                    },
+
+                    changePage: function (direction) {
+                        const totalPages = Math.ceil(
+                            this.totalItems / this.itemsPerPage
+                        );
+                        const newPage = this.currentPage + direction;
+                        if (newPage >= 1 && newPage <= totalPages) {
+                            this.currentPage = newPage;
+                            this.updateUI();
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        }
+                    },
+                };
+                // Ensure base styles are applied if not already by previous scripts
+                document
+                    .querySelectorAll("#pagination-left .pagination-nav-btn")
+                    .forEach((btn) => {
+                        btn.classList.add(
+                            "px-3",
+                            "py-2",
+                            "rounded-md",
+                            "border",
+                            "border-gray-300",
+                            "text-sm",
+                            "font-medium",
+                            "focus:outline-none",
+                            "focus:ring-2",
+                            "focus:ring-offset-2",
+                            "focus:ring-blue-500"
+                        );
+                    });
+                leftAlignedPagination.init();
+            </script>
+        </section>
+
+        <div class="component-separator"></div>
+
+        <!-- Component 5: Minimalist with Page Numbers Only -->
+        <section class="mb-16 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">
+                5. Minimalist with Page Numbers Only
+            </h2>
+
+            <div
+                id="pagination-minimalist"
+                class="flex justify-center items-center space-x-2"
+            >
+                <!-- Previous Button -->
+                <button class="minimalist-nav-btn" data-action="prev">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+
+                <!-- Page Numbers -->
+                <div class="flex space-x-1" id="minimalist-page-list">
+                    <!-- Numbers will be generated by JS -->
+                </div>
+
+                <!-- Next Button -->
+                <button class="minimalist-nav-btn" data-action="next">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </div>
+
+            <script>
+                const minimalistPagination = {
+                    currentPage: 1,
+                    totalPages: 8,
+                    maxVisibleButtons: 3, // Simpler display for minimalist
+                    container: document.getElementById("pagination-minimalist"),
+                    pageList: document.getElementById("minimalist-page-list"),
+                    prevButton: document.querySelector(
+                        '#pagination-minimalist button[data-action="prev"]'
+                    ),
+                    nextButton: document.querySelector(
+                        '#pagination-minimalist button[data-action="next"]'
+                    ),
+
+                    init: function () {
+                        this.updateUI();
+                        this.prevButton.addEventListener("click", () =>
+                            this.changePage(-1)
+                        );
+                        this.nextButton.addEventListener("click", () =>
+                            this.changePage(1)
+                        );
+                    },
+
+                    updateUI: function () {
+                        this.pageList.innerHTML = ""; // Clear previous numbers
+                        this.renderPageNumbers();
+
+                        this.prevButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === 1
+                        );
+                        this.prevButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== 1
+                        );
+                        this.prevButton.style.cursor =
+                            this.currentPage === 1 ? "not-allowed" : "pointer";
+
+                        this.nextButton.classList.toggle(
+                            "text-gray-400",
+                            this.currentPage === this.totalPages
+                        );
+                        this.nextButton.classList.toggle(
+                            "hover:bg-gray-100",
+                            this.currentPage !== this.totalPages
+                        );
+                        this.nextButton.style.cursor =
+                            this.currentPage === this.totalPages
+                                ? "not-allowed"
+                                : "pointer";
+                    },
+
+                    changePage: function (direction) {
+                        const newPage = this.currentPage + direction;
+                        if (newPage >= 1 && newPage <= this.totalPages) {
+                            this.currentPage = newPage;
+                            this.updateUI();
+                            console.log(
+                                `Navigated to page: ${this.currentPage}`
+                            );
+                        }
+                    },
+
+                    renderPageNumbers: function () {
+                        const pages = this.getVisiblePageNumbers();
+                        pages.forEach((page) => {
+                            const button = document.createElement("button");
+                            button.textContent = page;
+                            button.classList.add("minimalist-page-btn");
+                            if (page === "...") {
+                                button.classList.add(
+                                    "text-gray-500",
+                                    "cursor-default"
+                                );
+                            } else {
+                                if (page === this.currentPage) {
+                                    button.classList.add(
+                                        "bg-gray-700",
+                                        "text-white",
+                                        "font-bold"
+                                    );
+                                } else {
+                                    button.classList.add(
+                                        "text-gray-600",
+                                        "hover:bg-gray-100"
+                                    );
+                                }
+                                button.addEventListener("click", () => {
+                                    this.currentPage = page;
+                                    this.updateUI();
+                                    console.log(
+                                        `Navigated to page: ${this.currentPage}`
+                                    );
+                                });
+                            }
+                            this.pageList.appendChild(button);
+                        });
+                    },
+
+                    getVisiblePageNumbers: function () {
+                        const pages = [];
+                        const half = Math.floor(this.maxVisibleButtons / 2);
+
+                        if (this.totalPages <= this.maxVisibleButtons) {
+                            for (let i = 1; i <= this.totalPages; i++) {
+                                pages.push(i);
+                            }
+                        } else if (this.currentPage <= half) {
+                            for (
+                                let i = 1;
+                                i <= this.maxVisibleButtons - 1;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                            pages.push("...");
+                            pages.push(this.totalPages);
+                        } else if (this.currentPage > this.totalPages - half) {
+                            pages.push(1);
+                            pages.push("...");
+                            for (
+                                let i =
+                                    this.totalPages -
+                                    this.maxVisibleButtons +
+                                    2;
+                                i <= this.totalPages;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                        } else {
+                            pages.push(1);
+                            pages.push("...");
+                            for (
+                                let i = this.currentPage - half + 1;
+                                i <= this.currentPage + half - 1;
+                                i++
+                            ) {
+                                pages.push(i);
+                            }
+                            pages.push("...");
+                            pages.push(this.totalPages);
+                        }
+                        return pages;
+                    },
+                };
+
+                // Add base styling for minimalist pagination buttons
+                document
+                    .querySelectorAll(
+                        ".minimalist-nav-btn, .minimalist-page-btn"
+                    )
+                    .forEach((btn) => {
+                        btn.classList.add(
+                            "px-2",
+                            "py-2",
+                            "rounded-md",
+                            "text-sm",
+                            "focus:outline-none",
+                            "focus:ring-2",
+                            "focus:ring-offset-2",
+                            "focus:ring-gray-400"
+                        );
+                    });
+                minimalistPagination.init();
+            </script>
+        </section>
+    </body>
+</html>

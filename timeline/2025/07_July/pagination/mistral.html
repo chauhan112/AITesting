@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pagination Examples</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-100 p-8">
+        <div class="space-y-8">
+            <!-- Pagination 1: Basic Pagination -->
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Basic Pagination</h2>
+                <div id="pagination1" class="flex justify-center space-x-1">
+                    <!-- Pagination links will be inserted here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 2: Rounded Pagination -->
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Rounded Pagination</h2>
+                <div id="pagination2" class="flex justify-center space-x-1">
+                    <!-- Pagination links will be inserted here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 3: Pagination with Icons -->
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination with Icons
+                </h2>
+                <div id="pagination3" class="flex justify-center space-x-1">
+                    <!-- Pagination links will be inserted here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 4: Minimal Pagination -->
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Minimal Pagination</h2>
+                <div id="pagination4" class="flex justify-center space-x-1">
+                    <!-- Pagination links will be inserted here by JS -->
+                </div>
+            </div>
+
+            <!-- Pagination 5: Pagination with Border -->
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">
+                    Pagination with Border
+                </h2>
+                <div id="pagination5" class="flex justify-center space-x-1">
+                    <!-- Pagination links will be inserted here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Function to create pagination
+            function createPagination(
+                containerId,
+                totalPages,
+                currentPage,
+                style
+            ) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = "";
+
+                // Previous Button
+                const prevLi = document.createElement("li");
+                const prevLink = document.createElement("a");
+                prevLink.href = "#";
+                prevLink.innerHTML = style === "icon" ? "&laquo;" : "Previous";
+                prevLink.className = `px-3 py-1 rounded ${
+                    currentPage === 1
+                        ? "bg-gray-200 cursor-not-allowed"
+                        : "bg-blue-500 text-white"
+                }`;
+                prevLink.onclick = () => {
+                    if (currentPage > 1) {
+                        createPagination(
+                            containerId,
+                            totalPages,
+                            currentPage - 1,
+                            style
+                        );
+                    }
+                };
+                prevLi.appendChild(prevLink);
+                container.appendChild(prevLi);
+
+                // Page Numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement("li");
+                    const a = document.createElement("a");
+                    a.href = "#";
+                    a.textContent = i;
+                    a.className = `px-3 py-1 ${
+                        currentPage === i
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200"
+                    } ${style === "rounded" ? "rounded-full" : ""} ${
+                        style === "border" ? "border border-gray-300" : ""
+                    }`;
+                    a.onclick = () => {
+                        createPagination(containerId, totalPages, i, style);
+                    };
+                    li.appendChild(a);
+                    container.appendChild(li);
+                }
+
+                // Next Button
+                const nextLi = document.createElement("li");
+                const nextLink = document.createElement("a");
+                nextLink.href = "#";
+                nextLink.innerHTML = style === "icon" ? "&raquo;" : "Next";
+                nextLink.className = `px-3 py-1 rounded ${
+                    currentPage === totalPages
+                        ? "bg-gray-200 cursor-not-allowed"
+                        : "bg-blue-500 text-white"
+                }`;
+                nextLink.onclick = () => {
+                    if (currentPage < totalPages) {
+                        createPagination(
+                            containerId,
+                            totalPages,
+                            currentPage + 1,
+                            style
+                        );
+                    }
+                };
+                nextLi.appendChild(nextLink);
+                container.appendChild(nextLi);
+            }
+
+            // Initialize paginations
+            document.addEventListener("DOMContentLoaded", () => {
+                createPagination("pagination1", 5, 1, "basic");
+                createPagination("pagination2", 5, 1, "rounded");
+                createPagination("pagination3", 5, 1, "icon");
+                createPagination("pagination4", 5, 1, "minimal");
+                createPagination("pagination5", 5, 1, "border");
+            });
+        </script>
+    </body>
+</html>

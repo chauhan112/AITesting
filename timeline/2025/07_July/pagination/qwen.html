@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>5 Pagination Components</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com "></script>
+    </head>
+    <body class="bg-gray-100 p-6">
+        <div class="max-w-4xl mx-auto space-y-10">
+            <!-- Title -->
+            <h1 class="text-3xl font-bold text-center mb-8">
+                5 Different Pagination Components
+            </h1>
+
+            <!-- Component 1: Simple Rounded Buttons -->
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    Pagination 1 - Rounded Buttons
+                </h2>
+                <nav class="flex justify-center space-x-2">
+                    <button
+                        class="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-gray-200 rounded-full hover:bg-gray-300 active:bg-blue-500 active:text-white"
+                    >
+                        1
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-gray-200 rounded-full hover:bg-gray-300 active:bg-blue-500 active:text-white"
+                    >
+                        2
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-gray-200 rounded-full hover:bg-gray-300 active:bg-blue-500 active:text-white"
+                    >
+                        3
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                    >
+                        Next
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Component 2: Underline Style -->
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    Pagination 2 - Underline Style
+                </h2>
+                <nav class="flex justify-center space-x-4">
+                    <a
+                        href="#"
+                        class="px-3 py-1 border-b-2 border-transparent hover:border-blue-500"
+                        >Previous</a
+                    >
+                    <a href="#" class="px-3 py-1 border-b-2 border-blue-500"
+                        >1</a
+                    >
+                    <a
+                        href="#"
+                        class="px-3 py-1 border-b-2 border-transparent hover:border-blue-500"
+                        >2</a
+                    >
+                    <a
+                        href="#"
+                        class="px-3 py-1 border-b-2 border-transparent hover:border-blue-500"
+                        >3</a
+                    >
+                    <a
+                        href="#"
+                        class="px-3 py-1 border-b-2 border-transparent hover:border-blue-500"
+                        >Next</a
+                    >
+                </nav>
+            </div>
+
+            <!-- Component 3: Pills with Icons -->
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    Pagination 3 - Pills with Icons
+                </h2>
+                <nav class="flex justify-center space-x-2">
+                    <button
+                        class="inline-flex items-center px-3 py-1 bg-indigo-500 text-white rounded-full gap-1"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                        Prev
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                    >
+                        1
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                    >
+                        2
+                    </button>
+                    <button
+                        class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                    >
+                        3
+                    </button>
+                    <button
+                        class="inline-flex items-center px-3 py-1 bg-indigo-500 text-white rounded-full gap-1"
+                    >
+                        Next
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5l7 7-7 7"
+                            />
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Component 4: Minimalist Dots -->
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    Pagination 4 - Minimalist Dots
+                </h2>
+                <nav class="flex justify-center space-x-2">
+                    <button
+                        class="w-2 h-2 bg-gray-400 rounded-full hover:bg-gray-600"
+                    ></button>
+                    <button class="w-2 h-2 bg-blue-500 rounded-full"></button>
+                    <button
+                        class="w-2 h-2 bg-gray-400 rounded-full hover:bg-gray-600"
+                    ></button>
+                    <button
+                        class="w-2 h-2 bg-gray-400 rounded-full hover:bg-gray-600"
+                    ></button>
+                </nav>
+            </div>
+
+            <!-- Component 5: Full Control with JS -->
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    Pagination 5 - With JS Logic
+                </h2>
+                <nav class="flex justify-center space-x-2">
+                    <button
+                        id="prevBtn"
+                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                        ← Prev
+                    </button>
+                    <div id="pageNumbers" class="flex space-x-2"></div>
+                    <button
+                        id="nextBtn"
+                        class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                        Next →
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- JS for Pagination 5 -->
+        <script>
+            const totalPages = 5;
+            let currentPage = 1;
+
+            const pageNumbersDiv = document.getElementById("pageNumbers");
+            const prevBtn = document.getElementById("prevBtn");
+            const nextBtn = document.getElementById("nextBtn");
+
+            function renderPagination() {
+                pageNumbersDiv.innerHTML = "";
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.textContent = i;
+                    btn.className = `px-3 py-1 rounded ${
+                        i === currentPage
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                    }`;
+                    btn.addEventListener("click", () => {
+                        currentPage = i;
+                        renderPagination();
+                    });
+                    pageNumbersDiv.appendChild(btn);
+                }
+
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+            }
+
+            prevBtn.addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPagination();
+                }
+            });
+
+            nextBtn.addEventListener("click", () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPagination();
+                }
+            });
+
+            // Initial render
+            renderPagination();
+        </script>
+    </body>
+</html>

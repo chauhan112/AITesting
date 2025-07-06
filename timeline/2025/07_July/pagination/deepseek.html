@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pagination Components</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .active-page {
+                transform: scale(1.1);
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 p-8">
+        <div class="max-w-4xl mx-auto space-y-12">
+            <h1 class="text-3xl font-bold text-center mb-8">
+                Pagination Components
+            </h1>
+
+            <!-- Component 1: Basic Pagination -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">1. Basic Pagination</h2>
+                <div
+                    class="flex justify-center items-center space-x-2"
+                    id="pagination-1"
+                >
+                    <button
+                        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                        onclick="prevPage('pagination-1')"
+                    >
+                        Prev
+                    </button>
+                    <div class="flex space-x-1" id="pages-1"></div>
+                    <button
+                        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                        onclick="nextPage('pagination-1')"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 2: Numbered Pagination with Dots -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    2. Numbered Pagination with Dots
+                </h2>
+                <div
+                    class="flex justify-center items-center space-x-1"
+                    id="pagination-2"
+                >
+                    <button
+                        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                        onclick="prevPage('pagination-2')"
+                    >
+                        &laquo;
+                    </button>
+                    <div class="flex space-x-1" id="pages-2"></div>
+                    <button
+                        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                        onclick="nextPage('pagination-2')"
+                    >
+                        &raquo;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 3: Minimal Pagination -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    3. Minimal Pagination
+                </h2>
+                <div
+                    class="flex justify-center items-center space-x-4"
+                    id="pagination-3"
+                >
+                    <button
+                        class="text-gray-600 hover:text-gray-900"
+                        onclick="prevPage('pagination-3')"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                    <div class="flex space-x-2" id="pages-3"></div>
+                    <button
+                        class="text-gray-600 hover:text-gray-900"
+                        onclick="nextPage('pagination-3')"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 4: Large Button Pagination -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">
+                    4. Large Button Pagination
+                </h2>
+                <div
+                    class="flex justify-center items-center space-x-4"
+                    id="pagination-4"
+                >
+                    <button
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                        onclick="prevPage('pagination-4')"
+                    >
+                        Previous
+                    </button>
+                    <div class="flex space-x-2" id="pages-4"></div>
+                    <button
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                        onclick="nextPage('pagination-4')"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 5: Tabbed Pagination -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">5. Tabbed Pagination</h2>
+                <div class="flex justify-center" id="pagination-5">
+                    <div
+                        class="flex border-b border-gray-200"
+                        id="pages-5"
+                    ></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Initialize pagination for all components
+            document.addEventListener("DOMContentLoaded", function () {
+                initPagination("pagination-1", "pages-1", 10, 1, "basic");
+                initPagination(
+                    "pagination-2",
+                    "pages-2",
+                    15,
+                    1,
+                    "numbered-dots"
+                );
+                initPagination("pagination-3", "pages-3", 8, 1, "minimal");
+                initPagination("pagination-4", "pages-4", 12, 1, "large");
+                initPagination("pagination-5", "pages-5", 6, 1, "tabbed");
+            });
+
+            // Pagination initialization function
+            function initPagination(
+                containerId,
+                pagesContainerId,
+                totalPages,
+                currentPage,
+                style
+            ) {
+                const container = document.getElementById(containerId);
+                container.dataset.totalPages = totalPages;
+                container.dataset.currentPage = currentPage;
+                renderPages(containerId, pagesContainerId, style);
+            }
+
+            // Render page buttons based on style
+            function renderPages(containerId, pagesContainerId, style) {
+                const container = document.getElementById(containerId);
+                const pagesContainer =
+                    document.getElementById(pagesContainerId);
+                const totalPages = parseInt(container.dataset.totalPages);
+                const currentPage = parseInt(container.dataset.currentPage);
+
+                pagesContainer.innerHTML = "";
+
+                if (style === "basic") {
+                    // Basic pagination - show all pages
+                    for (let i = 1; i <= totalPages; i++) {
+                        const pageBtn = document.createElement("button");
+                        pageBtn.className = `px-3 py-1 rounded ${
+                            currentPage === i
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-200 hover:bg-gray-300"
+                        }`;
+                        pageBtn.textContent = i;
+                        pageBtn.onclick = () =>
+                            goToPage(containerId, pagesContainerId, i, style);
+                        pagesContainer.appendChild(pageBtn);
+                    }
+                } else if (style === "numbered-dots") {
+                    // Numbered pagination with dots for large ranges
+                    const maxVisible = 5;
+                    let startPage, endPage;
+
+                    if (totalPages <= maxVisible) {
+                        startPage = 1;
+                        endPage = totalPages;
+                    } else {
+                        const maxVisibleBeforeCurrent = Math.floor(
+                            maxVisible / 2
+                        );
+                        const maxVisibleAfterCurrent =
+                            Math.ceil(maxVisible / 2) - 1;
+
+                        if (currentPage <= maxVisibleBeforeCurrent) {
+                            startPage = 1;
+                            endPage = maxVisible;
+                        } else if (
+                            currentPage + maxVisibleAfterCurrent >=
+                            totalPages
+                        ) {
+                            startPage = totalPages - maxVisible + 1;
+                            endPage = totalPages;
+                        } else {
+                            startPage = currentPage - maxVisibleBeforeCurrent;
+                            endPage = currentPage + maxVisibleAfterCurrent;
+                        }
+                    }
+
+                    // First page
+                    if (startPage > 1) {
+                        addPageButton(
+                            containerId,
+                            pagesContainerId,
+                            1,
+                            currentPage,
+                            style
+                        );
+                        if (startPage > 2) {
+                            addDots(pagesContainer);
+                        }
+                    }
+
+                    // Middle pages
+                    for (let i = startPage; i <= endPage; i++) {
+                        addPageButton(
+                            containerId,
+                            pagesContainerId,
+                            i,
+                            currentPage,
+                            style
+                        );
+                    }
+
+                    // Last page
+                    if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                            addDots(pagesContainer);
+                        }
+                        addPageButton(
+                            containerId,
+                            pagesContainerId,
+                            totalPages,
+                            currentPage,
+                            style
+                        );
+                    }
+                } else if (style === "minimal") {
+                    // Minimal pagination - just show current page and total
+                    const pageInfo = document.createElement("span");
+                    pageInfo.className = "text-gray-700";
+                    pageInfo.textContent = `${currentPage} / ${totalPages}`;
+                    pagesContainer.appendChild(pageInfo);
+                } else if (style === "large") {
+                    // Large button pagination - show limited pages
+                    const maxVisible = 3;
+                    let startPage = Math.max(1, currentPage - 1);
+                    let endPage = Math.min(totalPages, currentPage + 1);
+
+                    if (currentPage === 1 && totalPages >= maxVisible) {
+                        endPage = maxVisible;
+                    } else if (
+                        currentPage === totalPages &&
+                        totalPages >= maxVisible
+                    ) {
+                        startPage = totalPages - maxVisible + 1;
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        addPageButton(
+                            containerId,
+                            pagesContainerId,
+                            i,
+                            currentPage,
+                            style
+                        );
+                    }
+                } else if (style === "tabbed") {
+                    // Tabbed pagination
+                    for (let i = 1; i <= totalPages; i++) {
+                        const tab = document.createElement("button");
+                        tab.className = `px-4 py-2 font-medium text-sm focus:outline-none ${
+                            currentPage === i
+                                ? "border-b-2 border-blue-500 text-blue-600"
+                                : "text-gray-500 hover:text-gray-700"
+                        }`;
+                        tab.textContent = `Page ${i}`;
+                        tab.onclick = () =>
+                            goToPage(containerId, pagesContainerId, i, style);
+                        pagesContainer.appendChild(tab);
+                    }
+                }
+            }
+
+            // Helper function to add a page button
+            function addPageButton(
+                containerId,
+                pagesContainerId,
+                pageNumber,
+                currentPage,
+                style
+            ) {
+                const pagesContainer =
+                    document.getElementById(pagesContainerId);
+
+                if (style === "numbered-dots") {
+                    const pageBtn = document.createElement("button");
+                    pageBtn.className = `w-8 h-8 rounded-full flex items-center justify-center ${
+                        currentPage === pageNumber
+                            ? "bg-blue-500 text-white active-page"
+                            : "bg-gray-200 hover:bg-gray-300"
+                    }`;
+                    pageBtn.textContent = pageNumber;
+                    pageBtn.onclick = () =>
+                        goToPage(
+                            containerId,
+                            pagesContainerId,
+                            pageNumber,
+                            style
+                        );
+                    pagesContainer.appendChild(pageBtn);
+                } else if (style === "large") {
+                    const pageBtn = document.createElement("button");
+                    pageBtn.className = `px-4 py-2 rounded-lg ${
+                        currentPage === pageNumber
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                    }`;
+                    pageBtn.textContent = pageNumber;
+                    pageBtn.onclick = () =>
+                        goToPage(
+                            containerId,
+                            pagesContainerId,
+                            pageNumber,
+                            style
+                        );
+                    pagesContainer.appendChild(pageBtn);
+                }
+            }
+
+            // Helper function to add dots
+            function addDots(pagesContainer) {
+                const dots = document.createElement("span");
+                dots.className = "px-2 flex items-end";
+                dots.textContent = "...";
+                pagesContainer.appendChild(dots);
+            }
+
+            // Navigate to a specific page
+            function goToPage(
+                containerId,
+                pagesContainerId,
+                pageNumber,
+                style
+            ) {
+                const container = document.getElementById(containerId);
+                const totalPages = parseInt(container.dataset.totalPages);
+
+                if (pageNumber >= 1 && pageNumber <= totalPages) {
+                    container.dataset.currentPage = pageNumber;
+                    renderPages(containerId, pagesContainerId, style);
+                }
+            }
+
+            // Go to previous page
+            function prevPage(containerId) {
+                const container = document.getElementById(containerId);
+                const currentPage = parseInt(container.dataset.currentPage);
+                const pagesContainerId =
+                    container.querySelector('[id^="pages-"]').id;
+                const style = getPaginationStyle(containerId);
+
+                goToPage(containerId, pagesContainerId, currentPage - 1, style);
+            }
+
+            // Go to next page
+            function nextPage(containerId) {
+                const container = document.getElementById(containerId);
+                const currentPage = parseInt(container.dataset.currentPage);
+                const totalPages = parseInt(container.dataset.totalPages);
+                const pagesContainerId =
+                    container.querySelector('[id^="pages-"]').id;
+                const style = getPaginationStyle(containerId);
+
+                goToPage(containerId, pagesContainerId, currentPage + 1, style);
+            }
+
+            // Helper function to get pagination style based on container ID
+            function getPaginationStyle(containerId) {
+                switch (containerId) {
+                    case "pagination-1":
+                        return "basic";
+                    case "pagination-2":
+                        return "numbered-dots";
+                    case "pagination-3":
+                        return "minimal";
+                    case "pagination-4":
+                        return "large";
+                    case "pagination-5":
+                        return "tabbed";
+                    default:
+                        return "basic";
+                }
+            }
+        </script>
+    </body>
+</html>

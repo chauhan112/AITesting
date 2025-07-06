@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tailwind Pagination Components</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50 p-10 space-y-16 text-gray-800">
+        <h1 class="text-2xl font-bold mb-4">1. Basic Numbered Pagination</h1>
+        <div class="space-y-4">
+            <div id="pagination1" class="flex space-x-2"></div>
+            <div id="page1" class="text-lg font-medium">Page: 1</div>
+        </div>
+
+        <h1 class="text-2xl font-bold mb-4">2. Next / Prev Buttons Only</h1>
+        <div class="space-y-4">
+            <div id="pagination2" class="flex space-x-2"></div>
+            <div id="page2" class="text-lg font-medium">Page: 1</div>
+        </div>
+
+        <h1 class="text-2xl font-bold mb-4">3. Dots + Active Page Highlight</h1>
+        <div class="space-y-4">
+            <div id="pagination3" class="flex items-center space-x-2"></div>
+            <div id="page3" class="text-lg font-medium">Page: 1</div>
+        </div>
+
+        <h1 class="text-2xl font-bold mb-4">4. Dropdown Page Selector</h1>
+        <div class="space-y-4">
+            <select id="pagination4" class="p-2 rounded border"></select>
+            <div id="page4" class="text-lg font-medium">Page: 1</div>
+        </div>
+
+        <h1 class="text-2xl font-bold mb-4">5. Input with Go Button</h1>
+        <div class="space-y-4">
+            <div class="flex space-x-2">
+                <input
+                    type="number"
+                    id="pagination5-input"
+                    class="p-2 border rounded w-20"
+                    min="1"
+                />
+                <button
+                    id="pagination5-go"
+                    class="px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                    Go
+                </button>
+            </div>
+            <div id="page5" class="text-lg font-medium">Page: 1</div>
+        </div>
+
+        <script>
+            const totalPages = 10;
+
+            // 1. Basic numbered pagination
+            function setupPagination1() {
+                const container = document.getElementById("pagination1");
+                const pageDisplay = document.getElementById("page1");
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.className =
+                        "px-3 py-1 rounded border hover:bg-blue-100";
+                    btn.textContent = i;
+                    btn.addEventListener("click", () => {
+                        pageDisplay.textContent = `Page: ${i}`;
+                    });
+                    container.appendChild(btn);
+                }
+            }
+
+            // 2. Prev / Next only
+            function setupPagination2() {
+                const container = document.getElementById("pagination2");
+                const pageDisplay = document.getElementById("page2");
+                let currentPage = 1;
+
+                const prevBtn = document.createElement("button");
+                prevBtn.textContent = "Prev";
+                prevBtn.className = "px-4 py-2 bg-gray-300 rounded";
+                prevBtn.addEventListener("click", () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        pageDisplay.textContent = `Page: ${currentPage}`;
+                    }
+                });
+
+                const nextBtn = document.createElement("button");
+                nextBtn.textContent = "Next";
+                nextBtn.className = "px-4 py-2 bg-gray-300 rounded";
+                nextBtn.addEventListener("click", () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        pageDisplay.textContent = `Page: ${currentPage}`;
+                    }
+                });
+
+                container.appendChild(prevBtn);
+                container.appendChild(nextBtn);
+            }
+
+            // 3. Dots + Active page highlight
+            function setupPagination3() {
+                const container = document.getElementById("pagination3");
+                const pageDisplay = document.getElementById("page3");
+
+                let current = 1;
+
+                function render() {
+                    container.innerHTML = "";
+                    for (let i = 1; i <= totalPages; i++) {
+                        const dot = document.createElement("div");
+                        dot.className = `w-4 h-4 rounded-full cursor-pointer ${
+                            i === current ? "bg-blue-600" : "bg-gray-400"
+                        }`;
+                        dot.title = `Page ${i}`;
+                        dot.addEventListener("click", () => {
+                            current = i;
+                            pageDisplay.textContent = `Page: ${current}`;
+                            render();
+                        });
+                        container.appendChild(dot);
+                    }
+                }
+
+                render();
+            }
+
+            // 4. Dropdown Selector
+            function setupPagination4() {
+                const select = document.getElementById("pagination4");
+                const pageDisplay = document.getElementById("page4");
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = i;
+                    opt.textContent = `Page ${i}`;
+                    select.appendChild(opt);
+                }
+
+                select.addEventListener("change", () => {
+                    pageDisplay.textContent = `Page: ${select.value}`;
+                });
+            }
+
+            // 5. Input + Go Button
+            function setupPagination5() {
+                const input = document.getElementById("pagination5-input");
+                const btn = document.getElementById("pagination5-go");
+                const pageDisplay = document.getElementById("page5");
+
+                btn.addEventListener("click", () => {
+                    const val = parseInt(input.value);
+                    if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                        pageDisplay.textContent = `Page: ${val}`;
+                    } else {
+                        alert("Invalid page number.");
+                    }
+                });
+            }
+
+            // Initialize all
+            setupPagination1();
+            setupPagination2();
+            setupPagination3();
+            setupPagination4();
+            setupPagination5();
+        </script>
+    </body>
+</html>
