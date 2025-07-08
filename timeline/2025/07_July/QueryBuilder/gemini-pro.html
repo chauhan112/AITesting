@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tailwind & JS Query Builder</title>
+        <!-- Include Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Simple transition for a smoother feel */
+            .rule-group,
+            .rule {
+                transition: all 0.3s ease-in-out;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 text-gray-800 p-4 sm:p-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6">
+            <h1 class="text-2xl font-bold mb-4 border-b pb-2">Query Builder</h1>
+
+            <!-- Container for all rules and groups -->
+            <div id="query-builder-container" class="space-y-4">
+                <!-- The main query group starts here -->
+                <div
+                    id="rules-container"
+                    class="rule-group p-4 bg-gray-50 border border-dashed rounded-lg space-y-4"
+                    data-group-condition="AND"
+                >
+                    <!-- Rules will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex items-center space-x-2">
+                <button
+                    id="get-query-btn"
+                    class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                >
+                    Get Query
+                </button>
+            </div>
+
+            <!-- Output Display -->
+            <div class="mt-6">
+                <h2 class="text-xl font-semibold mb-2">
+                    Generated Query (for sift.js)
+                </h2>
+                <pre
+                    id="query-output"
+                    class="bg-gray-900 text-green-400 p-4 rounded-lg text-sm whitespace-pre-wrap break-all"
+                >
+{}</pre
+                >
+            </div>
+        </div>
+
+        <!-- TEMPLATES (Hidden) -->
+        <template id="rule-template">
+            <div
+                class="rule flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 p-2 bg-white rounded-md border"
+            >
+                <select
+                    name="field"
+                    class="field-select w-full sm:w-1/4 p-2 border rounded-md bg-white focus:ring-2 focus:ring-indigo-400"
+                ></select>
+                <select
+                    name="operator"
+                    class="operator-select w-full sm:w-1/4 p-2 border rounded-md bg-white focus:ring-2 focus:ring-indigo-400"
+                ></select>
+                <input
+                    name="value"
+                    type="text"
+                    placeholder="Value"
+                    class="value-input flex-grow w-full sm:w-auto p-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+                />
+                <button
+                    type="button"
+                    class="remove-rule-btn px-3 py-2 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 w-full sm:w-auto"
+                >
+                    ✕
+                </button>
+            </div>
+        </template>
+
+        <template id="group-template">
+            <div
+                class="rule-group p-4 bg-gray-50 border border-dashed rounded-lg space-y-4"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <label class="font-semibold" for="group-condition"
+                            >Condition:</label
+                        >
+                        <select
+                            class="group-condition p-1 border rounded-md bg-white"
+                        >
+                            <option value="AND" selected>AND</option>
+                            <option value="OR">OR</option>
+                        </select>
+                    </div>
+                    <button
+                        type="button"
+                        class="remove-group-btn px-3 py-2 bg-red-500 text-white font-bold rounded-md hover:bg-red-600"
+                    >
+                        Remove Group
+                    </button>
+                </div>
+                <div class="rules-list space-y-4 border-l-4 pl-4 ml-4">
+                    <!-- Child rules/groups go here -->
+                </div>
+                <div class="group-actions mt-2 space-x-2">
+                    <button
+                        type="button"
+                        class="add-rule-btn px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-lg hover:bg-green-600"
+                    >
+                        + Add Rule
+                    </button>
+                    <button
+                        type="button"
+                        class="add-group-btn px-3 py-1 bg-yellow-500 text-white text-sm font-semibold rounded-lg hover:bg-yellow-600"
+                    >
+                        + Add Group
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- CONFIGURATION ---
+                const CONFIG = {
+                    fields: [
+                        { label: "Name", value: "name", type: "string" },
+                        { label: "Age", value: "age", type: "number" },
+                        {
+                            label: "Is Active",
+                            value: "isActive",
+                            type: "boolean",
+                        },
+                        {
+                            label: "City",
+                            value: "address.city",
+                            type: "string",
+                        },
+                        { label: "Tag", value: "tags", type: "string" },
+                    ],
+                    operators: {
+                        string: [
+                            { label: "is", value: "$eq" },
+                            { label: "is not", value: "$ne" },
+                            { label: "contains", value: "$in" }, // For arrays of strings
+                        ],
+                        number: [
+                            { label: "=", value: "$eq" },
+                            { label: "!=", value: "$ne" },
+                            { label: ">", value: "$gt" },
+                            { label: "<", value: "$lt" },
+                            { label: ">=", value: "$gte" },
+                            { label: "<=", value: "$lte" },
+                        ],
+                        boolean: [{ label: "is", value: "$eq" }],
+                    },
+                };
+
+                const queryBuilderContainer = document.getElementById(
+                    "query-builder-container"
+                );
+                const getQueryBtn = document.getElementById("get-query-btn");
+                const queryOutput = document.getElementById("query-output");
+
+                const ruleTemplate = document.getElementById("rule-template");
+                const groupTemplate = document.getElementById("group-template");
+
+                function populateSelect(selectElement, options) {
+                    selectElement.innerHTML = "";
+                    options.forEach((option) => {
+                        const opt = document.createElement("option");
+                        opt.value = option.value;
+                        opt.textContent = option.label;
+                        selectElement.appendChild(opt);
+                    });
+                }
+
+                function createRuleElement() {
+                    const fragment = ruleTemplate.content.cloneNode(true);
+                    const ruleElement = fragment.querySelector(".rule");
+                    const fieldSelect =
+                        ruleElement.querySelector(".field-select");
+                    const operatorSelect =
+                        ruleElement.querySelector(".operator-select");
+                    const valueInput =
+                        ruleElement.querySelector(".value-input");
+
+                    populateSelect(fieldSelect, CONFIG.fields);
+
+                    function updateOperatorsAndInput() {
+                        const selectedField = CONFIG.fields.find(
+                            (f) => f.value === fieldSelect.value
+                        );
+                        populateSelect(
+                            operatorSelect,
+                            CONFIG.operators[selectedField.type]
+                        );
+
+                        if (selectedField.type === "boolean") {
+                            valueInput.outerHTML = `
+                            <select name="value" class="value-input flex-grow w-full sm:w-auto p-2 border rounded-md focus:ring-2 focus:ring-indigo-400">
+                                <option value="true">True</option>
+                                <option value="false">False</option>
+                            </select>
+                        `;
+                        } else {
+                            valueInput.outerHTML = `
+                            <input name="value" type="${
+                                selectedField.type === "number"
+                                    ? "number"
+                                    : "text"
+                            }" placeholder="Value" class="value-input flex-grow w-full sm:w-auto p-2 border rounded-md focus:ring-2 focus:ring-indigo-400">
+                        `;
+                        }
+                    }
+
+                    fieldSelect.addEventListener(
+                        "change",
+                        updateOperatorsAndInput
+                    );
+                    updateOperatorsAndInput(); // Initial population
+
+                    return ruleElement;
+                }
+
+                function createGroupElement() {
+                    const fragment = groupTemplate.content.cloneNode(true);
+                    return fragment.querySelector(".rule-group");
+                }
+
+                // --- Event Delegation for adding/removing ---
+                queryBuilderContainer.addEventListener("click", (e) => {
+                    const target = e.target;
+
+                    if (target.matches(".add-rule-btn")) {
+                        const rulesList = target
+                            .closest(".rule-group")
+                            .querySelector(".rules-list");
+                        rulesList.appendChild(createRuleElement());
+                    } else if (target.matches(".add-group-btn")) {
+                        const rulesList = target
+                            .closest(".rule-group")
+                            .querySelector(".rules-list");
+                        rulesList.appendChild(createGroupElement());
+                    } else if (target.matches(".remove-rule-btn")) {
+                        target.closest(".rule").remove();
+                    } else if (target.matches(".remove-group-btn")) {
+                        target.closest(".rule-group").remove();
+                    }
+                });
+
+                // Initial setup for the root group
+                const rootGroup = document.getElementById("rules-container");
+                const rootActions = document.createElement("div");
+                rootActions.className = "group-actions mt-2 space-x-2";
+                rootActions.innerHTML = `
+                <button type="button" class="add-rule-btn px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-lg hover:bg-green-600">+ Add Rule</button>
+                <button type="button" class="add-group-btn px-3 py-1 bg-yellow-500 text-white text-sm font-semibold rounded-lg hover:bg-yellow-600">+ Add Group</button>
+            `;
+                const rootRulesList = document.createElement("div");
+                rootRulesList.className = "rules-list space-y-4";
+                rootGroup.appendChild(rootRulesList);
+                rootGroup.appendChild(rootActions);
+
+                // --- Query Generation ---
+                function parseValue(value, type) {
+                    if (type === "number") return parseFloat(value);
+                    if (type === "boolean") return value === "true";
+                    if (value.includes(","))
+                        return value.split(",").map((s) => s.trim());
+                    return value;
+                }
+
+                function generateQueryFromGroup(groupElement) {
+                    const condition = `$${
+                        groupElement.dataset.groupCondition?.toLowerCase() ||
+                        "and"
+                    }`;
+                    let criteria = [];
+
+                    const rules =
+                        groupElement.querySelector(".rules-list").children;
+                    for (const el of rules) {
+                        if (el.matches(".rule")) {
+                            const field =
+                                el.querySelector('[name="field"]').value;
+                            const operator =
+                                el.querySelector('[name="operator"]').value;
+                            const rawValue =
+                                el.querySelector('[name="value"]').value;
+                            const fieldType = CONFIG.fields.find(
+                                (f) => f.value === field
+                            ).type;
+
+                            if (rawValue === "") continue; // Skip empty rules
+
+                            const value = parseValue(rawValue, fieldType);
+
+                            let ruleQuery = {};
+                            ruleQuery[field] = {};
+                            ruleQuery[field][operator] = value;
+                            criteria.push(ruleQuery);
+                        } else if (el.matches(".rule-group")) {
+                            const subQuery = generateQueryFromGroup(el);
+                            if (Object.keys(subQuery).length > 0) {
+                                criteria.push(subQuery);
+                            }
+                        }
+                    }
+
+                    if (criteria.length === 0) return {};
+                    if (criteria.length === 1) return criteria[0]; // Don't wrap a single rule in $and/$or
+
+                    const query = {};
+                    query[condition] = criteria;
+                    return query;
+                }
+
+                getQueryBtn.addEventListener("click", () => {
+                    const rootGroup =
+                        document.getElementById("rules-container");
+                    const query = generateQueryFromGroup(rootGroup);
+                    queryOutput.textContent = JSON.stringify(query, null, 2);
+                });
+
+                // Add a default rule to start with
+                rootGroup
+                    .querySelector(".rules-list")
+                    .appendChild(createRuleElement());
+            });
+        </script>
+    </body>
+</html>
