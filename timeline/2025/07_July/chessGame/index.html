@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Programmable Chess Battle</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 30px;
+                background-color: #333;
+                color: #eee;
+                padding: 20px;
+            }
+            .main-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            #board-container {
+                width: 480px;
+                height: 480px;
+                border: 5px solid #555;
+            }
+            .board-table {
+                border-collapse: collapse;
+            }
+            .square {
+                width: 60px;
+                height: 60px;
+                text-align: center;
+                vertical-align: middle;
+                font-size: 44px;
+                user-select: none;
+            }
+            .square.light {
+                background-color: #f0d9b5;
+            }
+            .square.dark {
+                background-color: #b58863;
+            }
+            .piece {
+                cursor: grab;
+            }
+
+            .side-panel {
+                width: 400px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            textarea {
+                width: 100%;
+                height: 150px;
+                box-sizing: border-box;
+                background-color: #222;
+                color: #ddd;
+                border: 1px solid #555;
+                font-family: monospace;
+                font-size: 14px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+                background-color: #4a4;
+                color: white;
+                border: none;
+                border-radius: 5px;
+            }
+            button:disabled {
+                background-color: #777;
+                cursor: not-allowed;
+            }
+            #status-panel {
+                background-color: #444;
+                padding: 15px;
+                border-radius: 5px;
+                text-align: center;
+            }
+            #results-container {
+                margin-top: 20px;
+                width: 100%;
+            }
+            #results-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            #results-table th,
+            #results-table td {
+                border: 1px solid #666;
+                padding: 8px;
+                text-align: left;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="main-content">
+            <h1>Chess AI Battle</h1>
+            <div id="board-container"></div>
+            <div id="status-panel">
+                <h2>Welcome!</h2>
+                <p>Enter your algorithms and press "Start Game".</p>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div>
+                <label for="white-algo">White's Algorithm:</label>
+                <textarea id="white-algo">
+// Example: A simple algorithm that finds the first valid move.
+// 'api' is the only argument your function will receive.
+const myPieces = api.getAllPieces('white');
+if (myPieces.length === 0) return null; // Should not happen
+
+for (const piece of myPieces) {
+    // Try to move each piece to every square on the board
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const move = {
+                from: { row: piece.row, col: piece.col },
+                to: { row: r, col: c }
+            };
+            // The API checks if the move is pseudo-legal
+            if (api.isMoveLegal(move)) {
+                // Return the first legal move found
+                return move;
+            }
+        }
+    }
+}
+// If no move is found, forfeit (this indicates an error in the algo)
+return null;
+            </textarea
+                >
+            </div>
+            <div>
+                <label for="black-algo">Black's Algorithm:</label>
+                <textarea id="black-algo">
+// Example: A random-moving algorithm.
+// 'api' provides functions to interact with the board safely.
+const myPieces = api.getAllPieces('black');
+if (myPieces.length === 0) return null;
+
+let legalMoves = [];
+for (const piece of myPieces) {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const move = { from: piece.position, to: { row: r, col: c } };
+            if (api.isMoveLegal(move)) {
+                legalMoves.push(move);
+            }
+        }
+    }
+}
+
+if (legalMoves.length > 0) {
+    // Pick a random legal move
+    const randomIndex = Math.floor(Math.random() * legalMoves.length);
+    return legalMoves[randomIndex];
+}
+
+// Forfeit if no legal moves can be found
+return null;
+            </textarea
+                >
+            </div>
+            <button id="start-game-btn">Start Game</button>
+
+            <div id="results-container">
+                <h3>Game History</h3>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Game #</th>
+                            <th>Winner</th>
+                            <th>Reason</th>
+                            <th>Moves</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        <!-- Results will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- 1. GAME STATE & CONSTANTS ---
+                const PIECES = {
+                    "white-king": "♔",
+                    "white-queen": "♕",
+                    "white-rook": "♖",
+                    "white-bishop": "♗",
+                    "white-knight": "♘",
+                    "white-pawn": "♙",
+                    "black-king": "♚",
+                    "black-queen": "♛",
+                    "black-rook": "♜",
+                    "black-bishop": "♝",
+                    "black-knight": "♞",
+                    "black-pawn": "♟︎",
+                };
+
+                let game = {};
+                let whiteAlgorithm, blackAlgorithm;
+                let gameHistory = [];
+
+                // --- 2. BOARD INITIALIZATION & RENDERING ---
+                function createInitialBoard() {
+                    const p = (type, color) => ({ type, color });
+                    return [
+                        [
+                            p("rook", "black"),
+                            p("knight", "black"),
+                            p("bishop", "black"),
+                            p("queen", "black"),
+                            p("king", "black"),
+                            p("bishop", "black"),
+                            p("knight", "black"),
+                            p("rook", "black"),
+                        ],
+                        [
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                            p("pawn", "black"),
+                        ],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        [null, null, null, null, null, null, null, null],
+                        [
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                            p("pawn", "white"),
+                        ],
+                        [
+                            p("rook", "white"),
+                            p("knight", "white"),
+                            p("bishop", "white"),
+                            p("queen", "white"),
+                            p("king", "white"),
+                            p("bishop", "white"),
+                            p("knight", "white"),
+                            p("rook", "white"),
+                        ],
+                    ];
+                }
+
+                function renderBoard() {
+                    const container =
+                        document.getElementById("board-container");
+                    let tableHtml = '<table class="board-table">';
+                    for (let row = 0; row < 8; row++) {
+                        tableHtml += "<tr>";
+                        for (let col = 0; col < 8; col++) {
+                            const isLight = (row + col) % 2 !== 0;
+                            const piece = game.board[row][col];
+                            const pieceChar = piece
+                                ? PIECES[`${piece.color}-${piece.type}`]
+                                : "";
+                            tableHtml += `<td class="square ${
+                                isLight ? "light" : "dark"
+                            }">
+                                <span class="piece">${pieceChar}</span>
+                              </td>`;
+                        }
+                        tableHtml += "</tr>";
+                    }
+                    tableHtml += "</table>";
+                    container.innerHTML = tableHtml;
+                }
+
+                // --- 3. THE BOARD API (FOR ALGORITHMS) ---
+                // This is the object passed to the player's algorithm function.
+                // It provides controlled access to the game state.
+                const boardAPI = {
+                    /**
+                     * Returns an array of all pieces for a given color.
+                     * Each element is an object: { type, color, row, col }
+                     * @param {string} color - 'white' or 'black'
+                     */
+                    getAllPieces: (color) => {
+                        const pieces = [];
+                        for (let r = 0; r < 8; r++) {
+                            for (let c = 0; c < 8; c++) {
+                                const piece = game.board[r][c];
+                                if (piece && piece.color === color) {
+                                    pieces.push({
+                                        type: piece.type,
+                                        color: piece.color,
+                                        row: r,
+                                        col: c,
+                                        // Deprecated: for compatibility with older example
+                                        position: { row: r, col: c },
+                                    });
+                                }
+                            }
+                        }
+                        return pieces;
+                    },
+
+                    /**
+                     * Returns the piece at a specific square, or null if empty.
+                     * @param {number} row
+                     * @param {number} col
+                     */
+                    getPiece: (row, col) => {
+                        if (row < 0 || row > 7 || col < 0 || col > 7)
+                            return null;
+                        return game.board[row][col];
+                    },
+
+                    /**
+                     * Returns whose turn it is: 'white' or 'black'.
+                     */
+                    getTurn: () => game.turn,
+
+                    /**
+                     * Checks if a move is pseudo-legal (ignores checks for now).
+                     * @param {object} move - { from: {row, col}, to: {row, col} }
+                     */
+                    isMoveLegal: (move) => {
+                        if (!move || !move.from || !move.to) return false;
+
+                        const fromPiece = boardAPI.getPiece(
+                            move.from.row,
+                            move.from.col
+                        );
+                        if (!fromPiece || fromPiece.color !== game.turn) {
+                            return false; // No piece to move, or not your turn
+                        }
+
+                        const toPiece = boardAPI.getPiece(
+                            move.to.row,
+                            move.to.col
+                        );
+                        if (toPiece && toPiece.color === fromPiece.color) {
+                            return false; // Can't capture your own piece
+                        }
+
+                        // Basic move validation (no en passant, castling, or check detection)
+                        const dr = move.to.row - move.from.row;
+                        const dc = move.to.col - move.from.col;
+
+                        switch (fromPiece.type) {
+                            case "pawn":
+                                const direction =
+                                    fromPiece.color === "white" ? -1 : 1;
+                                // Move forward one
+                                if (dc === 0 && dr === direction && !toPiece)
+                                    return true;
+                                // Move forward two (initial move)
+                                const startRow =
+                                    fromPiece.color === "white" ? 6 : 1;
+                                if (
+                                    dc === 0 &&
+                                    move.from.row === startRow &&
+                                    dr === 2 * direction &&
+                                    !toPiece &&
+                                    !boardAPI.getPiece(
+                                        move.from.row + direction,
+                                        move.from.col
+                                    )
+                                )
+                                    return true;
+                                // Capture
+                                if (
+                                    Math.abs(dc) === 1 &&
+                                    dr === direction &&
+                                    toPiece
+                                )
+                                    return true;
+                                return false;
+                            case "knight":
+                                return (
+                                    (Math.abs(dr) === 2 &&
+                                        Math.abs(dc) === 1) ||
+                                    (Math.abs(dr) === 1 && Math.abs(dc) === 2)
+                                );
+                            case "king":
+                                return Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
+                            // Rook, Bishop, Queen need clear path checks (simplified here)
+                            case "rook":
+                                if (dr !== 0 && dc !== 0) return false;
+                                return isPathClear(move.from, move.to);
+                            case "bishop":
+                                if (Math.abs(dr) !== Math.abs(dc)) return false;
+                                return isPathClear(move.from, move.to);
+                            case "queen":
+                                if (
+                                    !(
+                                        (dr !== 0 && dc === 0) ||
+                                        (dr === 0 && dc !== 0) ||
+                                        Math.abs(dr) === Math.abs(dc)
+                                    )
+                                )
+                                    return false;
+                                return isPathClear(move.from, move.to);
+                        }
+                        return false;
+                    },
+                };
+
+                function isPathClear(from, to) {
+                    const dr = Math.sign(to.row - from.row);
+                    const dc = Math.sign(to.col - from.col);
+                    let r = from.row + dr;
+                    let c = from.col + dc;
+                    while (r !== to.row || c !== to.col) {
+                        if (boardAPI.getPiece(r, c)) return false; // Path is blocked
+                        r += dr;
+                        c += dc;
+                    }
+                    return true;
+                }
+
+                // --- 4. GAME LOOP & EXECUTION ---
+                function initializeGame() {
+                    game = {
+                        board: createInitialBoard(),
+                        turn: "white",
+                        history: [],
+                        isGameOver: false,
+                        winner: null,
+                        reason: "",
+                    };
+                    renderBoard();
+                    updateStatus();
+                }
+
+                function gameLoop() {
+                    if (game.isGameOver) return;
+
+                    const currentPlayer = game.turn;
+                    const currentAlgorithm =
+                        currentPlayer === "white"
+                            ? whiteAlgorithm
+                            : blackAlgorithm;
+
+                    // Use a Promise to handle potentially async algorithms in the future
+                    Promise.resolve()
+                        .then(() => currentAlgorithm(boardAPI))
+                        .then((move) => {
+                            if (game.isGameOver) return; // Game might have ended while thinking
+
+                            // Validate the move returned by the algorithm
+                            if (!move || !boardAPI.isMoveLegal(move)) {
+                                endGame(
+                                    currentPlayer === "white"
+                                        ? "black"
+                                        : "white",
+                                    `Illegal move by ${currentPlayer}`
+                                );
+                                return;
+                            }
+
+                            // Make the move
+                            const capturedPiece =
+                                game.board[move.to.row][move.to.col];
+                            game.board[move.to.row][move.to.col] =
+                                game.board[move.from.row][move.from.col];
+                            game.board[move.from.row][move.from.col] = null;
+                            game.history.push(move);
+
+                            // Check for pawn promotion (simplified to Queen)
+                            const movedPiece =
+                                game.board[move.to.row][move.to.col];
+                            if (
+                                movedPiece.type === "pawn" &&
+                                (move.to.row === 0 || move.to.row === 7)
+                            ) {
+                                movedPiece.type = "queen";
+                            }
+
+                            renderBoard();
+
+                            // Check for game over (king captured)
+                            if (
+                                capturedPiece &&
+                                capturedPiece.type === "king"
+                            ) {
+                                endGame(currentPlayer, `King captured`);
+                                return;
+                            }
+                            if (game.history.length > 200) {
+                                // Limit game length
+                                endGame("draw", "Move limit reached");
+                                return;
+                            }
+
+                            // Switch turns and continue the loop
+                            game.turn =
+                                currentPlayer === "white" ? "black" : "white";
+                            updateStatus();
+                            setTimeout(gameLoop, 200); // 200ms delay between moves
+                        })
+                        .catch((error) => {
+                            console.error(
+                                `${currentPlayer}'s algorithm threw an error:`,
+                                error
+                            );
+                            endGame(
+                                currentPlayer === "white" ? "black" : "white",
+                                `Error in ${currentPlayer}'s algorithm`
+                            );
+                        });
+                }
+
+                function endGame(winner, reason) {
+                    game.isGameOver = true;
+                    game.winner = winner;
+                    game.reason = reason;
+                    document.getElementById("start-game-btn").disabled = false;
+                    updateStatus();
+                    storeGameResult();
+                }
+
+                function updateStatus() {
+                    const panel = document.getElementById("status-panel");
+                    if (game.isGameOver) {
+                        let message = "";
+                        if (game.winner === "draw") {
+                            message = `Game Over: It's a Draw!`;
+                        } else {
+                            message = `Game Over: ${
+                                game.winner.charAt(0).toUpperCase() +
+                                game.winner.slice(1)
+                            } wins!`;
+                        }
+                        panel.innerHTML = `<h2>${message}</h2><p>Reason: ${game.reason}</p>`;
+                    } else {
+                        panel.innerHTML = `<h2>Turn: ${
+                            game.turn.charAt(0).toUpperCase() +
+                            game.turn.slice(1)
+                        }</h2>`;
+                    }
+                }
+
+                // --- 5. UI & EVENT HANDLERS ---
+                document
+                    .getElementById("start-game-btn")
+                    .addEventListener("click", () => {
+                        const whiteCode =
+                            document.getElementById("white-algo").value;
+                        const blackCode =
+                            document.getElementById("black-algo").value;
+
+                        try {
+                            // new Function() is safer than eval(). It creates a function from a string of code.
+                            // The 'api' argument is explicitly passed in.
+                            whiteAlgorithm = new Function("api", whiteCode);
+                            blackAlgorithm = new Function("api", blackCode);
+                        } catch (e) {
+                            alert("Error in algorithm syntax: " + e.message);
+                            return;
+                        }
+
+                        document.getElementById(
+                            "start-game-btn"
+                        ).disabled = true;
+                        initializeGame();
+                        setTimeout(gameLoop, 200);
+                    });
+
+                // --- 6. RESULTS STORAGE & DISPLAY ---
+                function storeGameResult() {
+                    const result = {
+                        id: gameHistory.length + 1,
+                        winner: game.winner,
+                        reason: game.reason,
+                        moves: game.history.length,
+                    };
+                    gameHistory.push(result);
+                    localStorage.setItem(
+                        "chessGameHistory",
+                        JSON.stringify(gameHistory)
+                    );
+                    renderResults();
+                }
+
+                function loadGameResults() {
+                    const storedHistory =
+                        localStorage.getItem("chessGameHistory");
+                    if (storedHistory) {
+                        gameHistory = JSON.parse(storedHistory);
+                        renderResults();
+                    }
+                }
+
+                function renderResults() {
+                    const tbody = document.getElementById("results-body");
+                    tbody.innerHTML = "";
+                    // Show latest games first
+                    [...gameHistory].reverse().forEach((result) => {
+                        const row = `<tr>
+                <td>${result.id}</td>
+                <td>${result.winner}</td>
+                <td>${result.reason}</td>
+                <td>${result.moves}</td>
+            </tr>`;
+                        tbody.innerHTML += row;
+                    });
+                }
+
+                // Initial setup
+                initializeGame();
+                loadGameResults();
+            });
+        </script>
+    </body>
+</html>
