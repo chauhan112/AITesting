@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Grid Visualizer</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Optional: Some custom styles or overrides if needed */
+            body {
+                font-family: Arial, sans-serif;
+            }
+            /* Hide the scrollbar but allow scrolling content if it overflows */
+            ::-webkit-scrollbar {
+                display: none;
+            }
+            body {
+                -ms-overflow-style: none; /* IE and Edge */
+                scrollbar-width: none; /* Firefox */
+            }
+        </style>
+    </head>
+    <body class="flex items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-md items-center">
+            <div>
+                <textarea id="grid-data" class="w-full h-48"> </textarea>
+                <button>Visualize</button>
+            </div>
+
+            <div
+                id="grid-container"
+                class="border-2 border-black shadow-lg items-center justify-center"
+            >
+                <!-- The grid cells will be dynamically inserted here by JavaScript -->
+            </div>
+        </div>
+        <script>
+            // Define the color mapping from numerical codes to Tailwind CSS classes
+            const colorMap = {
+                0: "bg-black", // Black
+                1: "bg-blue-500", // Bright Blue
+                2: "bg-red-500", // Red
+                3: "bg-green-500", // Green
+                4: "bg-yellow-400", // Yellow (a bit lighter)
+                5: "bg-gray-500", // Gray
+                6: "bg-pink-500", // Pink
+                7: "bg-orange-500", // Orange
+                8: "bg-sky-400", // Light Blue (like cyan/sky blue)
+                9: "bg-rose-900", // Dark Red / Maroon (using rose-900 for a deep, rich red)
+            };
+
+            /**
+             * Renders a 2D array as a colored grid in the specified container.
+             * @param {Array<Array<number>>} gridData - The 2D array representing the grid colors.
+             * @param {string} containerId - The ID of the HTML element to render the grid into.
+             */
+            function drawGrid(gridData, containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) {
+                    console.error(
+                        `Container with ID '${containerId}' not found.`
+                    );
+                    return;
+                }
+
+                // Clear any existing content in the container
+                container.innerHTML = "";
+
+                // Determine grid dimensions
+                const numRows = gridData.length;
+                const numCols = gridData[0] ? gridData[0].length : 0;
+
+                if (numRows === 0 || numCols === 0) {
+                    container.textContent = "No grid data to display.";
+                    return;
+                }
+
+                // Apply CSS Grid properties to the container using direct style
+                // We use fixed pixel values for cell size to match the image's precise look
+                const cellSize = "48px"; // Corresponds to Tailwind's w-12 h-12 (48px)
+                container.classList.add("grid");
+                container.style.gridTemplateColumns = `repeat(${numCols}, ${cellSize})`;
+                container.style.gridAutoRows = cellSize; // Ensure rows also have fixed height
+
+                // Iterate over the 2D array to create and append cells
+                gridData.forEach((row) => {
+                    row.forEach((cellValue) => {
+                        const cell = document.createElement("div");
+                        // Add Tailwind classes for cell dimensions and border
+                        cell.classList.add(
+                            "w-12",
+                            "h-12", // Fixed size for each cell (48px x 48px)
+                            "border",
+                            "border-gray-700" // Thin dark border for internal lines
+                        );
+
+                        // Get the color class from the map, default to black if not found
+                        const colorClass = colorMap[cellValue];
+                        if (colorClass) {
+                            cell.classList.add(colorClass);
+                        } else {
+                            console.warn(
+                                `Unknown color code: ${cellValue}. Defaulting to black.`
+                            );
+                            cell.classList.add("bg-black"); // Default or error color
+                        }
+
+                        container.appendChild(cell);
+                    });
+                });
+            }
+
+            // Example 2D array for the grid
+            // This matches the image provided: 5 rows by 6 columns
+            const myGridData = [
+                [0, 6, 8, 8, 8, 4],
+                [6, 4, 6, 4, 6, 4],
+                [8, 4, 6, 8, 8, 8],
+                [6, 4, 6, 4, 6, 4],
+                [8, 6, 8, 8, 8, 4],
+            ];
+
+            // Call the drawGrid function when the DOM is fully loaded
+            document.addEventListener("DOMContentLoaded", () => {
+                drawGrid(myGridData, "grid-container");
+            });
+
+            // You can uncomment and modify this to test with other grid data:
+            /*
+        const smallerGrid = [ 
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+        ];
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     drawGrid(smallerGrid, 'grid-container');
+        // });
+        */
+        </script>
+    </body>
+</html>

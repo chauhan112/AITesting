@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>2D Array Visualizer</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body
+        class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4 gap-10"
+    >
+        <div class="text-center">
+            <h1 class="text-4xl font-bold mb-2">2D Array Visualizer</h1>
+            <p class="text-gray-400">
+                The grid below is generated from the
+                <code class="bg-gray-700 p-1 rounded">gridData</code> array in
+                the script.
+            </p>
+        </div>
+
+        <!-- This is where the grid will be injected by JavaScript -->
+        <div id="grid-container" class="border-4 border-black">
+            <!-- Grid cells will be added here -->
+        </div>
+
+        <!-- Visual Color Palette Legend -->
+        <div class="mt-4">
+            <h2 class="text-2xl font-bold text-center mb-4">
+                Color Palette Key
+            </h2>
+            <div
+                id="palette-container"
+                class="flex flex-wrap justify-center gap-4"
+            >
+                <!-- Palette swatches will be added here -->
+            </div>
+        </div>
+
+        <script>
+            // --- 1. DEFINE YOUR DATA AND COLORS ---
+
+            /**
+             * Color Map: Maps an index (0-9) to a Tailwind CSS background color class.
+             * You can customize these colors.
+             */
+            const colorMap = [
+                "bg-black", // 0
+                "bg-blue-500", // 1
+                "bg-red-600", // 2
+                "bg-green-500", // 3
+                "bg-yellow-400", // 4
+                "bg-gray-500", // 5
+                "bg-pink-500", // 6
+                "bg-orange-500", // 7
+                "bg-sky-400", // 8 (Light Blue from your image)
+                "bg-red-900", // 9
+            ];
+
+            /**
+             * The 2D array to visualize.
+             * This data is transcribed from the image you provided.
+             * 8 = Light Blue, 6 = Pink, 4 = Yellow
+             *
+             * !!! TO DISPLAY A NEW PATTERN, JUST CHANGE THIS ARRAY !!!
+             */
+            const gridData = [
+                [8, 6, 8, 6, 8, 6],
+                [4, 6, 4, 6, 4, 6],
+                [8, 6, 8, 6, 8, 6],
+                [4, 8, 4, 6, 4, 8], // A slightly modified row for demonstration
+                [8, 6, 8, 6, 8, 6],
+                [4, 6, 4, 6, 4, 6],
+            ];
+
+            // --- 2. THE VISUALIZER LOGIC ---
+
+            /**
+             * Creates and displays a grid in a target container based on 2D data.
+             * @param {number[][]} data The 2D array of numbers to visualize.
+             * @param {HTMLElement} container The DOM element to render the grid into.
+             */
+            function createGrid(data, container) {
+                // Clear any previous grid content
+                container.innerHTML = "";
+
+                // Make sure we have valid data
+                if (!data || data.length === 0) {
+                    container.innerText = "No data to display.";
+                    return;
+                }
+
+                const rows = data.length;
+                const cols = data[0].length;
+
+                // Use CSS Grid for the layout. This makes the grid structure robust.
+                container.style.display = "grid";
+                container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+                // Loop through each cell of the 2D array
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        const cellValue = data[i][j];
+                        const colorClass = colorMap[cellValue] || "bg-white"; // Default to white if number is out of bounds
+
+                        // Create a new div element for the cell
+                        const cellElement = document.createElement("div");
+
+                        // Apply Tailwind classes for styling
+                        // 'aspect-square' keeps the cells perfectly square and responsive
+                        // The border creates the grid lines seen in your example
+                        cellElement.className = `w-full aspect-square border border-gray-700 ${colorClass}`;
+
+                        // Add the cell to the grid container
+                        container.appendChild(cellElement);
+                    }
+                }
+            }
+
+            /**
+             * Creates a visual legend for the color palette.
+             * @param {string[]} colors The array of color classes.
+             * @param {HTMLElement} container The DOM element to render the palette into.
+             */
+            function createPalette(colors, container) {
+                colors.forEach((colorClass, index) => {
+                    const swatchContainer = document.createElement("div");
+                    swatchContainer.className =
+                        "flex flex-col items-center gap-1";
+
+                    const swatch = document.createElement("div");
+                    swatch.className = `w-12 h-12 rounded-md border-2 border-gray-600 ${colorClass}`;
+
+                    const label = document.createElement("span");
+                    label.className = "font-mono text-sm";
+                    label.innerText = index;
+
+                    swatchContainer.appendChild(swatch);
+                    swatchContainer.appendChild(label);
+                    container.appendChild(swatchContainer);
+                });
+            }
+
+            // --- 3. RUN THE CODE WHEN THE PAGE LOADS ---
+
+            // Wait until the DOM is fully loaded before running the script
+            document.addEventListener("DOMContentLoaded", () => {
+                const gridContainer = document.getElementById("grid-container");
+                const paletteContainer =
+                    document.getElementById("palette-container");
+
+                // Call the functions to build the UI
+                createGrid(gridData, gridContainer);
+                createPalette(colorMap, paletteContainer);
+            });
+        </script>
+    </body>
+</html>
