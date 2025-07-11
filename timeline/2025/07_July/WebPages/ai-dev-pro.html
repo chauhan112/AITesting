@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+    <!-- Default to dark theme like the original -->
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI Studio Header Recreation</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Google Icons (Material Symbols) -->
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+        <style>
+            /* Custom styles for a cleaner look and feel */
+            .material-symbols-outlined {
+                font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0,
+                    "opsz" 24;
+                font-size: 24px;
+            }
+            /* Custom scrollbar for a modern look */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #4a5568; /* gray-700 */
+                border-radius: 4px;
+            }
+            .dark ::-webkit-scrollbar-thumb {
+                background: #718096; /* gray-600 */
+            }
+            /* Custom transition for sidebar text */
+            .nav-text {
+                transition: opacity 0.2s ease-in-out;
+            }
+            aside.collapsed .nav-text {
+                opacity: 0;
+            }
+        </style>
+        <script>
+            // Apply theme from localStorage on initial load
+            if (
+                localStorage.theme === "light" ||
+                (!("theme" in localStorage) &&
+                    window.matchMedia("(prefers-color-scheme: light)").matches)
+            ) {
+                document.documentElement.classList.remove("dark");
+            } else {
+                document.documentElement.classList.add("dark");
+            }
+        </script>
+    </head>
+    <body
+        class="bg-gray-100 dark:bg-[#131314] text-gray-800 dark:text-gray-200 font-sans antialiased overflow-hidden"
+    >
+        <div class="flex h-screen">
+            <!-- ===== Sidebar Start ===== -->
+            <aside
+                id="sidebar"
+                class="fixed left-0 top-0 z-40 flex h-screen flex-col overflow-y-auto bg-[#f3f6fc] dark:bg-[#1e1f20] transition-all duration-300 ease-in-out lg:static lg:translate-x-0 -translate-x-full w-64"
+            >
+                <!-- Sidebar Header -->
+                <div class="flex items-center justify-between gap-2 px-4 py-5">
+                    <a href="#" class="flex items-center gap-2">
+                        <!-- Light Mode Logo -->
+                        <svg
+                            width="29"
+                            height="30"
+                            viewBox="0 0 29 30"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="block dark:hidden"
+                        >
+                            <path
+                                d="M18.1591 17.0322C18.1163 17.5027 18.2662 17.9782 18.5859 18.326C18.9055 18.6737 19.357 18.8578 19.7673 19.0214C20.2154 19.1987 20.6027 19.3436 21.0212 19.5941C21.4199 19.8328 21.7725 20.1294 22.0675 20.4958C23.2802 21.9941 23.1681 24.1929 21.8121 25.5566C20.456 26.9202 18.3057 26.9935 16.864 25.727C16.4966 25.4032 16.1703 24.9873 15.9017 24.5799C15.4931 21.8697 16.2857 19.0299 18.1591 17.0322Z"
+                                fill="#87A9FF"
+                            ></path>
+                            <path
+                                d="M19.886 15.6415C20.3358 15.3756 20.756 15.1881 21.2453 15.0142C21.7166 14.8472 22.196 14.7091 22.6805 14.5847C23.1633 14.4603 23.651 14.3546 24.1387 14.2489C24.6264 14.1432 25.1108 14.041 25.5821 13.8586C27.8905 12.962 29.2878 10.5535 28.95 8.04954C28.6122 5.54559 26.63 3.61436 24.17 3.39106C23.0529 3.2905 21.9736 3.55981 20.9751 4.03197C19.9799 4.50242 19.0687 5.17059 18.2761 5.93592C16.6746 7.47852 15.4915 9.45918 14.7698 11.5677C14.0432 13.6898 13.7713 15.9722 13.9427 18.2102C14.0284 19.325 14.2261 20.4466 14.5424 21.5187C14.8522 22.5704 15.3004 23.6562 15.9034 24.5766C15.6431 22.8534 15.8672 21.0721 16.5609 19.4767C17.2529 17.8847 18.3997 16.521 19.886 15.6415Z"
+                                fill="#0057CE"
+                            ></path>
+                            <path
+                                d="M9.62059 17.1674C9.46241 16.9867 9.29764 16.8145 9.11474 16.6611C9.34212 17.06 9.36519 17.5117 9.26962 17.9463C9.17406 18.3793 8.96315 18.7799 8.69622 19.1242C8.42105 19.477 8.0981 19.7583 7.74714 20.0242C7.44067 20.256 6.99414 20.5526 6.71732 20.8304C5.90335 21.6486 5.73693 22.927 6.31363 23.9326C6.89033 24.94 8.06021 25.4173 9.15593 25.09C9.76064 24.9093 10.2731 24.502 10.6801 24.0366C11.092 23.5662 11.4265 23.0071 11.6901 22.4412C11.6226 20.4895 10.891 18.6247 9.62059 17.1674Z"
+                                fill="#87A9FF"
+                            ></path>
+                            <path
+                                d="M4.45504 6.30371C6.13076 6.30201 7.75705 7.25484 8.93516 8.32358C10.1858 9.45879 11.1546 10.9042 11.7923 12.4758C12.4332 14.0559 12.7414 15.7638 12.7298 17.4701C12.7183 19.1286 12.3986 20.9251 11.6901 22.4405C11.6226 20.4888 10.891 18.6223 9.62061 17.165C9.39817 16.911 9.16584 16.6809 8.88902 16.4866C8.61221 16.2922 8.32056 16.1491 8.00585 16.0349C7.39455 15.8133 6.70416 15.7093 6.06815 15.6377C5.41236 15.5627 4.75327 15.5184 4.09913 15.4195C3.42687 15.3173 2.8238 15.1673 2.22404 14.811C0.477466 13.7781 -0.369457 11.6747 0.152867 9.68379C0.675191 7.6912 2.43989 6.30542 4.45504 6.30371Z"
+                                fill="#0057CE"
+                            ></path>
+                        </svg>
+                        <!-- Dark Mode Logo -->
+                        <svg
+                            width="33"
+                            height="33"
+                            viewBox="0 0 33 33"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="hidden dark:block"
+                        >
+                            <mask id="path-2-inside-1_4067_33337" fill="white">
+                                <path
+                                    d="M21.7003 16.9533C22.1346 16.7051 22.5403 16.5301 23.0128 16.3678C23.4678 16.2119 23.9307 16.0831 24.3984 15.9669C24.8646 15.8508 25.3355 15.7521 25.8064 15.6535C26.2773 15.5549 26.745 15.4594 27.2 15.2892C29.4288 14.4524 30.7779 12.2045 30.4518 9.86745C30.1256 7.53043 28.2118 5.72796 25.8366 5.51955C24.758 5.42569 23.7159 5.67705 22.7519 6.11773C21.791 6.55681 20.9112 7.18044 20.146 7.89475C18.5997 9.3345 17.4574 11.1831 16.7606 13.151C16.059 15.1317 15.7965 17.2619 15.962 19.3507C16.0447 20.3912 16.2356 21.438 16.541 22.4387C16.8401 23.4202 17.2728 24.4336 17.8551 25.2927C17.6038 23.6843 17.8201 22.0218 18.4899 20.5328C19.1581 19.0469 20.2653 17.7742 21.7003 16.9533Z"
+                                ></path>
+                            </mask>
+                            <path
+                                d="M21.7003 16.9533C22.1346 16.7051 22.5403 16.5301 23.0128 16.3678C23.4678 16.2119 23.9307 16.0831 24.3984 15.9669C24.8646 15.8508 25.3355 15.7521 25.8064 15.6535C26.2773 15.5549 26.745 15.4594 27.2 15.2892C29.4288 14.4524 30.7779 12.2045 30.4518 9.86745C30.1256 7.53043 28.2118 5.72796 25.8366 5.51955C24.758 5.42569 23.7159 5.67705 22.7519 6.11773C21.791 6.55681 20.9112 7.18044 20.146 7.89475C18.5997 9.3345 17.4574 11.1831 16.7606 13.151C16.059 15.1317 15.7965 17.2619 15.962 19.3507C16.0447 20.3912 16.2356 21.438 16.541 22.4387C16.8401 23.4202 17.2728 24.4336 17.8551 25.2927C17.6038 23.6843 17.8201 22.0218 18.4899 20.5328C19.1581 19.0469 20.2653 17.7742 21.7003 16.9533Z"
+                                fill="white"
+                                stroke="white"
+                                stroke-width="4.41379"
+                                mask="url(#path-2-inside-1_4067_33337)"
+                            ></path>
+                            <path
+                                d="M20.7808 19.2998C20.7394 19.7389 20.8842 20.1827 21.1928 20.5073C21.5014 20.8318 21.9373 21.0036 22.3335 21.1564C22.7662 21.3218 23.14 21.457 23.5441 21.6909C23.9291 21.9136 24.2696 22.1904 24.5543 22.5325C25.7252 23.9309 25.6171 25.9831 24.3078 27.2558C22.9985 28.5286 20.9223 28.597 19.5303 27.4149C19.1756 27.1127 18.8606 26.7245 18.6012 26.3443C18.2067 23.8147 18.9719 21.1643 20.7808 19.2998Z"
+                                fill="white"
+                            ></path>
+                            <mask id="path-4-inside-2_4067_33337" fill="white">
+                                <path
+                                    d="M6.80141 8.23828C8.41934 8.23669 9.98955 9.126 11.127 10.1235C12.3345 11.183 13.27 12.5321 13.8856 13.9989C14.5045 15.4736 14.802 17.0677 14.7909 18.6602C14.7797 20.2081 14.4711 21.8849 13.787 23.2992C13.7218 21.4777 13.0154 19.7356 11.7888 18.3754C11.5741 18.1384 11.3498 17.9236 11.0825 17.7423C10.8152 17.5609 10.5336 17.4273 10.2298 17.3207C9.63955 17.1139 8.97297 17.0168 8.35889 16.95C7.72571 16.88 7.08936 16.8386 6.45777 16.7464C5.80869 16.6509 5.22643 16.5109 4.64734 16.1784C2.961 15.2143 2.14328 13.2512 2.6476 11.393C3.15191 9.53327 4.85575 8.23987 6.80141 8.23828Z"
+                                ></path>
+                            </mask>
+                            <path
+                                d="M6.80141 8.23828C8.41934 8.23669 9.98955 9.126 11.127 10.1235C12.3345 11.183 13.27 12.5321 13.8856 13.9989C14.5045 15.4736 14.802 17.0677 14.7909 18.6602C14.7797 20.2081 14.4711 21.8849 13.787 23.2992C13.7218 21.4777 13.0154 19.7356 11.7888 18.3754C11.5741 18.1384 11.3498 17.9236 11.0825 17.7423C10.8152 17.5609 10.5336 17.4273 10.2298 17.3207C9.63955 17.1139 8.97297 17.0168 8.35889 16.95C7.72571 16.88 7.08936 16.8386 6.45777 16.7464C5.80869 16.6509 5.22643 16.5109 4.64734 16.1784C2.961 15.2143 2.14328 13.2512 2.6476 11.393C3.15191 9.53327 4.85575 8.23987 6.80141 8.23828Z"
+                                fill="white"
+                                stroke="white"
+                                stroke-width="4.41379"
+                                mask="url(#path-4-inside-2_4067_33337)"
+                            ></path>
+                            <mask id="path-5-inside-3_4067_33337" fill="white">
+                                <path
+                                    d="M10.8224 19.1727C10.6697 19.0041 10.5106 18.8434 10.334 18.7002C10.5535 19.0725 10.5758 19.494 10.4835 19.8997C10.3913 20.3038 10.1876 20.6777 9.92992 20.999C9.66424 21.3283 9.35243 21.5908 9.01357 21.839C8.71766 22.0554 8.28653 22.3322 8.01926 22.5915C7.23336 23.3551 7.07268 24.5483 7.62949 25.4869C8.18631 26.4271 9.31584 26.8726 10.3738 26.5671C10.9576 26.3985 11.4524 26.0183 11.8453 25.584C12.2431 25.1449 12.566 24.6231 12.8206 24.0949C12.7553 22.2733 12.049 20.5329 10.8224 19.1727Z"
+                                ></path>
+                            </mask>
+                            <path
+                                d="M10.8224 19.1727C10.6697 19.0041 10.5106 18.8434 10.334 18.7002C10.5535 19.0725 10.5758 19.494 10.4835 19.8997C10.3913 20.3038 10.1876 20.6777 9.92992 20.999C9.66424 21.3283 9.35243 21.5908 9.01357 21.839C8.71766 22.0554 8.28653 22.3322 8.01926 22.5915C7.23336 23.3551 7.07268 24.5483 7.62949 25.4869C8.18631 26.4271 9.31584 26.8726 10.3738 26.5671C10.9576 26.3985 11.4524 26.0183 11.8453 25.584C12.2431 25.1449 12.566 24.6231 12.8206 24.0949C12.7553 22.2733 12.049 20.5329 10.8224 19.1727Z"
+                                stroke="white"
+                                stroke-width="3.31034"
+                                mask="url(#path-5-inside-3_4067_33337)"
+                            ></path>
+                            <path
+                                d="M10.8224 19.1727C10.6697 19.0041 10.5106 18.8434 10.334 18.7002C10.5535 19.0725 10.5758 19.494 10.4835 19.8997C10.3913 20.3038 10.1876 20.6777 9.92992 20.999C9.66424 21.3283 9.35243 21.5908 9.01357 21.839C8.71766 22.0554 8.28653 22.3322 8.01926 22.5915C7.23336 23.3551 7.07268 24.5483 7.62949 25.4869C8.18631 26.4271 9.31584 26.8726 10.3738 26.5671C10.9576 26.3985 11.4524 26.0183 11.8453 25.584C12.2431 25.1449 12.566 24.6231 12.8206 24.0949C12.7553 22.2733 12.049 20.5329 10.8224 19.1727Z"
+                                fill="white"
+                            ></path>
+                        </svg>
+
+                        <h1 class="text-xl font-semibold nav-text">
+                            AI Studio
+                        </h1>
+                    </a>
+                    <button
+                        id="sidebar-toggle"
+                        class="hidden lg:block p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    >
+                        <span class="material-symbols-outlined">menu_open</span>
+                    </button>
+                </div>
+
+                <!-- Sidebar Content -->
+                <div class="flex flex-1 flex-col justify-between px-2">
+                    <nav class="flex flex-col gap-1">
+                        <a
+                            href="#"
+                            class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium bg-[#dde3ea] dark:bg-[#282a2c] text-blue-600 dark:text-blue-400 hover:bg-[#d5dce6] dark:hover:bg-[#3c3f43]"
+                        >
+                            <span class="material-symbols-outlined"
+                                >add_comment</span
+                            >
+                            <span class="nav-text">New chat</span>
+                        </a>
+                        <a
+                            href="#"
+                            class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                        >
+                            <span class="material-symbols-outlined"
+                                >history</span
+                            >
+                            <span class="nav-text">History</span>
+                        </a>
+
+                        <hr class="my-2 border-gray-300 dark:border-gray-600" />
+
+                        <!-- Accordion Item 1 -->
+                        <div class="accordion-item">
+                            <button
+                                class="accordion-header flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                            >
+                                <span class="nav-text">Studio</span>
+                                <span
+                                    class="material-symbols-outlined accordion-chevron transition-transform duration-200"
+                                    >expand_more</span
+                                >
+                            </button>
+                            <div
+                                class="accordion-content hidden overflow-hidden transition-all duration-300"
+                            >
+                                <div class="pt-1 pl-5">
+                                    <a
+                                        href="#"
+                                        class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >mark_chat_unread</span
+                                        >
+                                        <span class="nav-text">Chat</span>
+                                    </a>
+                                    <a
+                                        href="#"
+                                        class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >graphic_eq</span
+                                        >
+                                        <span class="nav-text">Stream</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accordion Item 2 -->
+                        <div class="accordion-item">
+                            <button
+                                class="accordion-header flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                            >
+                                <span class="nav-text">Dashboard</span>
+                                <span
+                                    class="material-symbols-outlined accordion-chevron transition-transform duration-200"
+                                    >expand_more</span
+                                >
+                            </button>
+                            <div
+                                class="accordion-content hidden overflow-hidden transition-all duration-300"
+                            >
+                                <div class="pt-1 pl-5">
+                                    <a
+                                        href="#"
+                                        class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >key</span
+                                        >
+                                        <span class="nav-text">API Keys</span>
+                                    </a>
+                                    <a
+                                        href="#"
+                                        class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >bar_chart</span
+                                        >
+                                        <span class="nav-text">Usage</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Bottom Nav -->
+                    <div class="pb-4 px-2">
+                        <hr class="my-2 border-gray-300 dark:border-gray-600" />
+                        <button
+                            id="theme-toggle"
+                            class="flex w-full items-center gap-3 rounded-full px-3 py-2 text-sm font-medium hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                        >
+                            <span class="material-symbols-outlined">
+                                <!-- Icon will be set by JS -->
+                            </span>
+                            <span class="nav-text">Toggle Theme</span>
+                        </button>
+                        <a
+                            href="#"
+                            class="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium mt-1 hover:bg-[#dde3ea] dark:hover:bg-[#282a2c]"
+                        >
+                            <img
+                                src="https://lh3.googleusercontent.com/a/ACg8ocIrAAIi2TgWjsyclT42OwOqtnlT_YplxXi0ad5gk1zlX2EPJg=s64-cc"
+                                alt="User Avatar"
+                                class="h-6 w-6 rounded-full"
+                            />
+                            <span class="nav-text">My Account</span>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+            <!-- ===== Sidebar End ===== -->
+
+            <!-- ===== Content Area Start ===== -->
+            <div
+                id="content-area"
+                class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out lg:ml-64"
+            >
+                <!-- ===== Header Start ===== -->
+                <header
+                    class="sticky top-0 z-20 flex w-full bg-gray-100 dark:bg-[#131314] drop-shadow-sm border-b border-gray-200 dark:border-gray-700"
+                >
+                    <div
+                        class="flex flex-grow items-center justify-between px-4 py-2 shadow-sm md:px-6 2xl:px-8"
+                    >
+                        <div class="flex items-center gap-2 sm:gap-4">
+                            <!-- Hamburger Toggle BTN -->
+                            <button
+                                id="hamburger-btn"
+                                aria-controls="sidebar"
+                                class="block rounded-lg border border-gray-300 dark:border-gray-600 p-1.5 lg:hidden"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >menu</span
+                                >
+                            </button>
+
+                            <!-- Model Selector -->
+                            <div class="relative">
+                                <select
+                                    class="relative z-20 w-full appearance-none rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-800 py-2 pl-4 pr-10 text-sm font-medium outline-none transition focus:border-blue-500 active:border-blue-500"
+                                >
+                                    <option value="gemini-flash" selected>
+                                        Gemini 1.5 Flash
+                                    </option>
+                                    <option value="gemini-pro">
+                                        Gemini 1.5 Pro
+                                    </option>
+                                </select>
+                                <span
+                                    class="absolute top-1/2 right-3 z-10 -translate-y-1/2"
+                                >
+                                    <span class="material-symbols-outlined"
+                                        >expand_more</span
+                                    >
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button
+                                class="hidden sm:flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                            >
+                                <span
+                                    class="material-symbols-outlined"
+                                    style="font-size: 20px"
+                                    >key</span
+                                >
+                                Get API key
+                            </button>
+                            <button
+                                class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >tune</span
+                                >
+                            </button>
+                            <button
+                                class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >settings</span
+                                >
+                            </button>
+                            <img
+                                src="https://lh3.googleusercontent.com/a/ACg8ocIrAAIi2TgWjsyclT42OwOqtnlT_YplxXi0ad5gk1zlX2EPJg=s64-cc"
+                                alt="User Avatar"
+                                class="h-8 w-8 rounded-full"
+                            />
+                        </div>
+                    </div>
+                </header>
+                <!-- ===== Header End ===== -->
+
+                <!-- Main content for demonstration -->
+                <main class="p-4 md:p-6 2xl:p-10">
+                    <h1 class="text-2xl font-bold">Welcome to the Dashboard</h1>
+                    <p class="mt-2">
+                        This is the main content area. The header above and the
+                        sidebar to the left are responsive.
+                    </p>
+                    <div
+                        class="mt-8 p-6 border border-dashed border-gray-400 dark:border-gray-600 rounded-lg"
+                    >
+                        <p>
+                            Try resizing your browser window to see the
+                            responsive behavior.
+                        </p>
+                        <ul class="list-disc list-inside mt-4">
+                            <li>
+                                The sidebar will collapse to an icon-only view
+                                on large screens via the top-right button in the
+                                sidebar.
+                            </li>
+                            <li>
+                                The sidebar will disappear on smaller screens
+                                and can be toggled with the hamburger menu in
+                                the top header.
+                            </li>
+                        </ul>
+                    </div>
+                </main>
+            </div>
+            <!-- ===== Content Area End ===== -->
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- THEME TOGGLE ---
+                const themeToggleBtn = document.getElementById("theme-toggle");
+                const themeIcon = themeToggleBtn.querySelector(
+                    ".material-symbols-outlined"
+                );
+
+                const updateThemeIcon = () => {
+                    if (document.documentElement.classList.contains("dark")) {
+                        themeIcon.textContent = "light_mode";
+                    } else {
+                        themeIcon.textContent = "dark_mode";
+                    }
+                };
+
+                themeToggleBtn.addEventListener("click", () => {
+                    document.documentElement.classList.toggle("dark");
+                    if (document.documentElement.classList.contains("dark")) {
+                        localStorage.theme = "dark";
+                    } else {
+                        localStorage.theme = "light";
+                    }
+                    updateThemeIcon();
+                });
+
+                // Set initial icon
+                updateThemeIcon();
+
+                // --- SIDEBAR COLLAPSE/EXPAND (Desktop) ---
+                const sidebar = document.getElementById("sidebar");
+                const sidebarToggle = document.getElementById("sidebar-toggle");
+                const contentArea = document.getElementById("content-area");
+                const toggleIcon = sidebarToggle.querySelector(
+                    ".material-symbols-outlined"
+                );
+
+                sidebarToggle.addEventListener("click", () => {
+                    sidebar.classList.toggle("collapsed");
+                    if (sidebar.classList.contains("collapsed")) {
+                        sidebar.classList.remove("w-64");
+                        sidebar.classList.add("w-20");
+                        contentArea.classList.remove("lg:ml-64");
+                        contentArea.classList.add("lg:ml-20");
+                        toggleIcon.textContent = "menu";
+                    } else {
+                        sidebar.classList.remove("w-20");
+                        sidebar.classList.add("w-64");
+                        contentArea.classList.remove("lg:ml-20");
+                        contentArea.classList.add("lg:ml-64");
+                        toggleIcon.textContent = "menu_open";
+                    }
+                });
+
+                // --- SIDEBAR TOGGLE (Mobile) ---
+                const hamburgerBtn = document.getElementById("hamburger-btn");
+                hamburgerBtn.addEventListener("click", () => {
+                    sidebar.classList.toggle("-translate-x-full");
+                });
+
+                // --- ACCORDION MENU ---
+                const accordionHeaders =
+                    document.querySelectorAll(".accordion-header");
+                accordionHeaders.forEach((header) => {
+                    header.addEventListener("click", () => {
+                        const content = header.nextElementSibling;
+                        const chevron =
+                            header.querySelector(".accordion-chevron");
+
+                        content.classList.toggle("hidden");
+                        chevron.classList.toggle("rotate-180");
+                    });
+                });
+
+                // Adjust content margin based on initial state
+                if (!sidebar.classList.contains("collapsed")) {
+                    contentArea.classList.add("lg:ml-64");
+                } else {
+                    contentArea.classList.add("lg:ml-20");
+                }
+            });
+        </script>
+    </body>
+</html>
