@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dynamic Filter UI</title>
+        <!-- Tailwind CSS via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Basic Syntax Highlighting (highlight.js) for the output -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+        <style>
+            /* Custom styles for a bit more polish */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            .filter-block {
+                transition: all 0.3s ease-in-out;
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        </style>
+    </head>
+    <body class="bg-slate-100 text-slate-800">
+        <div class="container mx-auto max-w-4xl p-4 sm:p-8">
+            <header class="mb-8">
+                <h1 class="text-4xl font-bold text-slate-900 mb-2">
+                    Filter Parameters UI
+                </h1>
+                <p class="text-slate-600">
+                    Build a filter pipeline by adding and configuring steps.
+                    Then, generate the data structure.
+                </p>
+            </header>
+
+            <main class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-1">Filter Pipeline</h2>
+                <p id="no-filters-message" class="text-slate-500 mb-4">
+                    No filters added yet. Click "Add Filter" to begin.
+                </p>
+
+                <!-- Container for dynamic filter blocks -->
+                <div id="filter-pipeline" class="space-y-4 mb-6"></div>
+
+                <button
+                    id="add-filter-btn"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-sky-500 text-white font-semibold rounded-lg hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    Add Filter Step
+                </button>
+            </main>
+
+            <footer class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4">Output Structure</h2>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button
+                        id="show-structure-btn"
+                        class="flex-1 px-4 py-3 bg-slate-700 text-white font-semibold rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-700 transition-colors"
+                    >
+                        Generate Structure
+                    </button>
+                    <button
+                        id="copy-btn"
+                        class="flex-1 px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition-colors"
+                        style="display: none"
+                    >
+                        <span id="copy-btn-text">Copy to Clipboard</span>
+                    </button>
+                </div>
+
+                <div id="output-container" class="mt-6" style="display: none">
+                    <pre
+                        class="rounded-lg overflow-hidden"
+                    ><code id="output-code" class="language-json p-4"></code></pre>
+                </div>
+            </footer>
+        </div>
+
+        <!-- 
+      TEMPLATE FOR A SINGLE FILTER BLOCK
+      This is not displayed, but cloned by JavaScript to create new filter steps.
+    -->
+        <template id="filter-block-template">
+            <div
+                class="filter-block p-4 border border-slate-200 rounded-lg bg-slate-50/50 shadow-sm relative fade-in"
+            >
+                <button
+                    class="remove-btn absolute top-3 right-3 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-full p-1 transition-colors"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <!-- Filter Type Selector -->
+                    <div class="col-span-1">
+                        <label
+                            class="block text-sm font-medium text-slate-700 mb-1"
+                            >Filter Type</label
+                        >
+                        <select
+                            class="filter-type-selector w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
+                        >
+                            <option value="search" selected>Search</option>
+                            <option value="sort">Sort</option>
+                            <option value="group">Group</option>
+                        </select>
+                    </div>
+                    <!-- Dynamic Options based on type -->
+                    <div class="options-container md:col-span-2 mt-2 md:mt-0">
+                        <!-- JS will inject content here -->
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- DOM ELEMENTS ---
+                const filterPipeline =
+                    document.getElementById("filter-pipeline");
+                const addFilterBtn = document.getElementById("add-filter-btn");
+                const showStructureBtn =
+                    document.getElementById("show-structure-btn");
+                const copyBtn = document.getElementById("copy-btn");
+                const copyBtnText = document.getElementById("copy-btn-text");
+                const outputContainer =
+                    document.getElementById("output-container");
+                const outputCode = document.getElementById("output-code");
+                const filterBlockTemplate = document.getElementById(
+                    "filter-block-template"
+                );
+                const noFiltersMessage =
+                    document.getElementById("no-filters-message");
+
+                // --- HTML TEMPLATES FOR OPTIONS ---
+                const searchOptionsTemplate = `
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Search Value</label>
+                        <input type="text" data-param="searchValue" placeholder="e.g., xyz" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" data-param="advancedSearch" class="h-4 w-4 text-sky-600 border-slate-300 rounded focus:ring-sky-500">
+                        <label class="ml-2 block text-sm text-slate-900">Advanced Options</label>
+                    </div>
+                    <div data-param="advancedOptionsContainer" class="hidden space-y-3 pl-6 border-l-2 border-slate-200 ml-1">
+                         <div>
+                            <label class="block text-sm font-medium text-slate-700">Search Type</label>
+                            <select data-param="searchType" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="reg">Regex</option>
+                                <option value="case">Case-sensitive</option>
+                                <option value="word">Whole Word</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Field</label>
+                            <input type="text" data-param="searchField" placeholder="e.g., title" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                        </div>
+                        <div>
+                             <label class="block text-sm font-medium text-slate-700">Value(s)</label>
+                             <textarea data-param="searchAdvancedValue" placeholder="Enter one value, or multiple values on separate lines for a list" rows="2" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                const sortOptionsTemplate = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700">Sort by Field</label>
+                        <input type="text" data-param="sortField" placeholder="e.g., key" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                    </div>
+                    <div class="flex items-center pt-6">
+                        <input type="checkbox" data-param="sortReverse" class="h-4 w-4 text-sky-600 border-slate-300 rounded focus:ring-sky-500">
+                        <label class="ml-2 block text-sm text-slate-900">Reverse</label>
+                    </div>
+                </div>
+            `;
+
+                const groupOptionsTemplate = `
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Group by Fields</label>
+                    <textarea data-param="groupFields" placeholder="Enter field names, one per line (e.g., test\nother)" rows="3" class="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"></textarea>
+                </div>
+            `;
+
+                // --- CORE FUNCTIONS ---
+
+                const updateNoFiltersMessage = () => {
+                    const blockCount = filterPipeline.children.length;
+                    noFiltersMessage.style.display =
+                        blockCount === 0 ? "block" : "none";
+                };
+
+                const addFilterBlock = () => {
+                    const blockFragment =
+                        filterBlockTemplate.content.cloneNode(true);
+                    const newBlock =
+                        blockFragment.querySelector(".filter-block");
+                    filterPipeline.appendChild(newBlock);
+                    // Initialize the options for the default "search" type
+                    updateOptionsUI(newBlock, "search");
+                    updateNoFiltersMessage();
+                };
+
+                const updateOptionsUI = (block, type) => {
+                    const optionsContainer =
+                        block.querySelector(".options-container");
+                    optionsContainer.innerHTML = ""; // Clear previous options
+                    let template = "";
+                    switch (type) {
+                        case "sort":
+                            template = sortOptionsTemplate;
+                            break;
+                        case "group":
+                            template = groupOptionsTemplate;
+                            break;
+                        case "search":
+                        default:
+                            template = searchOptionsTemplate;
+                            break;
+                    }
+                    optionsContainer.innerHTML = template;
+
+                    // Add event listener for advanced search toggle if it exists
+                    const advancedCheckbox = optionsContainer.querySelector(
+                        '[data-param="advancedSearch"]'
+                    );
+                    if (advancedCheckbox) {
+                        const advancedOptions = optionsContainer.querySelector(
+                            '[data-param="advancedOptionsContainer"]'
+                        );
+                        const simpleInput = optionsContainer.querySelector(
+                            '[data-param="searchValue"]'
+                        );
+                        advancedCheckbox.addEventListener("change", (e) => {
+                            if (e.target.checked) {
+                                advancedOptions.style.display = "block";
+                                simpleInput.parentElement.style.display =
+                                    "none";
+                            } else {
+                                advancedOptions.style.display = "none";
+                                simpleInput.parentElement.style.display =
+                                    "block";
+                            }
+                        });
+                    }
+                };
+
+                const buildObjectFromBlock = (block) => {
+                    const type = block.querySelector(
+                        ".filter-type-selector"
+                    ).value;
+                    const optionsContainer =
+                        block.querySelector(".options-container");
+                    let value;
+
+                    switch (type) {
+                        case "search":
+                            const isAdvanced = optionsContainer.querySelector(
+                                '[data-param="advancedSearch"]'
+                            ).checked;
+                            if (!isAdvanced) {
+                                value = optionsContainer
+                                    .querySelector('[data-param="searchValue"]')
+                                    .value.trim();
+                            } else {
+                                const advancedValRaw = optionsContainer
+                                    .querySelector(
+                                        '[data-param="searchAdvancedValue"]'
+                                    )
+                                    .value.trim();
+                                // Treat multi-line as a list of strings
+                                const advancedValues = advancedValRaw
+                                    .split("\n")
+                                    .map((v) => v.trim())
+                                    .filter((v) => v);
+
+                                value = {
+                                    type: optionsContainer.querySelector(
+                                        '[data-param="searchType"]'
+                                    ).value,
+                                    value:
+                                        advancedValues.length > 1
+                                            ? advancedValues
+                                            : advancedValues[0] || "",
+                                    field: optionsContainer
+                                        .querySelector(
+                                            '[data-param="searchField"]'
+                                        )
+                                        .value.trim(),
+                                };
+                            }
+                            return { type, value };
+
+                        case "sort":
+                            value = {
+                                field: optionsContainer
+                                    .querySelector('[data-param="sortField"]')
+                                    .value.trim(),
+                                reverse: optionsContainer.querySelector(
+                                    '[data-param="sortReverse"]'
+                                ).checked,
+                            };
+                            return { type, value };
+
+                        case "group":
+                            const fieldsRaw = optionsContainer
+                                .querySelector('[data-param="groupFields"]')
+                                .value.trim();
+                            value = fieldsRaw
+                                .split("\n")
+                                .map((f) => f.trim())
+                                .filter((f) => f);
+                            return { type, value };
+                    }
+                    return null;
+                };
+
+                const generateStructure = () => {
+                    const blocks =
+                        filterPipeline.querySelectorAll(".filter-block");
+                    if (blocks.length === 0) {
+                        return null;
+                    }
+
+                    const results = Array.from(blocks)
+                        .map(buildObjectFromBlock)
+                        .filter(Boolean);
+
+                    // Per type `Param = ObjectA | List[ObjectA]`, return single object if only one
+                    return results.length === 1 ? results[0] : results;
+                };
+
+                // --- EVENT LISTENERS ---
+
+                addFilterBtn.addEventListener("click", addFilterBlock);
+
+                // Use event delegation for dynamically added elements
+                filterPipeline.addEventListener("click", (e) => {
+                    if (e.target.closest(".remove-btn")) {
+                        e.target.closest(".filter-block").remove();
+                        updateNoFiltersMessage();
+                    }
+                });
+
+                filterPipeline.addEventListener("change", (e) => {
+                    if (e.target.classList.contains("filter-type-selector")) {
+                        const block = e.target.closest(".filter-block");
+                        updateOptionsUI(block, e.target.value);
+                    }
+                });
+
+                showStructureBtn.addEventListener("click", () => {
+                    const structure = generateStructure();
+
+                    if (structure) {
+                        const jsonString = JSON.stringify(structure, null, 2);
+                        outputCode.textContent = jsonString;
+                        // Apply syntax highlighting
+                        hljs.highlightElement(outputCode);
+                        outputContainer.style.display = "block";
+                        copyBtn.style.display = "inline-flex";
+                    } else {
+                        outputContainer.style.display = "none";
+                        copyBtn.style.display = "none";
+                        alert(
+                            "Please add at least one filter to generate a structure."
+                        );
+                    }
+                });
+
+                copyBtn.addEventListener("click", () => {
+                    navigator.clipboard
+                        .writeText(outputCode.textContent)
+                        .then(() => {
+                            copyBtnText.textContent = "Copied!";
+                            copyBtn.classList.remove(
+                                "bg-green-600",
+                                "hover:bg-green-700"
+                            );
+                            copyBtn.classList.add("bg-indigo-600");
+                            setTimeout(() => {
+                                copyBtnText.textContent = "Copy to Clipboard";
+                                copyBtn.classList.add(
+                                    "bg-green-600",
+                                    "hover:bg-green-700"
+                                );
+                                copyBtn.classList.remove("bg-indigo-600");
+                            }, 2000);
+                        })
+                        .catch((err) => {
+                            console.error("Failed to copy text: ", err);
+                            alert("Failed to copy text.");
+                        });
+                });
+
+                // --- INITIALIZATION ---
+                addFilterBlock(); // Start with one filter block by default
+            });
+        </script>
+    </body>
+</html>
