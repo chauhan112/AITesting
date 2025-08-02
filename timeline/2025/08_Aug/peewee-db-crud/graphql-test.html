@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GraphQL Client</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                line-height: 1.6;
+                padding: 20px;
+            }
+            #query-container {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            textarea {
+                width: 100%;
+                height: 200px;
+                font-family: monospace;
+            }
+            button {
+                padding: 10px 15px;
+                cursor: pointer;
+            }
+            pre {
+                background-color: #f4f4f4;
+                padding: 15px;
+                border: 1px solid #ddd;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .error {
+                color: red;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>GraphQL API Client</h1>
+
+        <div id="query-container">
+            <label for="graphql-query"
+                >Enter your GraphQL Query or Mutation:</label
+            >
+            <textarea
+                id="graphql-query"
+                placeholder="Enter your GraphQL query here..."
+            ></textarea>
+            <button id="send-btn">Send Request</button>
+        </div>
+
+        <h2>Response:</h2>
+        <pre id="response-output">Results will be shown here...</pre>
+
+        <script>
+            // app.js
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const apiEndpoint = "http://localhost:8000/graphql"; // Your FastAPI GraphQL endpoint
+                const sendButton = document.getElementById("send-btn");
+                const queryTextarea = document.getElementById("graphql-query");
+                const responseOutput =
+                    document.getElementById("response-output");
+
+                // Pre-populate with an example query
+                queryTextarea.value = `query {
+  allCollections {
+    id
+    name
+    description
+    links {
+      id
+      title
+      url
+    }
+  }
+}`;
+
+                sendButton.addEventListener("click", async () => {
+                    const query = queryTextarea.value;
+
+                    // Clear previous output and show loading state
+                    responseOutput.textContent = "Loading...";
+                    responseOutput.classList.remove("error");
+
+                    try {
+                        const response = await fetch(apiEndpoint, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({
+                                query: query,
+                                // You can also include variables like this:
+                                // variables: { id: 1 }
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`
+                            );
+                        }
+
+                        const result = await response.json();
+
+                        // Format and display the JSON response
+                        responseOutput.textContent = JSON.stringify(
+                            result,
+                            null,
+                            2
+                        ); // Pretty print JSON
+                    } catch (error) {
+                        // Display any errors
+                        responseOutput.textContent = `An error occurred: \n${error.message}`;
+                        responseOutput.classList.add("error");
+                        console.error("Error sending GraphQL request:", error);
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
