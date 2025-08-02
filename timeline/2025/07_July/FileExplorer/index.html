@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>File Explorer</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* A little extra style for a better look */
+            body {
+                background-color: #f3f4f6; /* bg-gray-100 */
+            }
+        </style>
+    </head>
+    <body class="p-4 sm:p-8">
+        <div
+            id="file-explorer"
+            class="max-w-7xl mx-auto bg-white rounded-lg shadow-xl border border-gray-200"
+        >
+            <!-- Header / Breadcrumbs -->
+            <div
+                id="explorer-header"
+                class="px-6 py-4 border-b border-gray-200 flex items-center space-x-2 bg-gray-50 rounded-t-lg"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
+                </svg>
+                <nav
+                    id="breadcrumb-nav"
+                    class="text-sm font-medium text-gray-700"
+                ></nav>
+            </div>
+
+            <!-- File & Folder Grid -->
+            <div
+                id="content-grid"
+                class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4"
+            >
+                <!-- Content will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- SVG Icons Template (hidden) -->
+        <div id="icon-templates" class="hidden">
+            <!-- Folder Icon -->
+            <div id="folder-icon">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-16 w-16 text-blue-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
+                </svg>
+            </div>
+            <!-- File Icon -->
+            <div id="file-icon">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-16 w-16 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                </svg>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- DATA STRUCTURE ---
+                // A mock file system. Folders have a 'content' property.
+                const fileSystem = {
+                    name: "Root",
+                    type: "folder",
+                    content: {
+                        Documents: {
+                            type: "folder",
+                            content: {
+                                "report.docx": { type: "file" },
+                                "presentation.pptx": { type: "file" },
+                                Projects: {
+                                    type: "folder",
+                                    content: {
+                                        "project-alpha.js": { type: "file" },
+                                        "project-beta.css": { type: "file" },
+                                    },
+                                },
+                            },
+                        },
+                        Images: {
+                            type: "folder",
+                            content: {
+                                "vacation.jpg": { type: "file" },
+                                "logo.png": { type: "file" },
+                            },
+                        },
+                        Music: {
+                            type: "folder",
+                            content: {}, // Empty folder
+                        },
+                        "app.js": { type: "file" },
+                        "index.html": { type: "file" },
+                    },
+                };
+
+                // --- STATE ---
+                let currentPath = ["Root"];
+                let currentContentNode = fileSystem;
+
+                // --- DOM ELEMENTS ---
+                const contentGrid = document.getElementById("content-grid");
+                const breadcrumbNav = document.getElementById("breadcrumb-nav");
+                const folderIconSvg =
+                    document.getElementById("folder-icon").innerHTML;
+                const fileIconSvg =
+                    document.getElementById("file-icon").innerHTML;
+
+                // --- CORE FUNCTION (as requested) ---
+                /**
+                 * Clears and populates the content grid with folders and files.
+                 * @param {string[]} folders - An array of folder names.
+                 * @param {string[]} files - An array of file names.
+                 */
+                function setContent(folders, files) {
+                    contentGrid.innerHTML = ""; // Clear previous content
+
+                    // Render folders
+                    folders.forEach((folderName) => {
+                        const folderElement = createItemElement(
+                            folderName,
+                            "folder"
+                        );
+                        contentGrid.appendChild(folderElement);
+                    });
+
+                    // Render files
+                    files.forEach((fileName) => {
+                        const fileElement = createItemElement(fileName, "file");
+                        contentGrid.appendChild(fileElement);
+                    });
+                }
+
+                // --- HELPER FUNCTIONS ---
+
+                /**
+                 * Creates a DOM element for a file or folder.
+                 * @param {string} name - The name of the file or folder.
+                 * @param {'file'|'folder'} type - The type of item.
+                 * @returns {HTMLElement} The created anchor element.
+                 */
+                function createItemElement(name, type) {
+                    const item = document.createElement("a");
+                    item.href = "#";
+                    item.className =
+                        "flex flex-col items-center justify-start p-2 rounded-lg hover:bg-gray-100 transition-colors text-center";
+
+                    const icon =
+                        type === "folder" ? folderIconSvg : fileIconSvg;
+
+                    item.innerHTML = `
+                    ${icon}
+                    <span class="mt-2 text-sm text-gray-700 break-all">${name}</span>
+                `;
+
+                    // Add event listener
+                    item.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        if (type === "folder") {
+                            navigateTo(name);
+                        } else {
+                            alert(`Opening file: ${name}`);
+                        }
+                    });
+
+                    return item;
+                }
+
+                /**
+                 * Renders the breadcrumb navigation.
+                 */
+                function renderBreadcrumbs() {
+                    breadcrumbNav.innerHTML = "";
+                    currentPath.forEach((pathPart, index) => {
+                        if (index > 0) {
+                            const separator = document.createElement("span");
+                            separator.className = "mx-1 text-gray-400";
+                            separator.textContent = "/";
+                            breadcrumbNav.appendChild(separator);
+                        }
+
+                        const partEl = document.createElement("a");
+                        partEl.href = "#";
+                        partEl.textContent = pathPart;
+
+                        if (index === currentPath.length - 1) {
+                            partEl.className = "font-semibold text-gray-800";
+                        } else {
+                            partEl.className = "hover:underline";
+                            partEl.addEventListener("click", (e) => {
+                                e.preventDefault();
+                                // Navigate up to this part of the path
+                                currentPath = currentPath.slice(0, index + 1);
+                                render();
+                            });
+                        }
+
+                        breadcrumbNav.appendChild(partEl);
+                    });
+                }
+
+                /**
+                 * Navigates into a subfolder.
+                 * @param {string} folderName - The name of the folder to navigate into.
+                 */
+                function navigateTo(folderName) {
+                    if (
+                        currentContentNode.content &&
+                        currentContentNode.content[folderName]
+                    ) {
+                        currentPath.push(folderName);
+                        render();
+                    }
+                }
+
+                /**
+                 * Traverses the file system to get the node for the current path.
+                 */
+                function updateCurrentContentNode() {
+                    let node = fileSystem;
+                    // Slice(1) to skip 'Root'
+                    for (const part of currentPath.slice(1)) {
+                        node = node.content[part];
+                    }
+                    currentContentNode = node;
+                }
+
+                /**
+                 * The main render function to update the entire view.
+                 */
+                function render() {
+                    updateCurrentContentNode();
+
+                    const content = currentContentNode.content || {};
+                    const folderNames = [];
+                    const fileNames = [];
+
+                    Object.keys(content).forEach((itemName) => {
+                        if (content[itemName].type === "folder") {
+                            folderNames.push(itemName);
+                        } else {
+                            fileNames.push(itemName);
+                        }
+                    });
+
+                    // Sort alphabetically
+                    folderNames.sort();
+                    fileNames.sort();
+
+                    setContent(folderNames, fileNames);
+                    renderBreadcrumbs();
+                }
+
+                // --- INITIAL RENDER ---
+                render();
+            });
+        </script>
+    </body>
+</html>
