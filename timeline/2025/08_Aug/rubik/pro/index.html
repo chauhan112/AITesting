@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rubik's Cube Viewer</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body
+        class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen"
+    >
+        <h1 class="text-4xl font-bold mb-8">Rubik's Cube</h1>
+
+        <div id="cube-container" class="w-96 h-96"></div>
+
+        <div class="mt-8 text-center">
+            <p class="text-lg">Drag to rotate the cube</p>
+            <p class="text-sm text-gray-400">
+                (Implementation of face rotations is a more advanced topic)
+            </p>
+        </div>
+
+        <script>
+            // Get the container for the cube
+            const container = document.getElementById("cube-container");
+
+            // Create a scene
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111827); // bg-gray-900
+
+            // Create a camera
+            const camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.z = 5;
+
+            // Create a renderer
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Create the Rubik's Cube
+            const cubeSize = 3;
+            const spacing = 0.1;
+            const pieceSize = 1;
+            const pieces = [];
+
+            const colors = [
+                0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xffa500, 0xffffff,
+            ]; // Red, Green, Blue, Yellow, Orange, White
+
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        if (x === 0 && y === 0 && z === 0) continue;
+
+                        const geometry = new THREE.BoxGeometry(
+                            pieceSize,
+                            pieceSize,
+                            pieceSize
+                        );
+                        const materials = colors.map(
+                            (color) =>
+                                new THREE.MeshBasicMaterial({
+                                    color,
+                                    transparent: true,
+                                    opacity: 0.9,
+                                })
+                        );
+                        const piece = new THREE.Mesh(geometry, materials);
+
+                        piece.position.set(
+                            x * (pieceSize + spacing),
+                            y * (pieceSize + spacing),
+                            z * (pieceSize + spacing)
+                        );
+                        pieces.push(piece);
+                        scene.add(piece);
+                    }
+                }
+            }
+
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            directionalLight.position.set(1, 2, 3);
+            scene.add(directionalLight);
+
+            // Handle mouse controls for rotation
+            let isDragging = false;
+            let previousMousePosition = {
+                x: 0,
+                y: 0,
+            };
+
+            container.addEventListener("mousedown", (e) => {
+                isDragging = true;
+            });
+
+            container.addEventListener("mouseup", (e) => {
+                isDragging = false;
+            });
+
+            container.addEventListener("mousemove", (e) => {
+                const deltaMove = {
+                    x: e.offsetX - previousMousePosition.x,
+                    y: e.offsetY - previousMousePosition.y,
+                };
+
+                if (isDragging) {
+                    const deltaRotationQuaternion =
+                        new THREE.Quaternion().setFromEuler(
+                            new THREE.Euler(
+                                toRadians(deltaMove.y * 1),
+                                toRadians(deltaMove.x * 1),
+                                0,
+                                "XYZ"
+                            )
+                        );
+
+                    pieces.forEach((piece) => {
+                        piece.quaternion.multiplyQuaternions(
+                            deltaRotationQuaternion,
+                            piece.quaternion
+                        );
+                    });
+                }
+
+                previousMousePosition = {
+                    x: e.offsetX,
+                    y: e.offsetY,
+                };
+            });
+
+            function toRadians(angle) {
+                return angle * (Math.PI / 180);
+            }
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Handle window resizing
+            window.addEventListener("resize", () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        </script>
+    </body>
+</html>

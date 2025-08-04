@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>3D Rubik's Cube Viewer</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+                min-height: 100vh;
+                overflow: hidden;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .scene {
+                perspective: 1200px;
+                height: 600px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 2rem;
+            }
+
+            .cube {
+                width: 300px;
+                height: 300px;
+                position: relative;
+                transform-style: preserve-3d;
+                transform: rotateX(-20deg) rotateY(30deg);
+                transition: transform 0.1s ease;
+            }
+
+            .face {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                border: 2px solid #222;
+                transform-style: preserve-3d;
+            }
+
+            .sticker {
+                border: 1px solid #222;
+                box-sizing: border-box;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                transition: all 0.2s;
+            }
+
+            .sticker:hover {
+                transform: scale(0.95);
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.5) inset;
+                z-index: 10;
+            }
+
+            .front {
+                transform: translateZ(100px);
+            }
+            .back {
+                transform: translateZ(-100px) rotateY(180deg);
+            }
+            .right {
+                transform: translateX(100px) rotateY(90deg);
+            }
+            .left {
+                transform: translateX(-100px) rotateY(-90deg);
+            }
+            .top {
+                transform: translateY(-100px) rotateX(90deg);
+            }
+            .bottom {
+                transform: translateY(100px) rotateX(-90deg);
+            }
+
+            .instructions {
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 15px;
+                padding: 1.5rem;
+                max-width: 600px;
+                margin: 0 auto;
+                color: white;
+                line-height: 1.6;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .control-btn {
+                transition: all 0.2s;
+                transform: scale(1);
+            }
+
+            .control-btn:active {
+                transform: scale(0.95);
+            }
+
+            .color-key {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 1px solid #333;
+                margin-right: 8px;
+                border-radius: 4px;
+            }
+
+            .cube-preview {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 2px;
+                width: 120px;
+                height: 120px;
+                margin: 0 auto 1rem;
+                transform: rotateX(10deg) rotateY(-15deg);
+            }
+
+            .preview-sticker {
+                border: 1px solid #333;
+            }
+
+            .drag-hint {
+                animation: pulse 2s infinite;
+                color: #ffcc00;
+            }
+
+            @keyframes pulse {
+                0% {
+                    opacity: 0.5;
+                }
+                50% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0.5;
+                }
+            }
+
+            .logo {
+                font-weight: 800;
+                background: linear-gradient(
+                    to right,
+                    #ff0000,
+                    #ff8c00,
+                    #ffff00,
+                    #00ff00,
+                    #0000ff,
+                    #8b00ff
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+        </style>
+    </head>
+    <body class="text-white">
+        <div class="container mx-auto px-4 py-8">
+            <header class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                    <span class="logo">Rubik's Cube</span> 3D Viewer
+                </h1>
+                <p class="text-xl text-gray-200 max-w-2xl mx-auto">
+                    Explore a realistic 3D Rubik's Cube. Drag to rotate, use
+                    controls to change perspective, and hover over stickers for
+                    details.
+                </p>
+            </header>
+
+            <div class="scene">
+                <div class="cube" id="rubiksCube">
+                    <!-- Front face (white) -->
+                    <div class="face front">
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-white"
+                            data-face="front"
+                            data-pos="8"
+                        ></div>
+                    </div>
+
+                    <!-- Back face (yellow) -->
+                    <div class="face back">
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-yellow-300"
+                            data-face="back"
+                            data-pos="8"
+                        ></div>
+                    </div>
+
+                    <!-- Right face (blue) -->
+                    <div class="face right">
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-blue-500"
+                            data-face="right"
+                            data-pos="8"
+                        ></div>
+                    </div>
+
+                    <!-- Left face (green) -->
+                    <div class="face left">
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-green-600"
+                            data-face="left"
+                            data-pos="8"
+                        ></div>
+                    </div>
+
+                    <!-- Top face (red) -->
+                    <div class="face top">
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-red-600"
+                            data-face="top"
+                            data-pos="8"
+                        ></div>
+                    </div>
+
+                    <!-- Bottom face (orange) -->
+                    <div class="face bottom">
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="0"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="1"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="2"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="3"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="4"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="5"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="6"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="7"
+                        ></div>
+                        <div
+                            class="sticker bg-orange-500"
+                            data-face="bottom"
+                            data-pos="8"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-6 drag-hint">
+                <p class="text-xl">↔️ Drag to rotate the cube</p>
+            </div>
+
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12"
+            >
+                <div
+                    class="bg-gray-800 bg-opacity-50 rounded-2xl p-6 backdrop-blur-sm border border-gray-700"
+                >
+                    <h2 class="text-2xl font-bold mb-4 text-center">
+                        Cube Controls
+                    </h2>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button
+                            class="control-btn bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-medium transition"
+                            id="resetBtn"
+                        >
+                            Reset View
+                        </button>
+                        <button
+                            class="control-btn bg-purple-600 hover:bg-purple-700 py-2 rounded-lg font-medium transition"
+                            id="frontViewBtn"
+                        >
+                            Front View
+                        </button>
+                        <button
+                            class="control-btn bg-purple-600 hover:bg-purple-700 py-2 rounded-lg font-medium transition"
+                            id="topViewBtn"
+                        >
+                            Top View
+                        </button>
+                        <button
+                            class="control-btn bg-green-600 hover:bg-green-700 py-2 rounded-lg font-medium transition"
+                            id="leftViewBtn"
+                        >
+                            Left View
+                        </button>
+                        <button
+                            class="control-btn bg-red-600 hover:bg-red-700 py-2 rounded-lg font-medium transition"
+                            id="rightViewBtn"
+                        >
+                            Right View
+                        </button>
+                        <button
+                            class="control-btn bg-yellow-600 hover:bg-yellow-700 py-2 rounded-lg font-medium transition"
+                            id="backViewBtn"
+                        >
+                            Back View
+                        </button>
+                        <button
+                            class="control-btn bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-medium transition col-span-3"
+                            id="isometricViewBtn"
+                        >
+                            Isometric View
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-gray-800 bg-opacity-50 rounded-2xl p-6 backdrop-blur-sm border border-gray-700"
+                >
+                    <h2 class="text-2xl font-bold mb-4 text-center">
+                        Color Reference
+                    </h2>
+                    <div class="cube-preview mb-4">
+                        <div class="preview-sticker bg-white"></div>
+                        <div class="preview-sticker bg-white"></div>
+                        <div class="preview-sticker bg-white"></div>
+                        <div class="preview-sticker bg-red-600"></div>
+                        <div class="preview-sticker bg-gray-800"></div>
+                        <div class="preview-sticker bg-orange-500"></div>
+                        <div class="preview-sticker bg-green-600"></div>
+                        <div class="preview-sticker bg-gray-800"></div>
+                        <div class="preview-sticker bg-blue-500"></div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <div class="color-key bg-white"></div>
+                            <span>Front: White</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="color-key bg-yellow-300"></div>
+                            <span>Back: Yellow</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="color-key bg-blue-500"></div>
+                            <span>Right: Blue</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="color-key bg-green-600"></div>
+                            <span>Left: Green</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="color-key bg-red-600"></div>
+                            <span>Top: Red</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="color-key bg-orange-500"></div>
+                            <span>Bottom: Orange</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h2 class="text-2xl font-bold mb-3">How to Use</h2>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>
+                        <span class="font-medium">Drag</span> the cube with your
+                        mouse to rotate it in any direction
+                    </li>
+                    <li>
+                        <span class="font-medium">Hover</span> over any sticker
+                        to see its position details
+                    </li>
+                    <li>
+                        Use the
+                        <span class="font-medium">control buttons</span> to
+                        quickly set standard viewing angles
+                    </li>
+                    <li>
+                        This is a
+                        <span class="font-medium">3x3x3 Rubik's Cube</span> with
+                        standard color scheme
+                    </li>
+                    <li>
+                        The center pieces are fixed and determine the face color
+                    </li>
+                </ul>
+
+                <div class="mt-4 p-4 bg-gray-700 rounded-lg">
+                    <p class="font-medium">Sticker Information:</p>
+                    <p id="stickerInfo" class="mt-2 text-gray-200">
+                        Hover over any sticker to see details here
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const cube = document.getElementById("rubiksCube");
+                const stickerInfo = document.getElementById("stickerInfo");
+
+                // Initial rotation values
+                let rotX = -20;
+                let rotY = 30;
+                let isDragging = false;
+                let previousMouseX = 0;
+                let previousMouseY = 0;
+
+                // Face names for display
+                const faceNames = {
+                    front: "Front Face (White)",
+                    back: "Back Face (Yellow)",
+                    right: "Right Face (Blue)",
+                    left: "Left Face (Green)",
+                    top: "Top Face (Red)",
+                    bottom: "Bottom Face (Orange)",
+                };
+
+                // Position labels
+                const positionNames = [
+                    "Top-Left Corner",
+                    "Top Edge",
+                    "Top-Right Corner",
+                    "Left Edge",
+                    "Center",
+                    "Right Edge",
+                    "Bottom-Left Corner",
+                    "Bottom Edge",
+                    "Bottom-Right Corner",
+                ];
+
+                // Mouse events for rotation
+                cube.addEventListener("mousedown", (e) => {
+                    isDragging = true;
+                    previousMouseX = e.clientX;
+                    previousMouseY = e.clientY;
+                    cube.style.cursor = "grabbing";
+                });
+
+                document.addEventListener("mousemove", (e) => {
+                    if (!isDragging) return;
+
+                    const deltaX = e.clientX - previousMouseX;
+                    const deltaY = e.clientY - previousMouseY;
+
+                    rotY += deltaX * 0.5;
+                    rotX -= deltaY * 0.5;
+
+                    previousMouseX = e.clientX;
+                    previousMouseY = e.clientY;
+
+                    updateCubeRotation();
+                });
+
+                document.addEventListener("mouseup", () => {
+                    isDragging = false;
+                    cube.style.cursor = "grab";
+                });
+
+                // Touch support for mobile
+                cube.addEventListener("touchstart", (e) => {
+                    isDragging = true;
+                    previousMouseX = e.touches[0].clientX;
+                    previousMouseY = e.touches[0].clientY;
+                });
+
+                document.addEventListener(
+                    "touchmove",
+                    (e) => {
+                        if (!isDragging) return;
+                        e.preventDefault();
+
+                        const deltaX = e.touches[0].clientX - previousMouseX;
+                        const deltaY = e.touches[0].clientY - previousMouseY;
+
+                        rotY += deltaX * 0.5;
+                        rotX -= deltaY * 0.5;
+
+                        previousMouseX = e.touches[0].clientX;
+                        previousMouseY = e.touches[0].clientY;
+
+                        updateCubeRotation();
+                    },
+                    { passive: false }
+                );
+
+                document.addEventListener("touchend", () => {
+                    isDragging = false;
+                });
+
+                // Update cube rotation
+                function updateCubeRotation() {
+                    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+                }
+
+                // Sticker hover effect
+                const stickers = document.querySelectorAll(".sticker");
+                stickers.forEach((sticker) => {
+                    sticker.addEventListener("mouseenter", () => {
+                        const face = sticker.dataset.face;
+                        const pos = parseInt(sticker.dataset.pos);
+
+                        stickerInfo.innerHTML = `
+                        <span class="font-medium">${faceNames[face]}</span><br>
+                        Position: ${positionNames[pos]}<br>
+                        Coordinates: [${Math.floor(rotX)}, ${Math.floor(rotY)}]
+                    `;
+
+                        // Highlight the sticker
+                        sticker.style.filter = "brightness(1.2)";
+                        sticker.style.zIndex = "10";
+                    });
+
+                    sticker.addEventListener("mouseleave", () => {
+                        sticker.style.filter = "brightness(1)";
+                        sticker.style.zIndex = "1";
+                        stickerInfo.textContent =
+                            "Hover over any sticker to see details here";
+                    });
+                });
+
+                // Control buttons
+                document
+                    .getElementById("resetBtn")
+                    .addEventListener("click", () => {
+                        rotX = -20;
+                        rotY = 30;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("frontViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = 0;
+                        rotY = 0;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("topViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = -90;
+                        rotY = 0;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("leftViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = 0;
+                        rotY = -90;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("rightViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = 0;
+                        rotY = 90;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("backViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = 0;
+                        rotY = 180;
+                        updateCubeRotation();
+                    });
+
+                document
+                    .getElementById("isometricViewBtn")
+                    .addEventListener("click", () => {
+                        rotX = -30;
+                        rotY = 45;
+                        updateCubeRotation();
+                    });
+
+                // Initial setup
+                cube.style.cursor = "grab";
+            });
+        </script>
+    </body>
+</html>

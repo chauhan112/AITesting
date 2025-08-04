@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Interactive Rubik's Cube</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            cube: {
+                                red: "#FF4136",
+                                green: "#2ECC40",
+                                blue: "#0074D9",
+                                yellow: "#FFDC00",
+                                white: "#FFFFFF",
+                                orange: "#FF851B",
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            .scene {
+                perspective: 1500px;
+                transform-style: preserve-3d;
+            }
+
+            .cube {
+                transform-style: preserve-3d;
+                transition: transform 0.8s
+                    cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+
+            .face {
+                position: absolute;
+                border: 2px solid #111;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+                gap: 4px;
+                padding: 4px;
+                background-color: #222;
+                box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1);
+            }
+
+            .cubie {
+                border-radius: 4px;
+            }
+
+            .front {
+                transform: translateZ(100px);
+            }
+            .back {
+                transform: rotateY(180deg) translateZ(100px);
+            }
+            .right {
+                transform: rotateY(90deg) translateZ(100px);
+            }
+            .left {
+                transform: rotateY(-90deg) translateZ(100px);
+            }
+            .top {
+                transform: rotateX(90deg) translateZ(100px);
+            }
+            .bottom {
+                transform: rotateX(-90deg) translateZ(100px);
+            }
+
+            .bg-red {
+                background-color: theme("colors.cube.red");
+            }
+            .bg-green {
+                background-color: theme("colors.cube.green");
+            }
+            .bg-blue {
+                background-color: theme("colors.cube.blue");
+            }
+            .bg-yellow {
+                background-color: theme("colors.cube.yellow");
+            }
+            .bg-white {
+                background-color: theme("colors.cube.white");
+            }
+            .bg-orange {
+                background-color: theme("colors.cube.orange");
+            }
+
+            .controls button {
+                transition: all 0.2s ease;
+            }
+
+            .controls button:hover {
+                transform: scale(1.05);
+            }
+
+            .controls button:active {
+                transform: scale(0.95);
+            }
+
+            .move-history {
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            @media (max-width: 768px) {
+                .scene {
+                    perspective: 1000px;
+                }
+
+                .face {
+                    transform: scale(0.8) !important;
+                }
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4"
+    >
+        <div class="max-w-4xl w-full">
+            <h1
+                class="text-3xl md:text-4xl font-bold text-center text-white mb-2"
+            >
+                Interactive Rubik's Cube
+            </h1>
+            <p class="text-gray-400 text-center mb-8">
+                Click and drag to rotate the cube. Use controls to make moves.
+            </p>
+
+            <div
+                class="flex flex-col md:flex-row items-center justify-center gap-8"
+            >
+                <div class="scene w-64 h-64 md:w-80 md:h-80">
+                    <div class="cube relative w-full h-full">
+                        <!-- Front Face -->
+                        <div class="face front w-full h-full">
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                            <div class="cubie bg-red"></div>
+                        </div>
+
+                        <!-- Back Face -->
+                        <div class="face back w-full h-full">
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                            <div class="cubie bg-orange"></div>
+                        </div>
+
+                        <!-- Right Face -->
+                        <div class="face right w-full h-full">
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                            <div class="cubie bg-green"></div>
+                        </div>
+
+                        <!-- Left Face -->
+                        <div class="face left w-full h-full">
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                            <div class="cubie bg-blue"></div>
+                        </div>
+
+                        <!-- Top Face -->
+                        <div class="face top w-full h-full">
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                            <div class="cubie bg-yellow"></div>
+                        </div>
+
+                        <!-- Bottom Face -->
+                        <div class="face bottom w-full h-full">
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                            <div class="cubie bg-white"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-bold text-white mb-4">
+                            Cube Controls
+                        </h2>
+
+                        <div class="controls grid grid-cols-3 gap-3 mb-6">
+                            <button
+                                class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg font-medium rotate-x"
+                                data-axis="x"
+                                data-direction="1"
+                            >
+                                ↑ X
+                            </button>
+                            <button
+                                class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg font-medium rotate-y"
+                                data-axis="y"
+                                data-direction="1"
+                            >
+                                ↑ Y
+                            </button>
+                            <button
+                                class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg font-medium rotate-z"
+                                data-axis="z"
+                                data-direction="1"
+                            >
+                                ↑ Z
+                            </button>
+
+                            <button
+                                class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg font-medium rotate-x"
+                                data-axis="x"
+                                data-direction="-1"
+                            >
+                                ↓ X
+                            </button>
+                            <button
+                                class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg font-medium rotate-y"
+                                data-axis="y"
+                                data-direction="-1"
+                            >
+                                ↓ Y
+                            </button>
+                            <button
+                                class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg font-medium rotate-z"
+                                data-axis="z"
+                                data-direction="-1"
+                            >
+                                ↓ Z
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button
+                                class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-2 px-3 rounded-lg font-medium"
+                                id="scramble"
+                            >
+                                Scramble Cube
+                            </button>
+                            <button
+                                class="bg-white hover:bg-gray-200 text-gray-900 py-2 px-3 rounded-lg font-medium"
+                                id="reset"
+                            >
+                                Reset Cube
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h2 class="text-xl font-bold text-white mb-4">
+                            Move History
+                        </h2>
+                        <div
+                            class="move-history bg-gray-700 rounded-lg p-3 min-h-[100px] max-h-[120px] overflow-y-auto"
+                        >
+                            <p class="text-gray-400 text-center py-4">
+                                No moves yet...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-gray-800 rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-bold text-white mb-4">
+                    About This Cube
+                </h2>
+                <p class="text-gray-300 mb-3">
+                    This interactive 3D Rubik's Cube is built with HTML,
+                    Tailwind CSS, and JavaScript. It features:
+                </p>
+                <ul class="text-gray-300 list-disc pl-5 mb-4">
+                    <li>Full 3D visualization using CSS transforms</li>
+                    <li>Drag-to-rotate functionality</li>
+                    <li>Axis controls for manual rotation</li>
+                    <li>Scramble and reset functionality</li>
+                    <li>Move history tracking</li>
+                    <li>Responsive design</li>
+                </ul>
+                <p class="text-gray-400 text-sm">
+                    Tip: Click and drag on the cube to rotate it in 3D space.
+                    Use the controls to make specific rotations.
+                </p>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const cube = document.querySelector(".cube");
+                const moveHistory = document.querySelector(".move-history");
+                let isDragging = false;
+                let startX, startY;
+                let rotationX = -30;
+                let rotationY = -30;
+                let history = [];
+
+                // Initialize cube rotation
+                updateCubeRotation();
+
+                // Mouse events for dragging
+                cube.parentElement.addEventListener("mousedown", (e) => {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    cube.style.transition = "none";
+                });
+
+                document.addEventListener("mousemove", (e) => {
+                    if (!isDragging) return;
+
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+
+                    rotationY += deltaX * 0.5;
+                    rotationX -= deltaY * 0.5;
+
+                    startX = e.clientX;
+                    startY = e.clientY;
+
+                    updateCubeRotation();
+                });
+
+                document.addEventListener("mouseup", () => {
+                    isDragging = false;
+                    cube.style.transition =
+                        "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+                });
+
+                // Touch events for mobile
+                cube.parentElement.addEventListener("touchstart", (e) => {
+                    isDragging = true;
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    cube.style.transition = "none";
+                    e.preventDefault();
+                });
+
+                document.addEventListener("touchmove", (e) => {
+                    if (!isDragging) return;
+
+                    const deltaX = e.touches[0].clientX - startX;
+                    const deltaY = e.touches[0].clientY - startY;
+
+                    rotationY += deltaX * 0.5;
+                    rotationX -= deltaY * 0.5;
+
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+
+                    updateCubeRotation();
+                    e.preventDefault();
+                });
+
+                document.addEventListener("touchend", () => {
+                    isDragging = false;
+                    cube.style.transition =
+                        "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+                });
+
+                // Rotation buttons
+                document
+                    .querySelectorAll(".rotate-x, .rotate-y, .rotate-z")
+                    .forEach((button) => {
+                        button.addEventListener("click", () => {
+                            const axis = button.dataset.axis;
+                            const direction = parseInt(
+                                button.dataset.direction
+                            );
+                            const amount = 90 * direction;
+
+                            if (axis === "x") rotationX += amount;
+                            if (axis === "y") rotationY += amount;
+                            if (axis === "z") rotationY += amount; // Z rotation is less intuitive so we map to Y
+
+                            // Add to history
+                            const move = `${axis.toUpperCase()}${
+                                direction > 0 ? "+" : "-"
+                            }`;
+                            history.push(move);
+                            updateMoveHistory();
+
+                            updateCubeRotation();
+                        });
+                    });
+
+                // Scramble button
+                document
+                    .getElementById("scramble")
+                    .addEventListener("click", () => {
+                        history = [];
+                        updateMoveHistory();
+
+                        // Add scramble animation
+                        cube.style.transition = "transform 0.2s ease";
+
+                        // Random rotations
+                        const scrambleMoves = 20;
+                        for (let i = 0; i < scrambleMoves; i++) {
+                            setTimeout(() => {
+                                rotationX += Math.random() > 0.5 ? 90 : -90;
+                                rotationY += Math.random() > 0.5 ? 90 : -90;
+                                updateCubeRotation();
+
+                                // Add to history
+                                const axis = ["x", "y"][
+                                    Math.floor(Math.random() * 2)
+                                ];
+                                const direction = Math.random() > 0.5 ? 1 : -1;
+                                const move = `${axis.toUpperCase()}${
+                                    direction > 0 ? "+" : "-"
+                                }`;
+                                history.push(move);
+                                updateMoveHistory();
+                            }, i * 200);
+                        }
+
+                        // Reset transition after scramble
+                        setTimeout(() => {
+                            cube.style.transition =
+                                "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+                        }, scrambleMoves * 200);
+                    });
+
+                // Reset button
+                document
+                    .getElementById("reset")
+                    .addEventListener("click", () => {
+                        rotationX = -30;
+                        rotationY = -30;
+                        history = [];
+                        updateMoveHistory();
+                        updateCubeRotation();
+                    });
+
+                // Helper functions
+                function updateCubeRotation() {
+                    // Normalize rotations
+                    rotationX = rotationX % 360;
+                    rotationY = rotationY % 360;
+
+                    cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+                }
+
+                function updateMoveHistory() {
+                    if (history.length === 0) {
+                        moveHistory.innerHTML =
+                            '<p class="text-gray-400 text-center py-4">No moves yet...</p>';
+                        return;
+                    }
+
+                    moveHistory.innerHTML = "";
+                    const movesContainer = document.createElement("div");
+                    movesContainer.className = "flex flex-wrap gap-2";
+
+                    history.forEach((move, index) => {
+                        const moveElement = document.createElement("div");
+                        moveElement.className =
+                            "bg-gray-600 text-white px-3 py-1 rounded-md text-sm";
+                        moveElement.textContent = move;
+                        movesContainer.appendChild(moveElement);
+                    });
+
+                    moveHistory.appendChild(movesContainer);
+                    moveHistory.scrollTop = moveHistory.scrollHeight;
+                }
+            });
+        </script>
+    </body>
+</html>

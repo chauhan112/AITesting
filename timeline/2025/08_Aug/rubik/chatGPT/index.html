@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rubik's Cube Moves</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      perspective: 1000px;
+      height: 100vh;
+    }
+    .cube {
+      width: 200px;
+      height: 200px;
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease;
+    }
+    .face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      backface-visibility: hidden;
+    }
+    .face div {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #222;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center">
+
+  <!-- Controls -->
+  <div class="mb-4 space-x-2">
+    <button onclick="doMove('R')" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">R</button>
+    <button onclick="doMove(\"R'\")" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">R'</button>
+    <button onclick="doMove('U')" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded">U</button>
+    <button onclick="doMove(\"U'\")" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded">U'</button>
+    <button onclick="resetCube()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">Reset</button>
+  </div>
+
+  <!-- Cube -->
+  <div id="cube-container" class="cube"></div>
+
+  <script>
+    const COLORS = {
+      U: "bg-white",
+      D: "bg-yellow-400",
+      F: "bg-red-500",
+      B: "bg-orange-500",
+      L: "bg-blue-500",
+      R: "bg-green-500",
+    };
+
+    let cubeState = {};
+
+    function initCubeState() {
+      cubeState = {
+        U: Array(9).fill("U"),
+        D: Array(9).fill("D"),
+        F: Array(9).fill("F"),
+        B: Array(9).fill("B"),
+        L: Array(9).fill("L"),
+        R: Array(9).fill("R"),
+      };
+    }
+
+    function renderCube() {
+      const container = document.getElementById("cube-container");
+      container.innerHTML = "";
+
+      const faces = [
+        { name: "F", transform: "translateZ(100px)" },
+        { name: "B", transform: "rotateY(180deg) translateZ(100px)" },
+        { name: "L", transform: "rotateY(-90deg) translateZ(100px)" },
+        { name: "R", transform: "rotateY(90deg) translateZ(100px)" },
+        { name: "U", transform: "rotateX(90deg) translateZ(100px)" },
+        { name: "D", transform: "rotateX(-90deg) translateZ(100px)" },
+      ];
+
+      for (const face of faces) {
+        const div = document.createElement("div");
+        div.className = "face";
+        div.style.transform = face.transform;
+
+        for (let i = 0; i < 9; i++) {
+          const square = document.createElement("div");
+          square.className = COLORS[cubeState[face.name][i]];
+          div.appendChild(square);
+        }
+
+        container.appendChild(div);
+      }
+    }
+
+    function rotateFace(face, clockwise = true) {
+      const f = cubeState[face].slice();
+      const map = clockwise
+        ? [6, 3, 0, 7, 4, 1, 8, 5, 2]
+        : [2, 5, 8, 1, 4, 7, 0, 3, 6];
+
+      for (let i = 0; i < 9; i++) {
+        cubeState[face][i] = f[map[i]];
+      }
+    }
+
+    function doMove(move) {
+      const prime = move.includes("'");
+      const base = move.replace("'", "");
+
+      switch (base) {
+        case "R":
+          rotateFace("R", !prime);
+
+          const tempR = [
+            cubeState["U"][2], cubeState["U"][5], cubeState["U"][8]
+          ];
+          if (!prime) {
+            [cubeState["U"][2], cubeState["U"][5], cubeState["U"][8]] =
+              [cubeState["F"][2], cubeState["F"][5], cubeState["F"][8]];
+            [cubeState["F"][2], cubeState["F"][5], cubeState["F"][8]] =
+              [cubeState["D"][2], cubeState["D"][5], cubeState["D"][8]];
+            [cubeState["D"][2], cubeState["D"][5], cubeState["D"][8]] =
+              [cubeState["B"][6], cubeState["B"][3], cubeState["B"][0]];
+            [cubeState["B"][6], cubeState["B"][3], cubeState["B"][0]] = tempR;
+          } else {
+            [cubeState["U"][2], cubeState["U"][5], cubeState["U"][8]] =
+              [cubeState["B"][6], cubeState["B"][3], cubeState["B"][0]];
+            [cubeState["B"][6], cubeState["B"][3], cubeState["B"][0]] =
+              [cubeState["D"][2], cubeState["D"][5], cubeState["D"][8]];
+            [cubeState["D"][2], cubeState["D"][5], cubeState["D"][8]] =
+              [cubeState["F"][2], cubeState["F"][5], cubeState["F"][8]];
+            [cubeState["F"][2], cubeState["F"][5], cubeState["F"][8]] = tempR;
+          }
+          break;
+
+        case "U":
+          rotateFace("U", !prime);
+
+          const tempU = [
+            cubeState["F"][0], cubeState["F"][1], cubeState["F"][2]
+          ];
+          if (!prime) {
+            [cubeState["F"][0], cubeState["F"][1], cubeState["F"][2]] =
+              [cubeState["R"][0], cubeState["R"][1], cubeState["R"][2]];
+            [cubeState["R"][0], cubeState["R"][1], cubeState["R"][2]] =
+              [cubeState["B"][0], cubeState["B"][1], cubeState["B"][2]];
+            [cubeState["B"][0], cubeState["B"][1], cubeState["B"][2]] =
+              [cubeState["L"][0], cubeState["L"][1], cubeState["L"][2]];
+            [cubeState["L"][0], cubeState["L"][1], cubeState["L"][2]] = tempU;
+          } else {
+            [cubeState["F"][0], cubeState["F"][1], cubeState["F"][2]] =
+              [cubeState["L"][0], cubeState["L"][1], cubeState["L"][2]];
+            [cubeState["L"][0], cubeState["L"][1], cubeState["L"][2]] =
+              [cubeState["B"][0], cubeState["B"][1], cubeState["B"][2]];
+            [cubeState["B"][0], cubeState["B"][1], cubeState["B"][2]] =
+              [cubeState["R"][0], cubeState["R"][1], cubeState["R"][2]];
+            [cubeState["R"][0], cubeState["R"][1], cubeState["R"][2]] = tempU;
+          }
+          break;
+      }
+
+      renderCube();
+    }
+
+    function resetCube() {
+      initCubeState();
+      renderCube();
+    }
+
+    initCubeState();
+    renderCube();
+  </script>
+</body>
+</html>
