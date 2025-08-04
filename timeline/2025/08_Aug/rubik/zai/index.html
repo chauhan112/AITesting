@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rubik's Cube Game</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .cube-container {
+                perspective: 1000px;
+                perspective-origin: center center;
+            }
+
+            .cube {
+                position: relative;
+                width: 300px;
+                height: 300px;
+                transform-style: preserve-3d;
+                transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .face {
+                position: absolute;
+                width: 300px;
+                height: 300px;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+                gap: 4px;
+                padding: 4px;
+                background: #000;
+                border: 2px solid #000;
+            }
+
+            .sticker {
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+                cursor: pointer;
+            }
+
+            .sticker::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.3) 0%,
+                    transparent 50%,
+                    rgba(0, 0, 0, 0.1) 100%
+                );
+                pointer-events: none;
+            }
+
+            .sticker:hover {
+                transform: scale(0.95);
+                filter: brightness(1.1);
+            }
+
+            /* Face positions */
+            .front {
+                transform: rotateY(0deg) translateZ(150px);
+            }
+            .back {
+                transform: rotateY(180deg) translateZ(150px);
+            }
+            .right {
+                transform: rotateY(90deg) translateZ(150px);
+            }
+            .left {
+                transform: rotateY(-90deg) translateZ(150px);
+            }
+            .top {
+                transform: rotateX(90deg) translateZ(150px);
+            }
+            .bottom {
+                transform: rotateX(-90deg) translateZ(150px);
+            }
+
+            /* Colors */
+            .white {
+                background: #ffffff;
+            }
+            .yellow {
+                background: #ffd500;
+            }
+            .red {
+                background: #ff0000;
+            }
+            .orange {
+                background: #ff8c00;
+            }
+            .green {
+                background: #00ff00;
+            }
+            .blue {
+                background: #0051ba;
+            }
+
+            /* Animation classes */
+            @keyframes float {
+                0%,
+                100% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+
+            .floating {
+                animation: float 3s ease-in-out infinite;
+            }
+
+            /* Control button styles */
+            .control-btn {
+                transition: all 0.2s ease;
+                backdrop-filter: blur(10px);
+            }
+
+            .control-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .control-btn:active {
+                transform: translateY(0);
+            }
+
+            /* Info panel */
+            .info-panel {
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            /* Move button styles */
+            .move-btn {
+                transition: all 0.2s ease;
+                font-weight: 600;
+            }
+
+            .move-btn:hover {
+                transform: scale(1.05);
+            }
+
+            .move-btn:active {
+                transform: scale(0.95);
+            }
+
+            /* Timer display */
+            .timer {
+                font-family: "Courier New", monospace;
+                font-size: 2rem;
+                font-weight: bold;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+
+            /* Success animation */
+            @keyframes success {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            .success {
+                animation: success 0.5s ease-in-out;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 min-h-screen flex items-center justify-center p-4"
+    >
+        <div class="container mx-auto max-w-7xl">
+            <!-- Header -->
+            <header class="text-center mb-8 floating">
+                <h1 class="text-5xl font-bold text-white mb-2 tracking-tight">
+                    Rubik's Cube Game
+                </h1>
+                <p class="text-gray-300 text-lg">
+                    Solve the cube with face rotations
+                </p>
+            </header>
+
+            <!-- Game Stats -->
+            <div class="flex justify-center gap-8 mb-6">
+                <div class="info-panel rounded-xl p-4 text-center">
+                    <p class="text-gray-300 text-sm">Moves</p>
+                    <p id="moveCount" class="text-3xl font-bold text-white">
+                        0
+                    </p>
+                </div>
+                <div class="info-panel rounded-xl p-4 text-center">
+                    <p class="text-gray-300 text-sm">Time</p>
+                    <p id="timer" class="timer text-white">00:00</p>
+                </div>
+                <div class="info-panel rounded-xl p-4 text-center">
+                    <p class="text-gray-300 text-sm">Status</p>
+                    <p id="status" class="text-lg font-semibold text-green-400">
+                        Solved
+                    </p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="grid lg:grid-cols-3 gap-8 items-start">
+                <!-- Cube Container -->
+                <div class="lg:col-span-2 flex justify-center">
+                    <div class="cube-container">
+                        <div id="cube" class="cube">
+                            <!-- Front Face -->
+                            <div class="face front" data-face="front">
+                                <div class="sticker white" data-pos="0"></div>
+                                <div class="sticker white" data-pos="1"></div>
+                                <div class="sticker white" data-pos="2"></div>
+                                <div class="sticker white" data-pos="3"></div>
+                                <div class="sticker white" data-pos="4"></div>
+                                <div class="sticker white" data-pos="5"></div>
+                                <div class="sticker white" data-pos="6"></div>
+                                <div class="sticker white" data-pos="7"></div>
+                                <div class="sticker white" data-pos="8"></div>
+                            </div>
+
+                            <!-- Back Face -->
+                            <div class="face back" data-face="back">
+                                <div class="sticker yellow" data-pos="0"></div>
+                                <div class="sticker yellow" data-pos="1"></div>
+                                <div class="sticker yellow" data-pos="2"></div>
+                                <div class="sticker yellow" data-pos="3"></div>
+                                <div class="sticker yellow" data-pos="4"></div>
+                                <div class="sticker yellow" data-pos="5"></div>
+                                <div class="sticker yellow" data-pos="6"></div>
+                                <div class="sticker yellow" data-pos="7"></div>
+                                <div class="sticker yellow" data-pos="8"></div>
+                            </div>
+
+                            <!-- Right Face -->
+                            <div class="face right" data-face="right">
+                                <div class="sticker red" data-pos="0"></div>
+                                <div class="sticker red" data-pos="1"></div>
+                                <div class="sticker red" data-pos="2"></div>
+                                <div class="sticker red" data-pos="3"></div>
+                                <div class="sticker red" data-pos="4"></div>
+                                <div class="sticker red" data-pos="5"></div>
+                                <div class="sticker red" data-pos="6"></div>
+                                <div class="sticker red" data-pos="7"></div>
+                                <div class="sticker red" data-pos="8"></div>
+                            </div>
+
+                            <!-- Left Face -->
+                            <div class="face left" data-face="left">
+                                <div class="sticker orange" data-pos="0"></div>
+                                <div class="sticker orange" data-pos="1"></div>
+                                <div class="sticker orange" data-pos="2"></div>
+                                <div class="sticker orange" data-pos="3"></div>
+                                <div class="sticker orange" data-pos="4"></div>
+                                <div class="sticker orange" data-pos="5"></div>
+                                <div class="sticker orange" data-pos="6"></div>
+                                <div class="sticker orange" data-pos="7"></div>
+                                <div class="sticker orange" data-pos="8"></div>
+                            </div>
+
+                            <!-- Top Face -->
+                            <div class="face top" data-face="top">
+                                <div class="sticker green" data-pos="0"></div>
+                                <div class="sticker green" data-pos="1"></div>
+                                <div class="sticker green" data-pos="2"></div>
+                                <div class="sticker green" data-pos="3"></div>
+                                <div class="sticker green" data-pos="4"></div>
+                                <div class="sticker green" data-pos="5"></div>
+                                <div class="sticker green" data-pos="6"></div>
+                                <div class="sticker green" data-pos="7"></div>
+                                <div class="sticker green" data-pos="8"></div>
+                            </div>
+
+                            <!-- Bottom Face -->
+                            <div class="face bottom" data-face="bottom">
+                                <div class="sticker blue" data-pos="0"></div>
+                                <div class="sticker blue" data-pos="1"></div>
+                                <div class="sticker blue" data-pos="2"></div>
+                                <div class="sticker blue" data-pos="3"></div>
+                                <div class="sticker blue" data-pos="4"></div>
+                                <div class="sticker blue" data-pos="5"></div>
+                                <div class="sticker blue" data-pos="6"></div>
+                                <div class="sticker blue" data-pos="7"></div>
+                                <div class="sticker blue" data-pos="8"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls Panel -->
+                <div class="space-y-6">
+                    <!-- View Controls -->
+                    <div class="info-panel rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold text-white mb-4">
+                            View Controls
+                        </h2>
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <button
+                                onclick="rotateView('up')"
+                                class="control-btn bg-white/20 text-white p-3 rounded-lg hover:bg-white/30"
+                            >
+                                <svg
+                                    class="w-6 h-6 mx-auto"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 15l7-7 7 7"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <button
+                                onclick="rotateView('reset')"
+                                class="control-btn bg-white/20 text-white p-3 rounded-lg hover:bg-white/30"
+                            >
+                                <svg
+                                    class="w-6 h-6 mx-auto"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <button
+                                onclick="rotateView('down')"
+                                class="control-btn bg-white/20 text-white p-3 rounded-lg hover:bg-white/30"
+                            >
+                                <svg
+                                    class="w-6 h-6 mx-auto"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 9l-7 7-7-7"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <button
+                                onclick="rotateView('left')"
+                                class="control-btn bg-white/20 text-white p-3 rounded-lg hover:bg-white/30"
+                            >
+                                <svg
+                                    class="w-6 h-6 mx-auto"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 19l-7-7 7-7"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <div></div>
+                            <button
+                                onclick="rotateView('right')"
+                                class="control-btn bg-white/20 text-white p-3 rounded-lg hover:bg-white/30"
+                            >
+                                <svg
+                                    class="w-6 h-6 mx-auto"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 5l7 7-7 7"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Face Rotation Controls -->
+                    <div class="info-panel rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold text-white mb-4">
+                            Face Rotations
+                        </h2>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button
+                                onclick="makeMove('F')"
+                                class="move-btn bg-red-600 text-white p-3 rounded-lg hover:bg-red-700"
+                            >
+                                F
+                            </button>
+                            <button
+                                onclick="makeMove('F', true)"
+                                class="move-btn bg-red-700 text-white p-3 rounded-lg hover:bg-red-800"
+                            >
+                                F'
+                            </button>
+                            <button
+                                onclick="makeMove('F', false, true)"
+                                class="move-btn bg-red-800 text-white p-3 rounded-lg hover:bg-red-900"
+                            >
+                                F2
+                            </button>
+
+                            <button
+                                onclick="makeMove('B')"
+                                class="move-btn bg-yellow-600 text-white p-3 rounded-lg hover:bg-yellow-700"
+                            >
+                                B
+                            </button>
+                            <button
+                                onclick="makeMove('B', true)"
+                                class="move-btn bg-yellow-700 text-white p-3 rounded-lg hover:bg-yellow-800"
+                            >
+                                B'
+                            </button>
+                            <button
+                                onclick="makeMove('B', false, true)"
+                                class="move-btn bg-yellow-800 text-white p-3 rounded-lg hover:bg-yellow-900"
+                            >
+                                B2
+                            </button>
+
+                            <button
+                                onclick="makeMove('U')"
+                                class="move-btn bg-green-600 text-white p-3 rounded-lg hover:bg-green-700"
+                            >
+                                U
+                            </button>
+                            <button
+                                onclick="makeMove('U', true)"
+                                class="move-btn bg-green-700 text-white p-3 rounded-lg hover:bg-green-800"
+                            >
+                                U'
+                            </button>
+                            <button
+                                onclick="makeMove('U', false, true)"
+                                class="move-btn bg-green-800 text-white p-3 rounded-lg hover:bg-green-900"
+                            >
+                                U2
+                            </button>
+
+                            <button
+                                onclick="makeMove('D')"
+                                class="move-btn bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
+                            >
+                                D
+                            </button>
+                            <button
+                                onclick="makeMove('D', true)"
+                                class="move-btn bg-blue-700 text-white p-3 rounded-lg hover:bg-blue-800"
+                            >
+                                D'
+                            </button>
+                            <button
+                                onclick="makeMove('D', false, true)"
+                                class="move-btn bg-blue-800 text-white p-3 rounded-lg hover:bg-blue-900"
+                            >
+                                D2
+                            </button>
+
+                            <button
+                                onclick="makeMove('L')"
+                                class="move-btn bg-orange-600 text-white p-3 rounded-lg hover:bg-orange-700"
+                            >
+                                L
+                            </button>
+                            <button
+                                onclick="makeMove('L', true)"
+                                class="move-btn bg-orange-700 text-white p-3 rounded-lg hover:bg-orange-800"
+                            >
+                                L'
+                            </button>
+                            <button
+                                onclick="makeMove('L', false, true)"
+                                class="move-btn bg-orange-800 text-white p-3 rounded-lg hover:bg-orange-900"
+                            >
+                                L2
+                            </button>
+
+                            <button
+                                onclick="makeMove('R')"
+                                class="move-btn bg-red-600 text-white p-3 rounded-lg hover:bg-red-700"
+                            >
+                                R
+                            </button>
+                            <button
+                                onclick="makeMove('R', true)"
+                                class="move-btn bg-red-700 text-white p-3 rounded-lg hover:bg-red-800"
+                            >
+                                R'
+                            </button>
+                            <button
+                                onclick="makeMove('R', false, true)"
+                                class="move-btn bg-red-800 text-white p-3 rounded-lg hover:bg-red-900"
+                            >
+                                R2
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game Controls -->
+                    <div class="info-panel rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold text-white mb-4">
+                            Game Controls
+                        </h2>
+                        <div class="space-y-3">
+                            <button
+                                onclick="scrambleCube()"
+                                class="control-btn w-full bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 font-semibold"
+                            >
+                                Scramble Cube
+                            </button>
+                            <button
+                                onclick="resetCube()"
+                                class="control-btn w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 font-semibold"
+                            >
+                                Reset to Solved
+                            </button>
+                            <button
+                                onclick="solveCube()"
+                                class="control-btn w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 font-semibold"
+                            >
+                                Auto Solve
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="info-panel rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold text-white mb-4">
+                            How to Play
+                        </h2>
+                        <ul class="text-gray-300 space-y-2 text-sm">
+                            <li>
+                                • Use face rotation buttons to turn cube faces
+                            </li>
+                            <li>
+                                • F/B = Front/Back, U/D = Up/Down, L/R =
+                                Left/Right
+                            </li>
+                            <li>• ' = Counter-clockwise, 2 = Double turn</li>
+                            <li>• Scramble to start, solve to win!</li>
+                            <li>• Arrow keys rotate the view</li>
+                        </ul>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Success Modal -->
+            <div
+                id="successModal"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+            >
+                <div class="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
+                    <h2 class="text-3xl font-bold text-green-600 mb-4">
+                        Congratulations!
+                    </h2>
+                    <p class="text-gray-700 mb-2">
+                        You solved the Rubik's Cube!
+                    </p>
+                    <p class="text-gray-600 mb-6">
+                        Moves:
+                        <span id="finalMoves" class="font-bold">0</span> | Time:
+                        <span id="finalTime" class="font-bold">00:00</span>
+                    </p>
+                    <button
+                        onclick="closeSuccessModal()"
+                        class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold"
+                    >
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Cube state management
+            class RubiksCube {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.state = {
+                        front: Array(9).fill("white"),
+                        back: Array(9).fill("yellow"),
+                        top: Array(9).fill("green"),
+                        bottom: Array(9).fill("blue"),
+                        left: Array(9).fill("orange"),
+                        right: Array(9).fill("red"),
+                    };
+                    this.moveCount = 0;
+                    this.startTime = null;
+                    this.timerInterval = null;
+                    this.isScrambled = false;
+                }
+
+                // Rotate a face 90 degrees clockwise
+                rotateFace(face) {
+                    const temp = [...this.state[face]];
+                    this.state[face][0] = temp[6];
+                    this.state[face][1] = temp[3];
+                    this.state[face][2] = temp[0];
+                    this.state[face][3] = temp[7];
+                    this.state[face][4] = temp[4];
+                    this.state[face][5] = temp[1];
+                    this.state[face][6] = temp[8];
+                    this.state[face][7] = temp[5];
+                    this.state[face][8] = temp[2];
+                }
+
+                // Rotate a face 90 degrees counter-clockwise
+                rotateFaceCounter(face) {
+                    for (let i = 0; i < 3; i++) {
+                        this.rotateFace(face);
+                    }
+                }
+
+                // Front face rotation
+                F() {
+                    this.rotateFace("front");
+                    const temp = [
+                        this.state.top[6],
+                        this.state.top[7],
+                        this.state.top[8],
+                    ];
+                    this.state.top[6] = this.state.left[8];
+                    this.state.top[7] = this.state.left[5];
+                    this.state.top[8] = this.state.left[2];
+                    this.state.left[2] = this.state.bottom[0];
+                    this.state.left[5] = this.state.bottom[1];
+                    this.state.left[8] = this.state.bottom[2];
+                    this.state.bottom[0] = this.state.right[6];
+                    this.state.bottom[1] = this.state.right[3];
+                    this.state.bottom[2] = this.state.right[0];
+                    this.state.right[0] = temp[0];
+                    this.state.right[3] = temp[1];
+                    this.state.right[6] = temp[2];
+                }
+
+                FPrime() {
+                    for (let i = 0; i < 3; i++) this.F();
+                }
+
+                // Back face rotation
+                B() {
+                    this.rotateFace("back");
+                    const temp = [
+                        this.state.top[0],
+                        this.state.top[1],
+                        this.state.top[2],
+                    ];
+                    this.state.top[0] = this.state.right[2];
+                    this.state.top[1] = this.state.right[5];
+                    this.state.top[2] = this.state.right[8];
+                    this.state.right[2] = this.state.bottom[8];
+                    this.state.right[5] = this.state.bottom[7];
+                    this.state.right[8] = this.state.bottom[6];
+                    this.state.bottom[6] = this.state.left[0];
+                    this.state.bottom[7] = this.state.left[3];
+                    this.state.bottom[8] = this.state.left[6];
+                    this.state.left[0] = temp[2];
+                    this.state.left[3] = temp[1];
+                    this.state.left[6] = temp[0];
+                }
+
+                BPrime() {
+                    for (let i = 0; i < 3; i++) this.B();
+                }
+
+                // Up face rotation
+                U() {
+                    this.rotateFace("top");
+                    const temp = [
+                        this.state.front[0],
+                        this.state.front[1],
+                        this.state.front[2],
+                    ];
+                    this.state.front[0] = this.state.right[0];
+                    this.state.front[1] = this.state.right[1];
+                    this.state.front[2] = this.state.right[2];
+                    this.state.right[0] = this.state.back[0];
+                    this.state.right[1] = this.state.back[1];
+                    this.state.right[2] = this.state.back[2];
+                    this.state.back[0] = this.state.left[0];
+                    this.state.back[1] = this.state.left[1];
+                    this.state.back[2] = this.state.left[2];
+                    this.state.left[0] = temp[0];
+                    this.state.left[1] = temp[1];
+                    this.state.left[2] = temp[2];
+                }
+
+                UPrime() {
+                    for (let i = 0; i < 3; i++) this.U();
+                }
+
+                // Down face rotation
+                D() {
+                    this.rotateFace("bottom");
+                    const temp = [
+                        this.state.front[6],
+                        this.state.front[7],
+                        this.state.front[8],
+                    ];
+                    this.state.front[6] = this.state.left[6];
+                    this.state.front[7] = this.state.left[7];
+                    this.state.front[8] = this.state.left[8];
+                    this.state.left[6] = this.state.back[6];
+                    this.state.left[7] = this.state.back[7];
+                    this.state.left[8] = this.state.back[8];
+                    this.state.back[6] = this.state.right[6];
+                    this.state.back[7] = this.state.right[7];
+                    this.state.back[8] = this.state.right[8];
+                    this.state.right[6] = temp[0];
+                    this.state.right[7] = temp[1];
+                    this.state.right[8] = temp[2];
+                }
+
+                DPrime() {
+                    for (let i = 0; i < 3; i++) this.D();
+                }
+
+                // Left face rotation
+                L() {
+                    this.rotateFace("left");
+                    const temp = [
+                        this.state.front[0],
+                        this.state.front[3],
+                        this.state.front[6],
+                    ];
+                    this.state.front[0] = this.state.top[0];
+                    this.state.front[3] = this.state.top[3];
+                    this.state.front[6] = this.state.top[6];
+                    this.state.top[0] = this.state.back[8];
+                    this.state.top[3] = this.state.back[5];
+                    this.state.top[6] = this.state.back[2];
+                    this.state.back[2] = this.state.bottom[6];
+                    this.state.back[5] = this.state.bottom[3];
+                    this.state.back[8] = this.state.bottom[0];
+                    this.state.bottom[0] = temp[0];
+                    this.state.bottom[3] = temp[1];
+                    this.state.bottom[6] = temp[2];
+                }
+
+                LPrime() {
+                    for (let i = 0; i < 3; i++) this.L();
+                }
+
+                // Right face rotation
+                R() {
+                    this.rotateFace("right");
+                    const temp = [
+                        this.state.front[2],
+                        this.state.front[5],
+                        this.state.front[8],
+                    ];
+                    this.state.front[2] = this.state.bottom[2];
+                    this.state.front[5] = this.state.bottom[5];
+                    this.state.front[8] = this.state.bottom[8];
+                    this.state.bottom[2] = this.state.back[6];
+                    this.state.bottom[5] = this.state.back[3];
+                    this.state.bottom[8] = this.state.back[0];
+                    this.state.back[0] = this.state.top[8];
+                    this.state.back[3] = this.state.top[5];
+                    this.state.back[6] = this.state.top[2];
+                    this.state.top[2] = temp[0];
+                    this.state.top[5] = temp[1];
+                    this.state.top[8] = temp[2];
+                }
+
+                RPrime() {
+                    for (let i = 0; i < 3; i++) this.R();
+                }
+
+                // Check if cube is solved
+                isSolved() {
+                    for (let face in this.state) {
+                        const faceColors = this.state[face];
+                        const firstColor = faceColors[0];
+                        if (
+                            !faceColors.every((color) => color === firstColor)
+                        ) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                // Scramble the cube
+                scramble() {
+                    const moves = ["F", "B", "U", "D", "L", "R"];
+                    const modifiers = ["", "'", "2"];
+                    const scrambleMoves = 20;
+
+                    for (let i = 0; i < scrambleMoves; i++) {
+                        const move =
+                            moves[Math.floor(Math.random() * moves.length)];
+                        const modifier =
+                            modifiers[
+                                Math.floor(Math.random() * modifiers.length)
+                            ];
+                        this.makeMove(move + modifier, false);
+                    }
+
+                    this.isScrambled = true;
+                    this.moveCount = 0;
+                    this.startTimer();
+                }
+
+                // Make a move
+                makeMove(notation, updateCount = true) {
+                    const move = notation[0];
+                    const modifier = notation.slice(1);
+
+                    switch (move) {
+                        case "F":
+                            if (modifier === "'") this.FPrime();
+                            else if (modifier === "2") {
+                                this.F();
+                                this.F();
+                            } else this.F();
+                            break;
+                        case "B":
+                            if (modifier === "'") this.BPrime();
+                            else if (modifier === "2") {
+                                this.B();
+                                this.B();
+                            } else this.B();
+                            break;
+                        case "U":
+                            if (modifier === "'") this.UPrime();
+                            else if (modifier === "2") {
+                                this.U();
+                                this.U();
+                            } else this.U();
+                            break;
+                        case "D":
+                            if (modifier === "'") this.DPrime();
+                            else if (modifier === "2") {
+                                this.D();
+                                this.D();
+                            } else this.D();
+                            break;
+                        case "L":
+                            if (modifier === "'") this.LPrime();
+                            else if (modifier === "2") {
+                                this.L();
+                                this.L();
+                            } else this.L();
+                            break;
+                        case "R":
+                            if (modifier === "'") this.RPrime();
+                            else if (modifier === "2") {
+                                this.R();
+                                this.R();
+                            } else this.R();
+                            break;
+                    }
+
+                    if (updateCount) {
+                        this.moveCount++;
+                        document.getElementById("moveCount").textContent =
+                            this.moveCount;
+
+                        if (this.isScrambled && this.isSolved()) {
+                            this.stopTimer();
+                            this.showSuccess();
+                        }
+                    }
+
+                    this.updateDisplay();
+                }
+
+                // Update the visual display
+                updateDisplay() {
+                    for (let face in this.state) {
+                        const faceElement = document.querySelector(
+                            `[data-face="${face}"]`
+                        );
+                        const stickers =
+                            faceElement.querySelectorAll(".sticker");
+
+                        this.state[face].forEach((color, index) => {
+                            stickers[index].className = `sticker ${color}`;
+                        });
+                    }
+                }
+
+                // Timer functions
+                startTimer() {
+                    this.startTime = Date.now();
+                    this.timerInterval = setInterval(() => {
+                        const elapsed = Math.floor(
+                            (Date.now() - this.startTime) / 1000
+                        );
+                        const minutes = Math.floor(elapsed / 60)
+                            .toString()
+                            .padStart(2, "0");
+                        const seconds = (elapsed % 60)
+                            .toString()
+                            .padStart(2, "0");
+                        document.getElementById(
+                            "timer"
+                        ).textContent = `${minutes}:${seconds}`;
+                    }, 1000);
+                }
+
+                stopTimer() {
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                }
+
+                // Show success modal
+                showSuccess() {
+                    document.getElementById("finalMoves").textContent =
+                        this.moveCount;
+                    document.getElementById("finalTime").textContent =
+                        document.getElementById("timer").textContent;
+                    document
+                        .getElementById("successModal")
+                        .classList.remove("hidden");
+                    document.getElementById("status").textContent = "Solved!";
+                    document.getElementById("status").className =
+                        "text-lg font-semibold text-green-400 success";
+                }
+            }
+
+            // Initialize cube
+            const cube = new RubiksCube();
+
+            // View rotation
+            let rotationX = -20;
+            let rotationY = -30;
+            const cubeElement = document.getElementById("cube");
+
+            function updateViewRotation() {
+                cubeElement.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+            }
+
+            function rotateView(direction) {
+                switch (direction) {
+                    case "up":
+                        rotationX += 90;
+                        break;
+                    case "down":
+                        rotationX -= 90;
+                        break;
+                    case "left":
+                        rotationY -= 90;
+                        break;
+                    case "right":
+                        rotationY += 90;
+                        break;
+                    case "reset":
+                        rotationX = -20;
+                        rotationY = -30;
+                        break;
+                }
+                updateViewRotation();
+            }
+
+            // Game functions
+            function makeMove(move, prime = false, double = false) {
+                let notation = move;
+                if (prime) notation += "'";
+                if (double) notation += "2";
+                cube.makeMove(notation);
+            }
+
+            function scrambleCube() {
+                cube.reset();
+                cube.scramble();
+                document.getElementById("status").textContent = "Scrambled";
+                document.getElementById("status").className =
+                    "text-lg font-semibold text-yellow-400";
+            }
+
+            function resetCube() {
+                cube.reset();
+                cube.updateDisplay();
+                document.getElementById("moveCount").textContent = "0";
+                document.getElementById("timer").textContent = "00:00";
+                document.getElementById("status").textContent = "Solved";
+                document.getElementById("status").className =
+                    "text-lg font-semibold text-green-400";
+            }
+
+            function solveCube() {
+                // Simple solve animation
+                const solveMoves = [
+                    "F",
+                    "F",
+                    "B",
+                    "B",
+                    "U",
+                    "U",
+                    "D",
+                    "D",
+                    "L",
+                    "L",
+                    "R",
+                    "R",
+                ];
+                let moveIndex = 0;
+
+                const solveInterval = setInterval(() => {
+                    if (moveIndex < solveMoves.length) {
+                        cube.makeMove(solveMoves[moveIndex]);
+                        moveIndex++;
+                    } else {
+                        clearInterval(solveInterval);
+                        cube.reset();
+                        cube.updateDisplay();
+                        document.getElementById("status").textContent =
+                            "Solved";
+                        document.getElementById("status").className =
+                            "text-lg font-semibold text-green-400";
+                    }
+                }, 100);
+            }
+
+            function closeSuccessModal() {
+                document.getElementById("successModal").classList.add("hidden");
+                scrambleCube();
+            }
+
+            // Keyboard controls
+            document.addEventListener("keydown", (e) => {
+                switch (e.key) {
+                    case "ArrowUp":
+                        e.preventDefault();
+                        rotateView("up");
+                        break;
+                    case "ArrowDown":
+                        e.preventDefault();
+                        rotateView("down");
+                        break;
+                    case "ArrowLeft":
+                        e.preventDefault();
+                        rotateView("left");
+                        break;
+                    case "ArrowRight":
+                        e.preventDefault();
+                        rotateView("right");
+                        break;
+                    case " ":
+                        e.preventDefault();
+                        rotateView("reset");
+                        break;
+                    case "f":
+                    case "F":
+                        e.preventDefault();
+                        makeMove("F", e.shiftKey);
+                        break;
+                    case "b":
+                    case "B":
+                        e.preventDefault();
+                        makeMove("B", e.shiftKey);
+                        break;
+                    case "u":
+                    case "U":
+                        e.preventDefault();
+                        makeMove("U", e.shiftKey);
+                        break;
+                    case "d":
+                    case "D":
+                        e.preventDefault();
+                        makeMove("D", e.shiftKey);
+                        break;
+                    case "l":
+                    case "L":
+                        e.preventDefault();
+                        makeMove("L", e.shiftKey);
+                        break;
+                    case "r":
+                    case "R":
+                        e.preventDefault();
+                        makeMove("R", e.shiftKey);
+                        break;
+                    case "s":
+                    case "S":
+                        e.preventDefault();
+                        scrambleCube();
+                        break;
+                }
+            });
+
+            // Mouse drag rotation
+            let isDragging = false;
+            let startX, startY;
+
+            cubeElement.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                cubeElement.style.cursor = "grabbing";
+            });
+
+            document.addEventListener("mousemove", (e) => {
+                if (!isDragging) return;
+
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                rotationY += deltaX * 0.5;
+                rotationX -= deltaY * 0.5;
+
+                updateViewRotation();
+
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            document.addEventListener("mouseup", () => {
+                isDragging = false;
+                cubeElement.style.cursor = "grab";
+            });
+
+            // Initialize
+            updateViewRotation();
+            cubeElement.style.cursor = "grab";
+        </script>
+    </body>
+</html>
