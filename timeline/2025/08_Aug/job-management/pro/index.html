@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI CV & Motivation Generator</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Simple transition for modals */
+            .modal {
+                transition: opacity 0.3s ease-in-out,
+                    visibility 0.3s ease-in-out;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 text-gray-800 font-sans">
+        <div class="container mx-auto p-4 md:p-8">
+            <header class="mb-8">
+                <h1 class="text-4xl font-bold text-gray-900">
+                    AI CV & Motivation Generator
+                </h1>
+                <p class="text-gray-600">
+                    Create tailored CVs, motivation letters, and summaries for
+                    your job applications.
+                </p>
+            </header>
+
+            <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Job List & Running Processes -->
+                <div class="lg:col-span-1 space-y-8">
+                    <!-- Jobs Section -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold">My Jobs</h2>
+                            <button
+                                id="add-job-btn"
+                                class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+                            >
+                                Add New Job
+                            </button>
+                        </div>
+                        <div
+                            id="job-list"
+                            class="space-y-3 bg-white p-4 rounded-lg shadow-md"
+                        >
+                            <!-- Job items will be injected here by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Running Processes Section -->
+                    <div>
+                        <h2 class="text-2xl font-semibold mb-4">
+                            Running Processes
+                        </h2>
+                        <div
+                            id="running-processes"
+                            class="space-y-3 bg-white p-4 rounded-lg shadow-md min-h-[100px]"
+                        >
+                            <!-- Process items will be injected here by JS -->
+                            <p class="text-gray-500 italic">
+                                No active processes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Job Details & Generated Content -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Job Details Section -->
+                    <div
+                        id="job-details-section"
+                        class="bg-white p-6 rounded-lg shadow-md hidden"
+                    >
+                        <h2
+                            id="job-title-display"
+                            class="text-3xl font-bold mb-2"
+                        ></h2>
+                        <p class="text-gray-500 mb-4">Job Description</p>
+                        <div
+                            id="job-description-display"
+                            class="prose max-w-none h-48 overflow-y-auto p-3 bg-gray-50 rounded-md"
+                        ></div>
+                        <div class="mt-6 flex space-x-4">
+                            <button
+                                onclick="openGenerateModal('CV')"
+                                class="bg-teal-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-teal-600 transition duration-300"
+                            >
+                                Generate CV
+                            </button>
+                            <button
+                                onclick="openGenerateModal('Motivation')"
+                                class="bg-indigo-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-600 transition duration-300"
+                            >
+                                Generate Motivation
+                            </button>
+                            <button
+                                onclick="openGenerateModal('Summary')"
+                                class="bg-amber-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-600 transition duration-300"
+                            >
+                                Generate Summary
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder for when no job is selected -->
+                    <div
+                        id="no-job-selected"
+                        class="bg-white p-10 rounded-lg shadow-md text-center"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-700">
+                            Select a job to get started
+                        </h3>
+                        <p class="text-gray-500 mt-2">
+                            Choose a job from the list on the left to view its
+                            details and generate content.
+                        </p>
+                    </div>
+
+                    <!-- Generated Content Display -->
+                    <div
+                        id="generated-content-section"
+                        class="bg-white p-6 rounded-lg shadow-md hidden"
+                    >
+                        <h2
+                            id="generated-content-title"
+                            class="text-3xl font-bold mb-4"
+                        ></h2>
+                        <div
+                            id="generated-content-display"
+                            class="prose max-w-none h-96 overflow-y-auto p-4 bg-gray-50 rounded-md"
+                        ></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Modal for Adding a New Job -->
+        <div
+            id="add-job-modal"
+            class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center invisible opacity-0"
+        >
+            <div
+                class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md transform transition-transform duration-300 scale-95"
+            >
+                <h2 class="text-2xl font-bold mb-6">Add a New Job</h2>
+                <form id="add-job-form">
+                    <div class="mb-4">
+                        <label
+                            for="job-title-input"
+                            class="block text-sm font-medium text-gray-700"
+                            >Job Title</label
+                        >
+                        <input
+                            type="text"
+                            id="job-title-input"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    <div class="mb-4">
+                        <label
+                            for="job-link-input"
+                            class="block text-sm font-medium text-gray-700"
+                            >Job Link (Optional)</label
+                        >
+                        <input
+                            type="url"
+                            id="job-link-input"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div class="mb-6">
+                        <label
+                            for="job-description-input"
+                            class="block text-sm font-medium text-gray-700"
+                            >Job Description</label
+                        >
+                        <textarea
+                            id="job-description-input"
+                            rows="6"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        ></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button
+                            type="button"
+                            id="cancel-add-job"
+                            class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+                        >
+                            Save Job
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal for Generation Parameters -->
+        <div
+            id="generate-params-modal"
+            class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center invisible opacity-0"
+        >
+            <div
+                class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg transform transition-transform duration-300 scale-95"
+            >
+                <h2 id="generate-modal-title" class="text-2xl font-bold mb-6">
+                    Generate Settings
+                </h2>
+                <form id="generate-params-form">
+                    <input type="hidden" id="generation-type-input" />
+                    <div class="mb-4">
+                        <label
+                            for="ai-model-select"
+                            class="block text-sm font-medium text-gray-700"
+                            >Select AI Model</label
+                        >
+                        <select
+                            id="ai-model-select"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option>Gemini-Pro (Default)</option>
+                            <option>GPT-4</option>
+                            <option>Claude-3</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label
+                            for="temperature-input"
+                            class="block text-sm font-medium text-gray-700"
+                            >Temperature</label
+                        >
+                        <input
+                            type="range"
+                            id="temperature-input"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value="0.7"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div class="text-center text-sm text-gray-600 mt-1">
+                            Value: <span id="temperature-value">0.7</span>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label
+                            for="prompt-input"
+                            class="block text-sm font-medium text-gray-700"
+                            >Custom Prompt (Optional)</label
+                        >
+                        <textarea
+                            id="prompt-input"
+                            rows="4"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Enter any custom instructions for the AI..."
+                        ></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button
+                            type="button"
+                            id="cancel-generation"
+                            class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition"
+                        >
+                            Start Generation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- DUMMY DATA ---
+                let jobs = [
+                    {
+                        id: 1,
+                        title: "Frontend Developer",
+                        link: "https://example.com/job/1",
+                        description:
+                            "We are looking for a skilled Frontend Developer to join our team. Responsibilities include translating UI/UX design wireframes to actual code that will produce visual elements of the application.",
+                    },
+                    {
+                        id: 2,
+                        title: "UX/UI Designer",
+                        link: "https://example.com/job/2",
+                        description:
+                            "Seeking a talented UX/UI Designer to create amazing user experiences. The ideal candidate should have an eye for clean and artful design, possess superior UI skills and be able to translate high-level requirements into interaction flows and artifacts.",
+                    },
+                    {
+                        id: 3,
+                        title: "Cloud Solutions Architect",
+                        link: "https://example.com/job/3",
+                        description:
+                            "Join our team as a Cloud Solutions Architect to design and implement cloud-based solutions. You will be responsible for leading the design of our next-generation cloud infrastructure.",
+                    },
+                ];
+                let activeJobId = null;
+
+                // --- DOM ELEMENTS ---
+                const jobList = document.getElementById("job-list");
+                const addJobBtn = document.getElementById("add-job-btn");
+                const addJobModal = document.getElementById("add-job-modal");
+                const cancelAddJobBtn =
+                    document.getElementById("cancel-add-job");
+                const addJobForm = document.getElementById("add-job-form");
+                const jobDetailsSection = document.getElementById(
+                    "job-details-section"
+                );
+                const noJobSelectedDiv =
+                    document.getElementById("no-job-selected");
+
+                const generateParamsModal = document.getElementById(
+                    "generate-params-modal"
+                );
+                const generateParamsForm = document.getElementById(
+                    "generate-params-form"
+                );
+                const cancelGenerationBtn =
+                    document.getElementById("cancel-generation");
+
+                const runningProcessesDiv =
+                    document.getElementById("running-processes");
+                const generatedContentSection = document.getElementById(
+                    "generated-content-section"
+                );
+                const temperatureInput =
+                    document.getElementById("temperature-input");
+                const temperatureValue =
+                    document.getElementById("temperature-value");
+
+                // --- FUNCTIONS ---
+
+                const renderJobList = () => {
+                    jobList.innerHTML = "";
+                    if (jobs.length === 0) {
+                        jobList.innerHTML =
+                            '<p class="text-gray-500 italic">No jobs added yet. Click "Add New Job" to start.</p>';
+                        return;
+                    }
+                    jobs.forEach((job) => {
+                        const isActive = job.id === activeJobId;
+                        const jobElement = document.createElement("div");
+                        jobElement.className = `p-3 rounded-lg cursor-pointer transition duration-200 ${
+                            isActive
+                                ? "bg-blue-100 border-l-4 border-blue-500"
+                                : "hover:bg-gray-100"
+                        }`;
+                        jobElement.innerHTML = `<h4 class="font-bold text-gray-900">${job.title}</h4>`;
+                        jobElement.addEventListener("click", () =>
+                            selectJob(job.id)
+                        );
+                        jobList.appendChild(jobElement);
+                    });
+                };
+
+                const selectJob = (id) => {
+                    activeJobId = id;
+                    const job = jobs.find((j) => j.id === id);
+                    if (job) {
+                        document.getElementById(
+                            "job-title-display"
+                        ).textContent = job.title;
+                        document.getElementById(
+                            "job-description-display"
+                        ).innerHTML = job.description.replace(/\n/g, "<br>");
+
+                        jobDetailsSection.classList.remove("hidden");
+                        noJobSelectedDiv.classList.add("hidden");
+                        generatedContentSection.classList.add("hidden"); // Hide previous results
+
+                        renderJobList(); // Re-render to highlight active job
+                    }
+                };
+
+                const openModal = (modal) => {
+                    modal.classList.remove("invisible", "opacity-0");
+                    modal.querySelector("div").classList.remove("scale-95");
+                };
+
+                const closeModal = (modal) => {
+                    modal.classList.add("opacity-0");
+                    modal.querySelector("div").classList.add("scale-95");
+                    setTimeout(() => modal.classList.add("invisible"), 300);
+                };
+
+                window.openGenerateModal = (type) => {
+                    document.getElementById(
+                        "generate-modal-title"
+                    ).textContent = `Generate ${type} - Settings`;
+                    document.getElementById("generation-type-input").value =
+                        type;
+                    document.getElementById("prompt-input").value = ""; // Reset prompt
+                    openModal(generateParamsModal);
+                };
+
+                const startGenerationProcess = (type) => {
+                    const processId = `process-${Date.now()}`;
+                    const processElement = document.createElement("div");
+                    processElement.id = processId;
+                    processElement.className =
+                        "p-3 bg-yellow-100 rounded-lg animate-pulse";
+                    processElement.innerHTML = `
+                    <p class="font-semibold text-yellow-800">Generating ${type}...</p>
+                    <p class="text-sm text-yellow-700">Job: ${
+                        jobs.find((j) => j.id === activeJobId).title
+                    }</p>
+                `;
+
+                    if (runningProcessesDiv.querySelector("p")) {
+                        runningProcessesDiv.innerHTML = ""; // Clear "No active processes" message
+                    }
+
+                    runningProcessesDiv.appendChild(processElement);
+
+                    // Simulate background task
+                    setTimeout(() => {
+                        const completedProcess =
+                            document.getElementById(processId);
+                        completedProcess.classList.remove(
+                            "bg-yellow-100",
+                            "animate-pulse"
+                        );
+                        completedProcess.classList.add("bg-green-100");
+                        completedProcess.innerHTML = `
+                         <p class="font-semibold text-green-800">${type} Generated Successfully!</p>
+                         <p class="text-sm text-green-700">Job: ${
+                             jobs.find((j) => j.id === activeJobId).title
+                         }</p>
+                         <button class="text-sm text-blue-600 hover:underline" onclick="viewGeneratedContent('${type}')">Click to view</button>
+                    `;
+                    }, 3000 + Math.random() * 2000); // Simulate 3-5 second delay
+                };
+
+                window.viewGeneratedContent = (type) => {
+                    const job = jobs.find((j) => j.id === activeJobId);
+                    document.getElementById(
+                        "generated-content-title"
+                    ).textContent = `Generated ${type} for ${job.title}`;
+
+                    // Dummy content based on type
+                    let dummyContent = "";
+                    if (type === "CV") {
+                        dummyContent = `<h3>Professional Summary</h3><p>A highly motivated Frontend Developer with 5+ years of experience in creating responsive and user-friendly web applications...</p><h3>Experience</h3><p><b>Tech Solutions Inc.</b> - Frontend Developer (2020-Present)</p><ul><li>Developed and maintained the user interface for key projects.</li><li>Collaborated with UX/UI designers to implement design mockups.</li></ul>`;
+                    } else if (type === "Motivation") {
+                        dummyContent = `<h3>Subject: Application for the ${job.title} Position</h3><p>Dear Hiring Manager,</p><p>I am writing to express my keen interest in the ${job.title} position advertised on your company's website. With a strong background in web development and a passion for creating intuitive user interfaces, I am confident that I possess the skills and experience necessary to be a valuable asset to your team.</p><p>Thank you for considering my application. I look forward to the possibility of discussing this exciting opportunity with you further.</p><p>Sincerely,<br>A. Developer</p>`;
+                    } else {
+                        // Summary
+                        dummyContent = `<h3>Job Summary for ${job.title}</h3><p>The role requires a candidate proficient in modern frontend technologies. Key responsibilities include code implementation from UI/UX designs and ensuring the technical feasibility of UI/UX designs. The ideal candidate is a team player with strong communication skills.</p>`;
+                    }
+
+                    document.getElementById(
+                        "generated-content-display"
+                    ).innerHTML = dummyContent;
+                    generatedContentSection.classList.remove("hidden");
+                    jobDetailsSection.classList.add("hidden"); // Hide job details view
+                    noJobSelectedDiv.classList.add("hidden");
+                };
+
+                // --- EVENT LISTENERS ---
+
+                addJobBtn.addEventListener("click", () =>
+                    openModal(addJobModal)
+                );
+                cancelAddJobBtn.addEventListener("click", () =>
+                    closeModal(addJobModal)
+                );
+                cancelGenerationBtn.addEventListener("click", () =>
+                    closeModal(generateParamsModal)
+                );
+
+                addJobForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const newJob = {
+                        id: Date.now(), // simple unique id
+                        title: document.getElementById("job-title-input").value,
+                        link: document.getElementById("job-link-input").value,
+                        description: document.getElementById(
+                            "job-description-input"
+                        ).value,
+                    };
+                    jobs.push(newJob);
+                    addJobForm.reset();
+                    closeModal(addJobModal);
+                    selectJob(newJob.id); // Select the newly added job
+                });
+
+                generateParamsForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const type = document.getElementById(
+                        "generation-type-input"
+                    ).value;
+                    // Here you would collect params: model, temp, prompt
+                    // For now, we just start the simulation
+                    startGenerationProcess(type);
+                    closeModal(generateParamsModal);
+                });
+
+                temperatureInput.addEventListener("input", (e) => {
+                    temperatureValue.textContent = e.target.value;
+                });
+
+                // --- INITIAL RENDER ---
+                renderJobList();
+            });
+        </script>
+    </body>
+</html>
