@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .header-container { display: none; }
+        .header-container.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Header Switcher Controls -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm rounded-full shadow-2xl px-6 py-3 flex gap-3 items-center border border-gray-200">
+        <span class="text-sm font-medium text-gray-600">Header:</span>
+        <button onclick="showHeader(1)" class="header-btn px-4 py-2 rounded-full text-sm font-medium transition-all bg-indigo-600 text-white" data-header="1">1</button>
+        <button onclick="showHeader(2)" class="header-btn px-4 py-2 rounded-full text-sm font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" data-header="2">2</button>
+        <button onclick="showHeader(3)" class="header-btn px-4 py-2 rounded-full text-sm font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" data-header="3">3</button>
+        <button onclick="showHeader(4)" class="header-btn px-4 py-2 rounded-full text-sm font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" data-header="4">4</button>
+        <button onclick="showHeader(5)" class="header-btn px-4 py-2 rounded-full text-sm font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" data-header="5">5</button>
+    </div>
+
+    <!-- HEADER 1: Glassmorphism with Floating Elements -->
+    <div id="header-1" class="header-container active">
+        <header class="fixed top-4 left-4 right-4 z-40">
+            <nav class="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg shadow-indigo-500/10 border border-white/50 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Voltix</span>
+                    </div>
+                    <div class="hidden md:flex items-center gap-8">
+                        <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Products</a>
+                        <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Solutions</a>
+                        <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Pricing</a>
+                        <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Resources</a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="px-4 py-2 text-gray-700 font-medium hover:text-indigo-600 transition-colors">Sign In</button>
+                        <button class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5">Get Started</button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="pt-32 px-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl font-bold text-gray-900 mb-4">Glassmorphism Header</h1>
+                <p class="text-xl text-gray-600">Modern frosted glass effect with floating container and gradient accents</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER 2: Dark Mode with Neon Glow -->
+    <div id="header-2" class="header-container">
+        <header class="bg-gray-950 border-b border-cyan-500/20">
+            <nav class="max-w-7xl mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-12">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-cyan-500 rounded-lg shadow-lg shadow-cyan-500/50 animate-pulse"></div>
+                            <span class="text-2xl font-black text-white">NEON<span class="text-cyan-400">X</span></span>
+                        </div>
+                        <div class="hidden lg:flex items-center gap-1">
+                            <a href="#" class="px-4 py-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all font-medium">Dashboard</a>
+                            <a href="#" class="px-4 py-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all font-medium">Analytics</a>
+                            <a href="#" class="px-4 py-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all font-medium">Projects</a>
+                            <a href="#" class="px-4 py-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all font-medium">Team</a>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                        <button class="p-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all relative">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/50"></span>
+                        </button>
+                        <button class="px-5 py-2 bg-cyan-500 text-gray-950 rounded-lg font-bold hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/30">Launch App</button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="bg-gray-950 min-h-screen pt-24 px-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl font-bold text-white mb-4">Dark Mode Neon</h1>
+                <p class="text-xl text-gray-400">Cyberpunk-inspired with glowing cyan accents and dark theme</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER 3: Minimal Split with Animated Underline -->
+    <div id="header-3" class="header-container">
+        <header class="bg-white border-b border-gray-100">
+            <nav class="max-w-7xl mx-auto">
+                <div class="flex items-center justify-between px-6 py-6">
+                    <a href="#" class="text-2xl font-light tracking-widest text-gray-900">MINIMAL</a>
+                    <div class="hidden md:flex items-center gap-10">
+                        <a href="#" class="group relative text-gray-600 hover:text-gray-900 transition-colors">
+                            Collections
+                            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-900 transition-all group-hover:w-full"></span>
+                        </a>
+                        <a href="#" class="group relative text-gray-600 hover:text-gray-900 transition-colors">
+                            Lookbook
+                            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-900 transition-all group-hover:w-full"></span>
+                        </a>
+                        <a href="#" class="group relative text-gray-600 hover:text-gray-900 transition-colors">
+                            About
+                            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-900 transition-all group-hover:w-full"></span>
+                        </a>
+                        <a href="#" class="group relative text-gray-600 hover:text-gray-900 transition-colors">
+                            Contact
+                            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-900 transition-all group-hover:w-full"></span>
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <button class="text-gray-600 hover:text-gray-900 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                        <button class="text-gray-600 hover:text-gray-900 transition-colors relative">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                            <span class="absolute -top-2 -right-2 w-4 h-4 bg-gray-900 text-white text-xs rounded-full flex items-center justify-center">2</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="pt-24 px-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl font-light tracking-wide text-gray-900 mb-4">Minimal Elegance</h1>
+                <p class="text-xl text-gray-600">Clean typography with animated underline hover effects</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER 4: Gradient Mesh with Pill Navigation -->
+    <div id="header-4" class="header-container">
+        <div class="bg-gradient-to-br from-rose-100 via-purple-100 to-teal-100 min-h-screen">
+            <header class="pt-6 px-6">
+                <nav class="max-w-6xl mx-auto flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-rose-500 via-purple-500 to-teal-500 rounded-2xl rotate-12"></div>
+                        <span class="text-xl font-bold text-gray-800">Prism</span>
+                    </div>
+                    <div class="hidden md:flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+                        <a href="#" class="px-5 py-2 bg-white rounded-full text-gray-800 font-medium shadow-sm">Home</a>
+                        <a href="#" class="px-5 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Features</a>
+                        <a href="#" class="px-5 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Pricing</a>
+                        <a href="#" class="px-5 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Blog</a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="px-5 py-2.5 text-gray-700 font-medium hover:text-gray-900 transition-colors">Login</button>
+                        <button class="px-5 py-2.5 bg-gradient-to-r from-rose-500 via-purple-500 to-teal-500 text-white rounded-full font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all">Try Free</button>
+                    </div>
+                </nav>
+            </header>
+            <div class="pt-24 px-8">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h1 class="text-5xl font-bold text-gray-800 mb-4">Gradient Mesh</h1>
+                    <p class="text-xl text-gray-600">Soft colorful background with pill-style navigation tabs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER 5: Brutalist with Bold Typography -->
+    <div id="header-5" class="header-container">
+        <div class="bg-amber-50 min-h-screen">
+            <header class="border-b-4 border-gray-900">
+                <nav class="max-w-7xl mx-auto px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-8">
+                            <a href="#" class="text-3xl font-black text-gray-900 tracking-tighter">BRUTAL.</a>
+                            <div class="hidden lg:flex items-center gap-6">
+                                <a href="#" class="text-gray-900 font-bold uppercase text-sm tracking-wider hover:underline underline-offset-4 decoration-4">Work</a>
+                                <a href="#" class="text-gray-900 font-bold uppercase text-sm tracking-wider hover:underline underline-offset-4 decoration-4">About</a>
+                                <a href="#" class="text-gray-900 font-bold uppercase text-sm tracking-wider hover:underline underline-offset-4 decoration-4">Services</a>
+                                <a href="#" class="text-gray-900 font-bold uppercase text-sm tracking-wider hover:underline underline-offset-4 decoration-4">Contact</a>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button class="px-6 py-3 bg-gray-900 text-amber-50 font-bold uppercase text-sm tracking-wider hover:bg-gray-800 transition-colors border-4 border-gray-900">
+                                Let's Talk
+                            </button>
+                            <button class="lg:hidden p-2 border-4 border-gray-900">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+            <div class="pt-24 px-8">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h1 class="text-5xl font-black text-gray-900 mb-4 uppercase tracking-tight">Brutalist Style</h1>
+                    <p class="text-xl text-gray-700 font-medium">Raw, bold design with heavy borders and strong typography</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showHeader(num) {
+            // Hide all headers
+            document.querySelectorAll('.header-container').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected header
+            document.getElementById('header-' + num).classList.add('active');
+            
+            // Update button styles
+            document.querySelectorAll('.header-btn').forEach(btn => {
+                if (btn.dataset.header == num) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    btn.classList.add('bg-indigo-600', 'text-white');
+                } else {
+                    btn.classList.remove('bg-indigo-600', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

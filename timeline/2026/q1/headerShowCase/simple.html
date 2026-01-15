@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- 1. Minimalist Header -->
+    <header class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 font-bold text-xl text-indigo-600">Brand</div>
+                <nav class="hidden md:flex space-x-8">
+                    <button onclick="showView('home')" class="hover:text-indigo-600 font-medium">Home</button>
+                    <button onclick="showView('settings')" class="hover:text-indigo-600 font-medium">Settings</button>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Centered Logo Header -->
+    <header class="bg-white shadow-sm mt-8">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex space-x-4">
+                <button onclick="showView('home')" class="p-2 hover:bg-gray-100 rounded-full"><i class="fa-solid fa-house"></i></button>
+            </div>
+            <div class="text-2xl font-black tracking-tighter uppercase">Nexus</div>
+            <div class="flex space-x-4">
+                <button onclick="showView('settings')" class="p-2 hover:bg-gray-100 rounded-full"><i class="fa-solid fa-gear"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. Search-Focused Header -->
+    <header class="bg-indigo-700 text-white mt-8">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
+            <div class="font-bold text-lg hidden sm:block">SearchApp</div>
+            <div class="flex-1 max-w-md relative">
+                <input type="text" placeholder="Search anything..." class="w-full bg-indigo-600 text-white placeholder-indigo-200 border-none rounded-lg py-2 pl-10 focus:ring-2 focus:ring-white">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-indigo-200"></i>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="showView('home')">Home</button>
+                <button onclick="showView('settings')" class="bg-white text-indigo-700 px-4 py-1.5 rounded-md font-medium text-sm">Settings</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 4. Action-Heavy Header -->
+    <header class="bg-white border-b mt-8">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <i class="fa-solid fa-layer-group text-indigo-600 text-2xl"></i>
+                <h1 class="font-semibold text-gray-700">Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="showView('home')" class="px-3 py-2 hover:bg-gray-50 text-sm font-medium">View Site</button>
+                <div class="h-6 w-px bg-gray-200 mx-2"></div>
+                <button onclick="showView('settings')" class="flex items-center gap-2 text-sm font-medium text-gray-600">
+                    <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" class="w-8 h-8 rounded-full">
+                    <span class="hidden sm:inline">My Settings</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 5. Modern Gradient Header -->
+    <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white mt-8 shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="bg-white p-1.5 rounded-lg">
+                    <i class="fa-solid fa-bolt text-purple-600"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight">Flashy</span>
+            </div>
+            <nav class="flex bg-white/10 backdrop-blur-md rounded-full px-2 py-1">
+                <button onclick="showView('home')" class="px-4 py-1.5 rounded-full hover:bg-white/20 transition">Home</button>
+                <button onclick="showView('settings')" class="px-4 py-1.5 rounded-full hover:bg-white/20 transition">Settings</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Page Content Area -->
+    <main class="max-w-4xl mx-auto mt-12 px-4 pb-20">
+        
+        <!-- Home Page View -->
+        <div id="home-view" class="view active">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border">
+                <h2 class="text-3xl font-bold mb-4">Welcome Home</h2>
+                <p class="text-gray-600 leading-relaxed mb-6">
+                    This is the main dashboard content. Use the headers above to navigate. All headers are fully responsive and use Tailwind's utility classes for styling.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <h3 class="font-bold text-indigo-700">Recent Activity</h3>
+                        <p class="text-sm text-indigo-600/80">Everything is looking good today.</p>
+                    </div>
+                    <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <h3 class="font-bold text-emerald-700">System Status</h3>
+                        <p class="text-sm text-emerald-600/80">All systems operational.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page View -->
+        <div id="settings-view" class="view">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border">
+                <h2 class="text-3xl font-bold mb-6">Settings</h2>
+                
+                <div class="space-y-6">
+                    <section>
+                        <h3 class="text-lg font-semibold mb-3 border-b pb-2">Profile</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Display Name</label>
+                                <input type="text" value="Jane Doe" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                                <input type="email" value="jane@example.com" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-semibold mb-3 border-b pb-2">Notifications</h3>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Email notifications</span>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" checked class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer right-0 border-indigo-600"/>
+                                <label class="toggle-label block overflow-hidden h-6 rounded-full bg-indigo-600 cursor-pointer"></label>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3">
+                    <button onclick="showView('home')" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg">Cancel</button>
+                    <button class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function showView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Show the selected view
+            document.getElementById(viewId + '-view').classList.add('active');
+            
+            // Optional: Scroll to top when switching
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

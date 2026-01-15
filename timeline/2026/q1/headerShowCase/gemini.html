@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Showcase - 5 Designs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f3f4f6; padding-top: 80px; } /* Padding for control panel */
+        .header-section { display: none; }
+        .header-section.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- CONTROL PANEL -->
+    <div class="fixed top-0 left-0 w-full bg-white shadow-md z-50 p-4 flex items-center justify-center gap-4">
+        <span class="font-bold text-gray-700">Select Header Design:</span>
+        <select id="headerSelector" class="border border-gray-300 rounded px-3 py-1 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="header1">1. Classic Clean</option>
+            <option value="header2">2. Centered Nav</option>
+            <option value="header3">3. Corporate (Double Top)</option>
+            <option value="header4">4. E-Commerce (Search)</option>
+            <option value="header5">5. Dark Modern</option>
+        </select>
+    </div>
+
+    <!-- HEADER 1: Classic Clean -->
+    <div id="header1" class="header-section active">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="#" class="text-2xl font-bold text-blue-600">Brand<span class="text-gray-800">Logo</span></a>
+                    </div>
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex space-x-8 items-center">
+                        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium transition">Home</a>
+                        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium transition">Features</a>
+                        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium transition">Pricing</a>
+                        <a href="#" class="text-gray-600 hover:text-blue-600 font-medium transition">About</a>
+                        <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-md">Get Started</a>
+                    </div>
+                    <!-- Mobile Button -->
+                    <div class="md:hidden flex items-center">
+                        <button class="text-gray-600 hover:text-gray-900 focus:outline-none">
+                            <i class="fa-solid fa-bars text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Content Placeholder -->
+        <div class="max-w-7xl mx-auto px-4 py-10 text-center text-gray-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Classic Clean Layout</h2>
+            <p>Standard logo left, navigation right pattern.</p>
+        </div>
+    </div>
+
+    <!-- HEADER 2: Centered Nav -->
+    <div id="header2" class="header-section">
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 w-1/4">
+                        <a href="#" class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">B</div>
+                            <span class="text-xl font-bold text-gray-900">Brand</span>
+                        </a>
+                    </div>
+                    <!-- Center Nav -->
+                    <nav class="hidden md:flex space-x-10">
+                        <a href="#" class="text-base font-medium text-gray-500 hover:text-gray-900">Solutions</a>
+                        <a href="#" class="text-base font-medium text-gray-500 hover:text-gray-900">Docs</a>
+                        <a href="#" class="text-base font-medium text-gray-500 hover:text-gray-900">Enterprise</a>
+                    </nav>
+                    <!-- Right Actions -->
+                    <div class="hidden md:flex items-center justify-end w-1/4 space-x-4">
+                        <a href="#" class="whitespace-nowrap text-base font-medium text-gray-500 hover:text-gray-900">Sign in</a>
+                        <a href="#" class="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-base font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100">
+                            Sign up
+                        </a>
+                    </div>
+                     <!-- Mobile Button -->
+                     <div class="md:hidden flex items-center">
+                        <button class="text-gray-600"><i class="fa-solid fa-bars text-2xl"></i></button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="max-w-7xl mx-auto px-4 py-10 text-center text-gray-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Centered Navigation</h2>
+            <p>Balanced layout with clear separation of logo, links, and actions.</p>
+        </div>
+    </div>
+
+    <!-- HEADER 3: Corporate (Double Top) -->
+    <div id="header3" class="header-section">
+        <header class="bg-white">
+            <!-- Top Bar -->
+            <div class="bg-slate-800 text-white text-xs py-2">
+                <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                    <div class="flex gap-4">
+                        <span><i class="fa-solid fa-phone mr-1"></i> +1 (555) 123-4567</span>
+                        <span><i class="fa-solid fa-envelope mr-1"></i> support@company.com</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="#" class="hover:text-gray-300"><i class="fa-brands fa-facebook"></i></a>
+                        <a href="#" class="hover:text-gray-300"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="hover:text-gray-300"><i class="fa-brands fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Main Header -->
+            <div class="border-b border-gray-200 py-4">
+                <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                    <a href="#" class="text-2xl font-serif font-bold text-slate-800 tracking-wide">CORPORATE</a>
+                    <div class="hidden md:flex items-center gap-8">
+                        <div class="group relative">
+                            <a href="#" class="text-sm font-semibold text-gray-700 hover:text-slate-800 uppercase tracking-wider flex items-center gap-1">
+                                Services <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </a>
+                        </div>
+                        <a href="#" class="text-sm font-semibold text-gray-700 hover:text-slate-800 uppercase tracking-wider">Portfolio</a>
+                        <a href="#" class="text-sm font-semibold text-gray-700 hover:text-slate-800 uppercase tracking-wider">News</a>
+                        <a href="#" class="text-sm font-semibold text-gray-700 hover:text-slate-800 uppercase tracking-wider">Contact</a>
+                        <a href="#" class="border border-slate-800 text-slate-800 px-5 py-2 hover:bg-slate-800 hover:text-white transition duration-300 uppercase text-xs font-bold tracking-widest">Consult</a>
+                    </div>
+                     <!-- Mobile Button -->
+                     <div class="md:hidden">
+                        <button class="text-slate-800"><i class="fa-solid fa-bars text-2xl"></i></button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="max-w-7xl mx-auto px-4 py-10 text-center text-gray-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Corporate Layout</h2>
+            <p>Dual-layer header with contact info bar and serif typography.</p>
+        </div>
+    </div>
+
+    <!-- HEADER 4: E-Commerce -->
+    <div id="header4" class="header-section">
+        <header class="bg-white shadow relative z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between gap-4">
+                    <!-- Logo -->
+                    <a href="#" class="text-2xl font-black text-rose-500 italic tracking-tighter">SHOP<span class="text-black">MALL</span></a>
+                    
+                    <!-- Search Bar -->
+                    <div class="hidden md:flex flex-1 max-w-lg mx-auto relative">
+                        <input type="text" placeholder="Search for products..." class="w-full bg-gray-100 border-none rounded-full py-2 px-5 pl-12 focus:ring-2 focus:ring-rose-500 outline-none">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3 text-gray-400"></i>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-6">
+                        <a href="#" class="flex flex-col items-center text-gray-600 hover:text-rose-600 text-xs">
+                            <i class="fa-regular fa-user text-xl mb-1"></i>
+                            <span>Account</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center text-gray-600 hover:text-rose-600 text-xs">
+                            <i class="fa-regular fa-heart text-xl mb-1"></i>
+                            <span>Wishlist</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center text-gray-600 hover:text-rose-600 text-xs relative">
+                            <i class="fa-solid fa-cart-shopping text-xl mb-1"></i>
+                            <span class="absolute -top-1 right-1 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">3</span>
+                            <span>Cart</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Secondary Nav -->
+            <div class="bg-gray-800 text-white hidden md:block">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex space-x-8 text-sm py-2">
+                        <div class="font-bold bg-rose-600 px-4 py-2 -my-2 flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-bars"></i> All Categories
+                        </div>
+                        <a href="#" class="py-2 hover:text-rose-300">Deals</a>
+                        <a href="#" class="py-2 hover:text-rose-300">Electronics</a>
+                        <a href="#" class="py-2 hover:text-rose-300">Fashion</a>
+                        <a href="#" class="py-2 hover:text-rose-300">Home & Garden</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="max-w-7xl mx-auto px-4 py-10 text-center text-gray-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">E-Commerce Header</h2>
+            <p>Focus on search, categories, and user actions (Cart, Account).</p>
+        </div>
+    </div>
+
+    <!-- HEADER 5: Dark Modern -->
+    <div id="header5" class="header-section">
+        <header class="bg-black text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-8 bg-green-400"></div>
+                        <span class="text-2xl font-bold tracking-widest uppercase">NexGen</span>
+                    </div>
+
+                    <!-- Minimal Nav -->
+                    <nav class="hidden md:flex gap-1">
+                        <a href="#" class="px-4 py-2 text-sm font-medium hover:text-green-400 transition-colors">Work</a>
+                        <a href="#" class="px-4 py-2 text-sm font-medium hover:text-green-400 transition-colors">Studio</a>
+                        <a href="#" class="px-4 py-2 text-sm font-medium hover:text-green-400 transition-colors">Careers</a>
+                    </nav>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center gap-6">
+                        <button class="text-white hover:text-green-400 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <a href="#" class="hidden md:inline-block border border-gray-600 rounded-full px-6 py-2 text-sm hover:border-green-400 hover:text-green-400 transition duration-300">Let's Talk</a>
+                        <button class="md:hidden text-white"><i class="fa-solid fa-bars-staggered text-2xl"></i></button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Hero Placeholder -->
+        <div class="bg-gray-900 h-64 flex items-center justify-center">
+             <div class="text-center">
+                <h2 class="text-3xl font-bold text-white mb-2">Dark Modern Layout</h2>
+                <p class="text-gray-400">High contrast, minimal, digital-agency aesthetic.</p>
+             </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT FOR SWITCHING -->
+    <script>
+        const selector = document.getElementById('headerSelector');
+        const headers = document.querySelectorAll('.header-section');
+
+        selector.addEventListener('change', (e) => {
+            const selectedId = e.target.value;
+            
+            // Hide all
+            headers.forEach(header => {
+                header.classList.remove('active');
+            });
+
+            // Show selected
+            document.getElementById(selectedId).classList.add('active');
+        });
+    </script>
+</body>
+</html>

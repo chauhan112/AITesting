@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Header Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-950 text-white min-h-screen">
+    <div class="max-w-6xl mx-auto px-6 py-8">
+      <div class="flex flex-wrap gap-3 mb-8">
+        <button data-target="header-1" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">Header 1</button>
+        <button data-target="header-2" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">Header 2</button>
+        <button data-target="header-3" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">Header 3</button>
+        <button data-target="header-4" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">Header 4</button>
+        <button data-target="header-5" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">Header 5</button>
+      </div>
+
+      <!-- Header 1 -->
+      <header id="header-1" class="header-block">
+        <div class="flex items-center justify-between py-6">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-cyan-400"></div>
+            <div>
+              <p class="text-sm uppercase tracking-[0.2em] text-white/50">Nova Labs</p>
+              <h1 class="text-2xl font-semibold">Sleek Gradient Brand</h1>
+            </div>
+          </div>
+          <nav class="hidden md:flex items-center gap-6 text-white/80">
+            <a class="hover:text-white" href="#">Product</a>
+            <a class="hover:text-white" href="#">Pricing</a>
+            <a class="hover:text-white" href="#">Docs</a>
+          </nav>
+          <button class="px-4 py-2 rounded-full bg-white text-slate-900 font-medium">Get Started</button>
+        </div>
+        <div class="h-px bg-white/10"></div>
+      </header>
+
+      <!-- Header 2 -->
+      <header id="header-2" class="header-block hidden">
+        <div class="flex items-center justify-between py-6">
+          <div class="flex items-center gap-4">
+            <div class="text-3xl font-black tracking-tight">ALTA</div>
+            <span class="text-xs uppercase text-white/50">Studio</span>
+          </div>
+          <nav class="flex items-center gap-4 text-sm">
+            <a class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10" href="#">Work</a>
+            <a class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10" href="#">Services</a>
+            <a class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10" href="#">Contact</a>
+          </nav>
+        </div>
+        <div class="rounded-2xl bg-gradient-to-r from-amber-400/20 via-rose-500/20 to-indigo-500/20 p-4">
+          <p class="text-sm text-white/60">Minimal grid + pill nav for agencies.</p>
+        </div>
+      </header>
+
+      <!-- Header 3 -->
+      <header id="header-3" class="header-block hidden">
+        <div class="flex items-center justify-between py-6">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-full bg-emerald-400/20 border border-emerald-400/40 grid place-items-center text-emerald-200 font-bold">P</div>
+            <div class="leading-tight">
+              <h2 class="text-xl font-semibold">PulsePay</h2>
+              <p class="text-xs text-white/50">Fintech dashboard</p>
+            </div>
+          </div>
+          <div class="hidden lg:flex items-center gap-8 text-white/70 text-sm">
+            <a class="hover:text-white" href="#">Overview</a>
+            <a class="hover:text-white" href="#">Insights</a>
+            <a class="hover:text-white" href="#">Security</a>
+            <a class="hover:text-white" href="#">Support</a>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="px-3 py-2 rounded-lg border border-white/20 hover:border-white/40">Log in</button>
+            <button class="px-4 py-2 rounded-lg bg-emerald-400 text-slate-900 font-semibold">Open account</button>
+          </div>
+        </div>
+        <div class="h-px bg-white/10"></div>
+      </header>
+
+      <!-- Header 4 -->
+      <header id="header-4" class="header-block hidden">
+        <div class="flex items-center justify-between py-6">
+          <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-2xl bg-white/10 border border-white/10"></div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-white/40">Archive</p>
+              <h2 class="text-xl font-semibold">Museum Collective</h2>
+            </div>
+          </div>
+          <nav class="hidden md:flex gap-8 text-white/70">
+            <a class="hover:text-white" href="#">Exhibits</a>
+            <a class="hover:text-white" href="#">Artists</a>
+            <a class="hover:text-white" href="#">Visit</a>
+          </nav>
+          <button class="px-4 py-2 rounded-full border border-white/20 hover:border-white/40">Book Tickets</button>
+        </div>
+        <div class="rounded-3xl bg-white/5 border border-white/10 p-4 text-sm text-white/60">
+          Elegant, muted header for cultural brands.
+        </div>
+      </header>
+
+      <!-- Header 5 -->
+      <header id="header-5" class="header-block hidden">
+        <div class="flex items-center justify-between py-6">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-orange-500"></div>
+            <h2 class="text-2xl font-bold">Launchpad</h2>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-2">
+              <span class="text-xs text-white/40">Theme</span>
+              <div class="flex gap-1">
+                <div class="h-3 w-3 rounded-full bg-orange-400"></div>
+                <div class="h-3 w-3 rounded-full bg-cyan-400"></div>
+                <div class="h-3 w-3 rounded-full bg-purple-400"></div>
+              </div>
+            </div>
+            <button class="px-4 py-2 rounded-lg bg-white text-slate-900 font-medium">Join Waitlist</button>
+          </div>
+        </div>
+        <div class="h-px bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400"></div>
+      </header>
+    </div>
+
+    <script>
+      const buttons = document.querySelectorAll("button[data-target]");
+      const headers = document.querySelectorAll(".header-block");
+
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const target = btn.getAttribute("data-target");
+          headers.forEach((header) => {
+            header.classList.toggle("hidden", header.id !== target);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

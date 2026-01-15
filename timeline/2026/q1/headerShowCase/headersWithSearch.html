@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search-Centric Headers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .view { display: none; }
+        .view.active { display: block; }
+        /* Smooth transition for search expansion */
+        .search-expand { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- 1. The "Command Palette" Header (SaaS Style) -->
+    <!-- Minimalist, centered search that looks like a trigger for a command palette -->
+    <header class="bg-white border-b px-4 py-3 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="showView('home')">
+                <div class="w-8 h-8 bg-black rounded flex items-center justify-center text-white">
+                    <i class="fa-solid fa-terminal text-xs"></i>
+                </div>
+                <span class="font-bold hidden sm:block">DevStack</span>
+            </div>
+            
+            <div class="flex-1 max-w-xl relative group">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black"></i>
+                <input type="text" placeholder="Search documentation... (Press /)" 
+                    class="w-full bg-gray-100 border-transparent focus:bg-white focus:border-black focus:ring-0 rounded-lg py-2 pl-10 pr-4 text-sm transition-all">
+                <kbd class="hidden md:block absolute right-3 top-1/2 -translate-y-1/2 border bg-white px-1.5 py-0.5 rounded text-[10px] text-gray-400">/</kbd>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="showView('settings')" class="p-2 hover:bg-gray-100 rounded-full text-gray-600">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. The "E-Commerce Explorer" Header -->
+    <!-- Large, prominent search with category indicator and bold actions -->
+    <header class="bg-indigo-600 text-white mt-8 shadow-md">
+        <div class="max-w-7xl mx-auto">
+            <div class="px-4 py-3 flex items-center gap-4">
+                <div class="text-xl font-black tracking-tight shrink-0" onclick="showView('home')">SHOP.</div>
+                
+                <div class="flex-1 flex bg-white rounded-md overflow-hidden">
+                    <div class="hidden lg:flex items-center px-4 border-r text-gray-500 text-sm whitespace-nowrap bg-gray-50">
+                        All Categories <i class="fa-solid fa-chevron-down ml-2 text-[10px]"></i>
+                    </div>
+                    <input type="text" placeholder="Search for products..." class="w-full px-4 py-2 text-gray-800 focus:outline-none">
+                    <button class="bg-orange-500 px-6 hover:bg-orange-600 transition">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4 shrink-0">
+                    <button onclick="showView('home')" class="hidden sm:block hover:text-orange-200">Home</button>
+                    <button onclick="showView('settings')" class="flex items-center gap-2 bg-indigo-700 px-3 py-2 rounded-md hover:bg-indigo-800 transition">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span class="hidden md:inline">Account</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. The "Mobile-First Expandable" Header -->
+    <!-- Great for apps where search is vital but space is premium -->
+    <header class="bg-white border-b mt-8 px-4 h-16 flex items-center justify-between">
+        <button onclick="showView('home')" class="text-emerald-600 text-2xl"><i class="fa-solid fa-leaf"></i></button>
+        
+        <div class="flex-1 flex justify-center px-4">
+            <div class="w-full max-w-[40px] focus-within:max-w-md transition-all duration-300 relative group">
+                <input type="text" placeholder="Search..." 
+                    class="w-full h-10 rounded-full bg-gray-100 border-none focus:ring-2 focus:ring-emerald-500 pl-10 pr-4 placeholder:opacity-0 focus:placeholder:opacity-100 cursor-pointer focus:cursor-text">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 group-focus-within:text-emerald-500"></i>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="showView('home')" class="p-2 hover:bg-emerald-50 rounded-lg text-gray-500"><i class="fa-solid fa-house"></i></button>
+            <button onclick="showView('settings')" class="p-2 hover:bg-emerald-50 rounded-lg text-gray-500"><i class="fa-solid fa-gear"></i></button>
+        </div>
+    </header>
+
+    <!-- 4. The "Glassmorphism Floating" Header -->
+    <!-- Modern, centered search pill that floats over content -->
+    <header class="max-w-3xl mx-auto mt-8 px-4 sticky top-4 z-40">
+        <div class="bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-2 flex items-center gap-2">
+            <button onclick="showView('home')" class="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-compass"></i>
+            </button>
+            
+            <div class="flex-1 relative">
+                <input type="text" placeholder="Explore the world..." 
+                    class="w-full bg-gray-100/50 border-none rounded-xl py-2 pl-4 pr-10 focus:ring-2 focus:ring-blue-400">
+                <i class="fa-solid fa-location-crosshairs absolute right-3 top-3 text-gray-400"></i>
+            </div>
+
+            <button onclick="showView('settings')" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition">
+                <i class="fa-solid fa-sliders"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 5. The "Double-Row Desktop / Stacked Mobile" Header -->
+    <!-- Separates navigation and search for maximum utility -->
+    <header class="bg-gray-900 text-white mt-8">
+        <!-- Top Row -->
+        <div class="border-b border-gray-800">
+            <div class="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between text-xs uppercase tracking-widest font-bold">
+                <div class="flex gap-6">
+                    <button onclick="showView('home')" class="text-blue-400">Global</button>
+                    <button class="hover:text-blue-400 transition">News</button>
+                    <button class="hover:text-blue-400 transition">Markets</button>
+                </div>
+                <button onclick="showView('settings')" class="hover:text-blue-400 transition">
+                    <i class="fa-solid fa-circle-user mr-1"></i> Jane Doe
+                </button>
+            </div>
+        </div>
+        <!-- Bottom Row -->
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center gap-4">
+            <div class="text-2xl font-serif italic shrink-0" onclick="showView('home')">The Journal</div>
+            <div class="w-full flex bg-white/10 rounded overflow-hidden">
+                <input type="text" placeholder="Search archives..." class="w-full bg-transparent px-4 py-2 focus:bg-white/20 focus:outline-none">
+                <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 transition font-bold">SEARCH</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Content Area -->
+    <main class="max-w-4xl mx-auto mt-12 px-4 pb-20">
+        <!-- Home Page View -->
+        <div id="home-view" class="view active">
+            <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-200">
+                <span class="text-blue-600 font-bold tracking-widest text-sm uppercase">Main View</span>
+                <h2 class="text-4xl font-extrabold mt-2 mb-6 tracking-tight">Search Showcase Home</h2>
+                <p class="text-gray-500 text-lg leading-relaxed">
+                    Try out the search bars in each header above. Note how they handle different screen sizes:
+                </p>
+                <ul class="mt-6 space-y-4">
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-emerald-500 mt-1"></i>
+                        <span><strong>Variant 1:</strong> Uses a "Command Palette" style with keyboard shortcut hints.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-emerald-500 mt-1"></i>
+                        <span><strong>Variant 3:</strong> Shows a compact icon on mobile that expands on focus.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fa-solid fa-check-circle text-emerald-500 mt-1"></i>
+                        <span><strong>Variant 5:</strong> Uses a stacked layout for better organization.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Settings Page View -->
+        <div id="settings-view" class="view">
+            <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-200">
+                <h2 class="text-3xl font-bold mb-8">System Settings</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <label class="block">
+                            <span class="text-gray-700 font-medium">Search Sensitivity</span>
+                            <input type="range" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700 font-medium">Default Search Engine</span>
+                            <select class="mt-1 block w-full rounded-xl border-gray-200 bg-gray-50 p-3 outline-none focus:ring-2 focus:ring-blue-500">
+                                <option>Internal Database</option>
+                                <option>ElasticSearch Cloud</option>
+                                <option>Algolia Index</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h4 class="font-bold text-blue-800 mb-2">Search Statistics</h4>
+                        <div class="text-3xl font-black text-blue-600">1,284</div>
+                        <p class="text-sm text-blue-700 opacity-70">Queries performed today</p>
+                    </div>
+                </div>
+                <div class="mt-10 pt-6 border-t flex justify-end">
+                    <button onclick="showView('home')" class="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition">Done</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId + '-view').classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Support for the '/' keyboard shortcut in Variant 1
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                e.preventDefault();
+                document.querySelector('header:first-of-type input').focus();
+            }
+        });
+    </script>
+</body>
+</html>
