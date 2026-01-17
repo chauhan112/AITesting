@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Rubik's Cube Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111827; }
+        canvas { display: block; outline: none; }
+        /* Prevent pull-to-refresh on mobile */
+        html, body { overscroll-behavior: none; }
+    </style>
+    
+    <!-- Import Map: Fixes the "Failed to resolve module" error -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body class="text-white select-none touch-none">
+
+    <!-- UI Overlay -->
+    <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-start pointer-events-none z-10">
+        <div>
+            <h1 class="text-2xl font-bold drop-shadow-md text-blue-400">Rubik's 3D</h1>
+            <p class="text-xs text-gray-400">Drag background to view • Swipe faces to rotate</p>
+        </div>
+        <div class="flex flex-col gap-2 pointer-events-auto">
+            <button id="scrambleBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded shadow-lg transition transform active:scale-95">
+                Scramble
+            </button>
+            <button id="resetBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded shadow-lg transition transform active:scale-95">
+                Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="w-full h-screen"></div>
+
+    <!-- Main Game Logic -->
+    <script type="module">
+        // Now we can import using the names defined in the import map
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- Configuration ---
+        const CUBE_SIZE = 1;
+        const SPACING = 0.02; // Gap between cubes
+        const TOTAL_SIZE = CUBE_SIZE + SPACING;
+        const COLORS = {
+            U: 0xFFFFFF, // Up - White
+            D: 0xFFD500, // Down - Yellow
+            R: 0xB90000, // Right - Red
+            L: 0xFF5800, // Left - Orange
+            F: 0x009E60, // Front - Green
+            B: 0x0045AD  // Back - Blue
+        };
+        const INNER_COLOR = 0x222222; // Internal black color
+
+        // --- Globals ---
+        let scene, camera, renderer, controls;
+        let cubes = []; // Array of 27 meshes
+        let isAnimating = false;
+        
+        // Interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let startPoint = null;
+        let intersectFace = null;
+        let startCube = null;
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('game-container');
+
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111827); // Tailwind gray-900
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(6, 4, 6);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Controls (Orbit around the cube)
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false;
+            controls.minDistance = 3;
+            controls.maxDistance = 15;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // Build Cube
+            createRubiksCube();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            
+            // Touch/Mouse Interaction
+            const canvas = renderer.domElement;
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerUp);
+
+            // UI Buttons
+            document.getElementById('scrambleBtn').addEventListener('click', scrambleCube);
+            document.getElementById('resetBtn').addEventListener('click', resetCube);
+        }
+
+        function createCubeGeometry(x, y, z) {
+            const geometry = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+            
+            // Colors for faces: Right, Left, Up, Down, Front, Back
+            // Materials index: 0:R, 1:L, 2:U, 3:D, 4:F, 5:B
+            const materials = [
+                new THREE.MeshStandardMaterial({ color: x === 1 ? COLORS.R : INNER_COLOR, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: x === -1 ? COLORS.L : INNER_COLOR, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: y === 1 ? COLORS.U : INNER_COLOR, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: y === -1 ? COLORS.D : INNER_COLOR, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: z === 1 ? COLORS.F : INNER_COLOR, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ color: z === -1 ? COLORS.B : INNER_COLOR, roughness: 0.1 }),
+            ];
+
+            const mesh = new THREE.Mesh(geometry, materials);
+            
+            // Position with spacing
+            mesh.position.set(x * TOTAL_SIZE, y * TOTAL_SIZE, z * TOTAL_SIZE);
+            
+            // Store logical coordinate for easy finding later
+            mesh.userData = { 
+                originalPosition: new THREE.Vector3(x, y, z),
+                isCube: true
+            };
+            
+            // Round positions to avoid float errors
+            mesh.position.x = Math.round(mesh.position.x * 100) / 100;
+            mesh.position.y = Math.round(mesh.position.y * 100) / 100;
+            mesh.position.z = Math.round(mesh.position.z * 100) / 100;
+
+            return mesh;
+        }
+
+        function createRubiksCube() {
+            // Clear existing
+            cubes.forEach(c => scene.remove(c));
+            cubes = [];
+
+            for(let x=-1; x<=1; x++) {
+                for(let y=-1; y<=1; y++) {
+                    for(let z=-1; z<=1; z++) {
+                        const cube = createCubeGeometry(x, y, z);
+                        scene.add(cube);
+                        cubes.push(cube);
+                    }
+                }
+            }
+        }
+
+        // --- Interaction Logic ---
+
+        function getIntersects(event, element) {
+            const rect = element.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            return raycaster.intersectObjects(cubes);
+        }
+
+        function onPointerDown(event) {
+            if (isAnimating) return;
+
+            const intersects = getIntersects(event, renderer.domElement);
+            
+            if (intersects.length > 0) {
+                // Clicked on a cube
+                controls.enabled = false; // Disable camera orbit
+                startCube = intersects[0].object;
+                startPoint = intersects[0].point; // World intersection point
+                intersectFace = intersects[0].face.normal.clone(); // Normal of the face clicked
+                
+                // Transform normal to world space
+                intersectFace.transformDirection(startCube.matrixWorld).round();
+            }
+        }
+
+        function onPointerUp() {
+            controls.enabled = true;
+            startPoint = null;
+            startCube = null;
+        }
+
+        function onPointerMove(event) {
+            if (!startPoint || !startCube || isAnimating) return;
+
+            const intersects = getIntersects(event, renderer.domElement);
+            if (!intersects.length) return;
+
+            const currentPoint = intersects[0].point;
+            const delta = new THREE.Vector3().subVectors(currentPoint, startPoint);
+
+            // Threshold to prevent accidental moves
+            if (delta.length() < 0.2) return; 
+
+            // Logic to determine rotation axis
+            let bestAxis = null;
+            let maxDot = 0;
+
+            const axes = [
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, 1)
+            ];
+
+            // Filter out the axis parallel to face normal
+            const possibleAxes = axes.filter(a => Math.abs(a.dot(intersectFace)) < 0.1);
+
+            possibleAxes.forEach(axis => {
+                const dot = delta.clone().normalize().dot(axis);
+                if (Math.abs(dot) > Math.abs(maxDot)) {
+                    maxDot = dot;
+                    bestAxis = axis;
+                }
+            });
+
+            if (bestAxis) {
+                // Rotation axis is Cross(Normal, DragAxis)
+                const cross = new THREE.Vector3().crossVectors(intersectFace, delta.clone().normalize());
+                
+                let snapAxis = new THREE.Vector3(0,0,0);
+                if(Math.abs(cross.x) > 0.6) snapAxis.x = Math.sign(cross.x);
+                else if(Math.abs(cross.y) > 0.6) snapAxis.y = Math.sign(cross.y);
+                else if(Math.abs(cross.z) > 0.6) snapAxis.z = Math.sign(cross.z);
+                else return; 
+
+                // Execute Rotation
+                rotateSlice(snapAxis, startCube.position);
+                
+                startPoint = null; 
+                startCube = null;
+                controls.enabled = true;
+            }
+        }
+
+        // --- Core Rotation Logic ---
+
+        function rotateSlice(axisVector, pointOnSlice) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            let axisName = 'x';
+            if (Math.abs(axisVector.y) > 0.5) axisName = 'y';
+            if (Math.abs(axisVector.z) > 0.5) axisName = 'z';
+
+            const coord = Math.round(pointOnSlice[axisName] / TOTAL_SIZE); 
+
+            // Find cubes in slice
+            const activeCubes = cubes.filter(c => {
+                const cPos = Math.round(c.position[axisName] / TOTAL_SIZE);
+                return Math.abs(cPos - coord) < 0.1;
+            });
+
+            const pivot = new THREE.Object3D();
+            pivot.rotation.set(0,0,0);
+            scene.add(pivot);
+
+            activeCubes.forEach(c => {
+                pivot.attach(c);
+            });
+
+            // Target rotation (90 degrees)
+            const targetRotation = (Math.PI / 2) * (axisVector[axisName] > 0 ? 1 : -1); 
+            
+            const duration = 300;
+            const startTime = Date.now();
+
+            function anim() {
+                const now = Date.now();
+                const progress = Math.min((now - startTime) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                
+                pivot.rotation[axisName] = targetRotation * ease;
+
+                if (progress < 1) {
+                    requestAnimationFrame(anim);
+                } else {
+                    pivot.rotation[axisName] = targetRotation;
+                    pivot.updateMatrixWorld();
+                    
+                    activeCubes.forEach(c => {
+                        scene.attach(c);
+                        c.position.x = Math.round(c.position.x * 100) / 100;
+                        c.position.y = Math.round(c.position.y * 100) / 100;
+                        c.position.z = Math.round(c.position.z * 100) / 100;
+                        
+                        c.rotation.x = Math.round(c.rotation.x / (Math.PI/2)) * (Math.PI/2);
+                        c.rotation.y = Math.round(c.rotation.y / (Math.PI/2)) * (Math.PI/2);
+                        c.rotation.z = Math.round(c.rotation.z / (Math.PI/2)) * (Math.PI/2);
+                        c.updateMatrixWorld();
+                    });
+                    
+                    scene.remove(pivot);
+                    isAnimating = false;
+                }
+            }
+            anim();
+        }
+
+        function scrambleCube() {
+            if (isAnimating) return;
+            
+            const axes = [
+                new THREE.Vector3(1,0,0), new THREE.Vector3(-1,0,0),
+                new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0),
+                new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1)
+            ];
+            
+            let moveCount = 0;
+            const moves = 20;
+
+            function performRandomMove() {
+                if (moveCount >= moves) return;
+                
+                const randomAxis = axes[Math.floor(Math.random() * axes.length)];
+                const randomSlice = Math.floor(Math.random() * 3) - 1;
+                
+                const point = new THREE.Vector3();
+                if (randomAxis.x !== 0) point.x = randomSlice * TOTAL_SIZE;
+                if (randomAxis.y !== 0) point.y = randomSlice * TOTAL_SIZE;
+                if (randomAxis.z !== 0) point.z = randomSlice * TOTAL_SIZE;
+                
+                rotateSlice(randomAxis, point);
+                
+                // Fast scramble
+                setTimeout(performRandomMove, 350); 
+                moveCount++;
+            }
+            
+            performRandomMove();
+        }
+
+        function resetCube() {
+            if(isAnimating) return;
+            createRubiksCube();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

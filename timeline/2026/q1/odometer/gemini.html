@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Number Odometer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .digit-window {
+            height: 3rem; /* matches h-12 (48px) */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .digit-strip {
+            /* Will change transform for performance optimization */
+            will-change: transform;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 font-mono">
+
+    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+        <h1 class="text-2xl font-bold text-center mb-6 text-emerald-400 tracking-wider">RNG ODOMETER</h1>
+
+        <div class="flex items-end gap-4 mb-8">
+            <div class="flex-1">
+                <label for="length" class="block text-sm font-medium text-slate-400 mb-2">Digit Length (1-12)</label>
+                <input type="number" id="length" min="1" max="12" value="6" 
+                    class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500 transition-colors">
+            </div>
+            <button onclick="generateNumber()" 
+                class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-lg shadow-emerald-500/20 h-[42px]">
+                Generate
+            </button>
+        </div>
+
+        <div class="bg-black rounded-xl p-4 mb-6 shadow-inner border border-slate-700 overflow-x-auto no-scrollbar">
+            <div id="odometer-container" class="flex justify-center gap-1 min-w-max">
+                <!-- Digits injected here -->
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <div id="current-value" class="text-xs text-slate-500 font-sans"></div>
+            <button onclick="copyToClipboard()" id="copy-btn"
+                class="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span>Copy Result</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-8 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 font-medium">
+        Copied!
+    </div>
+
+    <script>
+        let currentNumberString = "";
+        const HEIGHT_REM = 3; // The height of one digit in rem
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupOdometer(document.getElementById('length').value);
+        });
+
+        document.getElementById('length').addEventListener('change', (e) => {
+            let val = parseInt(e.target.value);
+            if(val < 1) val = 1;
+            if(val > 12) val = 12;
+            e.target.value = val;
+            setupOdometer(val);
+        });
+
+        function setupOdometer(length) {
+            const container = document.getElementById('odometer-container');
+            container.innerHTML = '';
+            currentNumberString = '';
+
+            for (let i = 0; i < length; i++) {
+                const windowDiv = document.createElement('div');
+                windowDiv.className = 'digit-window bg-slate-800 w-8 md:w-10 rounded text-2xl md:text-3xl font-bold';
+                
+                const strip = document.createElement('div');
+                strip.className = 'digit-strip absolute w-full text-center text-white';
+                strip.setAttribute('data-current', '0'); // Track current digit (0-9)
+                
+                // Create 4 sets of 0-9. 
+                // Set 1: Indices 0-9   (Used for resetting position)
+                // Set 2: Indices 10-19 
+                // Set 3: Indices 20-29 (Target for spinning)
+                // Set 4: Indices 30-39 (Buffer)
+                let content = '';
+                for (let set = 0; set < 4; set++) {
+                    for (let n = 0; n <= 9; n++) {
+                        content += `<div class="h-12 flex items-center justify-center leading-12">${n}</div>`;
+                    }
+                }
+                strip.innerHTML = content;
+                
+                // Initialize at 0
+                strip.style.transform = `translateY(0)`;
+                
+                windowDiv.appendChild(strip);
+                container.appendChild(windowDiv);
+            }
+        }
+
+        function generateNumber() {
+            const strips = document.querySelectorAll('.digit-strip');
+            let newNumberString = "";
+
+            strips.forEach((strip, index) => {
+                const nextDigit = Math.floor(Math.random() * 10);
+                newNumberString += nextDigit;
+
+                // 1. Get current logical digit (0-9)
+                const currentDigit = parseInt(strip.getAttribute('data-current')) || 0;
+
+                // 2. INSTANTLY Reset to the top set (Indices 0-9)
+                // This is invisible to the user because the number is the same
+                strip.style.transition = 'none';
+                strip.style.transform = `translateY(-${currentDigit * HEIGHT_REM}rem)`;
+
+                // 3. Force browser reflow to apply the reset immediately
+                void strip.offsetHeight; 
+
+                // 4. Calculate target index in the 3rd set (Indices 20-29)
+                // This ensures we always spin 'forward'/downward by at least ~20 digits
+                const targetIndex = 20 + nextDigit; 
+
+                // 5. Animate to the new target
+                // Add staggered delay based on index for "rippling" effect
+                const duration = 1.5 + (index * 0.1); 
+                strip.style.transition = `transform ${duration}s cubic-bezier(0.25, 1, 0.5, 1)`;
+                strip.style.transform = `translateY(-${targetIndex * HEIGHT_REM}rem)`;
+
+                // 6. Update current digit storage
+                strip.setAttribute('data-current', nextDigit);
+            });
+
+            currentNumberString = newNumberString;
+            
+            // Update display text after animation roughly finishes
+            setTimeout(() => {
+                document.getElementById('current-value').innerText = `Value: ${currentNumberString}`;
+            }, 2000);
+        }
+
+        function copyToClipboard() {
+            if (!currentNumberString) return;
+            navigator.clipboard.writeText(currentNumberString).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>

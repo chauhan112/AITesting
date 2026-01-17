@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rubik's Cube</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cube-size: 200px;
+            --cell-size: calc(var(--cube-size) / 3);
+            --gap: 2px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d0d1a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: pan-y;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 200, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 100, 0, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 40px;
+        }
+
+        .cube-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 320px;
+            width: 100%;
+            touch-action: none;
+        }
+
+        .cube-container {
+            perspective: 800px;
+            width: var(--cube-size);
+            height: var(--cube-size);
+            touch-action: none;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.05s ease-out;
+        }
+
+        .face {
+            position: absolute;
+            width: var(--cube-size);
+            height: var(--cube-size);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--gap);
+            padding: var(--gap);
+            background: #1a1a2e;
+            border-radius: 8px;
+            backface-visibility: visible;
+        }
+
+        .cell {
+            border-radius: 6px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Face colors */
+        .color-white { background: linear-gradient(145deg, #ffffff, #e0e0e0); }
+        .color-yellow { background: linear-gradient(145deg, #ffeb3b, #fbc02d); }
+        .color-red { background: linear-gradient(145deg, #f44336, #c62828); }
+        .color-orange { background: linear-gradient(145deg, #ff9800, #e65100); }
+        .color-blue { background: linear-gradient(145deg, #2196f3, #1565c0); }
+        .color-green { background: linear-gradient(145deg, #4caf50, #2e7d32); }
+
+        /* Face positions */
+        .face-front  { transform: translateZ(calc(var(--cube-size) / 2)); }
+        .face-back   { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+        .face-right  { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .face-left   { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .face-top    { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+
+        .btn {
+            background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,200,255,0.3);
+            border-color: rgba(0,200,255,0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-scramble {
+            background: linear-gradient(145deg, #ff6b35, #f7931e);
+            border-color: #ff6b35;
+        }
+
+        .btn-scramble:hover {
+            box-shadow: 0 5px 20px rgba(255,107,53,0.5);
+        }
+
+        .btn-reset {
+            background: linear-gradient(145deg, #00bcd4, #0097a7);
+            border-color: #00bcd4;
+        }
+
+        .btn-reset:hover {
+            box-shadow: 0 5px 20px rgba(0,188,212,0.5);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 20px rgba(0,200,255,0.5), 0 0 40px rgba(0,200,255,0.3);
+        }
+
+        .move-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #00bcd4;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .move-indicator.show {
+            opacity: 1;
+        }
+
+        .controls-hint {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .zoom-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 12px;
+            color: #888;
+            font-size: 12px;
+            z-index: 50;
+        }
+
+        .face-buttons {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .face-btn {
+            padding: 10px 4px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        @media (min-width: 640px) {
+            .face-buttons {
+                max-width: 420px;
+            }
+            .face-btn {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="main-container">
+        <!-- Header -->
+        <div class="text-center mb-4 z-10">
+            <h1 class="text-2xl md:text-4xl font-black text-cyan-400 glow-text tracking-wider">RUBIK'S CUBE</h1>
+            <p class="text-gray-400 text-sm mt-2" id="moveCounter">Moves: 0</p>
+        </div>
+
+        <!-- Cube Area -->
+        <div class="cube-wrapper" id="cubeWrapper">
+            <div class="cube-container" id="cubeContainer">
+                <div class="cube" id="cube">
+                    <div class="face face-front" data-face="F"></div>
+                    <div class="face face-back" data-face="B"></div>
+                    <div class="face face-right" data-face="R"></div>
+                    <div class="face face-left" data-face="L"></div>
+                    <div class="face face-top" data-face="U"></div>
+                    <div class="face face-bottom" data-face="D"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zoom indicator -->
+        <div class="zoom-indicator" id="zoomIndicator">100%</div>
+
+        <!-- Main Controls -->
+        <div class="flex flex-wrap justify-center gap-3 mb-6 z-10">
+            <button class="btn btn-scramble px-6 py-3 rounded-lg text-white font-bold" onclick="scramble()">
+                🎲 SCRAMBLE
+            </button>
+            <button class="btn btn-reset px-6 py-3 rounded-lg text-white font-bold" onclick="resetCube()">
+                🔄 RESET
+            </button>
+        </div>
+
+        <!-- Instructions -->
+        <div class="controls-hint mb-4 p-3 rounded-xl text-center z-10">
+            <p class="text-gray-300 text-xs">
+                <span class="text-yellow-400">Drag</span> to rotate view • 
+                <span class="text-yellow-400">Pinch/Scroll</span> to zoom
+            </p>
+        </div>
+
+        <!-- Face rotation buttons -->
+        <div class="face-buttons z-10">
+            <button class="btn face-btn text-green-400" onclick="rotateFace('F', 1)">F</button>
+            <button class="btn face-btn text-green-400" onclick="rotateFace('F', -1)">F'</button>
+            <button class="btn face-btn text-blue-400" onclick="rotateFace('B', 1)">B</button>
+            <button class="btn face-btn text-blue-400" onclick="rotateFace('B', -1)">B'</button>
+            <button class="btn face-btn text-red-400" onclick="rotateFace('R', 1)">R</button>
+            <button class="btn face-btn text-red-400" onclick="rotateFace('R', -1)">R'</button>
+            <button class="btn face-btn text-orange-400" onclick="rotateFace('L', 1)">L</button>
+            <button class="btn face-btn text-orange-400" onclick="rotateFace('L', -1)">L'</button>
+            <button class="btn face-btn text-gray-100" onclick="rotateFace('U', 1)">U</button>
+            <button class="btn face-btn text-gray-100" onclick="rotateFace('U', -1)">U'</button>
+            <button class="btn face-btn text-yellow-400" onclick="rotateFace('D', 1)">D</button>
+            <button class="btn face-btn text-yellow-400" onclick="rotateFace('D', -1)">D'</button>
+        </div>
+    </div>
+
+    <!-- Move indicator -->
+    <div class="move-indicator" id="moveIndicator"></div>
+
+    <script>
+        const COLORS = {
+            'W': 'color-white',
+            'Y': 'color-yellow', 
+            'R': 'color-red',
+            'O': 'color-orange',
+            'B': 'color-blue',
+            'G': 'color-green'
+        };
+
+        const INITIAL_STATE = {
+            U: ['W','W','W','W','W','W','W','W','W'],
+            D: ['Y','Y','Y','Y','Y','Y','Y','Y','Y'],
+            F: ['G','G','G','G','G','G','G','G','G'],
+            B: ['B','B','B','B','B','B','B','B','B'],
+            R: ['R','R','R','R','R','R','R','R','R'],
+            L: ['O','O','O','O','O','O','O','O','O']
+        };
+
+        let cubeState = JSON.parse(JSON.stringify(INITIAL_STATE));
+        let moveCount = 0;
+        let rotationX = -25;
+        let rotationY = -35;
+        let zoom = 1;
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        let lastPinchDistance = 0;
+
+        const cube = document.getElementById('cube');
+        const cubeContainer = document.getElementById('cubeContainer');
+        const cubeWrapper = document.getElementById('cubeWrapper');
+        const moveIndicator = document.getElementById('moveIndicator');
+        const zoomIndicator = document.getElementById('zoomIndicator');
+
+        function renderCube() {
+            const faces = document.querySelectorAll('.face');
+            faces.forEach(face => {
+                const faceKey = face.dataset.face;
+                face.innerHTML = '';
+                cubeState[faceKey].forEach((color, i) => {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${COLORS[color]}`;
+                    face.appendChild(cell);
+                });
+            });
+            updateCubeTransform();
+        }
+
+        function updateCubeTransform() {
+            cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+            cubeContainer.style.transform = `scale(${zoom})`;
+            zoomIndicator.textContent = `${Math.round(zoom * 100)}%`;
+        }
+
+        function rotateFaceArray(face, direction) {
+            const arr = cubeState[face];
+            if (direction === 1) {
+                const temp = [...arr];
+                cubeState[face] = [
+                    temp[6], temp[3], temp[0],
+                    temp[7], temp[4], temp[1],
+                    temp[8], temp[5], temp[2]
+                ];
+            } else {
+                const temp = [...arr];
+                cubeState[face] = [
+                    temp[2], temp[5], temp[8],
+                    temp[1], temp[4], temp[7],
+                    temp[0], temp[3], temp[6]
+                ];
+            }
+        }
+
+        function rotateFace(face, direction, isScramble = false) {
+            rotateFaceArray(face, direction);
+            
+            let temp;
+            switch(face) {
+                case 'F':
+                    if (direction === 1) {
+                        temp = [cubeState.U[6], cubeState.U[7], cubeState.U[8]];
+                        [cubeState.U[6], cubeState.U[7], cubeState.U[8]] = [cubeState.L[8], cubeState.L[5], cubeState.L[2]];
+                        [cubeState.L[2], cubeState.L[5], cubeState.L[8]] = [cubeState.D[0], cubeState.D[1], cubeState.D[2]];
+                        [cubeState.D[0], cubeState.D[1], cubeState.D[2]] = [cubeState.R[6], cubeState.R[3], cubeState.R[0]];
+                        [cubeState.R[0], cubeState.R[3], cubeState.R[6]] = temp;
+                    } else {
+                        temp = [cubeState.U[6], cubeState.U[7], cubeState.U[8]];
+                        [cubeState.U[6], cubeState.U[7], cubeState.U[8]] = [cubeState.R[0], cubeState.R[3], cubeState.R[6]];
+                        [cubeState.R[0], cubeState.R[3], cubeState.R[6]] = [cubeState.D[2], cubeState.D[1], cubeState.D[0]];
+                        [cubeState.D[0], cubeState.D[1], cubeState.D[2]] = [cubeState.L[2], cubeState.L[5], cubeState.L[8]];
+                        [cubeState.L[2], cubeState.L[5], cubeState.L[8]] = [temp[2], temp[1], temp[0]];
+                    }
+                    break;
+                case 'B':
+                    if (direction === 1) {
+                        temp = [cubeState.U[0], cubeState.U[1], cubeState.U[2]];
+                        [cubeState.U[0], cubeState.U[1], cubeState.U[2]] = [cubeState.R[2], cubeState.R[5], cubeState.R[8]];
+                        [cubeState.R[2], cubeState.R[5], cubeState.R[8]] = [cubeState.D[8], cubeState.D[7], cubeState.D[6]];
+                        [cubeState.D[6], cubeState.D[7], cubeState.D[8]] = [cubeState.L[0], cubeState.L[3], cubeState.L[6]];
+                        [cubeState.L[0], cubeState.L[3], cubeState.L[6]] = [temp[2], temp[1], temp[0]];
+                    } else {
+                        temp = [cubeState.U[0], cubeState.U[1], cubeState.U[2]];
+                        [cubeState.U[0], cubeState.U[1], cubeState.U[2]] = [cubeState.L[6], cubeState.L[3], cubeState.L[0]];
+                        [cubeState.L[0], cubeState.L[3], cubeState.L[6]] = [cubeState.D[6], cubeState.D[7], cubeState.D[8]];
+                        [cubeState.D[6], cubeState.D[7], cubeState.D[8]] = [cubeState.R[8], cubeState.R[5], cubeState.R[2]];
+                        [cubeState.R[2], cubeState.R[5], cubeState.R[8]] = temp;
+                    }
+                    break;
+                case 'R':
+                    if (direction === 1) {
+                        temp = [cubeState.U[2], cubeState.U[5], cubeState.U[8]];
+                        [cubeState.U[2], cubeState.U[5], cubeState.U[8]] = [cubeState.F[2], cubeState.F[5], cubeState.F[8]];
+                        [cubeState.F[2], cubeState.F[5], cubeState.F[8]] = [cubeState.D[2], cubeState.D[5], cubeState.D[8]];
+                        [cubeState.D[2], cubeState.D[5], cubeState.D[8]] = [cubeState.B[6], cubeState.B[3], cubeState.B[0]];
+                        [cubeState.B[0], cubeState.B[3], cubeState.B[6]] = [temp[2], temp[1], temp[0]];
+                    } else {
+                        temp = [cubeState.U[2], cubeState.U[5], cubeState.U[8]];
+                        [cubeState.U[2], cubeState.U[5], cubeState.U[8]] = [cubeState.B[6], cubeState.B[3], cubeState.B[0]];
+                        [cubeState.B[0], cubeState.B[3], cubeState.B[6]] = [cubeState.D[8], cubeState.D[5], cubeState.D[2]];
+                        [cubeState.D[2], cubeState.D[5], cubeState.D[8]] = [cubeState.F[2], cubeState.F[5], cubeState.F[8]];
+                        [cubeState.F[2], cubeState.F[5], cubeState.F[8]] = temp;
+                    }
+                    break;
+                case 'L':
+                    if (direction === 1) {
+                        temp = [cubeState.U[0], cubeState.U[3], cubeState.U[6]];
+                        [cubeState.U[0], cubeState.U[3], cubeState.U[6]] = [cubeState.B[8], cubeState.B[5], cubeState.B[2]];
+                        [cubeState.B[2], cubeState.B[5], cubeState.B[8]] = [cubeState.D[6], cubeState.D[3], cubeState.D[0]];
+                        [cubeState.D[0], cubeState.D[3], cubeState.D[6]] = [cubeState.F[0], cubeState.F[3], cubeState.F[6]];
+                        [cubeState.F[0], cubeState.F[3], cubeState.F[6]] = temp;
+                    } else {
+                        temp = [cubeState.U[0], cubeState.U[3], cubeState.U[6]];
+                        [cubeState.U[0], cubeState.U[3], cubeState.U[6]] = [cubeState.F[0], cubeState.F[3], cubeState.F[6]];
+                        [cubeState.F[0], cubeState.F[3], cubeState.F[6]] = [cubeState.D[0], cubeState.D[3], cubeState.D[6]];
+                        [cubeState.D[0], cubeState.D[3], cubeState.D[6]] = [cubeState.B[8], cubeState.B[5], cubeState.B[2]];
+                        [cubeState.B[2], cubeState.B[5], cubeState.B[8]] = [temp[2], temp[1], temp[0]];
+                    }
+                    break;
+                case 'U':
+                    if (direction === 1) {
+                        temp = [cubeState.F[0], cubeState.F[1], cubeState.F[2]];
+                        [cubeState.F[0], cubeState.F[1], cubeState.F[2]] = [cubeState.R[0], cubeState.R[1], cubeState.R[2]];
+                        [cubeState.R[0], cubeState.R[1], cubeState.R[2]] = [cubeState.B[0], cubeState.B[1], cubeState.B[2]];
+                        [cubeState.B[0], cubeState.B[1], cubeState.B[2]] = [cubeState.L[0], cubeState.L[1], cubeState.L[2]];
+                        [cubeState.L[0], cubeState.L[1], cubeState.L[2]] = temp;
+                    } else {
+                        temp = [cubeState.F[0], cubeState.F[1], cubeState.F[2]];
+                        [cubeState.F[0], cubeState.F[1], cubeState.F[2]] = [cubeState.L[0], cubeState.L[1], cubeState.L[2]];
+                        [cubeState.L[0], cubeState.L[1], cubeState.L[2]] = [cubeState.B[0], cubeState.B[1], cubeState.B[2]];
+                        [cubeState.B[0], cubeState.B[1], cubeState.B[2]] = [cubeState.R[0], cubeState.R[1], cubeState.R[2]];
+                        [cubeState.R[0], cubeState.R[1], cubeState.R[2]] = temp;
+                    }
+                    break;
+                case 'D':
+                    if (direction === 1) {
+                        temp = [cubeState.F[6], cubeState.F[7], cubeState.F[8]];
+                        [cubeState.F[6], cubeState.F[7], cubeState.F[8]] = [cubeState.L[6], cubeState.L[7], cubeState.L[8]];
+                        [cubeState.L[6], cubeState.L[7], cubeState.L[8]] = [cubeState.B[6], cubeState.B[7], cubeState.B[8]];
+                        [cubeState.B[6], cubeState.B[7], cubeState.B[8]] = [cubeState.R[6], cubeState.R[7], cubeState.R[8]];
+                        [cubeState.R[6], cubeState.R[7], cubeState.R[8]] = temp;
+                    } else {
+                        temp = [cubeState.F[6], cubeState.F[7], cubeState.F[8]];
+                        [cubeState.F[6], cubeState.F[7], cubeState.F[8]] = [cubeState.R[6], cubeState.R[7], cubeState.R[8]];
+                        [cubeState.R[6], cubeState.R[7], cubeState.R[8]] = [cubeState.B[6], cubeState.B[7], cubeState.B[8]];
+                        [cubeState.B[6], cubeState.B[7], cubeState.B[8]] = [cubeState.L[6], cubeState.L[7], cubeState.L[8]];
+                        [cubeState.L[6], cubeState.L[7], cubeState.L[8]] = temp;
+                    }
+                    break;
+            }
+
+            if (!isScramble) {
+                moveCount++;
+                document.getElementById('moveCounter').textContent = `Moves: ${moveCount}`;
+                showMoveIndicator(`${face}${direction === -1 ? "'" : ''}`);
+            }
+            
+            renderCube();
+            checkSolved();
+        }
+
+        function showMoveIndicator(move) {
+            moveIndicator.textContent = move;
+            moveIndicator.classList.add('show');
+            setTimeout(() => moveIndicator.classList.remove('show'), 500);
+        }
+
+        function scramble() {
+            const faces = ['F', 'B', 'R', 'L', 'U', 'D'];
+            const moves = 20;
+            let lastFace = '';
+            
+            for (let i = 0; i < moves; i++) {
+                let face;
+                do {
+                    face = faces[Math.floor(Math.random() * faces.length)];
+                } while (face === lastFace);
+                
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                rotateFace(face, direction, true);
+                lastFace = face;
+            }
+            
+            moveCount = 0;
+            document.getElementById('moveCounter').textContent = `Moves: 0`;
+            renderCube();
+        }
+
+        function resetCube() {
+            cubeState = JSON.parse(JSON.stringify(INITIAL_STATE));
+            moveCount = 0;
+            document.getElementById('moveCounter').textContent = `Moves: 0`;
+            renderCube();
+        }
+
+        function checkSolved() {
+            const solved = Object.keys(cubeState).every(face => {
+                const firstColor = cubeState[face][0];
+                return cubeState[face].every(color => color === firstColor);
+            });
+
+            if (solved && moveCount > 0) {
+                setTimeout(() => {
+                    alert(`🎉 Congratulations! You solved it in ${moveCount} moves!`);
+                }, 100);
+            }
+        }
+
+        // Touch/Mouse controls
+        function getEventPosition(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function getPinchDistance(e) {
+            if (e.touches && e.touches.length >= 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            return 0;
+        }
+
+        function handleStart(e) {
+            if (e.touches && e.touches.length >= 2) {
+                lastPinchDistance = getPinchDistance(e);
+                isDragging = false;
+            } else {
+                isDragging = true;
+                const pos = getEventPosition(e);
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+        }
+
+        function handleMove(e) {
+            e.preventDefault();
+            
+            // Pinch zoom
+            if (e.touches && e.touches.length >= 2) {
+                const currentDistance = getPinchDistance(e);
+                if (lastPinchDistance > 0) {
+                    const delta = currentDistance - lastPinchDistance;
+                    zoom = Math.max(0.5, Math.min(2.5, zoom + delta * 0.005));
+                    updateCubeTransform();
+                }
+                lastPinchDistance = currentDistance;
+                return;
+            }
+            
+            if (!isDragging) return;
+            
+            const pos = getEventPosition(e);
+            const deltaX = pos.x - lastX;
+            const deltaY = pos.y - lastY;
+            
+            rotationY += deltaX * 0.5;
+            rotationX -= deltaY * 0.5;
+            rotationX = Math.max(-90, Math.min(90, rotationX));
+            
+            updateCubeTransform();
+            
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function handleEnd() {
+            isDragging = false;
+            lastPinchDistance = 0;
+        }
+
+        // Mouse wheel zoom
+        function handleWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoom = Math.max(0.5, Math.min(2.5, zoom + delta));
+            updateCubeTransform();
+        }
+
+        // Event listeners
+        cubeWrapper.addEventListener('mousedown', handleStart);
+        cubeWrapper.addEventListener('touchstart', handleStart, { passive: false });
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        cubeWrapper.addEventListener('wheel', handleWheel, { passive: false });
+
+        // Initialize
+        renderCube();
+    </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>App Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-12">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+        <a href="index.html" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Dashboard</a>
+        <h1 id="app-name" class="text-2xl font-bold mb-2">App Settings</h1>
+        <p id="app-id-display" class="text-gray-400 font-mono text-sm mb-8"></p>
+        
+        <div class="space-y-6">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                    <h4 class="font-bold">Notifications</h4>
+                    <p class="text-sm text-gray-500">Receive alerts for this specific app.</p>
+                </div>
+                <input type="checkbox" class="w-6 h-6" checked>
+            </div>
+            <button class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition">Update App Configuration</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the 'app' parameter from the URL
+        const params = new URLSearchParams(window.location.search);
+        const appId = params.get('app') || 'Unknown';
+        
+        document.getElementById('app-id-display').innerText = `ID: ${appId}`;
+        document.getElementById('app-name').innerText = appId.charAt(0).toUpperCase() + appId.slice(1) + ' Settings';
+    </script>
+</body>
+</html>
