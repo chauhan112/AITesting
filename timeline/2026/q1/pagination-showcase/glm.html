@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagination Showcase - 5 Different Styles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-white text-center mb-12">Pagination Showcase</h1>
+        
+        <!-- Pagination Style 1: Classic Numbered Pagination -->
+        <section class="mb-16 bg-gray-800 rounded-xl p-8 shadow-lg">
+            <h2 class="text-2xl font-semibold text-white mb-2">1. Classic Numbered Pagination</h2>
+            <p class="text-gray-400 mb-6">Traditional numbered pages with first, last, previous, and next buttons</p>
+            
+            <div id="content-1" class="bg-gray-700 rounded-lg p-4 mb-6 min-h-[200px]">
+                <div class="text-gray-300 space-y-2" id="items-1"></div>
+            </div>
+            
+            <nav id="pagination-1" class="flex justify-center items-center gap-2"></nav>
+        </section>
+
+        <!-- Pagination Style 2: Simple Previous/Next -->
+        <section class="mb-16 bg-gray-800 rounded-xl p-8 shadow-lg">
+            <h2 class="text-2xl font-semibold text-white mb-2">2. Simple Previous/Next</h2>
+            <p class="text-gray-400 mb-6">Minimalist pagination with only previous and next buttons</p>
+            
+            <div id="content-2" class="bg-gray-700 rounded-lg p-4 mb-6 min-h-[200px]">
+                <div class="text-gray-300 space-y-2" id="items-2"></div>
+            </div>
+            
+            <nav id="pagination-2" class="flex justify-between items-center">
+                <button id="prev-2" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    ← Previous
+                </button>
+                <span class="text-gray-300 text-lg">
+                    Page <span id="current-2" class="font-bold text-blue-400">1</span> of <span id="total-2">10</span>
+                </span>
+                <button id="next-2" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next →
+                </button>
+            </nav>
+        </section>
+
+        <!-- Pagination Style 3: Load More Button -->
+        <section class="mb-16 bg-gray-800 rounded-xl p-8 shadow-lg">
+            <h2 class="text-2xl font-semibold text-white mb-2">3. Load More Button</h2>
+            <p class="text-gray-400 mb-6">Progressive loading with a single "Load More" button</p>
+            
+            <div id="content-3" class="bg-gray-700 rounded-lg p-4 mb-6 min-h-[200px]">
+                <div class="text-gray-300 space-y-2" id="items-3"></div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button id="load-more-3" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold">
+                    Load More Items
+                </button>
+                <button id="reset-3" class="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-semibold ml-4 hidden">
+                    Reset
+                </button>
+            </div>
+        </section>
+
+        <!-- Pagination Style 4: Dots/Ellipsis Pagination -->
+        <section class="mb-16 bg-gray-800 rounded-xl p-8 shadow-lg">
+            <h2 class="text-2xl font-semibold text-white mb-2">4. Ellipsis Pagination</h2>
+            <p class="text-gray-400 mb-6">Compact pagination showing first/last pages with dots for skipped pages</p>
+            
+            <div id="content-4" class="bg-gray-700 rounded-lg p-4 mb-6 min-h-[200px]">
+                <div class="text-gray-300 space-y-2" id="items-4"></div>
+            </div>
+            
+            <nav id="pagination-4" class="flex justify-center items-center gap-1"></nav>
+        </section>
+
+        <!-- Pagination Style 5: Card-Based Pagination -->
+        <section class="mb-16 bg-gray-800 rounded-xl p-8 shadow-lg">
+            <h2 class="text-2xl font-semibold text-white mb-2">5. Card-Based Pagination</h2>
+            <p class="text-gray-400 mb-6">Modern card-style pagination with visual page indicators</p>
+            
+            <div id="content-5" class="bg-gray-700 rounded-lg p-4 mb-6 min-h-[200px]">
+                <div class="text-gray-300 space-y-2" id="items-5"></div>
+            </div>
+            
+            <nav id="pagination-5" class="flex justify-center items-center gap-3"></nav>
+        </section>
+    </div>
+
+    <script>
+        // Sample data generator
+        function generateItems(count) {
+            return Array.from({ length: count }, (_, i) => ({
+                id: i + 1,
+                title: `Item ${i + 1}`,
+                description: `This is the description for item ${i + 1}. It contains some sample content to demonstrate the pagination.`
+            }));
+        }
+
+        // ==================== Style 1: Classic Numbered Pagination ====================
+        const classicData = generateItems(50);
+        let currentPage1 = 1;
+        const itemsPerPage1 = 5;
+        const totalPages1 = Math.ceil(classicData.length / itemsPerPage1);
+
+        function renderClassic() {
+            const start = (currentPage1 - 1) * itemsPerPage1;
+            const end = start + itemsPerPage1;
+            const pageItems = classicData.slice(start, end);
+
+            const itemsContainer = document.getElementById('items-1');
+            itemsContainer.innerHTML = pageItems.map(item => `
+                <div class="flex items-center p-3 bg-gray-600 rounded-lg fade-in">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        ${item.id}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white">${item.title}</h3>
+                        <p class="text-sm text-gray-400">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            renderClassicPagination();
+        }
+
+        function renderClassicPagination() {
+            const nav = document.getElementById('pagination-1');
+            let html = '';
+
+            // First button
+            html += `<button onclick="goToPage(1)" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ${currentPage1 === 1 ? 'opacity-50 cursor-not-allowed' : ''}">First</button>`;
+
+            // Previous button
+            html += `<button onclick="goToPage(${currentPage1 - 1})" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ${currentPage1 === 1 ? 'opacity-50 cursor-not-allowed' : ''}">←</button>`;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages1; i++) {
+                if (i === 1 || i === totalPages1 || (i >= currentPage1 - 1 && i <= currentPage1 + 1)) {
+                    html += `<button onclick="goToPage(${i})" class="px-4 py-2 ${i === currentPage1 ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-lg transition-colors font-semibold">${i}</button>`;
+                } else if (i === currentPage1 - 2 || i === currentPage1 + 2) {
+                    html += `<span class="px-2 text-gray-500">...</span>`;
+                }
+            }
+
+            // Next button
+            html += `<button onclick="goToPage(${currentPage1 + 1})" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ${currentPage1 === totalPages1 ? 'opacity-50 cursor-not-allowed' : ''}">→</button>`;
+
+            // Last button
+            html += `<button onclick="goToPage(${totalPages1})" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ${currentPage1 === totalPages1 ? 'opacity-50 cursor-not-allowed' : ''}">Last</button>`;
+
+            nav.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages1) {
+                currentPage1 = page;
+                renderClassic();
+            }
+        }
+
+        // ==================== Style 2: Simple Previous/Next ====================
+        const simpleData = generateItems(50);
+        let currentPage2 = 1;
+        const itemsPerPage2 = 5;
+        const totalPages2 = Math.ceil(simpleData.length / itemsPerPage2);
+
+        function renderSimple() {
+            const start = (currentPage2 - 1) * itemsPerPage2;
+            const end = start + itemsPerPage2;
+            const pageItems = simpleData.slice(start, end);
+
+            const itemsContainer = document.getElementById('items-2');
+            itemsContainer.innerHTML = pageItems.map(item => `
+                <div class="flex items-center p-3 bg-gray-600 rounded-lg fade-in">
+                    <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        ${item.id}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white">${item.title}</h3>
+                        <p class="text-sm text-gray-400">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('current-2').textContent = currentPage2;
+            document.getElementById('total-2').textContent = totalPages2;
+            document.getElementById('prev-2').disabled = currentPage2 === 1;
+            document.getElementById('next-2').disabled = currentPage2 === totalPages2;
+        }
+
+        document.getElementById('prev-2').addEventListener('click', () => {
+            if (currentPage2 > 1) {
+                currentPage2--;
+                renderSimple();
+            }
+        });
+
+        document.getElementById('next-2').addEventListener('click', () => {
+            if (currentPage2 < totalPages2) {
+                currentPage2++;
+                renderSimple();
+            }
+        });
+
+        // ==================== Style 3: Load More Button ====================
+        const loadMoreData = generateItems(100);
+        let displayedItems3 = 5;
+        const loadBatchSize = 5;
+
+        function renderLoadMore() {
+            const itemsContainer = document.getElementById('items-3');
+            const currentItems = loadMoreData.slice(0, displayedItems3);
+            
+            itemsContainer.innerHTML = currentItems.map(item => `
+                <div class="flex items-center p-3 bg-gray-600 rounded-lg">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        ${item.id}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white">${item.title}</h3>
+                        <p class="text-sm text-gray-400">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            const loadMoreBtn = document.getElementById('load-more-3');
+            const resetBtn = document.getElementById('reset-3');
+
+            if (displayedItems3 >= loadMoreData.length) {
+                loadMoreBtn.classList.add('hidden');
+                resetBtn.classList.remove('hidden');
+                loadMoreBtn.textContent = 'All Items Loaded';
+            } else {
+                loadMoreBtn.classList.remove('hidden');
+                resetBtn.classList.add('hidden');
+                loadMoreBtn.textContent = `Load More (${loadMoreData.length - displayedItems3} remaining)`;
+            }
+        }
+
+        document.getElementById('load-more-3').addEventListener('click', () => {
+            displayedItems3 += loadBatchSize;
+            renderLoadMore();
+        });
+
+        document.getElementById('reset-3').addEventListener('click', () => {
+            displayedItems3 = loadBatchSize;
+            renderLoadMore();
+        });
+
+        // ==================== Style 4: Ellipsis Pagination ====================
+        const ellipsisData = generateItems(50);
+        let currentPage4 = 1;
+        const itemsPerPage4 = 5;
+        const totalPages4 = Math.ceil(ellipsisData.length / itemsPerPage4);
+
+        function renderEllipsis() {
+            const start = (currentPage4 - 1) * itemsPerPage4;
+            const end = start + itemsPerPage4;
+            const pageItems = ellipsisData.slice(start, end);
+
+            const itemsContainer = document.getElementById('items-4');
+            itemsContainer.innerHTML = pageItems.map(item => `
+                <div class="flex items-center p-3 bg-gray-600 rounded-lg fade-in">
+                    <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        ${item.id}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white">${item.title}</h3>
+                        <p class="text-sm text-gray-400">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            renderEllipsisPagination();
+        }
+
+        function renderEllipsisPagination() {
+            const nav = document.getElementById('pagination-4');
+            let pages = [];
+
+            // Always show first page
+            pages.push(1);
+
+            // Show ellipsis if needed
+            if (currentPage4 > 3) {
+                pages.push('...');
+            }
+
+            // Show pages around current
+            for (let i = Math.max(2, currentPage4 - 1); i <= Math.min(totalPages4 - 1, currentPage4 + 1); i++) {
+                pages.push(i);
+            }
+
+            // Show ellipsis if needed
+            if (currentPage4 < totalPages4 - 2) {
+                pages.push('...');
+            }
+
+            // Always show last page if more than 1 page
+            if (totalPages4 > 1) {
+                pages.push(totalPages4);
+            }
+
+            nav.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<span class="px-3 py-2 text-gray-500">...</span>`;
+                }
+                return `<button onclick="goToPage4(${page})" class="px-4 py-2 ${page === currentPage4 ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-lg transition-colors font-semibold">${page}</button>`;
+            }).join('');
+        }
+
+        function goToPage4(page) {
+            if (page >= 1 && page <= totalPages4) {
+                currentPage4 = page;
+                renderEllipsis();
+            }
+        }
+
+        // ==================== Style 5: Card-Based Pagination ====================
+        const cardData = generateItems(50);
+        let currentPage5 = 1;
+        const itemsPerPage5 = 5;
+        const totalPages5 = Math.ceil(cardData.length / itemsPerPage5);
+
+        function renderCard() {
+            const start = (currentPage5 - 1) * itemsPerPage5;
+            const end = start + itemsPerPage5;
+            const pageItems = cardData.slice(start, end);
+
+            const itemsContainer = document.getElementById('items-5');
+            itemsContainer.innerHTML = pageItems.map(item => `
+                <div class="flex items-center p-3 bg-gray-600 rounded-lg fade-in">
+                    <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        ${item.id}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white">${item.title}</h3>
+                        <p class="text-sm text-gray-400">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            renderCardPagination();
+        }
+
+        function renderCardPagination() {
+            const nav = document.getElementById('pagination-5');
+            const visiblePages = 5;
+            let startPage = Math.max(1, currentPage5 - Math.floor(visiblePages / 2));
+            let endPage = Math.min(totalPages5, startPage + visiblePages - 1);
+
+            if (endPage - startPage < visiblePages - 1) {
+                startPage = Math.max(1, endPage - visiblePages + 1);
+            }
+
+            nav.innerHTML = [];
+
+            // Previous button card
+            const prevCard = document.createElement('button');
+            prevCard.className = `w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-all ${currentPage5 === 1 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-pink-600 hover:bg-pink-700 text-white cursor-pointer'}`;
+            prevCard.innerHTML = '←';
+            prevCard.disabled = currentPage5 === 1;
+            prevCard.addEventListener('click', () => {
+                if (currentPage5 > 1) {
+                    currentPage5--;
+                    renderCard();
+                }
+            });
+            nav.appendChild(prevCard);
+
+            // Page cards
+            for (let i = startPage; i <= endPage; i++) {
+                const card = document.createElement('button');
+                card.className = `w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-all ${i === currentPage5 ? 'bg-pink-600 text-white scale-110 shadow-lg' : 'bg-gray-700 hover:bg-gray-600 text-white cursor-pointer'}`;
+                card.textContent = i;
+                card.addEventListener('click', () => {
+                    currentPage5 = i;
+                    renderCard();
+                });
+                nav.appendChild(card);
+            }
+
+            // Next button card
+            const nextCard = document.createElement('button');
+            nextCard.className = `w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-all ${currentPage5 === totalPages5 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-pink-600 hover:bg-pink-700 text-white cursor-pointer'}`;
+            nextCard.innerHTML = '→';
+            nextCard.disabled = currentPage5 === totalPages5;
+            nextCard.addEventListener('click', () => {
+                if (currentPage5 < totalPages5) {
+                    currentPage5++;
+                    renderCard();
+                }
+            });
+            nav.appendChild(nextCard);
+        }
+
+        // Initialize all pagination styles
+        renderClassic();
+        renderSimple();
+        renderLoadMore();
+        renderEllipsis();
+        renderCard();
+    </script>
+</body>
+</html>

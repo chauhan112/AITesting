@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Component Showcase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #161618;
+      --surface2: #1e1e22;
+      --border: #2a2a30;
+      --accent: #e8ff47;
+      --accent2: #ff6b47;
+      --accent3: #47c3ff;
+      --text: #f0f0f0;
+      --muted: #7a7a8a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .syne { font-family: 'Syne', sans-serif; }
+
+    /* noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.3;
+    }
+
+    .glow-accent { box-shadow: 0 0 40px rgba(232,255,71,0.08); }
+    .glow-accent2 { box-shadow: 0 0 40px rgba(255,107,71,0.08); }
+    .glow-accent3 { box-shadow: 0 0 40px rgba(71,195,255,0.08); }
+
+    /* pill tags */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* card styles */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .card:hover {
+      border-color: rgba(232,255,71,0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(232,255,71,0.05);
+    }
+    .card-inner {
+      padding: 16px;
+    }
+
+    /* section header line */
+    .section-line {
+      height: 1px;
+      background: linear-gradient(to right, var(--border) 0%, transparent 100%);
+      flex: 1;
+    }
+
+    /* star icon */
+    .star-filled { color: var(--accent); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* shimmer for badge */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-text {
+      background: linear-gradient(90deg, var(--accent), #fff, var(--accent));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+    }
+
+    /* fade in */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up {
+      animation: fadeUp 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    /* component preview area */
+    .preview-area {
+      background: var(--surface2);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* avatar stack */
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--surface);
+      margin-left: -8px;
+    }
+    .avatar:first-child { margin-left: 0; }
+
+    /* badge */
+    .badge {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px; right: 2px;
+      border: 2px solid var(--surface);
+    }
+
+    /* sidebar active */
+    .nav-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(232,255,71,0.08); color: var(--accent); }
+
+    /* toggle */
+    .toggle {
+      width: 40px; height: 22px;
+      background: var(--border);
+      border-radius: 99px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(18px); background: var(--bg); }
+
+    /* progress bar */
+    .progress-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    /* tooltip */
+    .tooltip-wrap { position: relative; display: inline-block; }
+    .tooltip-box {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.15s;
+    }
+    .tooltip-wrap:hover .tooltip-box { opacity: 1; transform: translateX(-50%) scale(1); }
+
+    /* search input */
+    .search-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px 8px 36px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: rgba(232,255,71,0.4); }
+    .search-input::placeholder { color: var(--muted); }
+
+    /* group header */
+    .group-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+    }
+
+    /* horizontal scroll snap */
+    .scroll-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+    }
+    .scroll-row::-webkit-scrollbar { height: 2px; }
+    .scroll-row > * { scroll-snap-align: start; flex-shrink: 0; }
+
+    /* chip */
+    .chip {
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      color: var(--muted);
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { background: rgba(232,255,71,0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* stat */
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    /* section separator */
+    .sep { border: none; border-top: 1px solid var(--border); }
+
+    /* kbd */
+    kbd {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* icon box */
+    .icon-box {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* notification dot pulse */
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+
+    /* active filter */
+    #filter-tabs button.active-tab {
+      background: rgba(232,255,71,0.1);
+      color: var(--accent);
+      border-color: rgba(232,255,71,0.3);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Top bar -->
+  <header style="border-bottom:1px solid var(--border); backdrop-filter: blur(12px); background: rgba(13,13,15,0.8);" class="sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="icon-box" style="background: var(--accent); color: var(--bg);">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      </div>
+      <span class="syne font-bold text-lg tracking-tight">Component<span class="shimmer-text">Shelf</span></span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative" style="max-width:240px;">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" placeholder="Search components…" id="search-input" />
+      </div>
+      <kbd>⌘K</kbd>
+      <div class="relative ml-1">
+        <div class="icon-box" style="background:var(--surface2); border:1px solid var(--border); cursor:pointer;">
+          <svg width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div class="badge pulse" style="background:var(--accent2);"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="min-height: calc(100vh - 65px);">
+
+    <!-- Sidebar -->
+    <aside style="width:220px; border-right:1px solid var(--border); padding:20px 12px; flex-shrink:0;" class="hidden lg:block">
+      <div class="mb-6">
+        <p class="group-label mb-3 px-2">Navigation</p>
+        <div class="nav-item active" onclick="filterGroup('all')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          All Components
+        </div>
+        <div class="nav-item" onclick="filterGroup('favourites')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Favourites
+          <span class="ml-auto tag" style="background:rgba(232,255,71,0.1); color:var(--accent);">4</span>
+        </div>
+        <div class="nav-item" onclick="filterGroup('recent')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Recently Used
+          <span class="ml-auto tag" style="background:rgba(71,195,255,0.1); color:var(--accent3);">3</span>
+        </div>
+        <div class="nav-item" onclick="filterGroup('new')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New Arrivals
+        </div>
+        <div class="nav-item" onclick="filterGroup('popular')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Most Popular
+        </div>
+      </div>
+
+      <hr class="sep mb-6" />
+
+      <div>
+        <p class="group-label mb-3 px-2">Categories</p>
+        <div class="nav-item" onclick="filterGroup('inputs')">Inputs &amp; Forms</div>
+        <div class="nav-item" onclick="filterGroup('display')">Display &amp; Media</div>
+        <div class="nav-item" onclick="filterGroup('feedback')">Feedback</div>
+        <div class="nav-item" onclick="filterGroup('navigation')">Navigation</div>
+      </div>
+
+      <hr class="sep my-6" />
+
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <p class="text-xs mb-1" style="color:var(--muted);">Collection progress</p>
+        <p class="syne font-bold text-lg mb-2">12 / 20</p>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:60%; background: linear-gradient(90deg, var(--accent), var(--accent3));"></div>
+        </div>
+        <p class="text-xs mt-2" style="color:var(--muted);">8 more to go</p>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 p-6 lg:p-8" style="max-width:900px;">
+
+      <!-- Page header -->
+      <div class="mb-8 fade-up" style="animation-delay:0.05s">
+        <p class="group-label mb-1">Component Library</p>
+        <h1 class="syne text-3xl font-extrabold tracking-tight mb-2">Your Shelf</h1>
+        <p style="color:var(--muted); font-size:13px;">Browse, organise, and preview UI building blocks.</p>
+      </div>
+
+      <!-- Filter chips -->
+      <div id="filter-tabs" class="scroll-row mb-8 fade-up" style="animation-delay:0.1s;">
+        <button class="chip active-tab" onclick="setChip(this,'all')">All</button>
+        <button class="chip" onclick="setChip(this,'favourites')">⭐ Favourites</button>
+        <button class="chip" onclick="setChip(this,'recent')">🕐 Recent</button>
+        <button class="chip" onclick="setChip(this,'new')">✦ New</button>
+        <button class="chip" onclick="setChip(this,'popular')">🔥 Popular</button>
+        <button class="chip" onclick="setChip(this,'inputs')">Inputs</button>
+        <button class="chip" onclick="setChip(this,'display')">Display</button>
+        <button class="chip" onclick="setChip(this,'feedback')">Feedback</button>
+      </div>
+
+      <!-- SECTION: Favourites -->
+      <section class="mb-10 component-section" data-group="favourites" style="animation-delay:0.15s;">
+        <div class="flex items-center gap-3 mb-4">
+          <svg class="star-filled" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span class="group-label">Favourites</span>
+          <div class="section-line"></div>
+          <span class="tag" style="background:rgba(232,255,71,0.1); color:var(--accent);">4 saved</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="fav-grid">
+          <!-- Avatar Group -->
+          <div class="card fade-up" data-group="favourites" data-name="avatar group" style="animation-delay:0.2s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Avatar Group</p>
+                  <p class="text-xs" style="color:var(--muted);">display · stacked</p>
+                </div>
+                <button class="star-btn" data-starred="true" onclick="toggleStar(this)" style="color:var(--accent);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area">
+                <div class="flex items-center">
+                  <img class="avatar" src="https://api.dicebear.com/7.x/personas/svg?seed=a1" />
+                  <img class="avatar" src="https://api.dicebear.com/7.x/personas/svg?seed=b2" />
+                  <img class="avatar" src="https://api.dicebear.com/7.x/personas/svg?seed=c3" />
+                  <div class="avatar flex items-center justify-center text-xs syne font-bold" style="background:var(--surface2); color:var(--muted); margin-left:-8px;">+4</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggle -->
+          <div class="card fade-up" data-group="favourites" data-name="toggle" style="animation-delay:0.25s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Toggle Switch</p>
+                  <p class="text-xs" style="color:var(--muted);">inputs · control</p>
+                </div>
+                <button class="star-btn" data-starred="true" onclick="toggleStar(this)" style="color:var(--accent);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area gap-3">
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+                <div class="toggle" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="card fade-up" data-group="favourites" data-name="progress bar" style="animation-delay:0.3s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Progress Bar</p>
+                  <p class="text-xs" style="color:var(--muted);">feedback · loading</p>
+                </div>
+                <button class="star-btn" data-starred="true" onclick="toggleStar(this)" style="color:var(--accent);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area flex-col gap-2 p-4">
+                <div class="w-full">
+                  <div class="flex justify-between text-xs mb-1" style="color:var(--muted);"><span>Upload</span><span>72%</span></div>
+                  <div class="progress-track w-full">
+                    <div class="progress-fill" style="width:72%; background:var(--accent);"></div>
+                  </div>
+                </div>
+                <div class="w-full">
+                  <div class="flex justify-between text-xs mb-1" style="color:var(--muted);"><span>Storage</span><span>38%</span></div>
+                  <div class="progress-track w-full">
+                    <div class="progress-fill" style="width:38%; background:var(--accent3);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tooltip -->
+          <div class="card fade-up" data-group="favourites" data-name="tooltip" style="animation-delay:0.35s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Tooltip</p>
+                  <p class="text-xs" style="color:var(--muted);">feedback · overlay</p>
+                </div>
+                <button class="star-btn" data-starred="true" onclick="toggleStar(this)" style="color:var(--accent);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area gap-4 pt-6 pb-4">
+                <div class="tooltip-wrap">
+                  <button style="background:var(--accent); color:var(--bg); border:none; border-radius:6px; padding:6px 14px; font-size:12px; font-family:'DM Mono',monospace; cursor:pointer;">Hover me</button>
+                  <div class="tooltip-box">This is a tooltip ✦</div>
+                </div>
+                <div class="tooltip-wrap">
+                  <button style="background:transparent; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 14px; font-size:12px; font-family:'DM Mono',monospace; cursor:pointer;">And me</button>
+                  <div class="tooltip-box">Another tooltip!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Recently Used -->
+      <section class="mb-10 component-section" data-group="recent">
+        <div class="flex items-center gap-3 mb-4">
+          <svg width="16" height="16" fill="none" stroke="var(--accent3)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="group-label">Recently Used</span>
+          <div class="section-line"></div>
+          <span class="tag" style="background:rgba(71,195,255,0.1); color:var(--accent3);">3 items</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+          <!-- Badge -->
+          <div class="card fade-up" data-group="recent" data-name="badge" style="animation-delay:0.2s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Badge</p>
+                  <p class="text-xs" style="color:var(--muted);">display</p>
+                </div>
+                <button class="star-btn" data-starred="false" onclick="toggleStar(this)" style="color:var(--muted);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area gap-2 flex-wrap p-3">
+                <span class="tag" style="background:rgba(232,255,71,0.1); color:var(--accent);">New</span>
+                <span class="tag" style="background:rgba(255,107,71,0.1); color:var(--accent2);">Hot</span>
+                <span class="tag" style="background:rgba(71,195,255,0.1); color:var(--accent3);">Beta</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stat Card -->
+          <div class="card fade-up" data-group="recent" data-name="stat card" style="animation-delay:0.25s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Stat Card</p>
+                  <p class="text-xs" style="color:var(--muted);">display · data</p>
+                </div>
+                <button class="star-btn" data-starred="false" onclick="toggleStar(this)" style="color:var(--muted);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area p-3">
+                <div style="width:100%;">
+                  <p class="text-xs mb-1" style="color:var(--muted);">Total Views</p>
+                  <p class="stat-num" style="color:var(--accent);">24.8K</p>
+                  <p class="text-xs mt-1" style="color:#4ade80;">↑ 12.4% this week</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kbd shortcut -->
+          <div class="card fade-up" data-group="recent" data-name="keyboard shortcut" style="animation-delay:0.3s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Keyboard</p>
+                  <p class="text-xs" style="color:var(--muted);">display · utility</p>
+                </div>
+                <button class="star-btn" data-starred="false" onclick="toggleStar(this)" style="color:var(--muted);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </button>
+              </div>
+              <div class="preview-area gap-2 flex-wrap p-3">
+                <kbd>⌘</kbd><kbd>K</kbd>
+                <span style="color:var(--muted); font-size:12px;">open search</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: New Arrivals -->
+      <section class="mb-10 component-section" data-group="new">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="color:var(--accent2); font-size:16px;">✦</span>
+          <span class="group-label">New Arrivals</span>
+          <div class="section-line"></div>
+          <span class="tag" style="background:rgba(255,107,71,0.1); color:var(--accent2);">Just added</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <!-- Toast Notification -->
+          <div class="card fade-up" data-group="new" data-name="toast notification" style="animation-delay:0.2s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Toast Notification</p>
+                  <p class="text-xs" style="color:var(--muted);">feedback · alerts</p>
+                </div>
+                <span class="tag" style="background:rgba(255,107,71,0.1); color:var(--accent2);">New</span>
+              </div>
+              <div class="preview-area p-3 flex-col gap-2">
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px; width:100%;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>
+                  <span style="font-size:12px;">Changes saved successfully</span>
+                </div>
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px; width:100%;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>
+                  <span style="font-size:12px;">Connection lost — retrying…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Command Palette -->
+          <div class="card fade-up" data-group="new" data-name="command palette" style="animation-delay:0.25s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Command Palette</p>
+                  <p class="text-xs" style="color:var(--muted);">navigation · search</p>
+                </div>
+                <span class="tag" style="background:rgba(255,107,71,0.1); color:var(--accent2);">New</span>
+              </div>
+              <div class="preview-area p-3">
+                <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; width:100%; overflow:hidden;">
+                  <div style="padding:8px 10px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px;">
+                    <svg width="12" height="12" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span style="font-size:12px; color:var(--muted);">Type a command…</span>
+                  </div>
+                  <div style="padding:6px;">
+                    <div style="padding:6px 8px; border-radius:6px; background:rgba(232,255,71,0.08); font-size:11px; color:var(--accent); display:flex; justify-content:space-between;">Open Dashboard <kbd>↵</kbd></div>
+                    <div style="padding:6px 8px; font-size:11px; color:var(--muted);">New Project</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Most Popular -->
+      <section class="mb-10 component-section" data-group="popular">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="font-size:16px;">🔥</span>
+          <span class="group-label">Most Popular</span>
+          <div class="section-line"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+          <!-- Button Group -->
+          <div class="card fade-up" data-group="popular" data-name="button group" style="animation-delay:0.2s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Button Group</p>
+                  <p class="text-xs" style="color:var(--muted);">inputs · actions</p>
+                </div>
+                <span style="font-size:12px; color:var(--muted);">2.4k uses</span>
+              </div>
+              <div class="preview-area gap-0 overflow-hidden">
+                <div style="display:flex; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+                  <button style="padding:7px 14px; font-size:12px; background:rgba(232,255,71,0.1); color:var(--accent); border:none; cursor:pointer; font-family:'DM Mono',monospace; border-right:1px solid var(--border);">Left</button>
+                  <button style="padding:7px 14px; font-size:12px; background:transparent; color:var(--muted); border:none; cursor:pointer; font-family:'DM Mono',monospace; border-right:1px solid var(--border);">Center</button>
+                  <button style="padding:7px 14px; font-size:12px; background:transparent; color:var(--muted); border:none; cursor:pointer; font-family:'DM Mono',monospace;">Right</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Field -->
+          <div class="card fade-up" data-group="popular inputs" data-name="input field" style="animation-delay:0.25s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Input Field</p>
+                  <p class="text-xs" style="color:var(--muted);">inputs · forms</p>
+                </div>
+                <span style="font-size:12px; color:var(--muted);">1.9k uses</span>
+              </div>
+              <div class="preview-area p-4 flex-col gap-2">
+                <div class="relative w-full">
+                  <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Email</label>
+                  <input style="background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:7px 10px; font-size:12px; width:100%; font-family:'DM Mono',monospace; outline:none;" placeholder="you@example.com" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dropdown -->
+          <div class="card fade-up" data-group="popular navigation" data-name="dropdown" style="animation-delay:0.3s;">
+            <div class="card-inner">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="syne font-semibold text-sm mb-0.5">Dropdown</p>
+                  <p class="text-xs" style="color:var(--muted);">navigation · select</p>
+                </div>
+                <span style="font-size:12px; color:var(--muted);">1.6k uses</span>
+              </div>
+              <div class="preview-area p-4">
+                <div style="position:relative; width:100%;">
+                  <div style="background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleDropdown()">
+                    <span id="dd-val">Select option…</span>
+                    <svg width="12" height="12" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                  <div id="dd-menu" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; z-index:10;">
+                    <div style="padding:7px 10px; font-size:12px; cursor:pointer; color:var(--muted);" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''" onclick="pickDd(this)">Option A</div>
+                    <div style="padding:7px 10px; font-size:12px; cursor:pointer; color:var(--muted);" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''" onclick="pickDd(this)">Option B</div>
+                    <div style="padding:7px 10px; font-size:12px; cursor:pointer; color:var(--muted);" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''" onclick="pickDd(this)">Option C</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty state (hidden by default) -->
+      <div id="empty-state" style="display:none; text-align:center; padding:60px 20px;">
+        <div style="font-size:40px; margin-bottom:12px;">🔍</div>
+        <p class="syne font-bold text-lg mb-2">No results found</p>
+        <p style="color:var(--muted); font-size:13px;">Try a different search term or group</p>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // Filter by group via sidebar or chips
+    let currentGroup = 'all';
+    let searchTerm = '';
+
+    function filterGroup(group) {
+      currentGroup = group;
+      // update sidebar active
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.remove('active');
+        if (n.getAttribute('onclick')?.includes(`'${group}'`)) n.classList.add('active');
+      });
+      applyFilter();
+    }
+
+    function setChip(el, group) {
+      document.querySelectorAll('#filter-tabs button').forEach(b => b.classList.remove('active-tab'));
+      el.classList.add('active-tab');
+      filterGroup(group);
+    }
+
+    function applyFilter() {
+      let anyVisible = false;
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        const groups = (card.dataset.group || '').toLowerCase();
+        const name = (card.dataset.name || '').toLowerCase();
+        const matchGroup = currentGroup === 'all' || groups.includes(currentGroup);
+        const matchSearch = searchTerm === '' || name.includes(searchTerm) || groups.includes(searchTerm);
+        const visible = matchGroup && matchSearch;
+        card.closest('.card').style.display = visible ? '' : 'none';
+        if (visible) anyVisible = true;
+      });
+
+      // show/hide sections
+      document.querySelectorAll('.component-section').forEach(sec => {
+        const group = sec.dataset.group;
+        const show = currentGroup === 'all' || currentGroup === group;
+        const hasVisible = [...sec.querySelectorAll('.card')].some(c => c.style.display !== 'none');
+        sec.style.display = (show && hasVisible) ? '' : 'none';
+      });
+
+      document.getElementById('empty-state').style.display = anyVisible ? 'none' : 'block';
+    }
+
+    // Search
+    document.getElementById('search-input').addEventListener('input', function() {
+      searchTerm = this.value.toLowerCase().trim();
+      applyFilter();
+    });
+
+    // Star toggle
+    function toggleStar(btn) {
+      const starred = btn.dataset.starred === 'true';
+      btn.dataset.starred = (!starred).toString();
+      if (!starred) {
+        btn.style.color = 'var(--accent)';
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+      } else {
+        btn.style.color = 'var(--muted)';
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+      }
+    }
+
+    // Dropdown demo
+    let ddOpen = false;
+    function toggleDropdown() {
+      ddOpen = !ddOpen;
+      document.getElementById('dd-menu').style.display = ddOpen ? 'block' : 'none';
+    }
+    function pickDd(el) {
+      document.getElementById('dd-val').textContent = el.textContent;
+      ddOpen = false;
+      document.getElementById('dd-menu').style.display = 'none';
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[onclick="toggleDropdown()"]') && !e.target.closest('#dd-menu')) {
+        ddOpen = false;
+        const m = document.getElementById('dd-menu');
+        if (m) m.style.display = 'none';
+      }
+    });
+
+    // Stagger fade-up animations
+    document.querySelectorAll('.fade-up').forEach((el, i) => {
+      el.style.animationDelay = (0.05 + i * 0.05) + 's';
+    });
+  </script>
+</body>
+</html>

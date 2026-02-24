@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Showcase</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons for nice UI icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* Custom scrollbar for a sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                    <i class="ph-bold ph-squares-four"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight text-slate-900">UI Library</span>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="relative hidden sm:block w-96">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" placeholder="Search components..." 
+                    class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm outline-none">
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-slate-500 hover:text-indigo-600 transition-colors relative">
+                    <i class="ph-bold ph-bell text-xl"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="mainContainer">
+        <!-- Content will be injected here by JS -->
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // 1. DATA: Define your component groups and items here
+        const componentData = [
+            {
+                id: "favourites",
+                title: "Favourites",
+                icon: "ph-star",
+                description: "Your most used components pinned for quick access.",
+                layout: "grid", // Visual style: grid of cards
+                items: [
+                    { name: "Authentication Modal", category: "Overlays", updated: "2 mins ago", icon: "ph-lock-key", color: "text-blue-600", bg: "bg-blue-100" },
+                    { name: "Sales Dashboard", category: "Layouts", updated: "1 hour ago", icon: "ph-chart-line-up", color: "text-emerald-600", bg: "bg-emerald-100" },
+                    { name: "User Profile Card", category: "Cards", updated: "Yesterday", icon: "ph-user-circle", color: "text-purple-600", bg: "bg-purple-100" },
+                    { name: "Checkout Flow", category: "Forms", updated: "3 days ago", icon: "ph-shopping-cart", color: "text-orange-600", bg: "bg-orange-100" }
+                ]
+            },
+            {
+                id: "recent",
+                title: "Recently Used",
+                icon: "ph-clock-counter-clockwise",
+                description: "Components you've modified or exported recently.",
+                layout: "list", // Visual style: detailed rows
+                items: [
+                    { name: "Navbar Simple", category: "Navigation", size: "12kb", status: "Published", icon: "ph-navigation-arrow" },
+                    { name: "Footer Large", category: "Navigation", size: "24kb", status: "Draft", icon: "ph-layout" },
+                    { name: "Pricing Table", category: "Marketing", size: "18kb", status: "Published", icon: "ph-currency-dollar" },
+                    { name: "Contact Form", category: "Forms", size: "8kb", status: "Review", icon: "ph-envelope" }
+                ]
+            },
+            {
+                id: "explore",
+                title: "Explore Categories",
+                icon: "ph-compass",
+                description: "Browse components by specific utility groups.",
+                layout: "tags", // Visual style: small pill/tags
+                items: [
+                    { name: "Buttons", count: 24, icon: "ph-cursor-click" },
+                    { name: "Inputs", count: 12, icon: "ph-textbox" },
+                    { name: "Modals", count: 8, icon: "ph-windows-logo" },
+                    { name: "Alerts", count: 15, icon: "ph-warning" },
+                    { name: "Tables", count: 6, icon: "ph-table" },
+                    { name: "Graphs", count: 10, icon: "ph-chart-pie" },
+                    { name: "Loaders", count: 18, icon: "ph-spinner" }
+                ]
+            }
+        ];
+
+        const mainContainer = document.getElementById('mainContainer');
+        const searchInput = document.getElementById('searchInput');
+
+        // 2. RENDER FUNCTIONS
+        
+        // Render a Card (for Grid Layout)
+        const renderCard = (item) => `
+            <div class="group bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300 cursor-pointer">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="${item.bg} ${item.color} w-10 h-10 rounded-lg flex items-center justify-center text-xl">
+                        <i class="${item.icon}"></i>
+                    </div>
+                    <button class="text-slate-300 hover:text-red-500 transition-colors">
+                        <i class="ph-fill ph-heart"></i>
+                    </button>
+                </div>
+                <h3 class="font-semibold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">${item.name}</h3>
+                <p class="text-xs text-slate-500 font-medium uppercase tracking-wide mb-3">${item.category}</p>
+                <div class="flex items-center gap-1 text-xs text-slate-400">
+                    <i class="ph ph-clock"></i>
+                    <span>${item.updated}</span>
+                </div>
+            </div>
+        `;
+
+        // Render a Row (for List Layout)
+        const renderRow = (item) => {
+            // Status badge logic
+            let statusColor = item.status === 'Published' ? 'bg-green-100 text-green-700' : 
+                              item.status === 'Draft' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700';
+            
+            return `
+            <div class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                        <i class="${item.icon} text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-slate-900">${item.name}</h4>
+                        <p class="text-sm text-slate-500">${item.category}</p>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center gap-8">
+                    <div class="text-sm text-slate-500 font-mono">${item.size}</div>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">
+                        ${item.status}
+                    </span>
+                    <button class="text-slate-400 hover:text-indigo-600">
+                        <i class="ph-bold ph-dots-three-vertical"></i>
+                    </button>
+                </div>
+            </div>
+            `;
+        };
+
+        // Render a Tag (for Tag Layout)
+        const renderTag = (item) => `
+            <div class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500 cursor-pointer transition-all">
+                <i class="${item.icon} text-indigo-500 text-xl"></i>
+                <div>
+                    <span class="block font-medium text-slate-700">${item.name}</span>
+                    <span class="text-xs text-slate-400">${item.count} items</span>
+                </div>
+            </div>
+        `;
+
+        // Main Render Loop
+        function renderPage(filter = "") {
+            mainContainer.innerHTML = '';
+            const lowerFilter = filter.toLowerCase();
+
+            componentData.forEach(group => {
+                // Filter items based on search input
+                const filteredItems = group.items.filter(item => 
+                    item.name.toLowerCase().includes(lowerFilter) || 
+                    (item.category && item.category.toLowerCase().includes(lowerFilter))
+                );
+
+                // If filtering and no items found in this group, skip rendering the group
+                if (filter && filteredItems.length === 0) return;
+
+                // Create Section Container
+                const section = document.createElement('section');
+                section.className = "mb-12";
+
+                // Section Header
+                section.innerHTML = `
+                    <div class="flex items-end justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                <i class="${group.icon} text-indigo-500"></i> ${group.title}
+                            </h2>
+                            <p class="text-slate-500 mt-1 text-sm">${group.description}</p>
+                        </div>
+                        ${!filter ? `<button class="text-sm font-medium text-indigo-600 hover:text-indigo-800">View All</button>` : ''}
+                    </div>
+                `;
+
+                // Content Container
+                const contentDiv = document.createElement('div');
+                
+                // Apply layout classes based on group type
+                if (group.layout === 'grid') {
+                    contentDiv.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6";
+                    contentDiv.innerHTML = filteredItems.map(renderCard).join('');
+                } else if (group.layout === 'list') {
+                    contentDiv.className = "flex flex-col gap-3";
+                    contentDiv.innerHTML = filteredItems.map(renderRow).join('');
+                } else if (group.layout === 'tags') {
+                    contentDiv.className = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4";
+                    contentDiv.innerHTML = filteredItems.map(renderTag).join('');
+                }
+
+                section.appendChild(contentDiv);
+                mainContainer.appendChild(section);
+            });
+
+            // Empty State
+            if (mainContainer.innerHTML === '') {
+                mainContainer.innerHTML = `
+                    <div class="text-center py-20">
+                        <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="ph ph-magnifying-glass text-2xl text-slate-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-slate-900">No components found</h3>
+                        <p class="text-slate-500">Try adjusting your search terms.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 3. INITIALIZATION & EVENTS
+        renderPage();
+
+        searchInput.addEventListener('input', (e) => {
+            renderPage(e.target.value);
+        });
+
+    </script>
+</body>
+</html>

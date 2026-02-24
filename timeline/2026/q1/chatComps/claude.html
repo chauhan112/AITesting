@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chat Components</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #7c6af7;
+    --accent2: #f7a26a;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --green: #4ade80;
+    --pink: #f472b6;
+    --blue: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    margin: 0;
+    padding: 0;
+  }
+  h1, h2, h3, .label { font-family: 'Syne', sans-serif; }
+
+  /* scrollbars */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* markdown rendered content */
+  .md-content p { margin: 0 0 4px; }
+  .md-content code { background: rgba(124,106,247,0.2); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+  .md-content pre { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; overflow-x: auto; margin: 6px 0; }
+  .md-content pre code { background: none; padding: 0; }
+  .md-content strong { color: var(--accent2); font-weight: 600; }
+  .md-content em { color: var(--muted); }
+  .md-content ul { margin: 4px 0; padding-left: 18px; }
+  .md-content a { color: var(--accent); }
+
+  /* bubble toggle */
+  #bubble-trigger {
+    position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 32px rgba(124,106,247,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 22px;
+  }
+  #bubble-trigger:hover { transform: scale(1.08); box-shadow: 0 12px 40px rgba(124,106,247,0.55); }
+
+  #chat-bubble-panel {
+    position: fixed; bottom: 96px; right: 28px; z-index: 999;
+    width: 360px; height: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
+  }
+  #chat-bubble-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1; pointer-events: all;
+  }
+
+  .bubble-header {
+    padding: 14px 18px;
+    background: linear-gradient(90deg, rgba(124,106,247,0.15), rgba(247,162,106,0.1));
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+
+  .bubble-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .bubble-input-row {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+  .bubble-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 12px; padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    resize: none; outline: none; line-height: 1.5;
+    min-height: 36px; max-height: 100px;
+    transition: border-color 0.2s;
+  }
+  .bubble-input:focus { border-color: var(--accent); }
+  .send-btn {
+    background: linear-gradient(135deg, var(--accent), #5b52e8);
+    border: none; border-radius: 10px; width: 36px; height: 36px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: white; flex-shrink: 0; transition: opacity 0.2s, transform 0.15s;
+  }
+  .send-btn:hover { opacity: 0.88; transform: scale(1.05); }
+
+  /* section labels */
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 6px 0 2px;
+  }
+
+  /* two-person chat */
+  .chat-2-container {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; height: 420px;
+    display: flex; flex-direction: column;
+  }
+  .chat-2-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(96,165,250,0.08), transparent);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .chat-2-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg-left { display: flex; gap: 8px; align-items: flex-end; }
+  .msg-right { display: flex; gap: 8px; align-items: flex-end; flex-direction: row-reverse; }
+  .msg-bubble {
+    max-width: 68%; padding: 10px 14px; border-radius: 16px;
+    font-size: 12.5px; line-height: 1.6;
+  }
+  .msg-bubble.left {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg-bubble.right {
+    background: linear-gradient(135deg, var(--accent), #5b52e8);
+    border-bottom-right-radius: 4px; color: #fff;
+  }
+  .msg-name { font-size: 10px; color: var(--muted); margin-bottom: 3px; font-family: 'Syne', sans-serif; font-weight: 600; }
+
+  /* many-people chat */
+  .chat-many-container {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; height: 420px;
+    display: flex; flex-direction: column;
+  }
+  .chat-many-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(74,222,128,0.08), transparent);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .chat-many-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg-group {
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .msg-group-bubble {
+    padding: 10px 14px; border-radius: 16px; border-top-left-radius: 4px;
+    font-size: 12.5px; line-height: 1.6; max-width: 85%;
+    border: 1px solid transparent;
+  }
+
+  /* color variants for group */
+  .color-0 { background: rgba(124,106,247,0.15); border-color: rgba(124,106,247,0.3); }
+  .color-1 { background: rgba(247,162,106,0.15); border-color: rgba(247,162,106,0.3); }
+  .color-2 { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.3); }
+  .color-3 { background: rgba(244,114,182,0.15); border-color: rgba(244,114,182,0.3); }
+  .color-4 { background: rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.3); }
+  .av-0 { background: rgba(124,106,247,0.3); color: #a89ff9; }
+  .av-1 { background: rgba(247,162,106,0.3); color: #f9c494; }
+  .av-2 { background: rgba(96,165,250,0.3); color: #93c5fd; }
+  .av-3 { background: rgba(244,114,182,0.3); color: #f9a8d4; }
+  .av-4 { background: rgba(74,222,128,0.3); color: #86efac; }
+  .name-0 { color: #a89ff9; }
+  .name-1 { color: #f9c494; }
+  .name-2 { color: #93c5fd; }
+  .name-3 { color: #f9a8d4; }
+  .name-4 { color: #86efac; }
+
+  /* tabs */
+  .tab-bar { display: flex; gap: 4px; padding: 20px 24px 0; }
+  .tab-btn {
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 8px 18px; border-radius: 8px 8px 0 0;
+    border: 1px solid var(--border); border-bottom: none;
+    background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: color 0.2s, background 0.2s;
+  }
+  .tab-btn.active { background: var(--surface2); color: var(--text); border-color: var(--accent); border-bottom-color: var(--surface2); }
+  .tab-panel { display: none; padding: 0 24px 24px; }
+  .tab-panel.active { display: block; }
+  .tab-wrapper {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 0 12px 12px 12px; padding: 20px;
+    margin-bottom: 20px;
+  }
+  /* The first tab gets no left-radius on the wrapper */
+  .tab-wrapper.first { border-top-left-radius: 0; }
+
+  /* ai chat tag */
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3);
+    color: #a89ff9; border-radius: 20px; padding: 2px 10px;
+    font-size: 10px; font-family: 'Syne', sans-serif; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .dot-pulse { width: 6px; height: 6px; border-radius: 50%; background: #a89ff9; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* page */
+  .page-header {
+    padding: 40px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 6px; }
+  .page-sub { color: var(--muted); font-size: 12px; }
+
+  /* online indicator */
+  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+
+  /* typing indicator */
+  .typing { display: flex; gap: 4px; align-items: center; padding: 2px 0; }
+  .typing span {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--muted);
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+  .timestamp { font-size: 10px; color: var(--muted); flex-shrink: 0; align-self: flex-end; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title" style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+    Chat Components
+  </h1>
+  <p class="page-sub">TwoPeopleChatComponent · ManyPeopleChatComponent · AIChatComponent · ChatBubbleComponent</p>
+</div>
+
+<!-- ============================================================
+     TABS
+============================================================ -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('two')">Two-Person</button>
+  <button class="tab-btn" onclick="switchTab('many')">Group Chat</button>
+  <button class="tab-btn" onclick="switchTab('ai')">AI Chat</button>
+</div>
+
+<!-- TWO PERSON TAB -->
+<div id="tab-two" class="tab-panel active">
+  <div class="tab-wrapper first">
+    <p class="section-label" style="margin-top:0">TwoPeopleChatComponent</p>
+    <div id="two-person-mount"></div>
+  </div>
+</div>
+
+<!-- MANY PEOPLE TAB -->
+<div id="tab-many" class="tab-panel">
+  <div class="tab-wrapper">
+    <p class="section-label" style="margin-top:0">ManyPeopleChatComponent</p>
+    <div id="many-people-mount"></div>
+  </div>
+</div>
+
+<!-- AI CHAT TAB -->
+<div id="tab-ai" class="tab-panel">
+  <div class="tab-wrapper">
+    <p class="section-label" style="margin-top:0">AIChatComponent <span class="ai-badge" style="margin-left:8px"><span class="dot-pulse"></span>GLM-4.7 / Local</span></p>
+    <div id="ai-chat-mount"></div>
+  </div>
+</div>
+
+<!-- FLOATING BUBBLE TRIGGER -->
+<button id="bubble-trigger" title="Open Chat" onclick="toggleBubble()">💬</button>
+
+<!-- FLOATING BUBBLE PANEL -->
+<div id="chat-bubble-panel">
+  <div class="bubble-header">
+    <div class="avatar av-1" style="font-size:16px">🤖</div>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px" id="bubble-title-el">Support Bot</div>
+      <div style="font-size:10px;color:var(--green);display:flex;align-items:center;gap:4px"><span class="online-dot" style="width:6px;height:6px"></span>Online</div>
+    </div>
+    <button onclick="toggleBubble()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0">×</button>
+  </div>
+  <div class="bubble-messages" id="bubble-messages"></div>
+  <div class="bubble-input-row">
+    <textarea class="bubble-input" id="bubble-input" rows="1" placeholder="Type a message…" onkeydown="bubbleKeydown(event)"></textarea>
+    <button class="send-btn" onclick="bubbleSend()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+function md(text) {
+  if (window.marked) return marked.parse(text);
+  return text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`(.*?)`/g,'<code>$1</code>');
+}
+
+function initials(name) {
+  return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+// ============================================================
+// MESSAGE MODEL (CRUD + localStorage)
+// ============================================================
+class MessageModel {
+  constructor(storageKey = 'chat_messages') {
+    this.key = storageKey;
+  }
+  _load() {
+    try { return JSON.parse(localStorage.getItem(this.key)) || []; }
+    catch { return []; }
+  }
+  _save(msgs) {
+    localStorage.setItem(this.key, JSON.stringify(msgs));
+  }
+  read_all() { return this._load(); }
+  read(id) { return this._load().find(m => m.id === id) || null; }
+  create(msg) {
+    const msgs = this._load();
+    const record = { ...msg, id: Date.now() + Math.random().toString(36).slice(2), createdAt: new Date().toISOString() };
+    msgs.push(record);
+    this._save(msgs);
+    return record;
+  }
+  update(id, patch) {
+    const msgs = this._load();
+    const idx = msgs.findIndex(m => m.id === id);
+    if (idx === -1) return null;
+    msgs[idx] = { ...msgs[idx], ...patch, updatedAt: new Date().toISOString() };
+    this._save(msgs);
+    return msgs[idx];
+  }
+  delete(id) {
+    const msgs = this._load();
+    const idx = msgs.findIndex(m => m.id === id);
+    if (idx === -1) return false;
+    msgs.splice(idx, 1);
+    this._save(msgs);
+    return true;
+  }
+  clear() { this._save([]); }
+}
+
+// ============================================================
+// COLOR SYSTEM
+// ============================================================
+const USER_COLORS = [
+  { av: 'av-0', bubble: 'color-0', name: 'name-0' },
+  { av: 'av-1', bubble: 'color-1', name: 'name-1' },
+  { av: 'av-2', bubble: 'color-2', name: 'name-2' },
+  { av: 'av-3', bubble: 'color-3', name: 'name-3' },
+  { av: 'av-4', bubble: 'color-4', name: 'name-4' },
+];
+const colorMap = {};
+let colorIdx = 0;
+function getUserColor(name) {
+  if (!colorMap[name]) { colorMap[name] = USER_COLORS[colorIdx++ % USER_COLORS.length]; }
+  return colorMap[name];
+}
+
+// ============================================================
+// TwoPeopleChatComponent
+// ============================================================
+class TwoPeopleChatComponent {
+  constructor() {
+    this._userName = 'You';
+    this._msgs = [];
+    this._el = null;
+    this._build();
+  }
+  _build() {
+    this._el = document.createElement('div');
+    this._el.className = 'chat-2-container';
+    this._el.innerHTML = `
+      <div class="chat-2-header">
+        <div class="online-dot"></div>
+        <div class="avatar av-2" id="c2-other-av">?</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px" id="c2-other-name">—</div>
+          <div style="font-size:10px;color:var(--muted)">Online</div>
+        </div>
+      </div>
+      <div class="chat-2-messages" id="c2-messages"></div>
+    `;
+  }
+  get_comp() { return this._el; }
+  set_user_name(name) { this._userName = name; this._render(); }
+  set_messages(msgs) { this._msgs = msgs; this._render(); }
+  _render() {
+    const container = this._el.querySelector('#c2-messages');
+    const otherNameEl = this._el.querySelector('#c2-other-name');
+    const otherAvEl = this._el.querySelector('#c2-other-av');
+    // find the "other" user
+    const other = this._msgs.find(m => m.user.name !== this._userName);
+    if (other) {
+      otherNameEl.textContent = other.user.name;
+      otherAvEl.textContent = initials(other.user.name);
+    }
+    container.innerHTML = '';
+    this._msgs.forEach(msg => {
+      const isMe = msg.user.name === this._userName;
+      const div = document.createElement('div');
+      div.className = isMe ? 'msg-right' : 'msg-left';
+      const clr = getUserColor(msg.user.name);
+      div.innerHTML = `
+        ${!isMe ? `<div class="avatar ${clr.av}">${initials(msg.user.name)}</div>` : ''}
+        <div>
+          ${!isMe ? `<div class="msg-name">${msg.user.name}</div>` : ''}
+          <div class="msg-bubble ${isMe ? 'right' : 'left'} md-content">${md(msg.content)}</div>
+        </div>
+        ${isMe ? `<div class="avatar av-0">${initials(this._userName)}</div>` : ''}
+      `;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// ============================================================
+// ManyPeopleChatComponent
+// ============================================================
+class ManyPeopleChatComponent {
+  constructor() {
+    this._groupName = 'Group';
+    this._msgs = [];
+    this._el = null;
+    this._build();
+  }
+  _build() {
+    this._el = document.createElement('div');
+    this._el.className = 'chat-many-container';
+    this._el.innerHTML = `
+      <div class="chat-many-header">
+        <div class="avatar av-4" style="font-size:16px">👥</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px" id="cm-group-name">Group</div>
+          <div style="font-size:10px;color:var(--muted)" id="cm-member-count">0 members</div>
+        </div>
+      </div>
+      <div class="chat-many-messages" id="cm-messages"></div>
+    `;
+  }
+  get_comp() { return this._el; }
+  set_group_name(name) {
+    this._groupName = name;
+    this._el.querySelector('#cm-group-name').textContent = name;
+  }
+  set_messages(msgs) {
+    this._msgs = msgs;
+    // unique members
+    const members = [...new Set(msgs.map(m => m.user.name))];
+    this._el.querySelector('#cm-member-count').textContent = `${members.length} members`;
+    this._render();
+  }
+  _render() {
+    const container = this._el.querySelector('#cm-messages');
+    container.innerHTML = '';
+    let lastUser = null;
+    this._msgs.forEach(msg => {
+      const clr = getUserColor(msg.user.name);
+      const div = document.createElement('div');
+      div.className = 'msg-group';
+      const showHeader = lastUser !== msg.user.name;
+      lastUser = msg.user.name;
+      div.innerHTML = `
+        <div class="avatar ${clr.av}" style="visibility:${showHeader ? 'visible' : 'hidden'}">${initials(msg.user.name)}</div>
+        <div style="flex:1;min-width:0">
+          ${showHeader ? `<div class="msg-name ${clr.name}" style="margin-bottom:4px">${msg.user.name}</div>` : ''}
+          <div class="msg-group-bubble ${clr.bubble} md-content">${md(msg.content)}</div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// ============================================================
+// AIChatComponent (extends TwoPeopleChatComponent)
+// ============================================================
+class AIChatComponent extends TwoPeopleChatComponent {
+  constructor() {
+    super();
+    this._api = '';
+    this._model = 'glm-4.7';
+    this._userName = 'You';
+    // add input row
+    const inputRow = document.createElement('div');
+    inputRow.style.cssText = 'padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;';
+    inputRow.innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span class="ai-badge"><span class="dot-pulse"></span><span id="ai-model-label">glm-4.7</span></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <textarea id="ai-input" class="bubble-input" rows="1" placeholder="Ask anything…" style="min-height:36px" onkeydown="aiKeydown(event)"></textarea>
+          <button class="send-btn" onclick="aiSend()" id="ai-send-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+    this._el.appendChild(inputRow);
+    this._localMsgs = [];
+    this._aiUser = { name: 'GLM-4.7', type: 'Bot', icon: null };
+    this._meUser = { name: 'You', type: 'Person', icon: null };
+  }
+  set_api_and_model(api, model) {
+    this._api = api;
+    this._model = model;
+    this._aiUser = { name: model, type: 'Bot', icon: null };
+    const label = this._el.querySelector('#ai-model-label');
+    if (label) label.textContent = model;
+  }
+  addUserMessage(text) {
+    this._localMsgs.push({ user: this._meUser, content: text });
+    this.set_messages([...this._localMsgs]);
+  }
+  addAIMessage(text) {
+    this._localMsgs.push({ user: this._aiUser, content: text });
+    this.set_messages([...this._localMsgs]);
+  }
+  showTyping() {
+    const c = this._el.querySelector('#c2-messages');
+    const t = document.createElement('div');
+    t.className = 'msg-left'; t.id = 'ai-typing';
+    const clr = getUserColor(this._aiUser.name);
+    t.innerHTML = `
+      <div class="avatar ${clr.av}">${initials(this._aiUser.name)}</div>
+      <div class="msg-bubble left"><div class="typing"><span></span><span></span><span></span></div></div>
+    `;
+    c.appendChild(t);
+    c.scrollTop = c.scrollHeight;
+  }
+  hideTyping() {
+    const t = this._el.querySelector('#ai-typing');
+    if (t) t.remove();
+  }
+}
+
+// ============================================================
+// ChatBubbleComponent
+// ============================================================
+class ChatBubbleComponent {
+  constructor(mountEl, messagesEl, titleEl) {
+    this._mountEl = mountEl;
+    this._messagesEl = messagesEl;
+    this._titleEl = titleEl;
+    this._model = new MessageModel('bubble_msgs');
+    this._title = 'Chat';
+    this._render();
+  }
+  get_comp() { return this._mountEl; }
+  set_title(name) {
+    this._title = name;
+    if (this._titleEl) this._titleEl.textContent = name;
+  }
+  set_messages(msgs) {
+    msgs.forEach(m => this._model.create(m));
+    this._render();
+  }
+  _render() {
+    const msgs = this._model.read_all();
+    if (!this._messagesEl) return;
+    this._messagesEl.innerHTML = '';
+    msgs.forEach(msg => {
+      const isMe = msg.user && msg.user.name === 'You';
+      const div = document.createElement('div');
+      div.style.cssText = `display:flex;gap:8px;align-items:flex-end;${isMe ? 'flex-direction:row-reverse' : ''}`;
+      const clr = getUserColor(msg.user ? msg.user.name : 'System');
+      div.innerHTML = `
+        ${!isMe ? `<div class="avatar ${clr.av}" style="width:26px;height:26px;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center">${initials(msg.user ? msg.user.name : '?')}</div>` : ''}
+        <div class="msg-bubble ${isMe ? 'right' : 'left'} md-content" style="max-width:78%;font-size:12px">${md(msg.content)}</div>
+      `;
+      this._messagesEl.appendChild(div);
+    });
+    this._messagesEl.scrollTop = this._messagesEl.scrollHeight;
+  }
+  sendMessage(text) {
+    const meUser = { name: 'You', type: 'Person', icon: null };
+    this._model.create({ user: meUser, content: text });
+    this._render();
+  }
+}
+
+// ============================================================
+// GLOBAL INSTANCES
+// ============================================================
+
+// Two-person chat
+const twoPerson = new TwoPeopleChatComponent();
+twoPerson.set_user_name('You');
+twoPerson.set_messages([
+  { user: { name: 'Alex', type: 'Person' }, content: 'Hey! Did you see the new **design system** docs?' },
+  { user: { name: 'You', type: 'Person' }, content: 'Just skimmed it. The `token` naming is much cleaner now.' },
+  { user: { name: 'Alex', type: 'Person' }, content: 'Totally. They also added:\n- Dark mode tokens\n- Spacing scale\n- New typography ramp' },
+  { user: { name: 'You', type: 'Person' }, content: 'When are we migrating the dashboard?' },
+  { user: { name: 'Alex', type: 'Person' }, content: 'Sprint 8 — let\'s sync Thursday?' },
+]);
+document.getElementById('two-person-mount').appendChild(twoPerson.get_comp());
+
+// Many-people chat
+const manyPeople = new ManyPeopleChatComponent();
+manyPeople.set_group_name('Design & Dev 🚀');
+manyPeople.set_messages([
+  { user: { name: 'Zara', type: 'Person' }, content: 'Morning everyone! Designs are in Figma 🎨' },
+  { user: { name: 'Marcus', type: 'Person' }, content: 'Nice! Left some comments on the **nav** component.' },
+  { user: { name: 'Priya', type: 'Person' }, content: '```js\nconst theme = useTheme();\n```\nShould we abstract this into a hook?' },
+  { user: { name: 'Zara', type: 'Person' }, content: 'Good idea — let\'s call it `useDesignTokens`' },
+  { user: { name: 'Jin', type: 'Person' }, content: 'I can handle that. ETA end of day.' },
+  { user: { name: 'Marcus', type: 'Person' }, content: 'Perfect. I\'ll start on the *mobile* breakpoints meanwhile.' },
+]);
+document.getElementById('many-people-mount').appendChild(manyPeople.get_comp());
+
+// AI chat
+const aiChat = new AIChatComponent();
+aiChat.set_user_name('You');
+aiChat.set_api_and_model('https://open.bigmodel.cn/api/paas/v4/chat/completions', 'glm-4.7');
+aiChat.set_messages([
+  { user: { name: 'GLM-4.7', type: 'Bot' }, content: 'Hello! I\'m **GLM-4.7**. How can I help you today?' },
+  { user: { name: 'You', type: 'Person' }, content: 'Can you explain TypeScript generics briefly?' },
+  { user: { name: 'GLM-4.7', type: 'Bot' }, content: 'Sure! Generics let you write *reusable* functions that work over many types:\n\n```ts\nfunction identity<T>(arg: T): T {\n  return arg;\n}\n```\n\n`T` is a type variable — it captures whatever type you pass in.' },
+]);
+document.getElementById('ai-chat-mount').appendChild(aiChat.get_comp());
+
+// Bubble
+const bubbleComp = new ChatBubbleComponent(
+  document.getElementById('chat-bubble-panel'),
+  document.getElementById('bubble-messages'),
+  document.getElementById('bubble-title-el')
+);
+bubbleComp.set_title('Support Bot');
+bubbleComp.set_messages([
+  { user: { name: 'Bot', type: 'Bot' }, content: 'Hi! How can I help you today?' },
+]);
+
+// ============================================================
+// UI INTERACTIONS
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+let bubbleOpen = false;
+function toggleBubble() {
+  bubbleOpen = !bubbleOpen;
+  document.getElementById('chat-bubble-panel').classList.toggle('open', bubbleOpen);
+  document.getElementById('bubble-trigger').textContent = bubbleOpen ? '✕' : '💬';
+}
+
+function bubbleKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); bubbleSend(); }
+}
+function bubbleSend() {
+  const input = document.getElementById('bubble-input');
+  const text = input.value.trim();
+  if (!text) return;
+  bubbleComp.sendMessage(text);
+  input.value = '';
+  // echo reply after delay
+  setTimeout(() => {
+    bubbleComp._model.create({ user: { name: 'Bot', type: 'Bot' }, content: 'Thanks for your message! A human will follow up soon. 🙂' });
+    bubbleComp._render();
+  }, 800);
+}
+
+// AI send
+function aiKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); }
+}
+async function aiSend() {
+  const input = document.getElementById('ai-input');
+  const btn = document.getElementById('ai-send-btn');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; btn.disabled = true;
+  aiChat.addUserMessage(text);
+  aiChat.showTyping();
+
+  // Simulate AI response (replace with real API call using aiChat._api)
+  await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+  aiChat.hideTyping();
+
+  // Simulated responses
+  const responses = [
+    'Great question! Here\'s a concise answer with an example:\n\n```ts\nconst result = await fetch(url);\nconst data = await result.json();\n```',
+    'That\'s a nuanced topic. The key insight is:\n\n> **Separation of concerns** keeps your code maintainable and testable.',
+    'I can help with that! Let me break it down:\n\n1. **Step one** — define your types\n2. **Step two** — implement the logic\n3. **Step three** — write tests',
+    'Interesting! In *functional programming*, we\'d approach this differently using `map`, `filter`, and `reduce` instead of loops.',
+  ];
+  const reply = responses[Math.floor(Math.random() * responses.length)];
+  aiChat.addAIMessage(reply);
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

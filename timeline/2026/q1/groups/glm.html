@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --bg-elevated: #12121a;
+            --fg: #e8e8ed;
+            --muted: #6b6b7b;
+            --accent: #00e5a0;
+            --accent-dim: rgba(0, 229, 160, 0.15);
+            --card: #16161f;
+            --border: #2a2a3a;
+            --danger: #ff4d6a;
+            --warning: #ffb84d;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+        }
+
+        .font-mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .bg-noise {
+            background-image: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 160, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 50%, rgba(0, 229, 160, 0.05), transparent);
+        }
+
+        .grid-pattern {
+            background-image: 
+                linear-gradient(rgba(42, 42, 58, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 58, 0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-scale {
+            animation: scaleIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-slide {
+            animation: slideInLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+        }
+
+        .stagger-1 { animation-delay: 0.05s; }
+        .stagger-2 { animation-delay: 0.1s; }
+        .stagger-3 { animation-delay: 0.15s; }
+        .stagger-4 { animation-delay: 0.2s; }
+        .stagger-5 { animation-delay: 0.25s; }
+        .stagger-6 { animation-delay: 0.3s; }
+        .stagger-7 { animation-delay: 0.35s; }
+        .stagger-8 { animation-delay: 0.4s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-in, .animate-scale, .animate-slide {
+                animation: none;
+                opacity: 1;
+            }
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 0 1px var(--accent), 0 0 40px -10px var(--accent);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #00c896);
+            color: var(--bg);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px -8px rgba(0, 229, 160, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .component-card {
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .component-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .tab-active {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: var(--bg-elevated);
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .favorite-btn.active svg {
+            fill: var(--warning);
+            stroke: var(--warning);
+        }
+
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .search-glow:focus {
+            box-shadow: 0 0 0 2px var(--accent-dim), 0 0 24px -4px var(--accent);
+        }
+
+        .drag-over {
+            border-color: var(--accent) !important;
+            background: var(--accent-dim) !important;
+        }
+    </style>
+</head>
+<body class="bg-noise">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3 animate-slide">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[#00c896] flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[var(--bg)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                    </div>
+                    <span class="font-semibold text-lg tracking-tight">Component Library</span>
+                </div>
+
+                <!-- Search -->
+                <div class="hidden md:flex flex-1 max-w-md mx-8 animate-in stagger-1">
+                    <div class="relative w-full">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search components..." 
+                            class="w-full pl-10 pr-4 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-sm text-[var(--fg)] placeholder-[var(--muted)] focus:outline-none search-glow transition-all"
+                        >
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-3 animate-in stagger-2">
+                    <span class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[var(--card)] border border-[var(--border)] rounded-full text-xs font-mono text-[var(--muted)]">
+                        <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
+                        <span id="componentCount">24</span> components
+                    </span>
+                    <button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                        Add New
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Mobile Search -->
+        <div class="md:hidden mb-6 animate-in">
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input 
+                    type="text" 
+                    id="searchInputMobile"
+                    placeholder="Search components..." 
+                    class="w-full pl-10 pr-4 py-3 bg-[var(--card)] border border-[var(--border)] rounded-xl text-sm text-[var(--fg)] placeholder-[var(--muted)] focus:outline-none search-glow transition-all"
+                >
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <nav class="flex flex-wrap gap-2 mb-8 animate-in stagger-1" id="tabNavigation">
+            <button class="tab-btn tab-active px-4 py-2 rounded-lg text-sm font-medium border border-transparent transition-all" data-tab="all">
+                All Components
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium border border-transparent text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--card)] transition-all" data-tab="favorites">
+                Favorites
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium border border-transparent text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--card)] transition-all" data-tab="recent">
+                Recently Used
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium border border-transparent text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--card)] transition-all" data-tab="trending">
+                Trending
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium border border-transparent text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--card)] transition-all" data-tab="archived">
+                Archived
+            </button>
+        </nav>
+
+        <!-- Favorites Section -->
+        <section class="mb-10 component-section" data-section="favorites" id="favoritesSection">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[var(--warning)]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Favorites</h2>
+                        <p class="text-xs text-[var(--muted)]">Your go-to components</p>
+                    </div>
+                </div>
+                <span class="text-xs font-mono text-[var(--muted)] bg-[var(--card)] px-2 py-1 rounded" id="favoritesCount">0 items</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="favoritesGrid">
+                <!-- Populated by JS -->
+            </div>
+            <div id="favoritesEmpty" class="hidden py-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center">
+                    <svg class="w-8 h-8 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                </div>
+                <p class="text-[var(--muted)]">No favorites yet</p>
+                <p class="text-xs text-[var(--muted)] mt-1">Click the star icon on any component to add it here</p>
+            </div>
+        </section>
+
+        <!-- Recently Used Section -->
+        <section class="mb-10 component-section" data-section="recent" id="recentSection">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Recently Used</h2>
+                        <p class="text-xs text-[var(--muted)]">Your recent activity</p>
+                    </div>
+                </div>
+                <span class="text-xs font-mono text-[var(--muted)] bg-[var(--card)] px-2 py-1 rounded" id="recentCount">0 items</span>
+            </div>
+            <div class="overflow-x-auto scrollbar-thin -mx-4 px-4">
+                <div class="flex gap-4 pb-2" id="recentList" style="min-width: max-content;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Section -->
+        <section class="mb-10 component-section" data-section="trending" id="trendingSection">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[#8b5cf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Trending</h2>
+                        <p class="text-xs text-[var(--muted)]">Popular this week</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="trendingGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- All Components Section -->
+        <section class="mb-10 component-section" data-section="all" id="allSection">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[var(--fg)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">All Components</h2>
+                        <p class="text-xs text-[var(--muted)]">Browse the full library</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category Filter -->
+            <div class="flex flex-wrap gap-2 mb-6" id="categoryFilters">
+                <button class="category-btn active px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--accent)] text-[var(--bg)] transition-all" data-category="all">All</button>
+                <button class="category-btn px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--fg)] transition-all" data-category="ui">UI Elements</button>
+                <button class="category-btn px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--fg)] transition-all" data-category="forms">Forms</button>
+                <button class="category-btn px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--fg)] transition-all" data-category="navigation">Navigation</button>
+                <button class="category-btn px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--fg)] transition-all" data-category="data">Data Display</button>
+                <button class="category-btn px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--fg)] transition-all" data-category="feedback">Feedback</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="allGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- Archived Section -->
+        <section class="mb-10 component-section hidden" data-section="archived" id="archivedSection">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--muted)]/10 border border-[var(--muted)]/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Archived</h2>
+                        <p class="text-xs text-[var(--muted)]">Components you've archived</p>
+                    </div>
+                </div>
+            </div>
+            <div class="py-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center">
+                    <svg class="w-8 h-8 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                    </svg>
+                </div>
+                <p class="text-[var(--muted)]">No archived components</p>
+                <p class="text-xs text-[var(--muted)] mt-1">Archive components you no longer need</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Component Detail Modal -->
+    <div id="componentModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[var(--bg)]/80 backdrop-blur-sm">
+        <div class="relative w-full max-w-lg bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button id="closeModal" class="absolute top-4 right-4 p-2 rounded-lg hover:bg-[var(--bg)] transition-colors" aria-label="Close modal">
+                <svg class="w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="p-6">
+                <div id="modalContent">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Component Data
+        const components = [
+            { id: 1, name: 'Button Group', category: 'ui', description: 'Horizontally arranged buttons with shared styling', usageCount: 2340, lastUsed: new Date(Date.now() - 1000 * 60 * 5), isFavorite: true, isNew: false },
+            { id: 2, name: 'Input Field', category: 'forms', description: 'Text input with label, placeholder and validation states', usageCount: 5670, lastUsed: new Date(Date.now() - 1000 * 60 * 15), isFavorite: true, isNew: false },
+            { id: 3, name: 'Card Component', category: 'ui', description: 'Container with header, body and footer sections', usageCount: 3890, lastUsed: new Date(Date.now() - 1000 * 60 * 30), isFavorite: false, isNew: false },
+            { id: 4, name: 'Dropdown Menu', category: 'navigation', description: 'Expandable menu with keyboard navigation support', usageCount: 1890, lastUsed: new Date(Date.now() - 1000 * 60 * 45), isFavorite: true, isNew: false },
+            { id: 5, name: 'Data Table', category: 'data', description: 'Sortable, filterable table with pagination', usageCount: 4120, lastUsed: new Date(Date.now() - 1000 * 60 * 60), isFavorite: false, isNew: true },
+            { id: 6, name: 'Toast Notification', category: 'feedback', description: 'Brief auto-dismissing messages', usageCount: 2780, lastUsed: new Date(Date.now() - 1000 * 60 * 90), isFavorite: true, isNew: false },
+            { id: 7, name: 'Modal Dialog', category: 'ui', description: 'Overlay dialog with backdrop and focus trap', usageCount: 3450, lastUsed: new Date(Date.now() - 1000 * 60 * 120), isFavorite: false, isNew: false },
+            { id: 8, name: 'Checkbox Group', category: 'forms', description: 'Multiple selection with indeterminate state', usageCount: 1560, lastUsed: new Date(Date.now() - 1000 * 60 * 180), isFavorite: false, isNew: true },
+            { id: 9, name: 'Tabs', category: 'navigation', description: 'Tabbed interface with animated transitions', usageCount: 2890, lastUsed: new Date(Date.now() - 1000 * 60 * 200), isFavorite: true, isNew: false },
+            { id: 10, name: 'Progress Bar', category: 'feedback', description: 'Linear progress indicator with labels', usageCount: 1340, lastUsed: new Date(Date.now() - 1000 * 60 * 240), isFavorite: false, isNew: false },
+            { id: 11, name: 'Search Input', category: 'forms', description: 'Search field with autocomplete suggestions', usageCount: 2100, lastUsed: new Date(Date.now() - 1000 * 60 * 300), isFavorite: false, isNew: false },
+            { id: 12, name: 'Breadcrumb', category: 'navigation', description: 'Hierarchical navigation path indicator', usageCount: 890, lastUsed: new Date(Date.now() - 1000 * 60 * 360), isFavorite: false, isNew: false },
+            { id: 13, name: 'Badge', category: 'ui', description: 'Small label for status or count display', usageCount: 3200, lastUsed: new Date(Date.now() - 1000 * 60 * 420), isFavorite: false, isNew: false },
+            { id: 14, name: 'Select Dropdown', category: 'forms', description: 'Custom styled select with search option', usageCount: 2450, lastUsed: new Date(Date.now() - 1000 * 60 * 480), isFavorite: true, isNew: false },
+            { id: 15, name: 'Alert Banner', category: 'feedback', description: 'Full-width contextual alert messages', usageCount: 1670, lastUsed: new Date(Date.now() - 1000 * 60 * 540), isFavorite: false, isNew: true },
+            { id: 16, name: 'Sidebar Navigation', category: 'navigation', description: 'Collapsible vertical navigation panel', usageCount: 980, lastUsed: new Date(Date.now() - 1000 * 60 * 600), isFavorite: false, isNew: false },
+            { id: 17, name: 'Skeleton Loader', category: 'feedback', description: 'Placeholder animation during content load', usageCount: 1890, lastUsed: new Date(Date.now() - 1000 * 60 * 660), isFavorite: false, isNew: false },
+            { id: 18, name: 'Avatar Group', category: 'ui', description: 'Stacked user avatars with overflow count', usageCount: 1120, lastUsed: new Date(Date.now() - 1000 * 60 * 720), isFavorite: false, isNew: false },
+            { id: 19, name: 'Date Picker', category: 'forms', description: 'Calendar-based date selection component', usageCount: 2340, lastUsed: new Date(Date.now() - 1000 * 60 * 780), isFavorite: false, isNew: false },
+            { id: 20, name: 'Stats Card', category: 'data', description: 'Metric display with trend indicator', usageCount: 1560, lastUsed: new Date(Date.now() - 1000 * 60 * 840), isFavorite: true, isNew: false },
+            { id: 21, name: 'Accordion', category: 'navigation', description: 'Collapsible content panels', usageCount: 1890, lastUsed: new Date(Date.now() - 1000 * 60 * 900), isFavorite: false, isNew: false },
+            { id: 22, name: 'Toggle Switch', category: 'forms', description: 'Binary on/off switch control', usageCount: 2780, lastUsed: new Date(Date.now() - 1000 * 60 * 960), isFavorite: false, isNew: false },
+            { id: 23, name: 'Tooltip', category: 'ui', description: 'Contextual information on hover', usageCount: 2100, lastUsed: new Date(Date.now() - 1000 * 60 * 1020), isFavorite: false, isNew: false },
+            { id: 24, name: 'Chart Component', category: 'data', description: 'Interactive data visualization charts', usageCount: 3450, lastUsed: new Date(Date.now() - 1000 * 60 * 1080), isFavorite: true, isNew: true },
+        ];
+
+        // State
+        let currentTab = 'all';
+        let currentCategory = 'all';
+        let searchQuery = '';
+
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const searchInputMobile = document.getElementById('searchInputMobile');
+        const tabNavigation = document.getElementById('tabNavigation');
+        const categoryFilters = document.getElementById('categoryFilters');
+        const modal = document.getElementById('componentModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const modalContent = document.getElementById('modalContent');
+
+        // Category colors
+        const categoryColors = {
+            ui: { bg: 'rgba(0, 229, 160, 0.1)', border: 'rgba(0, 229, 160, 0.3)', text: '#00e5a0' },
+            forms: { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.3)', text: '#3b82f6' },
+            navigation: { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.3)', text: '#8b5cf6' },
+            data: { bg: 'rgba(236, 72, 153, 0.1)', border: 'rgba(236, 72, 153, 0.3)', text: '#ec4899' },
+            feedback: { bg: 'rgba(251, 146, 60, 0.1)', border: 'rgba(251, 146, 60, 0.3)', text: '#fb923c' },
+        };
+
+        // Utility Functions
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toString();
+        }
+
+        // Render Functions
+        function createComponentCard(component, layout = 'default') {
+            const colors = categoryColors[component.category];
+            const isFavorite = component.isFavorite;
+            
+            if (layout === 'horizontal') {
+                return `
+                    <div class="component-card flex-shrink-0 w-64 p-4 bg-[var(--card)] border border-[var(--border)] rounded-xl cursor-pointer animate-scale" data-component-id="${component.id}">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: ${colors.bg}; border: 1px solid ${colors.border}; color: ${colors.text}">${component.category}</span>
+                                ${component.isNew ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-[var(--accent)] text-[var(--bg)]">New</span>' : ''}
+                            </div>
+                            <button class="favorite-btn p-1 rounded hover:bg-[var(--bg)] transition-colors ${isFavorite ? 'active' : ''}" data-id="${component.id}" aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                <svg class="w-4 h-4 ${isFavorite ? 'text-[var(--warning)]' : 'text-[var(--muted)]'}" fill="${isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <h3 class="font-semibold text-sm mb-1">${component.name}</h3>
+                        <p class="text-xs text-[var(--muted)] line-clamp-2">${component.description}</p>
+                        <div class="flex items-center gap-3 mt-3 text-xs text-[var(--muted)]">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                ${formatTimeAgo(component.lastUsed)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (layout === 'trending') {
+                return `
+                    <div class="component-card p-5 bg-[var(--card)] border border-[var(--border)] rounded-xl cursor-pointer animate-scale" data-component-id="${component.id}">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: ${colors.bg}; border: 1px solid ${colors.border}">
+                                    <span class="text-lg font-bold" style="color: ${colors.text}">#${component.trendingRank || 1}</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold">${component.name}</h3>
+                                    <span class="text-xs text-[var(--muted)]">${component.category}</span>
+                                </div>
+                            </div>
+                            <button class="favorite-btn p-2 rounded-lg hover:bg-[var(--bg)] transition-colors ${isFavorite ? 'active' : ''}" data-id="${component.id}" aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                <svg class="w-5 h-5 ${isFavorite ? 'text-[var(--warning)]' : 'text-[var(--muted)]'}" fill="${isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-sm text-[var(--muted)] mb-4">${component.description}</p>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-1.5 text-sm">
+                                <svg class="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                </svg>
+                                <span class="font-mono text-[var(--accent)]">${formatNumber(component.usageCount)}</span>
+                                <span class="text-[var(--muted)]">uses</span>
+                            </div>
+                            <div class="flex-1 h-1.5 bg-[var(--bg)] rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-[var(--accent)] to-[#00c896] rounded-full" style="width: ${Math.min(100, (component.usageCount / 6000) * 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Default card layout
+            return `
+                <div class="component-card p-4 bg-[var(--card)] border border-[var(--border)] rounded-xl cursor-pointer animate-scale" data-component-id="${component.id}">
+                    <div class="flex items-start justify-between mb-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: ${colors.bg}; border: 1px solid ${colors.border}; color: ${colors.text}">${component.category}</span>
+                        <div class="flex items-center gap-1">
+                            ${component.isNew ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-[var(--accent)] text-[var(--bg)] badge-pulse">New</span>' : ''}
+                            <button class="favorite-btn p-1.5 rounded-lg hover:bg-[var(--bg)] transition-colors ${isFavorite ? 'active' : ''}" data-id="${component.id}" aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                <svg class="w-4 h-4 ${isFavorite ? 'text-[var(--warning)]' : 'text-[var(--muted)]'}" fill="${isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold mb-1">${component.name}</h3>
+                    <p class="text-xs text-[var(--muted)] line-clamp-2 mb-3">${component.description}</p>
+                    <div class="flex items-center justify-between text-xs text-[var(--muted)]">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            ${formatNumber(component.usageCount)}
+                        </span>
+                        <span>${formatTimeAgo(component.lastUsed)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFavorites() {
+            const favorites = components.filter(c => c.isFavorite);
+            const grid = document.getElementById('favoritesGrid');
+            const empty = document.getElementById('favoritesEmpty');
+            const count = document.getElementById('favoritesCount');
+
+            count.textContent = `${favorites.length} items`;
+
+            if (favorites.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                empty.classList.add('hidden');
+                grid.innerHTML = favorites.map((c, i) => createComponentCard(c)).join('');
+            }
+        }
+
+        function renderRecent() {
+            const recent = [...components].sort((a, b) => b.lastUsed - a.lastUsed).slice(0, 8);
+            const list = document.getElementById('recentList');
+            const count = document.getElementById('recentCount');
+
+            count.textContent = `${recent.length} items`;
+            list.innerHTML = recent.map((c, i) => createComponentCard(c, 'horizontal')).join('');
+        }
+
+        function renderTrending() {
+            const trending = [...components].sort((a, b) => b.usageCount - a.usageCount).slice(0, 4);
+            const grid = document.getElementById('trendingGrid');
+            
+            grid.innerHTML = trending.map((c, i) => {
+                c.trendingRank = i + 1;
+                return createComponentCard(c, 'trending');
+            }).join('');
+        }
+
+        function renderAll() {
+            let filtered = [...components];
+
+            // Apply category filter
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(c => c.category === currentCategory);
+            }
+
+            // Apply search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(c => 
+                    c.name.toLowerCase().includes(query) || 
+                    c.description.toLowerCase().includes(query) ||
+                    c.category.toLowerCase().includes(query)
+                );
+            }
+
+            const grid = document.getElementById('allGrid');
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center">
+                            <svg class="w-8 h-8 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-[var(--muted)]">No components found</p>
+                        <p class="text-xs text-[var(--muted)] mt-1">Try adjusting your search or filter</p>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = filtered.map((c, i) => createComponentCard(c)).join('');
+            }
+
+            document.getElementById('componentCount').textContent = filtered.length;
+        }
+
+        function renderAllSections() {
+            renderFavorites();
+            renderRecent();
+            renderTrending();
+            renderAll();
+        }
+
+        function toggleFavorite(id) {
+            const component = components.find(c => c.id === id);
+            if (component) {
+                component.isFavorite = !component.isFavorite;
+                renderAllSections();
+            }
+        }
+
+        function showModal(component) {
+            const colors = categoryColors[component.category];
+            modalContent.innerHTML = `
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style="background: ${colors.bg}; border: 1px solid ${colors.border}">
+                        <svg class="w-7 h-7" style="color: ${colors.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 id="modalTitle" class="text-xl font-bold">${component.name}</h3>
+                            ${component.isNew ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-[var(--accent)] text-[var(--bg)]">New</span>' : ''}
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-xs font-medium inline-block" style="background: ${colors.bg}; border: 1px solid ${colors.border}; color: ${colors.text}">${component.category}</span>
+                    </div>
+                </div>
+                
+                <p class="text-[var(--muted)] mb-6">${component.description}</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-4 bg-[var(--bg)] rounded-xl border border-[var(--border)]">
+                        <p class="text-xs text-[var(--muted)] mb-1">Total Uses</p>
+                        <p class="text-2xl font-bold font-mono text-[var(--accent)]">${formatNumber(component.usageCount)}</p>
+                    </div>
+                    <div class="p-4 bg-[var(--bg)] rounded-xl border border-[var(--border)]">
+                        <p class="text-xs text-[var(--muted)] mb-1">Last Used</p>
+                        <p class="text-lg font-semibold">${formatTimeAgo(component.lastUsed)}</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button class="flex-1 btn-primary px-4 py-3 rounded-xl text-sm font-semibold" onclick="alert('Component added to project!')">
+                        Add to Project
+                    </button>
+                    <button class="favorite-btn-modal px-4 py-3 rounded-xl text-sm font-medium bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors ${component.isFavorite ? 'text-[var(--warning)]' : 'text-[var(--muted)]'}" onclick="toggleFavorite(${component.id}); showModal(components.find(c => c.id === ${component.id}))">
+                        <svg class="w-5 h-5 mx-auto" fill="${component.isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Event Listeners
+        tabNavigation.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tab-btn');
+            if (!btn) return;
+
+            const tab = btn.dataset.tab;
+            currentTab = tab;
+
+            // Update tab styles
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('tab-active');
+                b.classList.add('text-[var(--muted)]');
+            });
+            btn.classList.add('tab-active');
+            btn.classList.remove('text-[var(--muted)]');
+
+            // Show/hide sections based on tab
+            const sections = document.querySelectorAll('.component-section');
+            sections.forEach(section => {
+                if (tab === 'all') {
+                    section.classList.remove('hidden');
+                } else if (tab === 'favorites') {
+                    section.classList.toggle('hidden', section.dataset.section !== 'favorites');
+                } else if (tab === 'recent') {
+                    section.classList.toggle('hidden', section.dataset.section !== 'recent');
+                } else if (tab === 'trending') {
+                    section.classList.toggle('hidden', section.dataset.section !== 'trending');
+                } else if (tab === 'archived') {
+                    section.classList.toggle('hidden', section.dataset.section !== 'archived');
+                }
+            });
+        });
+
+        categoryFilters.addEventListener('click', (e) => {
+            const btn = e.target.closest('.category-btn');
+            if (!btn) return;
+
+            currentCategory = btn.dataset.category;
+
+            document.querySelectorAll('.category-btn').forEach(b => {
+                b.classList.remove('active', 'bg-[var(--accent)]', 'text-[var(--bg)]');
+                b.classList.add('bg-[var(--card)]', 'text-[var(--muted)]');
+            });
+            btn.classList.add('active', 'bg-[var(--accent)]', 'text-[var(--bg)]');
+            btn.classList.remove('bg-[var(--card)]', 'text-[var(--muted)]');
+
+            renderAll();
+        });
+
+        // Use event delegation for favorite buttons and component cards
+        document.addEventListener('click', (e) => {
+            const favoriteBtn = e.target.closest('.favorite-btn');
+            if (favoriteBtn) {
+                e.stopPropagation();
+                const id = parseInt(favoriteBtn.dataset.id);
+                toggleFavorite(id);
+                return;
+            }
+
+            const card = e.target.closest('.component-card');
+            if (card) {
+                const id = parseInt(card.dataset.componentId);
+                const component = components.find(c => c.id === id);
+                if (component) {
+                    showModal(component);
+                }
+            }
+        });
+
+        // Search functionality
+        function handleSearch(query) {
+            searchQuery = query;
+            renderAll();
+        }
+
+        searchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+        searchInputMobile.addEventListener('input', (e) => {
+            searchInput.value = e.target.value;
+            handleSearch(e.target.value);
+        });
+
+        // Modal controls
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideModal();
+        });
+
+        // Initial render
+        renderAllSections();
+
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all animated elements
+        document.querySelectorAll('.animate-in, .animate-scale').forEach(el => {
+            el.style.animationPlayState = 'paused';
+            observer.observe(el);
+        });
+
+        // Re-observe after render
+        function reobserveElements() {
+            document.querySelectorAll('.animate-in, .animate-scale').forEach(el => {
+                el.style.animationPlayState = 'running';
+                observer.observe(el);
+            });
+        }
+    </script>
+</body>
+</html>

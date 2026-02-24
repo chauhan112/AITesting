@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Component Library</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typescript/5.3.3/typescript.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0d0d0f;
+            --surface: #161619;
+            --surface2: #1e1e23;
+            --border: #2a2a32;
+            --accent: #e8ff5a;
+            --accent2: #5affd4;
+            --muted: #666680;
+            --text: #e8e8f0;
+            --text-dim: #9090a8;
+            --sidebar-w: 240px;
+            --header-h: 52px;
+            --radius: 8px;
+            --font-ui: 'Syne', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        /* ── Layout ── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: var(--header-h);
+            padding: 0 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: var(--radius);
+            transition: background .15s;
+        }
+
+        .hamburger:hover {
+            background: var(--surface2);
+        }
+
+        .hamburger span {
+            display: block;
+            width: 18px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+        }
+
+        .header-title {
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            color: var(--accent);
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        .header-title:hover {
+            opacity: .8;
+        }
+
+        .main-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            transition: transform .2s;
+        }
+
+        .sidebar-nav {
+            padding: 12px 8px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            transition: all .15s;
+            letter-spacing: 0.02em;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--surface2);
+            color: var(--accent);
+        }
+
+        .nav-item .icon {
+            width: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .body-container {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg);
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 20px;
+            font-size: 12px;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all .15s;
+            color: var(--text-dim);
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+
+        .breadcrumb-item.last {
+            color: var(--text);
+            cursor: default;
+        }
+
+        .breadcrumb-item.last:hover {
+            background: none;
+        }
+
+        .breadcrumb-sep {
+            color: var(--border);
+        }
+
+        /* ── Tree / Explorer ── */
+        .tree {
+            padding: 12px;
+        }
+
+        .tree-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            text-transform: uppercase;
+            padding: 4px 8px 8px;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .15s;
+            color: var(--text-dim);
+            user-select: none;
+        }
+
+        .tree-item:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .tree-item .ti-icon {
+            font-size: 14px;
+        }
+
+        .tree-item.folder {
+            color: var(--accent2);
+        }
+
+        .tree-item.folder:hover {
+            color: var(--accent2);
+            background: color-mix(in srgb, var(--accent2) 10%, transparent);
+        }
+
+        .tree-item.file {}
+
+        /* ── Search ── */
+        .search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0 12px;
+            transition: border-color .15s;
+        }
+
+        .search-wrap:focus-within {
+            border-color: var(--accent);
+        }
+
+        .search-wrap input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 10px 0;
+        }
+
+        .search-wrap input::placeholder {
+            color: var(--muted);
+        }
+
+        .search-clear {
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1;
+            transition: color .15s;
+            user-select: none;
+        }
+
+        .search-clear:hover {
+            color: var(--text);
+        }
+
+        /* ── Lister ── */
+        .lister {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .lister-search {}
+
+        .lister-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lister-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .lister-item:hover {
+            border-color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+            transform: translateX(2px);
+        }
+
+        .lister-item-label {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .lister-item-value {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--muted);
+        }
+
+        /* ── Group Component ── */
+        .group-comp {
+            padding: 16px;
+        }
+
+        .group-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .group-card {
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .group-card:hover {
+            border-color: var(--accent2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(90, 255, 212, .08);
+        }
+
+        .group-card-label {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .group-card-value {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--muted);
+        }
+
+        /* ── Filter Page ── */
+        .filter-page {
+            padding: 20px;
+            max-width: 600px;
+        }
+
+        .filter-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .filter-sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-tag {
+            padding: 6px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .filter-tag:hover,
+        .filter-tag.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+
+        /* ── Create Form ── */
+        .create-form {
+            padding: 20px;
+            max-width: 480px;
+        }
+
+        .form-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-btn {
+            padding: 10px 24px;
+            background: var(--accent);
+            color: #0d0d0f;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: opacity .15s, transform .1s;
+            text-transform: uppercase;
+        }
+
+        .form-btn:hover {
+            opacity: .88;
+            transform: translateY(-1px);
+        }
+
+        /* ── Section header ── */
+        .page-header {
+            padding: 20px 20px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header-title {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .page-header-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            background: color-mix(in srgb, var(--accent2) 15%, transparent);
+            color: var(--accent2);
+            border-radius: 100px;
+        }
+
+        /* ── Homepage ── */
+        .homepage {
+            padding-bottom: 32px;
+        }
+
+        /* ── Empty state ── */
+        .empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 48px 20px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: var(--header-h);
+                left: 0;
+                bottom: 0;
+                z-index: 200;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 4px 0 20px rgba(0, 0, 0, .6);
+            }
+        }
+
+        /* ── Transitions ── */
+        .page-enter {
+            animation: pageEnter .18s ease;
+        }
+
+        @keyframes pageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        //  INTERFACES (runtime-less — just for documentation)
+        // ═══════════════════════════════════════════════════════════
+
+        // ═══════════════════════════════════════════════════════════
+        //  BASE: BaseElement
+        //  Provides get_element() via internal _el
+        // ═══════════════════════════════════════════════════════════
+        class BaseElement {
+            constructor(tag = 'div') {
+                this._el = document.createElement(tag);
+            }
+            get_element() { return this._el; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  BASE: BaseComponent extends BaseElement
+        //  Adds set_attrs / set_events
+        // ═══════════════════════════════════════════════════════════
+        class BaseComponent extends BaseElement {
+            set_attrs(attrs) {
+                for (const [k, v] of Object.entries(attrs)) {
+                    if (k === 'class') this._el.className = v;
+                    else if (k === 'innerHTML') this._el.innerHTML = v;
+                    else if (k === 'textContent') this._el.textContent = v;
+                    else this._el.setAttribute(k, v);
+                }
+                return this;
+            }
+            set_events(events) {
+                for (const [ev, fn] of Object.entries(events)) {
+                    this._el.addEventListener(ev, fn);
+                }
+                return this;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  BASE: BaseContainer
+        //  IContainer — display(comp) appends component's element
+        // ═══════════════════════════════════════════════════════════
+        class BaseContainer extends BaseComponent {
+            display(comp) {
+                this._el.appendChild(comp.get_element());
+            }
+            clear() {
+                this._el.innerHTML = '';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  SearchComp
+        // ═══════════════════════════════════════════════════════════
+        class SearchComp extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'search-wrap';
+                this._input = document.createElement('input');
+                this._input.type = 'text';
+                this._input.placeholder = 'Search…';
+                this._clear = document.createElement('span');
+                this._clear.className = 'search-clear';
+                this._clear.textContent = '×';
+                this._clear.style.display = 'none';
+                this._el.appendChild(this._input);
+                this._el.appendChild(this._clear);
+
+                this._input.addEventListener('input', () => {
+                    this._clear.style.display = this._input.value ? 'block' : 'none';
+                    this.on_search();
+                });
+                this._clear.addEventListener('click', () => this.clear());
+            }
+            on_search() { /* override */ }
+            get_value() { return this._input.value; }
+            clear() {
+                this._input.value = '';
+                this._clear.style.display = 'none';
+                this.on_search();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  BreadcrumbComp — IBreadcrumb
+        // ═══════════════════════════════════════════════════════════
+        class BreadcrumbComp extends BaseComponent {
+            constructor() {
+                super('nav');
+                this._el.className = 'breadcrumb';
+                this._items = [];
+            }
+            set_attrs(attrs) { return super.set_attrs(attrs); }
+            set_events(events) { return super.set_events(events); }
+            set_items(items) {
+                this._items = items;
+                this._render();
+            }
+            _render() {
+                this._el.innerHTML = '';
+                this._items.forEach((item, i) => {
+                    const span = document.createElement('span');
+                    span.className = 'breadcrumb-item' + (i === this._items.length - 1 ? ' last' : '');
+                    span.textContent = item.label;
+                    if (i < this._items.length - 1) {
+                        span.addEventListener('click', () => this.on_clicked(item));
+                    }
+                    this._el.appendChild(span);
+                    if (i < this._items.length - 1) {
+                        const sep = document.createElement('span');
+                        sep.className = 'breadcrumb-sep';
+                        sep.textContent = '/';
+                        this._el.appendChild(sep);
+                    }
+                });
+            }
+            on_clicked(item) { /* override */ }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  TreeComponent — ITreeComponent
+        // ═══════════════════════════════════════════════════════════
+        class TreeComponent extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'tree';
+            }
+            set_items(folders, files) {
+                this._el.innerHTML = '';
+                if (folders.length) {
+                    const lbl = document.createElement('div');
+                    lbl.className = 'tree-section-label';
+                    lbl.textContent = 'Folders';
+                    this._el.appendChild(lbl);
+                    folders.forEach(f => {
+                        const row = this._make_row(f, 'folder', '📁');
+                        row.addEventListener('click', () => this.on_folder_clicked(f));
+                        this._el.appendChild(row);
+                    });
+                }
+                if (files.length) {
+                    const lbl = document.createElement('div');
+                    lbl.className = 'tree-section-label';
+                    lbl.textContent = 'Files';
+                    this._el.appendChild(lbl);
+                    files.forEach(f => {
+                        const row = this._make_row(f, 'file', '◻');
+                        row.addEventListener('click', () => this.on_file_clicked(f));
+                        this._el.appendChild(row);
+                    });
+                }
+                if (!folders.length && !files.length) {
+                    this._el.innerHTML = '<div class="empty"><div class="empty-icon">∅</div><div>Empty directory</div></div>';
+                }
+            }
+            _make_row(item, cls, icon) {
+                const row = document.createElement('div');
+                row.className = `tree-item ${cls}`;
+                row.innerHTML = `<span class="ti-icon">${icon}</span><span>${item.label}</span>`;
+                return row;
+            }
+            on_folder_clicked(folder) { /* override */ }
+            on_file_clicked(file) { /* override */ }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  GroupComponent
+        // ═══════════════════════════════════════════════════════════
+        class GroupComponent extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'group-comp';
+                this._title_el = document.createElement('div');
+                this._title_el.className = 'group-title';
+                this._grid = document.createElement('div');
+                this._grid.className = 'group-grid';
+                this._el.appendChild(this._title_el);
+                this._el.appendChild(this._grid);
+                this._on_item_click = null;
+            }
+            set_title(title) { this._title_el.textContent = title; }
+            set_items(items) {
+                this._grid.innerHTML = '';
+                if (!items.length) {
+                    this._grid.innerHTML = '<div class="empty"><div class="empty-icon">∅</div><div>None yet</div></div>';
+                    return;
+                }
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'group-card';
+                    card.innerHTML = `<div class="group-card-label">${item.label}</div><div class="group-card-value">${item.value}</div>`;
+                    if (this._on_item_click) card.addEventListener('click', () => this._on_item_click(item));
+                    this._grid.appendChild(card);
+                });
+            }
+            on_item_click(fn) { this._on_item_click = fn; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  ListerComp
+        // ═══════════════════════════════════════════════════════════
+        class ListerComp extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'lister';
+                this._search = new SearchComp();
+                this._list_wrap = document.createElement('div');
+                this._list_wrap.className = 'lister-list';
+                this._all_items = [];
+                this._el.appendChild(this._search.get_element());
+                this._el.appendChild(this._list_wrap);
+
+                this._search.on_search = () => this._filter(this._search.get_value());
+            }
+            get_subcomponents() { return { search_comp: this._search }; }
+            set_items(items) {
+                this._all_items = items;
+                this._render(items);
+            }
+            _filter(query) {
+                const q = query.toLowerCase();
+                this._render(q ? this._all_items.filter(i => i.label.toLowerCase().includes(q) || i.value.toLowerCase().includes(q)) : this._all_items);
+            }
+            _render(items) {
+                this._list_wrap.innerHTML = '';
+                if (!items.length) {
+                    this._list_wrap.innerHTML = '<div class="empty"><div class="empty-icon">◻</div><div>No results</div></div>';
+                    return;
+                }
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'lister-item';
+                    row.innerHTML = `<span class="lister-item-label">${item.label}</span><span class="lister-item-value">${item.value}</span>`;
+                    row.addEventListener('click', () => this.on_item_clicked(item));
+                    this._list_wrap.appendChild(row);
+                });
+            }
+            on_item_clicked(item) { /* override */ }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  SimpleCreateForm
+        // ═══════════════════════════════════════════════════════════
+        class SimpleCreateForm extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'create-form';
+                this._el.innerHTML = `
+      <div class="form-title">New Component</div>
+      <div class="form-field">
+        <label class="form-label">Label</label>
+        <input class="form-input" type="text" placeholder="e.g. My Button" id="cf-label"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Value / Key</label>
+        <input class="form-input" type="text" placeholder="e.g. my-button" id="cf-value"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Description</label>
+        <textarea class="form-input form-textarea" placeholder="Optional notes…" id="cf-desc"></textarea>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Tags (comma-separated)</label>
+        <input class="form-input" type="text" placeholder="e.g. ui, button, input" id="cf-tags"/>
+      </div>
+      <button class="form-btn" id="cf-submit">Create →</button>
+    `;
+                this._el.querySelector('#cf-submit').addEventListener('click', () => {
+                    const data = this._collect();
+                    if (data) this.on_submit(data);
+                });
+            }
+            _collect() {
+                const label = this._el.querySelector('#cf-label').value.trim();
+                const value = this._el.querySelector('#cf-value').value.trim();
+                if (!label || !value) { alert('Label and Value are required.'); return null; }
+                return {
+                    label,
+                    value,
+                    description: this._el.querySelector('#cf-desc').value.trim(),
+                    tags: this._el.querySelector('#cf-tags').value.split(',').map(t => t.trim()).filter(Boolean)
+                };
+            }
+            on_submit(data) { /* override */ }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  FilterComp (advanced filter/create page)
+        // ═══════════════════════════════════════════════════════════
+        class FilterComp extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'filter-page page-enter';
+
+                this._header = document.createElement('div');
+                this._header.className = 'page-header';
+                this._header.innerHTML = '<span class="page-header-title">Filters</span><span class="page-header-badge">Advanced</span>';
+
+                this._active_tags = new Set();
+
+                this._tags_wrap = document.createElement('div');
+                this._tags_wrap.className = 'filter-tags';
+
+                this._form_container = new BaseContainer();
+                this._create_form = new SimpleCreateForm();
+                this._form_container.display(this._create_form);
+
+                this._el.appendChild(this._header);
+
+                const sub = document.createElement('div');
+                sub.className = 'filter-sub';
+                sub.textContent = 'Select tags to filter the view, or create a new component below.';
+                this._el.appendChild(sub);
+                this._el.appendChild(this._tags_wrap);
+
+                const divider = document.createElement('div');
+                divider.style.cssText = 'height:1px;background:var(--border);margin:20px 0;';
+                this._el.appendChild(divider);
+                this._el.appendChild(this._form_container.get_element());
+
+                this._set_default_tags();
+            }
+            _set_default_tags() {
+                const defaults = ['favourite', 'recent', 'ui', 'form', 'layout', 'data', 'navigation'];
+                defaults.forEach(t => {
+                    const tag = document.createElement('span');
+                    tag.className = 'filter-tag';
+                    tag.textContent = t;
+                    tag.dataset.tag = t;
+                    tag.addEventListener('click', () => {
+                        if (this._active_tags.has(t)) { this._active_tags.delete(t); tag.classList.remove('active'); }
+                        else { this._active_tags.add(t); tag.classList.add('active'); }
+                        this.on_filter_change([...this._active_tags]);
+                    });
+                    this._tags_wrap.appendChild(tag);
+                });
+            }
+            get_subcomponents() { return { create_form_container: this._form_container, create_form: this._create_form }; }
+            on_filter_change(active_tags) { /* override */ }
+            get_active_tags() { return [...this._active_tags]; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  InLineMemoryTreeModel — ITreeModel
+        // ═══════════════════════════════════════════════════════════
+        class InLineMemoryTreeModel {
+            constructor() {
+                // Data tree: keys are folder names, leaf values are strings (files)
+                this._data = {
+                    'src': {
+                        'components': {
+                            'Button.ts': null,
+                            'Input.ts': null,
+                            'Modal.ts': {
+                                'pages': {
+                                    'Home.ts': null,
+                                    'Explorer.ts': null,
+                                },
+                                'tests': {
+                                    'unit': {
+                                        'Button.test.ts': null,
+                                    },
+                                    'e2e': {
+                                        'src': {
+                                            'components': {
+                                                'Button.ts': null,
+                                                'Input.ts': null,
+                                                'Modal.ts': {
+                                                    'pages': {
+                                                        'Home.ts': null,
+                                                        'Explorer.ts': null,
+                                                    },
+                                                    'tests': {
+                                                        'unit': {
+                                                            'Button.test.ts': null,
+                                                        },
+                                                        'e2e': {
+                                                            'app.spec.ts': null,
+                                                        }
+                                                    },
+                                                },
+                                            },
+                                            'pages': {
+                                                'Home.ts': null,
+                                                'Explorer.ts': null,
+                                            },
+                                            'index.ts': null,
+                                        },
+                                    }
+                                },
+                            },
+                        },
+                        'pages': {
+                            'Home.ts': null,
+                            'Explorer.ts': null,
+                        },
+                        'index.ts': null,
+                    },
+                    'tests': {
+                        'unit': {
+                            'Button.test.ts': null,
+                        },
+                        'e2e': {
+                            'app.spec.ts': null,
+                        }
+                    },
+                    'README.md': null,
+                    'package.json': null,
+                };
+                this._path = []; // current path as array of folder names
+            }
+
+            _resolve(path) {
+                let node = this._data;
+                for (const seg of path) {
+                    if (node && typeof node === 'object' && seg in node) node = node[seg];
+                    else return null;
+                }
+                return node;
+            }
+
+            async list_dir() {
+                const node = this._resolve(this._path) || this._data;
+                if (typeof node !== 'object') return { folders: [], files: [] };
+                const folders = [], files = [];
+                for (const [k, v] of Object.entries(node)) {
+                    if (v === null) files.push({ label: k, value: k });
+                    else folders.push({ label: k, value: k });
+                }
+                return { folders, files };
+            }
+            async cd(folder) { this._path.push(folder.value); }
+            async goto_root() { this._path = []; }
+            async goback() { if (this._path.length) this._path.pop(); }
+            async get_location() { return [...this._path]; }
+            async goto_location(location) { this._path = [...location]; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  ExplorerComp — ITreeComponent + breadcrumb
+        //  Uses a model to navigate
+        // ═══════════════════════════════════════════════════════════
+        class ExplorerComp extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.style.cssText = 'display:flex;flex-direction:column;height:100%;';
+                this._breadcrumb = new BreadcrumbComp();
+                this._tree = new TreeComponent();
+                this._el.appendChild(this._breadcrumb.get_element());
+                this._el.appendChild(this._tree.get_element());
+
+                this._breadcrumb.on_clicked = async (item) => {
+                    if (this._model) {
+                        const loc = await this._model.get_location();
+                        const idx = loc.indexOf(item.value);
+                        if (idx >= 0) await this._model.goto_location(loc.slice(0, idx + 1));
+                        else await this._model.goto_root();
+                        await this._refresh();
+                    }
+                };
+
+                this._tree.on_folder_clicked = async (folder) => {
+                    if (this._model) {
+                        await this._model.cd(folder);
+                        await this._refresh();
+                        this.on_folder_clicked(folder);
+                    }
+                };
+                this._tree.on_file_clicked = (file) => this.on_file_clicked(file);
+            }
+            set_model(model) {
+                this._model = model;
+                this._refresh();
+            }
+            async _refresh() {
+                if (!this._model) return;
+                const { folders, files } = await this._model.list_dir();
+                const loc = await this._model.get_location();
+                const crumbs = [{ label: '~', value: '' }, ...loc.map(l => ({ label: l, value: l }))];
+                this._breadcrumb.set_items(crumbs);
+                this.set_items(folders, files);
+            }
+            set_items(folders, files) { this._tree.set_items(folders, files); }
+            on_folder_clicked(folder) { /* override */ }
+            on_file_clicked(file) { /* override */ }
+            get_element() { return this._el; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Homepage
+        // ═══════════════════════════════════════════════════════════
+        class Homepage extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.className = 'homepage page-enter';
+                this._header = document.createElement('div');
+                this._header.className = 'page-header';
+                this._header.innerHTML = '<span class="page-header-title">Home</span>';
+                this._el.appendChild(this._header);
+
+                this._favourite = new GroupComponent();
+                this._favourite.set_title('Favourites');
+                this._recent = new GroupComponent();
+                this._recent.set_title('Recently Used');
+
+                this._el.appendChild(this._favourite.get_element());
+                this._el.appendChild(this._recent.get_element());
+            }
+            get_subcomponents() { return { favourite: this._favourite, recent: this._recent }; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  HeaderFunction — header controller
+        // ═══════════════════════════════════════════════════════════
+        class HeaderFunction extends BaseElement {
+            constructor(on_hamburger) {
+                super('header');
+                this._el.className = 'header';
+
+                // Hamburger
+                const hb = document.createElement('div');
+                hb.className = 'hamburger';
+                hb.innerHTML = '<span></span><span></span><span></span>';
+                hb.addEventListener('click', () => on_hamburger && on_hamburger());
+                this._el.appendChild(hb);
+
+                this._title_el = document.createElement('span');
+                this._title_el.className = 'header-title';
+                this._title_el.textContent = 'Components';
+                this._el.appendChild(this._title_el);
+
+                this._title_el.addEventListener('click', () => this.on_title_click());
+            }
+            set_title(title) { this._title_el.textContent = title; }
+            on_title_click() { /* override */ }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  WebpageComp
+        // ═══════════════════════════════════════════════════════════
+        class WebpageComp extends BaseElement {
+            constructor() {
+                super('div');
+                this._el.id = 'app';
+                this._el.style.cssText = 'display:flex;flex-direction:column;height:100vh;';
+
+                this._sidebar_container = new BaseContainer();
+                this._sidebar_container.set_attrs({ class: 'sidebar-nav' });
+
+                const sidebar_wrap = document.createElement('div');
+                sidebar_wrap.className = 'sidebar';
+                sidebar_wrap.id = 'main-sidebar';
+                sidebar_wrap.appendChild(this._sidebar_container.get_element());
+
+                this._header = new HeaderFunction(() => sidebar_wrap.classList.toggle('open'));
+                this._body_container = new BaseContainer();
+                this._body_container.set_attrs({ class: 'body-container' });
+
+                const main = document.createElement('div');
+                main.className = 'main-area';
+                main.appendChild(sidebar_wrap);
+                main.appendChild(this._body_container.get_element());
+
+                this._el.appendChild(this._header.get_element());
+                this._el.appendChild(main);
+
+                this.comps = {
+                    sidebar: this._sidebar_container,
+                    body: this._body_container,
+                    header: this._header,
+                };
+            }
+            get_subcomponents() { return this.comps; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  SidebarNavItem — a single nav link for the sidebar
+        // ═══════════════════════════════════════════════════════════
+        class SidebarNavItem extends BaseComponent {
+            constructor(label, icon) {
+                super('div');
+                this._el.className = 'nav-item';
+                this._el.innerHTML = `<span class="icon">${icon}</span><span>${label}</span>`;
+                this._el.addEventListener('click', () => this.on_click());
+            }
+            on_click() { /* override */ }
+            set_active(active) {
+                if (active) this._el.classList.add('active');
+                else this._el.classList.remove('active');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  UIShowCase — wires everything together
+        // ═══════════════════════════════════════════════════════════
+        class UIShowCase {
+            constructor() {
+                this._page = new WebpageComp();
+                this._home = new Homepage();
+                this._explorer = new ExplorerComp();
+                this._lister = new ListerComp();
+                this._filter = new FilterComp();
+                this._explorer_model = new InLineMemoryTreeModel();
+                this._current_nav = null;
+
+                // Sample data
+                this._components = [
+                    { label: 'Button', value: 'button', tags: ['ui', 'form'] },
+                    { label: 'Input', value: 'input', tags: ['ui', 'form'] },
+                    { label: 'Modal', value: 'modal', tags: ['ui', 'layout'] },
+                    { label: 'Sidebar', value: 'sidebar', tags: ['layout', 'navigation'] },
+                    { label: 'Breadcrumb', value: 'breadcrumb', tags: ['navigation'] },
+                    { label: 'Tree', value: 'tree', tags: ['data', 'navigation'] },
+                    { label: 'Search', value: 'search', tags: ['ui', 'form'] },
+                    { label: 'Card', value: 'card', tags: ['ui'] },
+                    { label: 'Table', value: 'table', tags: ['data'] },
+                    { label: 'Chart', value: 'chart', tags: ['data'] },
+                ];
+
+                this._favourites = this._components.slice(0, 4);
+                this._recent = this._components.slice(3, 7);
+
+                this._setup_home();
+                this._setup_explorer();
+                this._setup_lister();
+                this._setup_filter();
+                this._setup_sidebar();
+                this._setup_page_title();
+
+                this._navigate('home');
+            }
+
+            _setup_home() {
+                const { favourite, recent } = this._home.get_subcomponents();
+                favourite.set_items(this._favourites);
+                recent.set_items(this._recent);
+                const click_handler = (item) => {
+                    alert(`Opened: ${item.label} (${item.value})`);
+                };
+                favourite.on_item_click(click_handler);
+                recent.on_item_click(click_handler);
+            }
+
+            _setup_explorer() {
+                this._explorer.set_model(this._explorer_model);
+                this._explorer.on_file_clicked = (file) => {
+                    alert(`File selected: ${file.label}`);
+                };
+            }
+
+            _setup_lister() {
+                this._lister.set_items(this._components);
+                this._lister.on_item_clicked = (item) => {
+                    alert(`Component opened: ${item.label}`);
+                };
+            }
+
+            _setup_filter() {
+                const { create_form } = this._filter.get_subcomponents();
+                create_form.on_submit = (data) => {
+                    this._components.push(data);
+                    this._lister.set_items(this._components);
+                    alert(`Component "${data.label}" created!`);
+                };
+                this._filter.on_filter_change = (tags) => {
+                    console.log('Active filters:', tags);
+                };
+            }
+
+            _nav_items = [];
+
+            _setup_sidebar() {
+                const { sidebar } = this._page.get_subcomponents();
+
+                const routes = [
+                    { id: 'home', label: 'Home', icon: '⌂' },
+                    { id: 'explorer', label: 'Explorer', icon: '⊞' },
+                    { id: 'lister', label: 'Lister', icon: '≡' },
+                    { id: 'filter', label: 'Filters', icon: '⚙' },
+                ];
+
+                routes.forEach(r => {
+                    const item = new SidebarNavItem(r.label, r.icon);
+                    item.on_click = () => this._navigate(r.id);
+                    item._id = r.id;
+                    this._nav_items.push(item);
+                    sidebar.display(item);
+                });
+            }
+
+            _setup_page_title() {
+                const { header } = this._page.get_subcomponents();
+                header.on_title_click = () => this._navigate('home');
+            }
+
+            _navigate(id) {
+                this._current_nav = id;
+                const { body, header } = this._page.get_subcomponents();
+                body.clear();
+
+                const titles = { home: 'Home', explorer: 'Explorer', lister: 'Lister', filter: 'Filters' };
+                header.set_title(titles[id] || 'Components');
+
+                this._nav_items.forEach(ni => ni.set_active(ni._id === id));
+
+                const pages = {
+                    home: this._home,
+                    explorer: this._explorer,
+                    lister: this._lister,
+                    filter: this._filter,
+                };
+
+                const target = pages[id];
+                if (target) {
+                    target.get_element().classList.remove('page-enter');
+                    void target.get_element().offsetWidth; // reflow
+                    target.get_element().classList.add('page-enter');
+                    body.display(target);
+                }
+            }
+
+            get_subcomponents() {
+                return {
+                    page: this._page,
+                    home: this._home,
+                    explorer: this._explorer,
+                    lister: this._lister,
+                    filter: this._filter,
+                    explorer_model: this._explorer_model,
+                };
+            }
+
+            mount(root) {
+                root.innerHTML = '';
+                root.appendChild(this._page.get_element());
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Bootstrap
+        // ═══════════════════════════════════════════════════════════
+        const ui = new UIShowCase();
+        ui.mount(document.getElementById('app'));
+    </script>
+</body>
+
+</html>

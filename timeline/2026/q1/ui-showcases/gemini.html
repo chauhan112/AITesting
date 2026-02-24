@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DomOps Component Manager</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Checkerboard pattern for previews */
+        .checkerboard {
+            background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        
+        /* Mobile safe area adjustments */
+        body { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-200">
+
+    <div id="app" class="w-full h-full flex flex-col md:flex-row relative"></div>
+
+    <script>
+        /**
+         * ==========================================
+         * 1. CORE LOGIC & REGISTRY
+         * ==========================================
+         */
+        class ComponentRegistry {
+            constructor() {
+                if (ComponentRegistry.instance) return ComponentRegistry.instance;
+                this.components = [];
+                ComponentRegistry.instance = this;
+            }
+            static getInstance() { return new ComponentRegistry(); }
+            register(component) { this.components.push(component); }
+            getAll() { return this.components; }
+            search(query) {
+                const q = query.toLowerCase();
+                return this.components.filter(c => 
+                    c.title.toLowerCase().includes(q) || 
+                    c.tags.some(t => t.toLowerCase().includes(q))
+                );
+            }
+        }
+
+        /**
+         * ==========================================
+         * 2. TREE / EXPLORER LOGIC
+         * ==========================================
+         */
+        class FileSystemExplorer {
+            constructor(registry) {
+                this.registry = registry;
+                this.currentPath = [];
+            }
+            list_dir() {
+                const fullPathStr = this.currentPath.join('/');
+                const all = this.registry.getAll();
+                const folders = new Set();
+                const files = [];
+
+                all.forEach(comp => {
+                    const compLoc = comp.location.replace(/^\/+|\/+$/g, '');
+                    const currentLoc = fullPathStr.replace(/^\/+|\/+$/g, '');
+
+                    if (compLoc === currentLoc || (currentLoc === "" && compLoc === "")) {
+                        files.push(comp);
+                    } else if (compLoc.startsWith(currentLoc)) {
+                        const relative = currentLoc === "" ? compLoc : compLoc.substring(currentLoc.length + 1);
+                        const parts = relative.split('/');
+                        if (parts.length > 0 && parts[0] !== "") folders.add(parts[0]);
+                    }
+                });
+                return { folders: Array.from(folders).sort(), files: files.sort((a,b) => a.title.localeCompare(b.title)) };
+            }
+            cd(folderName) { this.currentPath.push(folderName); }
+            goback() { this.currentPath.pop(); }
+            gotoRoot() { this.currentPath = []; }
+            getLocation() { return this.currentPath.length > 0 ? this.currentPath.join('/') : 'root'; }
+        }
+
+        /**
+         * ==========================================
+         * 3. DATA MODELS
+         * ==========================================
+         */
+        class FilterModel {
+            constructor() {
+                this.filters = [
+                    { name: "Tech", value: "React" },
+                    { name: "Status", value: "Active" }
+                ];
+            }
+            readAll() { return this.filters; }
+            add(name, value) { this.filters.push({ name, value }); }
+            remove(index) { this.filters.splice(index, 1); }
+        }
+
+        /**
+         * ==========================================
+         * 4. UI COMPONENTS
+         * ==========================================
+         */
+        class CardComponent {
+            constructor(data) { this.data = data; }
+            render() {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full hover:shadow-md transition-all duration-200 overflow-hidden group active:scale-[0.98] transition-transform";
+                
+                card.innerHTML = `
+                    <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-start">
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-slate-700 text-sm truncate pr-2">${this.data.title}</h4>
+                            <div class="text-[10px] text-slate-400 font-mono uppercase truncate">${this.data.location}</div>
+                        </div>
+                        <i class="fa fa-external-link-alt text-xs text-slate-300"></i>
+                    </div>
+                    <div class="bg-slate-100 h-28 flex items-center justify-center p-2 overflow-hidden relative checkerboard">
+                        <div class="preview-container flex items-center justify-center w-full h-full transform scale-90 origin-center pointer-events-none"></div>
+                    </div>
+                    <div class="p-3 flex-grow flex flex-col">
+                        <p class="text-xs text-slate-500 mb-2 line-clamp-2 leading-relaxed">${this.data.description}</p>
+                        <div class="mt-auto flex flex-wrap gap-1">
+                            ${this.data.tags.map(t => `<span class="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded border border-blue-100">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Render DOM Preview safely
+                const container = card.querySelector('.preview-container');
+                try { container.appendChild(this.data.renderPreview()); } catch (e) { container.innerText = "Error"; }
+                
+                card.onclick = (e) => {
+                    if(e.target.tagName !== 'BUTTON') alert(`Opening: ${this.data.title}`);
+                };
+                return card;
+            }
+        }
+
+        class ListGroup {
+            constructor(title) { this.title = title; this.elements = []; }
+            add(element) { this.elements.push(element); }
+            render() {
+                const container = document.createElement('div');
+                container.className = "mb-8 animate-fade-in";
+                container.innerHTML = `<h3 class="text-lg font-bold text-slate-700 mb-3 flex items-center gap-2 px-1"><span class="w-1 h-5 bg-blue-500 rounded-full"></span> ${this.title}</h3>`;
+                
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4";
+                
+                if(this.elements.length === 0) grid.innerHTML = `<div class="text-slate-400 italic text-sm px-1">No items found.</div>`;
+                else this.elements.forEach(el => grid.appendChild(new CardComponent(el).render()));
+                
+                container.appendChild(grid);
+                return container;
+            }
+        }
+
+        /**
+         * ==========================================
+         * 5. PAGES
+         * ==========================================
+         */
+        class HomePage {
+            render() {
+                const container = document.createElement('div');
+                const reg = ComponentRegistry.getInstance();
+                
+                const banner = document.createElement('div');
+                banner.className = "bg-gradient-to-r from-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-lg mb-8 mx-1";
+                banner.innerHTML = `
+                    <h1 class="text-2xl font-bold mb-1">Hello, Dev</h1>
+                    <p class="text-slate-300 text-sm">Your component library is ready.</p>
+                `;
+                container.appendChild(banner);
+
+                const favorites = new ListGroup("Favorites");
+                reg.getAll().filter(c => c.tags.includes('fav')).forEach(c => favorites.add(c));
+                container.appendChild(favorites.render());
+
+                const recent = new ListGroup("Recently Updated");
+                reg.getAll().slice(0, 4).forEach(c => recent.add(c));
+                container.appendChild(recent.render());
+                
+                return container;
+            }
+        }
+
+        class ExplorerPage {
+            constructor() {
+                this.explorer = new FileSystemExplorer(ComponentRegistry.getInstance());
+                this.container = document.createElement('div');
+            }
+            render() { this.updateView(); return this.container; }
+            updateView() {
+                this.container.innerHTML = '';
+                
+                // Responsive Breadcrumb
+                const navBar = document.createElement('div');
+                navBar.className = "flex flex-wrap items-center gap-2 mb-6 text-sm bg-white p-3 rounded-lg border border-slate-200 shadow-sm mx-1";
+                
+                const rootBtn = document.createElement('button');
+                rootBtn.className = "font-bold text-slate-600 hover:text-blue-600 flex items-center gap-1";
+                rootBtn.innerHTML = '<i class="fa fa-database"></i> root';
+                rootBtn.onclick = () => { this.explorer.gotoRoot(); this.updateView(); };
+                navBar.appendChild(rootBtn);
+
+                const location = this.explorer.getLocation();
+                if(location !== 'root') {
+                     navBar.innerHTML += `<span class="text-slate-300">/</span>`;
+                     const locSpan = document.createElement('span');
+                     locSpan.className = "font-mono text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded text-xs truncate max-w-[150px]";
+                     locSpan.innerText = location;
+                     navBar.appendChild(locSpan);
+                     
+                     const backBtn = document.createElement('button');
+                     backBtn.className = "ml-auto px-3 py-1.5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 text-xs font-bold whitespace-nowrap";
+                     backBtn.innerHTML = '<i class="fa fa-arrow-up"></i> Up';
+                     backBtn.onclick = () => { this.explorer.goback(); this.updateView(); };
+                     navBar.appendChild(backBtn);
+                }
+                this.container.appendChild(navBar);
+
+                const { folders, files } = this.explorer.list_dir();
+
+                if (folders.length > 0) {
+                    const fGrid = document.createElement('div');
+                    fGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8";
+                    folders.forEach(f => {
+                        const div = document.createElement('div');
+                        div.className = "bg-amber-50 border border-amber-100 p-3 rounded-xl text-center active:bg-amber-100 transition-colors";
+                        div.innerHTML = `<i class="fa fa-folder text-2xl mb-1 block text-amber-400"></i><span class="font-semibold text-xs text-amber-900 block truncate">${f}</span>`;
+                        div.onclick = () => { this.explorer.cd(f); this.updateView(); };
+                        fGrid.appendChild(div);
+                    });
+                    this.container.appendChild(fGrid);
+                }
+
+                if (files.length > 0) {
+                    const fileGrid = document.createElement('div');
+                    fileGrid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+                    files.forEach(f => fileGrid.appendChild(new CardComponent(f).render()));
+                    this.container.appendChild(fileGrid);
+                }
+                
+                if (folders.length === 0 && files.length === 0) {
+                    this.container.innerHTML += `<div class="text-center py-10 opacity-50"><i class="fa fa-folder-open text-4xl mb-2"></i><div class="text-sm">Empty Directory</div></div>`;
+                }
+            }
+        }
+
+        class SearchPage {
+            render() {
+                const container = document.createElement('div');
+                const searchBar = document.createElement('input');
+                searchBar.type = "text";
+                searchBar.placeholder = "Search...";
+                searchBar.className = "w-full p-3 px-4 text-base border-none rounded-xl shadow-md ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none mb-6 sticky top-0 z-10";
+                
+                const results = document.createElement('div');
+                results.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+
+                const doSearch = (val) => {
+                    results.innerHTML = '';
+                    const res = ComponentRegistry.getInstance().search(val);
+                    if(res.length === 0) results.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">No results</div>`;
+                    else res.forEach(r => results.appendChild(new CardComponent(r).render()));
+                };
+                searchBar.onkeyup = (e) => doSearch(e.target.value);
+                doSearch('');
+                
+                container.appendChild(searchBar);
+                container.appendChild(results);
+                return container;
+            }
+        }
+
+        class FilterConfigPage {
+            constructor() { this.model = new FilterModel(); }
+            render() {
+                const container = document.createElement('div');
+                container.className = "max-w-3xl mx-auto";
+                container.innerHTML = `<h2 class="text-xl font-bold text-slate-800 mb-4 px-1">Manage Filters</h2>`;
+
+                const form = document.createElement('div');
+                form.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row gap-3 items-end";
+                form.innerHTML = `
+                    <input id="f-name" class="w-full bg-slate-50 border p-2 rounded text-sm" placeholder="Name">
+                    <input id="f-val" class="w-full bg-slate-50 border p-2 rounded text-sm" placeholder="Value">
+                    <button id="f-add" class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium"><i class="fa fa-plus"></i></button>
+                `;
+
+                const list = document.createElement('div');
+                const renderList = () => {
+                    list.innerHTML = '';
+                    const bg = document.createElement('div');
+                    bg.className = "bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200";
+                    
+                    if(this.model.readAll().length === 0) bg.innerHTML = `<div class="p-4 text-center text-sm text-slate-400">Empty</div>`;
+                    
+                    this.model.readAll().forEach((item, idx) => {
+                        const row = document.createElement('div');
+                        row.className = "flex items-center justify-between p-3 border-b border-slate-100 last:border-0";
+                        row.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">${idx + 1}</div>
+                                <div><div class="font-bold text-sm text-slate-700">${item.name}</div><div class="text-xs text-slate-400">${item.value}</div></div>
+                            </div>
+                            <button class="del-btn text-red-400 p-2" data-idx="${idx}"><i class="fa fa-trash"></i></button>
+                        `;
+                        bg.appendChild(row);
+                    });
+                    list.appendChild(bg);
+                    list.querySelectorAll('.del-btn').forEach(b => b.onclick = (e) => {
+                        this.model.remove(parseInt(e.currentTarget.dataset.idx)); renderList();
+                    });
+                };
+
+                form.querySelector('#f-add').onclick = () => {
+                    const n = form.querySelector('#f-name'), v = form.querySelector('#f-val');
+                    if(n.value && v.value) { this.model.add(n.value, v.value); n.value=''; v.value=''; renderList(); }
+                };
+
+                container.appendChild(form);
+                container.appendChild(list);
+                renderList();
+                return container;
+            }
+        }
+
+        /**
+         * ==========================================
+         * 6. APP LAYOUT (MOBILE OPTIMIZED)
+         * ==========================================
+         */
+        class AppLayout {
+            constructor() {
+                this.seedData();
+                this.initUI();
+            }
+
+            initUI() {
+                const app = document.getElementById('app');
+                
+                // 1. Mobile Header (Visible only on mobile)
+                const mobileHeader = document.createElement('header');
+                mobileHeader.className = "md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-40 sticky top-0 shadow-md";
+                mobileHeader.innerHTML = `
+                    <div class="font-bold text-lg flex items-center gap-2"><i class="fa fa-cube"></i> DomOps</div>
+                    <button id="menu-btn" class="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800"><i class="fa fa-bars text-xl"></i></button>
+                `;
+                app.appendChild(mobileHeader);
+
+                // 2. Sidebar Backdrop (For mobile)
+                const backdrop = document.createElement('div');
+                backdrop.className = "fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity opacity-0";
+                app.appendChild(backdrop);
+
+                // 3. Sidebar
+                const sidebar = document.createElement('nav');
+                // fixed on mobile (slide in), relative on desktop (flex item)
+                sidebar.className = "fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 flex flex-col z-50 transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:flex-shrink-0 shadow-2xl md:shadow-none";
+                sidebar.innerHTML = `
+                    <div class="p-6 text-white font-bold text-xl hidden md:flex items-center gap-3 border-b border-slate-800">
+                        <i class="fa fa-cube text-blue-500"></i> DomOps
+                    </div>
+                    <!-- Mobile Close Button inside sidebar -->
+                    <div class="md:hidden p-4 flex justify-end border-b border-slate-800">
+                        <button id="close-menu" class="text-white"><i class="fa fa-times text-xl"></i></button>
+                    </div>
+                    <ul class="flex-1 p-4 space-y-1 overflow-y-auto">
+                        <li><button id="nav-home" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa fa-home w-5 text-center"></i> Home</button></li>
+                        <li><button id="nav-explorer" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa fa-folder-tree w-5 text-center"></i> Explorer</button></li>
+                        <li><button id="nav-search" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa fa-search w-5 text-center"></i> Lister</button></li>
+                        <div class="pt-4 pb-2 text-xs font-bold uppercase text-slate-600 px-4">Config</div>
+                        <li><button id="nav-filter" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa fa-sliders w-5 text-center"></i> Filters</button></li>
+                    </ul>
+                    <div class="p-4 border-t border-slate-800 text-xs text-center md:text-left">
+                        <div class="bg-slate-800 p-3 rounded flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-purple-500"></div>
+                            <div>
+                                <div class="text-white font-bold">Admin</div>
+                                <div class="text-slate-500">v1.0 Mobile</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                app.appendChild(sidebar);
+
+                // 4. Main Content
+                const main = document.createElement('main');
+                main.className = "flex-1 overflow-y-auto bg-slate-50 relative w-full";
+                
+                this.contentWrapper = document.createElement('div');
+                this.contentWrapper.className = "p-4 md:p-8 max-w-7xl mx-auto min-h-full pb-20 md:pb-8"; // Extra padding bottom for mobile scroll
+                main.appendChild(this.contentWrapper);
+                app.appendChild(main);
+
+                // --- LOGIC ---
+                
+                // Mobile Menu Toggling
+                const toggleMenu = (show) => {
+                    if(show) {
+                        sidebar.classList.remove('-translate-x-full');
+                        backdrop.classList.remove('hidden');
+                        setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+                    } else {
+                        sidebar.classList.add('-translate-x-full');
+                        backdrop.classList.add('opacity-0');
+                        setTimeout(() => backdrop.classList.add('hidden'), 300);
+                    }
+                };
+
+                document.getElementById('menu-btn').onclick = () => toggleMenu(true);
+                document.getElementById('close-menu').onclick = () => toggleMenu(false);
+                backdrop.onclick = () => toggleMenu(false);
+
+                // Navigation Logic
+                const nav = (id, Comp) => {
+                    document.getElementById(id).onclick = () => {
+                        // Update UI Active State
+                        document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('bg-blue-600', 'text-white'));
+                        document.getElementById(id).classList.add('bg-blue-600', 'text-white');
+                        
+                        // Navigate
+                        this.contentWrapper.innerHTML = '';
+                        const el = new Comp().render();
+                        el.classList.add('animate-fade-in');
+                        this.contentWrapper.appendChild(el);
+                        
+                        // Close menu on mobile
+                        if(window.innerWidth < 768) toggleMenu(false);
+                    };
+                };
+
+                nav('nav-home', HomePage);
+                nav('nav-explorer', ExplorerPage);
+                nav('nav-search', SearchPage);
+                nav('nav-filter', FilterConfigPage);
+
+                // Init
+                document.getElementById('nav-home').click();
+            }
+
+            seedData() {
+                const reg = ComponentRegistry.getInstance();
+                const add = (id, title, loc, desc, tags, previewFn) => reg.register({id, title, location: loc, description: desc, tags, renderPreview: previewFn});
+
+                add('btn-1', 'Primary Action', 'ui/buttons', 'Main CTA button', ['ui', 'fav'], () => {
+                    const b = document.createElement('button'); b.className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs shadow"; b.innerText="Submit"; return b;
+                });
+                add('inp-1', 'Search Input', 'ui/forms', 'Input with icon', ['ui'], () => {
+                    const d=document.createElement('div'); d.className="border rounded px-2 py-1 flex items-center gap-2 bg-white w-full"; d.innerHTML='<i class="fa fa-search text-gray-400 text-xs"></i><div class="h-3 bg-gray-100 rounded w-full"></div>'; return d;
+                });
+                add('card-1', 'Profile Card', 'ui/cards', 'User info display', ['ui'], () => {
+                    const d=document.createElement('div'); d.className="border rounded p-2 bg-white w-24 flex flex-col items-center gap-1 shadow-sm"; d.innerHTML='<div class="w-6 h-6 rounded-full bg-slate-200"></div><div class="w-12 h-2 bg-slate-100 rounded"></div>'; return d;
+                });
+                add('nav-1', 'Breadcrumbs', 'layout/nav', 'Path navigation', ['layout'], () => {
+                    const d=document.createElement('div'); d.className="text-[10px] text-blue-500 flex gap-1"; d.innerHTML='<span>Home</span>/<span>Lib</span>'; return d;
+                });
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => new AppLayout());
+    </script>
+</body>
+</html>
