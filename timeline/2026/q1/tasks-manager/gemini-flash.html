@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8">
+    <div id="app" class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+        <!-- JS will inject content here -->
+    </div>
+
+    <script>
+        // --- Data Model ---
+        class LocalStorageTaskModel {
+            constructor() { this.KEY = 'task_app_data'; }
+
+            async read_all() {
+                return JSON.parse(localStorage.getItem(this.KEY) || '[]');
+            }
+
+            async read(id) {
+                const tasks = await this.read_all();
+                return tasks.find(t => t.id === id);
+            }
+
+            async create(data) {
+                const tasks = await this.read_all();
+                const newTask = {
+                    id: Date.now().toString(),
+                    name: data.name || "Untitled",
+                    description: data.description || "",
+                    is_done: false,
+                    parentId: data.parentId || "",
+                };
+                tasks.push(newTask);
+                localStorage.setItem(this.KEY, JSON.stringify(tasks));
+                return newTask;
+            }
+
+            async update(id, data) {
+                let tasks = await this.read_all();
+                tasks = tasks.map(t => t.id === id ? { ...t, ...data } : t);
+                localStorage.setItem(this.KEY, JSON.stringify(tasks));
+            }
+
+            async deleteIt(id) {
+                let tasks = await this.read_all();
+                // Filter out task and all its recursive subtasks
+                const deleteRecursive = (id) => {
+                    const children = tasks.filter(t => t.parentId === id);
+                    children.forEach(child => deleteRecursive(child.id));
+                    tasks = tasks.filter(t => t.id !== id);
+                };
+                deleteRecursive(id);
+                localStorage.setItem(this.KEY, JSON.stringify(tasks));
+            }
+        }
+
+        // --- App Logic ---
+        const model = new LocalStorageTaskModel();
+        const app = document.getElementById('app');
+
+        async function renderHome() {
+            const tasks = await model.read_all();
+            const roots = tasks.filter(t => !t.parentId);
+            
+            app.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800">My Tasks</h1>
+                    <button onclick="promptCreate()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">+ New Task</button>
+                </div>
+                <div class="space-y-2">
+                    ${roots.length ? roots.map(t => `
+                        <div onclick="viewTask('${t.id}')" class="p-4 border rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                            <h3 class="font-medium">${t.name}</h3>
+                        </div>
+                    `).join('') : '<p class="text-gray-500 italic">No tasks yet.</p>'}
+                </div>
+            `;
+        }
+
+        async function viewTask(id) {
+            const task = await model.read(id);
+            const all = await model.read_all();
+            const subtasks = all.filter(t => t.parentId === id);
+
+            app.innerHTML = `
+                <button onclick="renderHome()" class="text-blue-600 text-sm mb-4 hover:underline">← Back</button>
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">${task.name}</h2>
+                <p class="text-gray-600 bg-gray-50 p-3 rounded mb-4">${task.description || 'No description provided.'}</p>
+                
+                <div class="flex gap-2 mb-8">
+                    <button onclick="alert('Log feature active')" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Log Data</button>
+                    <button onclick="editTask('${task.id}')" class="bg-gray-200 px-4 py-2 rounded text-sm hover:bg-gray-300">Edit</button>
+                    <button onclick="deleteTask('${task.id}')" class="bg-red-50 text-red-600 px-4 py-2 rounded text-sm border border-red-200 hover:bg-red-100">Delete</button>
+                </div>
+
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">Subtasks</h3>
+                        <button onclick="promptCreate('${task.id}')" class="text-blue-600 text-sm font-semibold">+ Add Subtask</button>
+                    </div>
+                    <ul class="space-y-2">
+                        ${subtasks.map(s => `
+                            <li class="flex items-center gap-3 p-3 bg-gray-50 rounded border">
+                                <input type="checkbox" ${s.is_done ? 'checked' : ''} onchange="toggleDone('${s.id}', this.checked)">
+                                <span class="flex-grow cursor-pointer" onclick="viewTask('${s.id}')">${s.name}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // --- Actions ---
+        async function promptCreate(parentId = "") {
+            const name = prompt("Enter task name:");
+            if (name) {
+                await model.create({ name, parentId });
+                parentId ? viewTask(parentId) : renderHome();
+            }
+        }
+
+        async function toggleDone(id, is_done) {
+            await model.update(id, { is_done });
+        }
+
+        async function editTask(id) {
+            const task = await model.read(id);
+            const newName = prompt("Edit name:", task.name);
+            const newDesc = prompt("Edit description:", task.description);
+            if (newName !== null) {
+                await model.update(id, { name: newName, description: newDesc });
+                viewTask(id);
+            }
+        }
+
+        async function deleteTask(id) {
+            if (confirm("Delete this and all subtasks?")) {
+                await model.deleteIt(id);
+                renderHome();
+            }
+        }
+
+        // Initialize
+        renderHome();
+    </script>
+</body>
+</html>

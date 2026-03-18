@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIB21 - Krankheitsworkflow NINOX Prototype</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Optional Tailwind config for custom colors if needed
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#005a9c',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-6">
+
+    <div id="app" class="max-w-7xl mx-auto"></div>
+
+    <script>
+        // ==========================================
+        // 1. DATA MODELS (IDataModel interface)
+        // ==========================================
+        /*
+          interface IDataModel {
+            read_all();
+            read(id);
+            update(id, changed_vals);
+            delete(id);
+            create(vals);
+          }
+        */
+        class LocalStorageModel {
+            constructor(tableName) {
+                this.tableName = tableName;
+                // Initialize if empty
+                if (!localStorage.getItem(this.tableName)) {
+                    localStorage.setItem(this.tableName, JSON.stringify([]));
+                }
+            }
+
+            _getData() {
+                return JSON.parse(localStorage.getItem(this.tableName));
+            }
+
+            _saveData(data) {
+                localStorage.setItem(this.tableName, JSON.stringify(data));
+            }
+
+            read_all() {
+                return this._getData();
+            }
+
+            read(id) {
+                return this._getData().find(item => item.id === id);
+            }
+
+            create(vals) {
+                const data = this._getData();
+                const newItem = { id: crypto.randomUUID(), ...vals };
+                data.push(newItem);
+                this._saveData(data);
+                return newItem;
+            }
+
+            update(id, changed_vals) {
+                const data = this._getData();
+                const index = data.findIndex(item => item.id === id);
+                if (index !== -1) {
+                    data[index] = { ...data[index], ...changed_vals };
+                    this._saveData(data);
+                    return data[index];
+                }
+                return null;
+            }
+
+            delete(id) {
+                let data = this._getData();
+                data = data.filter(item => item.id !== id);
+                this._saveData(data);
+            }
+        }
+
+        // Specific Models
+        const ConsultantsDB = new LocalStorageModel('consultants');
+        const AppointmentsDB = new LocalStorageModel('appointments');
+
+        // Seed Dummy Data for the prototype
+        function seedData() {
+            if (ConsultantsDB.read_all().length === 0) {
+                const c1 = ConsultantsDB.create({ name: 'Kerstin (Geschäftsführung)' });
+                const c2 = ConsultantsDB.create({ name: 'Anna (Beraterin)' });
+                
+                // Seed some appointments for Kerstin
+                AppointmentsDB.create({ consultantId: c1.id, client: 'Max Mustermann', type: 'Erstgespräch', date: '2026-03-05', time: '10:00-11:00', phone: '0151-123456', email: 'max@test.de', status: 'geplant' });
+                AppointmentsDB.create({ consultantId: c1.id, client: 'Erika Musterfrau', type: 'Runder Tisch', date: '2026-03-05', time: '12:00-14:00', phone: '0151-654321', email: 'erika@test.de', status: 'geplant' });
+                AppointmentsDB.create({ consultantId: c1.id, client: 'Hans Meier', type: 'Folgetermin', date: '2026-03-06', time: '09:00-10:00', phone: '0170-987654', email: 'hans@test.de', status: 'geplant' });
+                AppointmentsDB.create({ consultantId: c1.id, client: 'Julia Schmidt', type: 'Informationsgespräch', date: '2026-03-05', time: '15:00-15:30', phone: '0160-111222', email: 'julia@test.de', status: 'geplant' });
+                AppointmentsDB.create({ consultantId: c1.id, client: 'Tom Becker', type: 'Abschluss', date: '2026-03-07', time: '11:00-12:00', phone: '0175-333444', email: 'tom@test.de', status: 'geplant' });
+            }
+        }
+
+
+        // ==========================================
+        // 2. UTILS & HELPERS
+        // ==========================================
+        function createElementFromHTML(htmlString) {
+            const div = document.createElement('div');
+            div.innerHTML = htmlString.trim();
+            return div.firstChild;
+        }
+
+
+        // ==========================================
+        // 3. COMPONENTS (IComponent interface)
+        // ==========================================
+        /*
+          interface IComponent {
+            get_comp(): HTMLElement;
+          }
+        */
+
+        // --- Trigger Form Component (3.0 Trigger) ---
+        class TriggerComponent {
+            constructor(onStartWorkflow) {
+                this.onStartWorkflow = onStartWorkflow;
+            }
+
+            get_comp() {
+                const consultants = ConsultantsDB.read_all();
+                const optionsHTML = consultants.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+                const html = `
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-8 border-t-4 border-blue-600">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">3.0 Trigger: Krankheitsworkflow starten</h2>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Beraterin</label>
+                                <select id="consultant-select" class="w-full border-gray-300 border p-2 rounded focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">-- Bitte wählen --</option>
+                                    ${optionsHTML}
+                                </select>
+                            </div>
+                            <div class="flex-1 min-w-[150px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Zeitraum von</label>
+                                <input type="date" id="date-from" class="w-full border-gray-300 border p-2 rounded" value="2026-03-05">
+                            </div>
+                            <div class="flex-1 min-w-[150px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Zeitraum bis</label>
+                                <input type="date" id="date-to" class="w-full border-gray-300 border p-2 rounded" value="2026-03-07">
+                            </div>
+                            <div>
+                                <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition duration-200">
+                                    Krankheitsworkflow starten
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const element = createElementFromHTML(html);
+
+                // Event Listeners
+                element.querySelector('#start-btn').addEventListener('click', () => {
+                    const cid = element.querySelector('#consultant-select').value;
+                    const from = element.querySelector('#date-from').value;
+                    const to = element.querySelector('#date-to').value;
+                    
+                    if(!cid) {
+                        alert("Bitte eine Beraterin auswählen.");
+                        return;
+                    }
+                    this.onStartWorkflow(cid, from, to);
+                });
+
+                return element;
+            }
+        }
+
+        // --- Appointment List Component (3.1 Terminliste) ---
+        class AppointmentListComponent {
+            constructor(consultantId, dateFrom, dateTo) {
+                this.consultantId = consultantId;
+                this.dateFrom = dateFrom;
+                this.dateTo = dateTo;
+            }
+
+            _getSortedAppointments() {
+                const all = AppointmentsDB.read_all();
+                
+                // Filter
+                let filtered = all.filter(a => 
+                    a.consultantId === this.consultantId && 
+                    a.date >= this.dateFrom && 
+                    a.date <= this.dateTo &&
+                    a.status === 'geplant' // only planned ones initially, but for demo we show what's there
+                );
+
+                // Sort Order Matrix (1. Runder Tisch, 2. Info, 3. Erstgespräch, 4. Folgetermin, 5. Abschluss)
+                const priority = {
+                    'Runder Tisch': 1,
+                    'Informationsgespräch': 2,
+                    'Erstgespräch': 3,
+                    'Folgetermin': 4,
+                    'Abschluss': 5
+                };
+
+                filtered.sort((a, b) => {
+                    if (priority[a.type] !== priority[b.type]) {
+                        return priority[a.type] - priority[b.type];
+                    }
+                    // Secondary sorting by date/time
+                    const dtA = new Date(`${a.date}T${a.time.split('-')[0]}`);
+                    const dtB = new Date(`${b.date}T${b.time.split('-')[0]}`);
+                    return dtA - dtB;
+                });
+
+                return filtered;
+            }
+
+            _getColorClass(type) {
+                // Rot = Runder Tisch / Informationsgespräch
+                // Orange = Erstgespräch
+                // Grün = Folgetermin / Abschluss
+                if (type === 'Runder Tisch' || type === 'Informationsgespräch') return 'bg-red-100 text-red-800 border-red-200';
+                if (type === 'Erstgespräch') return 'bg-orange-100 text-orange-800 border-orange-200';
+                return 'bg-green-100 text-green-800 border-green-200';
+            }
+
+            get_comp() {
+                const appointments = this._getSortedAppointments();
+                
+                const container = document.createElement('div');
+                container.className = "bg-white p-6 rounded-lg shadow-md";
+
+                if (appointments.length === 0) {
+                    container.innerHTML = `<h2 class="text-xl font-bold mb-4">3.1 Terminliste</h2><p class="text-gray-500">Keine Termine im gewählten Zeitraum gefunden.</p>`;
+                    return container;
+                }
+
+                // Build Table Rows
+                const rowsHTML = appointments.map(a => {
+                    const colorClass = this._getColorClass(a.type);
+                    return `
+                        <tr class="border-b hover:bg-gray-50 transition duration-150">
+                            <td class="p-3 font-medium">${a.client}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold border ${colorClass}">
+                                    ${a.type}
+                                </span>
+                            </td>
+                            <td class="p-3 whitespace-nowrap">${a.date}</td>
+                            <td class="p-3 whitespace-nowrap">${a.time}</td>
+                            <td class="p-3 text-sm">${a.phone}<br><span class="text-gray-500">${a.email}</span></td>
+                            <td class="p-3">
+                                <select class="text-sm border-gray-300 border rounded p-1" data-id="${a.id}">
+                                    <option value="offen">offen</option>
+                                    <option value="umgebucht (Vertretung)">umgebucht (Vertretung)</option>
+                                    <option value="freigegeben">freigegeben</option>
+                                </select>
+                            </td>
+                            <td class="p-3 text-center">
+                                <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const html = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">3.1 Terminliste (Gefiltert & Sortiert nach Prio)</h2>
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-4 border border-gray-400 rounded shadow-sm">
+                            Workflow fortsetzen
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 border-b-2 border-gray-300">
+                                    <th class="p-3 font-semibold text-gray-700">Klient:in</th>
+                                    <th class="p-3 font-semibold text-gray-700">Terminart</th>
+                                    <th class="p-3 font-semibold text-gray-700">Datum</th>
+                                    <th class="p-3 font-semibold text-gray-700">Uhrzeit</th>
+                                    <th class="p-3 font-semibold text-gray-700">Kontakt</th>
+                                    <th class="p-3 font-semibold text-gray-700">Sichtkontrolle (Status)</th>
+                                    <th class="p-3 font-semibold text-gray-700 text-center">Pers. Anruf</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHTML}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4 italic">* Farbkodierung: Rot = Runder Tisch/Info, Orange = Erstgespräch, Grün = Folge/Abschluss</p>
+                `;
+
+                container.innerHTML = html;
+
+                // Bind state changes to the local storage DB
+                const selects = container.querySelectorAll('select');
+                selects.forEach(sel => {
+                    sel.addEventListener('change', (e) => {
+                        const appId = e.target.getAttribute('data-id');
+                        const newStatus = e.target.value;
+                        AppointmentsDB.update(appId, { status: newStatus });
+                        // Optionally trigger a toast or console log
+                        console.log(`Updated appointment ${appId} to ${newStatus}`);
+                    });
+                });
+
+                return container;
+            }
+        }
+
+        // --- Main App Coordinator ---
+        class App {
+            constructor(rootElementId) {
+                this.rootElement = document.getElementById(rootElementId);
+                this.state = {
+                    workflowStarted: false,
+                    selectedConsultant: null,
+                    dateFrom: null,
+                    dateTo: null
+                };
+            }
+
+            render() {
+                this.rootElement.innerHTML = ''; // clear
+
+                // Header
+                const headerHTML = `
+                    <header class="mb-8 border-b pb-4">
+                        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">SOP: Krankheitsbedingte Terminverschiebung</h1>
+                        <p class="text-gray-500 mt-1">GIB21 - Technische Anforderung NINOX (Version 2.4)</p>
+                    </header>
+                `;
+                this.rootElement.appendChild(createElementFromHTML(headerHTML));
+
+                // 1. Render Trigger Form Component
+                const triggerComp = new TriggerComponent((cid, from, to) => {
+                    this.state.workflowStarted = true;
+                    this.state.selectedConsultant = cid;
+                    this.state.dateFrom = from;
+                    this.state.dateTo = to;
+                    this.render(); // Re-render to show list
+                });
+                this.rootElement.appendChild(triggerComp.get_comp());
+
+                // 2. Render List if workflow started
+                if (this.state.workflowStarted) {
+                    const listComp = new AppointmentListComponent(
+                        this.state.selectedConsultant, 
+                        this.state.dateFrom, 
+                        this.state.dateTo
+                    );
+                    this.rootElement.appendChild(listComp.get_comp());
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup local storage dummy data
+            seedData();
+            
+            // Mount App
+            const mainApp = new App('app');
+            mainApp.render();
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Smooth transitions for modals */
+        .modal-active { opacity: 1; pointer-events: auto; transform: scale(1); }
+        .modal-inactive { opacity: 0; pointer-events: none; transform: scale(0.95); transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold cursor-pointer hover:text-blue-200 transition" onclick="navigate('')">
+                ✅ TaskFlow
+            </h1>
+            <div id="breadcrumb" class="text-sm font-medium text-blue-100">Home</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main id="app" class="max-w-4xl mx-auto p-4 mt-4 mb-20"></main>
+
+    <!-- TASK MODAL (Create/Edit) -->
+    <div id="task-modal" class="modal-inactive fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-4">Add Task</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
+                    <input id="task-name" type="text" placeholder="Task name..." class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="task-desc" rows="3" placeholder="Task details..." class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="w-full sm:w-1/2">
+                        <label class="block text-sm font-medium text-gray-700">Estimation (hrs)</label>
+                        <input id="task-est" type="number" min="0" step="0.5" placeholder="0" class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div class="w-full sm:w-1/2">
+                        <label class="block text-sm font-medium text-gray-700">Type</label>
+                        <select id="task-type" class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="personal">Personal</option>
+                            <option value="office">Office</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Conclusions</label>
+                    <textarea id="task-conc" rows="2" placeholder="Any final thoughts..." class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeTaskModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium transition">Cancel</button>
+                <button onclick="saveTask()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition shadow-sm">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOG DATA MODAL -->
+    <div id="log-modal" class="modal-inactive fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Log Data</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">What did you do?</label>
+                    <textarea id="log-did" rows="3" placeholder="I completed..." class="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Next Tasks (Inline creation)</label>
+                    <p class="text-xs text-gray-500 mb-1">Separate multiple new sub-tasks with commas.</p>
+                    <input id="log-next" type="text" placeholder="e.g. Write tests, Update documentation" class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-green-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeLogModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium transition">Cancel</button>
+                <button onclick="saveLog()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium transition shadow-sm">Save Log</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- UTILS ---
+        function generateId() {
+            return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 
+                   Date.now().toString(36) + Math.random().toString(36).substring(2);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag]));
+        }
+
+        // --- MODEL IMPLEMENTATION ---
+        class LocalStorageTaskModel {
+            constructor() {
+                this.default_parent = "";
+                this.storageKey = "tasks_db";
+            }
+            set_parent(parentId) {
+                this.default_parent = parentId;
+            }
+            async read_all() {
+                const data = localStorage.getItem(this.storageKey);
+                return data ? JSON.parse(data) :[];
+            }
+            async read(id) {
+                const tasks = await this.read_all();
+                return tasks.find(t => t.id === id);
+            }
+            async create(data) {
+                const tasks = await this.read_all();
+                const newTask = {
+                    id: generateId(),
+                    name: data.name || "Untitled Task",
+                    description: data.description || "",
+                    is_done: data.is_done || false,
+                    estimation: data.estimation || 0,
+                    conclusions: data.conclusions || "",
+                    type: data.type || "personal",
+                    parentId: data.parentId !== undefined ? data.parentId : this.default_parent
+                };
+                tasks.push(newTask);
+                localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+                return newTask;
+            }
+            async update(id, data) {
+                const tasks = await this.read_all();
+                const index = tasks.findIndex(t => t.id === id);
+                if (index === -1) throw new Error("Task not found");
+                tasks[index] = { ...tasks[index], ...data };
+                localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+                return tasks[index];
+            }
+            async deleteIt(id) {
+                let tasks = await this.read_all();
+                // Find all nested children to perform a cascading recursive delete
+                const getChildrenIds = (parentId, taskList) => {
+                    let ids = [parentId];
+                    const children = taskList.filter(t => t.parentId === parentId);
+                    for(const child of children) {
+                        ids = ids.concat(getChildrenIds(child.id, taskList));
+                    }
+                    return ids;
+                };
+                const idsToDelete = getChildrenIds(id, tasks);
+                tasks = tasks.filter(t => !idsToDelete.includes(t.id));
+                localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+            }
+        }
+
+        // --- STATE & APP LOGIC ---
+        const taskModel = new LocalStorageTaskModel();
+        let currentParentId = ""; // "" represents the Homepage
+        let editingTaskId = null; // Used for identifying if modal is in edit or create mode
+        let currentLogTaskId = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => render());
+
+        async function navigate(id) {
+            currentParentId = id;
+            await render();
+        }
+
+        async function render() {
+            const app = document.getElementById('app');
+            const breadcrumb = document.getElementById('breadcrumb');
+            app.innerHTML = ''; // Clear current view
+            
+            const allTasks = await taskModel.read_all();
+
+            if (currentParentId === "") {
+                // --- HOME VIEW ---
+                breadcrumb.innerHTML = "Home";
+                const rootTasks = allTasks.filter(t => t.parentId === "");
+                
+                app.innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Home</h2>
+                        <button onclick="openTaskModal('', '')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-sm font-medium transition flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            New Task
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        ${rootTasks.length > 0 
+                            ? rootTasks.map(t => generateTaskCardHTML(t)).join('') 
+                            : `<div class="text-center p-10 bg-white rounded-lg border border-dashed border-gray-300"><p class="text-gray-500 mb-2">You don't have any root tasks.</p><button onclick="openTaskModal('', '')" class="text-blue-600 hover:underline">Create your first task</button></div>`}
+                    </div>
+                `;
+            } else {
+                // --- TASK DETAIL VIEW ---
+                const currentTask = allTasks.find(t => t.id === currentParentId);
+                if (!currentTask) { navigate(''); return; }
+
+                breadcrumb.innerHTML = `<span class="cursor-pointer hover:underline" onclick="navigate('')">Home</span> / Task`;
+                
+                // Get immediate sub-tasks
+                const subTasks = allTasks.filter(t => t.parentId === currentParentId);
+
+                app.innerHTML = `
+                    <button onclick="navigate('${currentTask.parentId}')" class="text-gray-500 hover:text-gray-800 mb-4 inline-flex items-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Back
+                    </button>
+
+                    <!-- Task Information Card -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8 relative">
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-2 mb-4 md:mb-0 md:absolute md:top-6 md:right-6">
+                            <button onclick="openLogModal('${currentTask.id}')" class="text-sm bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded hover:bg-green-100 transition shadow-sm font-medium">Log Data</button>
+                            <button onclick="openTaskModal('${currentTask.id}')" class="text-sm bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded hover:bg-gray-100 transition shadow-sm font-medium">Edit</button>
+                            <button onclick="deleteCurrentTask('${currentTask.id}', '${currentTask.parentId}')" class="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded hover:bg-red-100 transition shadow-sm font-medium">Delete</button>
+                        </div>
+
+                        <div class="flex items-center gap-3 mb-4">
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 max-w-[70%] break-words">${escapeHTML(currentTask.name)}</h2>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${currentTask.type === 'office' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'} uppercase tracking-wide border ${currentTask.type === 'office' ? 'border-purple-200' : 'border-orange-200'}">${currentTask.type}</span>
+                            ${currentTask.is_done ? '<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200 uppercase tracking-wide">Done</span>' : ''}
+                        </div>
+
+                        <div class="prose max-w-none text-gray-600 mb-6 whitespace-pre-wrap leading-relaxed">${escapeHTML(currentTask.description) || '<em class="text-gray-400">No description provided.</em>'}</div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-100">
+                            <div><strong class="text-gray-900 block mb-1">Estimation</strong> <span class="bg-white px-2 py-1 rounded border shadow-sm">${currentTask.estimation} hours</span></div>
+                            <div><strong class="text-gray-900 block mb-1">Conclusions</strong> <div class="italic text-gray-600">${escapeHTML(currentTask.conclusions) || '-'}</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tasks Section -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Sub-Tasks</h3>
+                        <button onclick="openTaskModal('', '${currentTask.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 px-3 py-1.5 text-sm rounded-md font-medium transition flex items-center gap-1 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Add Sub-task
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${subTasks.length > 0 
+                            ? subTasks.map(t => generateTaskCardHTML(t)).join('') 
+                            : `<p class="text-gray-500 italic p-4 bg-white rounded border border-dashed border-gray-300 text-center">No sub-tasks yet.</p>`}
+                    </div>
+                `;
+            }
+        }
+
+        // --- UI COMPONENT GENERATORS ---
+        function generateTaskCardHTML(task) {
+            return `
+                <div class="bg-white p-4 rounded-lg shadow-sm border ${task.is_done ? 'border-l-4 border-l-green-500 border-gray-200 opacity-75' : 'border-l-4 border-l-blue-500 border-gray-200'} flex items-center justify-between hover:shadow-md transition-shadow group">
+                    <div class="flex items-start gap-4 flex-1">
+                        <!-- Click propagates separately from the main container -->
+                        <div class="pt-1">
+                           <input type="checkbox" ${task.is_done ? 'checked' : ''} class="w-5 h-5 cursor-pointer accent-blue-600 rounded border-gray-300" onclick="toggleTaskStatus(event, '${task.id}')">
+                        </div>
+                        <!-- Clicking anywhere else navigates inside -->
+                        <div class="flex-1 cursor-pointer" onclick="navigate('${task.id}')">
+                            <h4 class="text-lg font-semibold ${task.is_done ? 'line-through text-gray-500' : 'text-gray-800'} group-hover:text-blue-600 transition-colors">${escapeHTML(task.name)}</h4>
+                            ${task.description ? `<p class="text-sm text-gray-500 line-clamp-2 mt-1">${escapeHTML(task.description)}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="hidden sm:block ml-4">
+                       <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded uppercase tracking-wider">${task.type}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- ACTIONS ---
+        async function toggleTaskStatus(event, id) {
+            event.stopPropagation(); // Prevent triggering the row click
+            const task = await taskModel.read(id);
+            await taskModel.update(id, { is_done: !task.is_done });
+            render();
+        }
+
+        async function deleteCurrentTask(id, parentId) {
+            if (confirm("⚠️ Are you sure you want to delete this task? All sub-tasks will also be permanently deleted.")) {
+                await taskModel.deleteIt(id);
+                navigate(parentId);
+            }
+        }
+
+        // --- TASK MODAL HANDLERS ---
+        async function openTaskModal(editId = "", parentId = "") {
+            editingTaskId = editId;
+            const modal = document.getElementById('task-modal');
+            const title = document.getElementById('modal-title');
+            
+            // DOM Elements
+            const nameEl = document.getElementById('task-name');
+            const descEl = document.getElementById('task-desc');
+            const estEl = document.getElementById('task-est');
+            const typeEl = document.getElementById('task-type');
+            const concEl = document.getElementById('task-conc');
+
+            // Reset Fields
+            nameEl.value = ''; descEl.value = ''; estEl.value = '0'; typeEl.value = 'personal'; concEl.value = '';
+
+            if (editId) {
+                title.innerText = "Edit Task";
+                const task = await taskModel.read(editId);
+                if (task) {
+                    nameEl.value = task.name;
+                    descEl.value = task.description;
+                    estEl.value = task.estimation;
+                    typeEl.value = task.type;
+                    concEl.value = task.conclusions;
+                }
+            } else {
+                title.innerText = (parentId || currentParentId) ? "Add Sub-task" : "Add Root Task";
+            }
+            
+            modal.classList.remove('modal-inactive');
+            modal.classList.add('modal-active');
+            nameEl.focus();
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            modal.classList.remove('modal-active');
+            modal.classList.add('modal-inactive');
+        }
+
+        async function saveTask() {
+            const name = document.getElementById('task-name').value.trim();
+            if (!name) { alert("Task name is required."); return; }
+
+            const data = {
+                name: name,
+                description: document.getElementById('task-desc').value,
+                estimation: parseFloat(document.getElementById('task-est').value) || 0,
+                type: document.getElementById('task-type').value,
+                conclusions: document.getElementById('task-conc').value
+            };
+
+            if (editingTaskId) {
+                await taskModel.update(editingTaskId, data);
+            } else {
+                data.parentId = currentParentId; // Create inside whatever scope we're viewing
+                await taskModel.create(data);
+            }
+            
+            closeTaskModal();
+            render();
+        }
+
+        // --- LOG DATA MODAL HANDLERS ---
+        function openLogModal(taskId) {
+            currentLogTaskId = taskId;
+            document.getElementById('log-did').value = '';
+            document.getElementById('log-next').value = '';
+            
+            const modal = document.getElementById('log-modal');
+            modal.classList.remove('modal-inactive');
+            modal.classList.add('modal-active');
+            document.getElementById('log-did').focus();
+        }
+
+        function closeLogModal() {
+            const modal = document.getElementById('log-modal');
+            modal.classList.remove('modal-active');
+            modal.classList.add('modal-inactive');
+        }
+
+        // --- COMPLETING THE LOGGING LOGIC ---
+        async function saveLog() {
+            const did = document.getElementById('log-did').value.trim();
+            const nextInput = document.getElementById('log-next').value;
+            
+            if (!did) {
+                alert("Please describe what you did.");
+                return;
+            }
+
+            // Create sub-tasks based on the "Next" input
+            const nextTaskNames = nextInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const createdTasks = [];
+            
+            for (const name of nextTaskNames) {
+               // We set parentId to the currentLogTaskId so they appear as sub-tasks
+               const newTask = await taskModel.create({ 
+                   name: name, 
+                   parentId: currentLogTaskId,
+                   description: "Created via log entry."
+               });
+               createdTasks.push(newTask);
+            }
+
+            // Persist the LogItem (as requested by interface)
+            const logsDb = JSON.parse(localStorage.getItem('logs_db') || '[]');
+            const logItem = {
+                did: did,
+                next: createdTasks,
+                task_id: currentLogTaskId,
+                timestamp: new Date().toISOString()
+            };
+            
+            logsDb.push(logItem);
+            localStorage.setItem('logs_db', JSON.stringify(logsDb));
+            
+            // Clean up and refresh
+            closeLogModal();
+            render();
+        }
+
+        // --- MODAL TOGGLERS ---
+        function closeLogModal() {
+            const modal = document.getElementById('log-modal');
+            modal.classList.remove('modal-active');
+            modal.classList.add('modal-inactive');
+            currentLogTaskId = null;
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            modal.classList.remove('modal-active');
+            modal.classList.add('modal-inactive');
+            editingTaskId = null;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Linear Algebra Clock</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX CSS & JS for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        /* Ensures block math doesn't add unwanted vertical margins */
+        .katex-display { margin: 0 !important; }
+        
+        /* Define the container so we can use 'cqi' (Container Query Inline) units */
+        #clock-container {
+            container-type: inline-size;
+        }
+
+        .math-container {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-[#f2f2f5] flex flex-col items-center justify-center min-h-screen py-8 px-4 font-sans overflow-x-hidden">
+
+    <!-- Responsive Title -->
+    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#3B3044] mb-6 md:mb-10 font-serif tracking-tight text-center w-full">
+        Linear Algebra clock
+    </h1>
+
+    <!-- Pure CSS Responsive Container -->
+    <div class="w-full max-w-[700px] flex justify-center items-center">
+        
+        <!-- The Clock Face relies entirely on standard aspect-square & container queries -->
+        <div id="clock-container" class="relative w-full aspect-square rounded-full border-black bg-white shadow-2xl overflow-hidden" style="border-width: 1.5cqi;">
+            
+            <!-- Faint background image overlay (René Descartes) -->
+            <div class="absolute inset-0 w-full h-full bg-[url('https://upload.wikimedia.org/wikipedia/commons/7/73/Frans_Hals_-_Portret_van_Ren%C3%A9_Descartes.jpg')] bg-cover bg-center opacity-[0.04] pointer-events-none z-0"></div>
+
+            <!-- Center Dot -->
+            <div class="absolute top-1/2 left-1/2 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 z-40" style="width: 3.5cqi; height: 3.5cqi;"></div>
+
+            <!-- Hands -->
+            <!-- Hour Hand -->
+            <div id="hour-wrapper" class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-30">
+                <div class="absolute bg-black rounded-full origin-bottom" style="width: 1.5cqi; height: 26cqi; bottom: 50%;"></div>
+            </div>
+            <!-- Minute Hand -->
+            <div id="minute-wrapper" class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-30">
+                <div class="absolute bg-gray-800 rounded-full origin-bottom" style="width: 1cqi; height: 38cqi; bottom: 50%;"></div>
+            </div>
+            <!-- Second Hand -->
+            <div id="second-wrapper" class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-30">
+                <div class="absolute bg-red-600 rounded-full origin-bottom" style="width: 0.5cqi; height: 42cqi; bottom: 50%;"></div>
+                <!-- Tail for second hand -->
+                <div class="absolute bg-red-600 rounded-full origin-top" style="width: 0.5cqi; height: 10cqi; top: 50%;"></div>
+            </div>
+
+            <!-- Container for Ticks and Math -->
+            <div id="clock-face" class="absolute inset-0 w-full h-full"></div>
+            
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const clockFace = document.getElementById('clock-face');
+
+            // 1. Generate the 60 Tick Marks natively responsive
+            for (let i = 0; i < 60; i++) {
+                const isHour = i % 5 === 0;
+                const angle = i * 6;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'absolute top-0 left-0 w-full h-full flex justify-center z-10';
+                wrapper.style.transform = `rotate(${angle}deg)`;
+
+                const tickMark = document.createElement('div');
+                tickMark.style.backgroundColor = 'black';
+                // cqi perfectly scales lengths & widths along with the circle width
+                tickMark.style.width = isHour ? '1.2cqi' : '0.5cqi';
+                tickMark.style.height = isHour ? '4.5cqi' : '2cqi';
+                tickMark.style.marginTop = '0.5cqi';
+
+                wrapper.appendChild(tickMark);
+                clockFace.appendChild(wrapper);
+            }
+
+            // 2. Define Math Equations and their relative scale adjustments
+            const equations =[
+                { text: '\\delta_{33}', hour: 1, scale: 1.4 },
+                { text: '\\text{Nullity} \\begin{pmatrix} 1 & 2 & 3 \\\\ 2 & 4 & 6 \\\\ 3 & 6 & 9 \\end{pmatrix}', hour: 2, scale: 0.75 },
+                { text: '\\text{Rank} \\begin{pmatrix} 1 & 2 & 3 \\\\ 0 & 4 & 5 \\\\ 0 & 0 & 6 \\end{pmatrix}', hour: 3, scale: 0.75 },
+                { text: '\\begin{bmatrix} 6 - \\lambda & 4 \\\\ -1 & 2 - \\lambda \\end{bmatrix} = 0', hour: 4, scale: 0.8 },
+                { text: 'd\\left(\\begin{bmatrix} 5 \\\\ 2 \\end{bmatrix}, \\begin{bmatrix} 1 \\\\ 5 \\end{bmatrix}\\right)', hour: 5, scale: 0.8 },
+                { text: '\\det \\begin{pmatrix} 5 & 1 \\\\ 4 & 2 \\end{pmatrix}', hour: 6, scale: 1.0 },
+                { text: '\\left\\| \\begin{bmatrix} 2 \\\\ 3 \\\\ 6 \\end{bmatrix} \\right\\|', hour: 7, scale: 1.0 },
+                { text: '2i \\cdot (2j \\times 2k)', hour: 8, scale: 1.1 },
+                { text: '2x - 10 = 8', hour: 9, scale: 1.3 },
+                { text: '\\text{tr}(2I_5)', hour: 10, scale: 1.3 },
+                { text: '\\begin{bmatrix} 2 \\\\ 4 \\\\ 5 \\end{bmatrix} \\cdot \\begin{bmatrix} 3 \\\\ 5 \\\\ -3 \\end{bmatrix}', hour: 11, scale: 0.8 },
+                { text: '\\dim_{\\mathbb{R}}(\\mathbb{C}^6)', hour: 12, scale: 1.3 }
+            ];
+
+            const radiusPercent = 37.5; // Radius from the center (0 to 50%)
+
+            equations.forEach(eq => {
+                const angle = eq.hour * 30; // 360 degrees / 12 hours
+                const rad = (angle - 90) * (Math.PI / 180);
+
+                const x = Math.cos(rad) * radiusPercent;
+                const y = Math.sin(rad) * radiusPercent;
+
+                const el = document.createElement('div');
+                el.className = 'math-container z-20 text-black font-serif';
+                
+                // Position using responsive percentages
+                el.style.left = `calc(50% + ${x}%)`;
+                el.style.top = `calc(50% + ${y}%)`;
+                
+                // Use CSS Container Query Inline (cqi) units. 
+                // This forces KaTeX to scale perfectly alongside the circle's DOM width.
+                el.style.fontSize = `calc(${eq.scale * 3.2}cqi)`; 
+
+                el.innerHTML = katex.renderToString(eq.text, {
+                    displayMode: true,
+                    throwOnError: false
+                });
+                clockFace.appendChild(el);
+            });
+
+            // 3. Functional Clock Logic
+            function updateClock() {
+                const now = new Date();
+                const ms = now.getMilliseconds();
+                const seconds = now.getSeconds();
+                const minutes = now.getMinutes();
+                const hours = now.getHours();
+
+                // Smooth sweep mechanics
+                const secondAngle = (seconds + ms / 1000) * 6;
+                const minuteAngle = minutes * 6 + seconds * 0.1;
+                const hourAngle = (hours % 12) * 30 + minutes * 0.5;
+
+                document.getElementById('second-wrapper').style.transform = `rotate(${secondAngle}deg)`;
+                document.getElementById('minute-wrapper').style.transform = `rotate(${minuteAngle}deg)`;
+                document.getElementById('hour-wrapper').style.transform = `rotate(${hourAngle}deg)`;
+            }
+
+            // Run frequently for a smooth second hand
+            setInterval(updateClock, 30);
+            updateClock();
+        });
+    </script>
+</body>
+</html>

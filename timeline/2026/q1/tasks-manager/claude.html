@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tasks</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .fade-in { animation: fadeIn 0.15s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+
+<div id="app" class="max-w-2xl mx-auto px-4 py-10"></div>
+
+<script>
+// ─── MODEL ───────────────────────────────────────────────────────────────────
+
+class LocalStorageTaskModel {
+  constructor() { this._parentId = ""; }
+
+  _allTasks() { return JSON.parse(localStorage.getItem("tasks") || "[]"); }
+  _saveTasks(t) { localStorage.setItem("tasks", JSON.stringify(t)); }
+  _allLogs() { return JSON.parse(localStorage.getItem("logs") || "[]"); }
+  _saveLogs(l) { localStorage.setItem("logs", JSON.stringify(l)); }
+
+  set_parent(pid) { this._parentId = pid; }
+
+  async read_all() {
+    const pid = this._parentId;
+    return this._allTasks().filter(t => t.parentId === pid);
+  }
+
+  async read(id) { return this._allTasks().find(t => t.id === id); }
+
+  async create(data) {
+    const tasks = this._allTasks();
+    const task = {
+      id: crypto.randomUUID(),
+      name: data.name || "Untitled",
+      description: data.description || "",
+      is_done: false,
+      estimation: data.estimation || 0,
+      conclusions: data.conclusions || "",
+      type: data.type || "personal",
+      parentId: data.parentId !== undefined ? data.parentId : this._parentId,
+    };
+    tasks.push(task);
+    this._saveTasks(tasks);
+    return task;
+  }
+
+  async update(id, data) {
+    const tasks = this._allTasks();
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx === -1) throw new Error("Not found");
+    tasks[idx] = { ...tasks[idx], ...data };
+    this._saveTasks(tasks);
+    return tasks[idx];
+  }
+
+  async deleteIt(id) {
+    let tasks = this._allTasks();
+    const toDelete = new Set([id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      tasks.forEach(t => {
+        if (toDelete.has(t.parentId) && !toDelete.has(t.id)) {
+          toDelete.add(t.id); changed = true;
+        }
+      });
+    }
+    this._saveTasks(tasks.filter(t => !toDelete.has(t.id)));
+  }
+
+  async createLog(data) {
+    const logs = this._allLogs();
+    const log = {
+      id: crypto.randomUUID(),
+      did: data.did || "",
+      task_id: data.task_id,
+      next: data.next || [],
+      createdAt: new Date().toISOString(),
+    };
+    for (const n of log.next) {
+      await this.create({ name: n.name, parentId: data.task_id });
+    }
+    logs.push(log);
+    this._saveLogs(logs);
+    return log;
+  }
+
+  async getLogsForTask(task_id) {
+    return this._allLogs().filter(l => l.task_id === task_id);
+  }
+}
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+const model = new LocalStorageTaskModel();
+let navStack = [{ id: "", name: "Home" }];
+
+function currentId() { return navStack[navStack.length - 1].id; }
+
+async function navigate(taskId, taskName) {
+  navStack.push({ id: taskId, name: taskName });
+  await renderTaskDetail(taskId);
+}
+
+async function navBack(idx) {
+  navStack = navStack.slice(0, idx + 1);
+  navStack.length === 1 ? await renderHome() : await renderTaskDetail(currentId());
+}
+
+async function refreshView() {
+  navStack.length <= 1 ? await renderHome() : await renderTaskDetail(currentId());
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function app() { return document.getElementById("app"); }
+
+function badge(type) {
+  return type === "office"
+    ? `<span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/60 text-blue-300 font-medium">office</span>`
+    : `<span class="text-xs px-2 py-0.5 rounded-full bg-violet-900/60 text-violet-300 font-medium">personal</span>`;
+}
+
+function breadcrumb() {
+  return `<nav class="flex items-center gap-1 text-sm text-zinc-500 mb-8 flex-wrap">
+    ${navStack.map((c, i) => i === navStack.length - 1
+      ? `<span class="text-zinc-200 font-semibold">${esc(c.name)}</span>`
+      : `<button onclick="navBack(${i})" class="hover:text-white underline underline-offset-2 transition-colors">${esc(c.name)}</button><span class="text-zinc-700">/</span>`
+    ).join("")}
+  </nav>`;
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+
+async function renderHome() {
+  model.set_parent("");
+  const tasks = await model.read_all();
+  app().innerHTML = `
+    <div class="fade-in">
+      ${breadcrumb()}
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold tracking-tight">My Tasks</h1>
+        <button onclick="openCreateModal('')"
+          class="flex items-center gap-2 bg-white text-zinc-900 hover:bg-zinc-200 transition-colors text-sm font-semibold px-4 py-2 rounded-lg">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          New Task
+        </button>
+      </div>
+      ${tasks.length === 0
+        ? `<div class="text-center py-24 text-zinc-600">
+             <div class="text-5xl mb-4">✓</div>
+             <p class="text-lg font-medium text-zinc-500">No tasks yet</p>
+             <p class="text-sm mt-1">Create your first task to get started</p>
+           </div>`
+        : `<ul class="space-y-2">${tasks.map(taskRow).join("")}</ul>`
+      }
+    </div>`;
+}
+
+function taskRow(t) {
+  return `
+    <li data-nav-id="${esc(t.id)}" data-nav-name="${esc(t.name)}"
+        class="group flex items-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl px-4 py-3.5 cursor-pointer transition-colors">
+      <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${t.is_done ? 'bg-emerald-500' : 'bg-zinc-600'}"></div>
+      <span class="flex-1 font-medium ${t.is_done ? 'line-through text-zinc-500' : ''}">${esc(t.name)}</span>
+      ${badge(t.type)}
+      ${t.estimation ? `<span class="text-xs text-zinc-500 font-mono">${t.estimation}h</span>` : ''}
+      <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors flex-shrink-0"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+    </li>`;
+}
+
+// ─── TASK DETAIL ─────────────────────────────────────────────────────────────
+
+async function renderTaskDetail(taskId) {
+  const task = await model.read(taskId);
+  if (!task) { await renderHome(); return; }
+
+  model.set_parent(taskId);
+  const subtasks = await model.read_all();
+  const logs = await model.getLogsForTask(taskId);
+
+  app().innerHTML = `
+    <div class="fade-in">
+      ${breadcrumb()}
+
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <h1 class="text-2xl font-bold leading-snug ${task.is_done ? 'line-through text-zinc-500' : ''}">${esc(task.name)}</h1>
+        <div class="flex items-center gap-2 flex-shrink-0 mt-1">
+          ${badge(task.type)}
+          ${task.estimation ? `<span class="text-xs text-zinc-500 font-mono">${task.estimation}h</span>` : ''}
+        </div>
+      </div>
+
+      <button onclick="toggleDone('${task.id}')"
+        class="mb-6 flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors
+               ${task.is_done
+                 ? 'border-emerald-700 text-emerald-400 bg-emerald-950/40 hover:bg-emerald-950/70'
+                 : 'border-zinc-700 text-zinc-400 bg-zinc-900 hover:bg-zinc-800'}">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          ${task.is_done
+            ? '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>'
+            : '<circle cx="12" cy="12" r="9"/>'}
+        </svg>
+        ${task.is_done ? "Mark Undone" : "Mark Done"}
+      </button>
+
+      ${task.description ? `
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3.5 mb-4 text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">${esc(task.description)}</div>
+      ` : ''}
+
+      ${task.conclusions ? `
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3.5 mb-4 text-sm">
+          <p class="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-1">Conclusions</p>
+          <p class="text-zinc-300 leading-relaxed whitespace-pre-wrap">${esc(task.conclusions)}</p>
+        </div>
+      ` : ''}
+
+      <!-- Subtasks -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Subtasks</h2>
+          <button onclick="openCreateModal('${task.id}')"
+            class="text-xs text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        ${subtasks.length === 0
+          ? `<p class="text-zinc-600 text-sm py-2">No subtasks</p>`
+          : `<ul class="space-y-2">${subtasks.map(subtaskRow).join("")}</ul>`
+        }
+      </div>
+
+      <!-- Logs -->
+      ${logs.length > 0 ? `
+        <div class="mb-6">
+          <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2.5">Work Log</h2>
+          <ul class="space-y-2">
+            ${logs.map(l => `
+              <li class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm">
+                <p class="text-zinc-300 leading-relaxed">${esc(l.did)}</p>
+                ${l.next.length ? `<p class="text-xs text-zinc-600 mt-1.5">+${l.next.length} subtask${l.next.length > 1 ? 's' : ''} created</p>` : ''}
+                <p class="text-xs text-zinc-700 mt-1">${new Date(l.createdAt).toLocaleString()}</p>
+              </li>`).join("")}
+          </ul>
+        </div>
+      ` : ''}
+
+      <!-- Actions -->
+      <div class="flex flex-wrap gap-2 pt-4 border-t border-zinc-800">
+        <button onclick="openLogModal('${task.id}')"
+          class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium px-4 py-2 rounded-lg">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+          </svg>
+          Log Work
+        </button>
+        <button onclick="openEditModal('${task.id}')"
+          class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium px-4 py-2 rounded-lg">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110.414 16H9v-2a2 2 0 01.586-1.414z"/>
+          </svg>
+          Edit
+        </button>
+        <button onclick="confirmDelete('${task.id}')"
+          class="flex items-center gap-2 bg-zinc-900 hover:bg-red-950 border border-zinc-800 hover:border-red-900 transition-colors text-sm font-medium px-4 py-2 rounded-lg text-zinc-400 hover:text-red-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16m-10-4h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"/>
+          </svg>
+          Delete
+        </button>
+      </div>
+    </div>`;
+}
+
+function subtaskRow(t) {
+  return `
+    <li class="group flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 hover:bg-zinc-800 transition-colors">
+      <button data-toggle-id="${esc(t.id)}" class="flex-shrink-0">
+        <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors pointer-events-none
+                    ${t.is_done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600 hover:border-zinc-400'}">
+          ${t.is_done ? `<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
+        </div>
+      </button>
+      <span data-nav-id="${esc(t.id)}" data-nav-name="${esc(t.name)}"
+            class="flex-1 text-sm font-medium cursor-pointer ${t.is_done ? 'line-through text-zinc-500' : ''}">${esc(t.name)}</span>
+      ${badge(t.type)}
+      <svg data-nav-id="${esc(t.id)}" data-nav-name="${esc(t.name)}"
+           class="w-4 h-4 text-zinc-700 group-hover:text-zinc-500 cursor-pointer transition-colors flex-shrink-0"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+    </li>`;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+
+async function toggleDone(id) {
+  const task = await model.read(id);
+  if (!task) return;
+  await model.update(id, { is_done: !task.is_done });
+  await refreshView();
+}
+
+async function confirmDelete(id) {
+  openConfirm("Delete this task and all its subtasks?", async () => {
+    await model.deleteIt(id);
+    navStack.pop();
+    navStack.length <= 1 ? await renderHome() : await renderTaskDetail(currentId());
+  });
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+
+function closeModal() { document.getElementById("modal-overlay")?.remove(); }
+
+function openModal(html) {
+  closeModal();
+  const el = document.createElement("div");
+  el.id = "modal-overlay";
+  el.className = "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4";
+  el.innerHTML = `<div class="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl fade-in">${html}</div>`;
+  el.addEventListener("click", e => { if (e.target === el) closeModal(); });
+  document.body.appendChild(el);
+}
+
+// CREATE
+function openCreateModal(parentId) {
+  openModal(`
+    <div class="p-6">
+      <h2 class="text-lg font-bold mb-5">New Task</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Name *</label>
+          <input id="f-name" type="text" placeholder="Task name"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors placeholder-zinc-600" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Description</label>
+          <textarea id="f-desc" rows="3" placeholder="What is this task about?"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors placeholder-zinc-600 resize-none"></textarea>
+        </div>
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Type</label>
+            <select id="f-type"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors">
+              <option value="personal">Personal</option>
+              <option value="office">Office</option>
+            </select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Estimate (h)</label>
+            <input id="f-est" type="number" min="0" step="0.5" placeholder="0"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors placeholder-zinc-600" />
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium py-2.5 rounded-lg">Cancel</button>
+        <button onclick="submitCreate('${parentId}')" class="flex-1 bg-white text-zinc-900 hover:bg-zinc-200 transition-colors text-sm font-semibold py-2.5 rounded-lg">Create</button>
+      </div>
+    </div>`);
+  setTimeout(() => document.getElementById("f-name")?.focus(), 50);
+}
+
+async function submitCreate(parentId) {
+  const name = document.getElementById("f-name").value.trim();
+  if (!name) { document.getElementById("f-name").focus(); return; }
+  await model.create({
+    name,
+    description: document.getElementById("f-desc").value.trim(),
+    type: document.getElementById("f-type").value,
+    estimation: parseFloat(document.getElementById("f-est").value) || 0,
+    parentId,
+  });
+  closeModal();
+  await refreshView();
+}
+
+// EDIT
+async function openEditModal(id) {
+  const t = await model.read(id);
+  if (!t) return;
+  openModal(`
+    <div class="p-6">
+      <h2 class="text-lg font-bold mb-5">Edit Task</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Name *</label>
+          <input id="e-name" type="text" value="${esc(t.name)}"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Description</label>
+          <textarea id="e-desc" rows="3"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors resize-none">${esc(t.description)}</textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Conclusions</label>
+          <textarea id="e-conc" rows="2"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors resize-none">${esc(t.conclusions)}</textarea>
+        </div>
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Type</label>
+            <select id="e-type"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors">
+              <option value="personal" ${t.type === "personal" ? "selected" : ""}>Personal</option>
+              <option value="office" ${t.type === "office" ? "selected" : ""}>Office</option>
+            </select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Estimate (h)</label>
+            <input id="e-est" type="number" min="0" step="0.5" value="${t.estimation || ''}"
+              class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors" />
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium py-2.5 rounded-lg">Cancel</button>
+        <button onclick="submitEdit('${id}')" class="flex-1 bg-white text-zinc-900 hover:bg-zinc-200 transition-colors text-sm font-semibold py-2.5 rounded-lg">Save</button>
+      </div>
+    </div>`);
+}
+
+async function submitEdit(id) {
+  const name = document.getElementById("e-name").value.trim();
+  if (!name) return;
+  await model.update(id, {
+    name,
+    description: document.getElementById("e-desc").value.trim(),
+    conclusions: document.getElementById("e-conc").value.trim(),
+    type: document.getElementById("e-type").value,
+    estimation: parseFloat(document.getElementById("e-est").value) || 0,
+  });
+  closeModal();
+  // update breadcrumb name too
+  const last = navStack[navStack.length - 1];
+  if (last.id === id) last.name = name;
+  await refreshView();
+}
+
+// LOG
+function openLogModal(taskId) {
+  openModal(`
+    <div class="p-6">
+      <h2 class="text-lg font-bold mb-1">Log Work</h2>
+      <p class="text-zinc-500 text-sm mb-5">Record what you did and queue up next steps.</p>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">What did you do? *</label>
+          <textarea id="l-did" rows="3" placeholder="Describe what was accomplished…"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-500 transition-colors placeholder-zinc-600 resize-none"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Next Tasks <span class="normal-case text-zinc-600 font-normal">(becomes subtasks)</span></label>
+          <div id="next-list" class="space-y-2 mb-2"></div>
+          <div class="flex gap-2">
+            <input id="l-next-input" type="text" placeholder="Task name…"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addNextTask();}"
+              class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-zinc-500 transition-colors placeholder-zinc-600" />
+            <button onclick="addNextTask()"
+              class="bg-zinc-700 hover:bg-zinc-600 transition-colors text-sm font-medium px-3 py-2 rounded-lg">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium py-2.5 rounded-lg">Cancel</button>
+        <button onclick="submitLog('${taskId}')" class="flex-1 bg-white text-zinc-900 hover:bg-zinc-200 transition-colors text-sm font-semibold py-2.5 rounded-lg">Save Log</button>
+      </div>
+    </div>`);
+  setTimeout(() => document.getElementById("l-did")?.focus(), 50);
+}
+
+function addNextTask() {
+  const input = document.getElementById("l-next-input");
+  const name = input.value.trim();
+  if (!name) return;
+  const list = document.getElementById("next-list");
+  const item = document.createElement("div");
+  item.dataset.name = name;
+  item.className = "flex items-center justify-between bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm";
+  item.innerHTML = `<span class="text-zinc-300">${esc(name)}</span>
+    <button onclick="this.parentElement.remove()" class="text-zinc-500 hover:text-red-400 transition-colors ml-2 text-xs">✕</button>`;
+  list.appendChild(item);
+  input.value = "";
+  input.focus();
+}
+
+async function submitLog(taskId) {
+  const did = document.getElementById("l-did").value.trim();
+  if (!did) { document.getElementById("l-did").focus(); return; }
+  const next = Array.from(document.querySelectorAll("#next-list [data-name]")).map(el => ({ name: el.dataset.name }));
+  await model.createLog({ did, task_id: taskId, next });
+  closeModal();
+  await refreshView();
+}
+
+// CONFIRM
+function openConfirm(message, onConfirm) {
+  openModal(`
+    <div class="p-6">
+      <h2 class="text-lg font-bold mb-2">Are you sure?</h2>
+      <p class="text-zinc-400 text-sm mb-6">${message}</p>
+      <div class="flex gap-3">
+        <button onclick="closeModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm font-medium py-2.5 rounded-lg">Cancel</button>
+        <button id="confirm-btn" class="flex-1 bg-red-600 hover:bg-red-500 transition-colors text-sm font-semibold py-2.5 rounded-lg">Delete</button>
+      </div>
+    </div>`);
+  document.getElementById("confirm-btn").onclick = onConfirm;
+}
+
+// ─── EVENT DELEGATION ────────────────────────────────────────────────────────
+
+document.addEventListener("click", async e => {
+  // Toggle done checkbox
+  const toggleBtn = e.target.closest("[data-toggle-id]");
+  if (toggleBtn) {
+    e.stopPropagation();
+    await toggleDone(toggleBtn.dataset.toggleId);
+    return;
+  }
+  // Navigate into task
+  const navEl = e.target.closest("[data-nav-id]");
+  if (navEl) {
+    await navigate(navEl.dataset.navId, navEl.dataset.navName);
+  }
+});
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>

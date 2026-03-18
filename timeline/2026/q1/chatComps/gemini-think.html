@@ -40,9 +40,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // 1. LOCAL STORAGE CRUD MODEL
-        // ==========================================
+
         class LocalMessageModel {
             constructor(collectionName) {
                 this.collectionName = collectionName;
@@ -75,10 +73,6 @@
                 localStorage.setItem(this.collectionName, JSON.stringify(msgs));
             }
         }
-
-        // ==========================================
-        // 2. COMPONENTS
-        // ==========================================
 
         class TwoPeopleChatComponent {
             constructor() {
@@ -199,9 +193,6 @@
             }
         }
 
-        // ==========================================
-        // NEW: AIChatComponentWithThink
-        // ==========================================
         class AIChatComponentWithThink extends AIChatComponent {
             
             // Overriding set_messages to support the 'think' tag
@@ -364,10 +355,6 @@
                 input.value = '';
             }
         }
-
-        // ==========================================
-        // 3. INITIALIZATION & PREVIEW
-        // ==========================================
 
         const userMe = { name: "Alex", type: "Person", icon: "user" };
         const userOther = { name: "Bob", type: "Person", icon: "ghost" };

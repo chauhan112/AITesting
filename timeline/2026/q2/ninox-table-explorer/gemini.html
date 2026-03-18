@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Model Viewer</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8 text-gray-800">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">JSON Model Viewer</h1>
+            <p class="text-gray-600 mb-4">Upload a JSON file to see tables, fields, and field details.</p>
+
+            <label class="block">
+                <span class="sr-only">Choose profile photo</span>
+                <input type="file" id="jsonUpload" accept=".json,application/json" class="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer
+                " />
+            </label>
+            <p id="errorMsg" class="text-red-500 text-sm mt-2 hidden"></p>
+        </header>
+
+        <!-- Three-column layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Tables Column -->
+            <div class="bg-white rounded-lg shadow p-4 h-[600px] flex flex-col">
+                <h2 class="text-lg font-semibold border-b pb-2 mb-3">1. Tables</h2>
+                <div class="flex-1 overflow-y-auto">
+                    <ul id="tablesList" class="space-y-1">
+                        <li class="text-gray-400 italic text-sm">Please upload a JSON file first.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fields Column -->
+            <div class="bg-white rounded-lg shadow p-4 h-[600px] flex flex-col">
+                <h2 class="text-lg font-semibold border-b pb-2 mb-3">2. Fields</h2>
+                <div class="flex-1 overflow-y-auto">
+                    <ul id="fieldsList" class="space-y-1">
+                        <li class="text-gray-400 italic text-sm">Select a table to view fields.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Details Column -->
+            <div class="bg-white rounded-lg shadow p-4 h-[600px] flex flex-col">
+                <h2 class="text-lg font-semibold border-b pb-2 mb-3">3. Field Details</h2>
+                <div class="flex-1 overflow-y-auto bg-gray-50 rounded p-3">
+                    <pre id="detailsView"
+                        class="text-sm font-mono text-gray-700 whitespace-pre-wrap"><span class="text-gray-400 italic font-sans">Select a field to view details.</span></pre>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        class GenericInfoGetter {
+            constructor(typ) {
+                this._type = typ;
+                this.tables = null;
+            }
+
+            get_type() {
+                return this._type;
+            }
+
+            getInfo(data) {
+                return { type: this._type, title: data.caption };
+            }
+
+            setAllTables(tables) {
+                this.tables = tables;
+            }
+        }
+
+        class FieldsInfoGetter extends GenericInfoGetter {
+            constructor(typ, fields = []) {
+                super(typ);
+                this.fields = fields;
+            }
+
+            getInfo(data) {
+                const res = {
+                    type: this._type,
+                    title: data.caption,
+                };
+                for (const f of this.fields) {
+                    res[f] = data[f];
+                }
+                return res;
+            }
+        }
+
+        class ChoicesTypeInfoGetter extends GenericInfoGetter {
+            constructor(typ = "choice") {
+                super(typ);
+            }
+
+            getInfo(data) {
+                const vals = [];
+                for (const v in data.values) {
+                    let val = data.values[v];
+                    vals.push({ name: val.caption, value: v });
+                }
+                return {
+                    type: this._type,
+                    title: data.caption,
+                    values: vals,
+                };
+            }
+        }
+
+        class StringLikeInfoGetter extends GenericInfoGetter {
+            constructor() {
+                super("string");
+            }
+
+            getInfo(data) {
+                const res = { title: data.caption };
+                res.type = data.stringMultiline === true ? "multiline" : "string";
+                res.height = data.height;
+                res.stringAutocorrect = data.stringAutocorrect;
+                return res;
+            }
+        }
+
+        class FileInfoGetter extends GenericInfoGetter {
+            constructor() {
+                super("file");
+            }
+
+            getInfo(data) {
+                const res = { title: data.caption };
+                res.type = data.fileHandling === "signature" ? "signature" : "Image";
+                return res;
+            }
+        }
+
+        class RefInfoGetter extends GenericInfoGetter {
+            constructor() {
+                super("ref");
+            }
+
+            getInfo(data) {
+                const res = { title: data.caption, type: "ref" };
+                if (this.tables) {
+                    res["ref-table"] = this.tables[data.refTypeId].caption;
+                }
+                res.cascade = data.cascade;
+                return res;
+            }
+        }
+
+        class RevInfoGetter extends GenericInfoGetter {
+            constructor() { super("rev"); }
+            getInfo(data) { return { type: this._type, title: data.caption }; }
+        }
+
+        class DChoiceInfoGetter extends GenericInfoGetter {
+            constructor() { super("dchoice"); }
+            getInfo(data) { return { type: this._type, title: data.caption }; }
+        }
+
+        class DMultiInfoGetter extends GenericInfoGetter {
+            constructor() { super("dmulti"); }
+            getInfo(data) { return { type: this._type, title: data.caption }; }
+        }
+
+        class MainNinoxParser {
+            static getAllInstances() {
+                const genericTypes = ["number", "timestamp", "email", "location", "color", "icon", "time", "user", "boolean"];
+                let res = genericTypes.map(t => new GenericInfoGetter(t));
+
+                const choicesLike = ["choice", "multi"];
+                res = res.concat(choicesLike.map(t => new ChoicesTypeInfoGetter(t)));
+
+                const typesWithFields = [
+                    ["date", ["dateCalendar", "dateYearly"]],
+                    ["timeinterval", ["timeintervalFormat"]],
+                    ["appointment", ["dateCalendar"]],
+                    ["link", ["linkPreview"]],
+                    ["html", ["height"]],
+                ];
+
+                res = res.concat(typesWithFields.map(([t, f]) => new FieldsInfoGetter(t, f)));
+
+                res.push(new StringLikeInfoGetter());
+                res.push(new FileInfoGetter());
+                res.push(new RefInfoGetter());
+                res.push(new RevInfoGetter());
+                res.push(new DChoiceInfoGetter());
+                res.push(new DMultiInfoGetter());
+
+                return res;
+            }
+        }
+
+        class JSONParser {
+            constructor() {
+                this.data = null;
+                this.table_to_id = null;
+                this.parser_map = {};
+                const parser = MainNinoxParser.getAllInstances();
+                for (const p of parser) {
+                    if (this.parser_map[p.get_type()] != null)
+                        throw new Error("duplicate parser");
+                    this.parser_map[p.get_type()] = p;
+                }
+            }
+
+            set_data(data) {
+                this.data = data;
+                this.table_to_id = null;
+            }
+
+            get_tables() {
+                let types = this.data.schema.types;
+                let res = [];
+                for (const type in types) {
+                    res.push(types[type].caption);
+                }
+                return res.sort((a, b) => a.localeCompare(b));
+            }
+
+            get_fields(table_name) {
+                let fields = this._get_raw_fields(table_name);
+                return this.parse_fields(fields)
+                    .map((f) => ({
+                        name: f.title,
+                        type: f.type,
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            _get_raw_fields(table_name) {
+                let tables_to_id = this.get_table_to_id();
+                let table_id = tables_to_id[table_name];
+                return this.data.schema.types[table_id].fields;
+            }
+
+            parse_fields(fields) {
+                let res = [];
+                for (const k in fields) {
+                    let field = fields[k];
+                    let p = this.parser_map[field.base];
+                    if (p) res.push(p.getInfo(field));
+                }
+                return res;
+            }
+
+            get_field_detail(table_name, field_name) {
+                let fields = this._get_raw_fields(table_name);
+                for (const k in fields) {
+                    let field = fields[k];
+                    if (field.caption === field_name)
+                        return this.parser_map[field.base].getInfo(field);
+                }
+                return null;
+            }
+
+            get_table_to_id() {
+                if (this.table_to_id != null) return this.table_to_id;
+                let types = this.data.schema.types;
+                this.table_to_id = {};
+                for (const type in types) {
+                    this.table_to_id[types[type].caption] = type;
+                }
+                return this.table_to_id;
+            }
+        }
+
+        const model = new JSONParser();
+        let currentTable = null;
+
+        // DOM Elements
+        const fileUpload = document.getElementById('jsonUpload');
+        const errorMsg = document.getElementById('errorMsg');
+        const tablesList = document.getElementById('tablesList');
+        const fieldsList = document.getElementById('fieldsList');
+        const detailsView = document.getElementById('detailsView');
+
+        // Handle File Upload
+        fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsedData = JSON.parse(event.target.result);
+                    model.set_data(parsedData);
+                    errorMsg.classList.add('hidden');
+                    renderTables();
+                } catch (err) {
+                    errorMsg.textContent = "Invalid JSON file. Please check your formatting.";
+                    errorMsg.classList.remove('hidden');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 1. Render Tables
+        function renderTables() {
+            const tables = model.get_tables();
+            tablesList.innerHTML = '';
+            fieldsList.innerHTML = '<li class="text-gray-400 italic text-sm">Select a table to view fields.</li>';
+            detailsView.innerHTML = '<span class="text-gray-400 italic font-sans">Select a field to view details.</span>';
+            currentTable = null;
+
+            if (tables.length === 0) {
+                tablesList.innerHTML = '<li class="text-gray-500">No tables found in this JSON.</li>';
+                return;
+            }
+
+            tables.forEach(table => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2 rounded cursor-pointer hover:bg-blue-50 transition-colors text-gray-700';
+                li.textContent = table;
+
+                li.onclick = () => {
+                    // Handle active selection styles
+                    Array.from(tablesList.children).forEach(el => el.classList.remove('bg-blue-100', 'font-medium', 'text-blue-800'));
+                    li.classList.add('bg-blue-100', 'font-medium', 'text-blue-800');
+
+                    currentTable = table;
+                    renderFields(table);
+                };
+
+                tablesList.appendChild(li);
+            });
+        }
+
+        // 2. Render Fields
+        function renderFields(tableName) {
+            const fields = model.get_fields(tableName);
+            fieldsList.innerHTML = '';
+            detailsView.innerHTML = '<span class="text-gray-400 italic font-sans">Select a field to view details.</span>';
+
+            if (fields.length === 0) {
+                fieldsList.innerHTML = '<li class="text-gray-500 text-sm">No fields found for this table.</li>';
+                return;
+            }
+
+            fields.forEach(field => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2 rounded cursor-pointer hover:bg-green-50 transition-colors flex justify-between items-center group';
+
+                li.innerHTML = `
+                    <span class="text-gray-700 group-hover:text-green-800">${field.name}</span>
+                    <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">${field.type}</span>
+                `;
+
+                li.onclick = () => {
+                    // Handle active selection styles
+                    Array.from(fieldsList.children).forEach(el => el.classList.remove('bg-green-100', 'font-medium'));
+                    li.classList.add('bg-green-100', 'font-medium');
+
+                    renderDetails(tableName, field.name);
+                };
+
+                fieldsList.appendChild(li);
+            });
+        }
+
+        // 3. Render Field Details
+        function renderDetails(tableName, fieldName) {
+            const details = model.get_field_detail(tableName, fieldName);
+            // Prettify the JSON output for the details view
+            detailsView.textContent = JSON.stringify(details, null, 4);
+        }
+    </script>
+</body>
+
+</html>

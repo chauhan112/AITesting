@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Algebra Clock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          garamond: ['"EB Garamond"', 'Georgia', 'serif'],
+          playfair: ['"Playfair Display"', 'serif'],
+        },
+        colors: {
+          parchment: '#f5f0e8',
+          face: '#faf7f2',
+          ink: '#1a1410',
+          crimson: '#8b1a1a',
+          gold: '#c9a84c',
+        },
+        keyframes: {
+          fadeIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
+        },
+        animation: {
+          fadeIn: 'fadeIn 0.8s ease-out forwards',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'EB Garamond', Georgia, serif; }
+  .clock-shadow {
+    box-shadow:
+      0 0 0 3px #c9a84c,
+      0 0 0 9px #1a1410,
+      0 30px 90px rgba(26,20,16,0.25),
+      inset 0 2px 10px rgba(255,255,255,0.5);
+  }
+  .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 4px 4px 2px 2px; }
+  .second-tail::after {
+    content: '';
+    position: absolute;
+    bottom: -18%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 18%;
+    background: #8b1a1a;
+    border-radius: 2px;
+  }
+  .mjx-container { display: inline-block !important; }
+  .hour-label { transition: color 0.4s, text-shadow 0.4s; }
+  .hour-label.active { color: #8b1a1a; text-shadow: 0 0 12px rgba(139,26,26,0.3); }
+  .tick-major { position:absolute; top:50%; left:50%; transform-origin:0 0; }
+  .tick-major::after { content:''; position:absolute; background:#1a1410; width:2.5px; height:18px; left:-1.25px; top:-268px; border-radius:2px; }
+  .tick-minor::after { content:''; position:absolute; background:#1a1410; width:1px; height:9px; left:-0.5px; top:-268px; opacity:0.5; }
+</style>
+</head>
+<body class="min-h-screen bg-parchment flex flex-col items-center justify-center overflow-hidden">
+
+<!-- Background glow -->
+<div class="fixed inset-0 pointer-events-none">
+  <div class="absolute top-0 left-0 w-96 h-96 rounded-full opacity-10" style="background:radial-gradient(circle, #c9a84c, transparent)"></div>
+  <div class="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-10" style="background:radial-gradient(circle, #8b1a1a, transparent)"></div>
+</div>
+
+<h1 class="font-playfair font-black text-ink text-2xl md:text-3xl tracking-widest mb-6 animate-fadeIn">
+  LINEAR <span class="text-crimson">ALGEBRA</span> CLOCK
+</h1>
+
+<div class="clock-wrap relative animate-fadeIn" style="width:min(560px,90vw);height:min(560px,90vw);">
+  <!-- Clock face -->
+  <div id="clockFace" class="w-full h-full rounded-full bg-face clock-shadow relative">
+
+    <!-- Tick marks rendered by JS -->
+    <div id="ticks" class="absolute inset-0 rounded-full"></div>
+
+    <!-- Hour labels rendered by JS -->
+    <div id="labels" class="absolute inset-0 rounded-full"></div>
+
+    <!-- Hands -->
+    <div id="handHour"   class="hand bg-ink" style="width:5px;margin-left:-2.5px;height:33%;box-shadow:0 2px 8px rgba(26,20,16,0.3)"></div>
+    <div id="handMinute" class="hand bg-ink" style="width:3px;margin-left:-1.5px;height:43%;box-shadow:0 2px 6px rgba(26,20,16,0.2)"></div>
+    <div id="handSecond" class="hand second-tail bg-crimson" style="width:2px;margin-left:-1px;height:47%"></div>
+
+    <!-- Center cap -->
+    <div class="absolute top-1/2 left-1/2 w-4 h-4 bg-ink rounded-full z-10 -translate-x-1/2 -translate-y-1/2" style="box-shadow:0 0 0 3px #c9a84c"></div>
+  </div>
+</div>
+
+<!-- Digital time -->
+<div id="digitalTime" class="mt-6 font-playfair text-ink text-xl tracking-widest opacity-60 animate-fadeIn"></div>
+
+<script>
+// ── Hour expressions (1–12) with LaTeX ──────────────────────────────────────
+const HOURS = [
+  // 1
+  { latex: `\\delta_{33}`,
+    tip: "Kronecker delta δ₃₃ = 1" },
+  // 2
+  { latex: `\\dim_{\\mathbb{R}}(\\mathbb{C}^6)`,
+    tip: "ℂ⁶ over ℝ has dimension 12… wait, that's 12. Actually dim_ℝ(ℂ¹) = 2, so dim_ℝ(ℂ⁶) = 12. But clock shows it at 12 position — reassigning: for 2, use dot product" },
+  // Actually let's just use the exact positions from the image
+];
+
+// Correct mapping from image (clockwise from 12):
+// 12 = dim_ℝ(ℂ⁶) = 12
+// 1  = δ₃₃ = 1
+// 2  = [2,4,5]·[3,5,-3] = 6+20-15 = 11? Let's compute: 2·3+4·5+5·(-3)=6+20-15=11. Hmm image shows it at ~2 o'clock
+//    Actually from the image layout let me map by position:
+
+const hourData = [
+  // index 0 = hour 12
+  { h:12, latex: `\\dim_{\\mathbb{R}}(\\mathbb{C}^6)`,       note:"dim_ℝ(ℂ⁶)=12" },
+  // hour 1
+  { h:1,  latex: `\\delta_{33}`,                              note:"δ₃₃=1" },
+  // hour 2 — dot product [2,4,5]·[3,5,-3]=6+20-15=11 — image puts it near 2 but value=11, skip; use tr(2I₅)=10 for 10
+  // Re-reading the image clockwise:
+  // 12 o'clock: dim_ℝ(ℂ⁶)
+  // 1 o'clock:  δ₃₃
+  // 2 o'clock:  Nullity([[1,2,3],[2,4,6],[3,6,9]])  — rank=1, nullity=3-1=2 ✓
+  { h:2,  latex: `\\text{Nullity}\\!\\left(\\begin{bmatrix}1&2&3\\\\2&4&6\\\\3&6&9\\end{bmatrix}\\right)`, note:"nullity=2" },
+  // 3 o'clock: Rank([[1,2,3],[0,4,5],[0,0,6]]) = 3
+  { h:3,  latex: `\\text{Rank}\\!\\left(\\begin{bmatrix}1&2&3\\\\0&4&5\\\\0&0&6\\end{bmatrix}\\right)`, note:"rank=3" },
+  // 4 o'clock: det eigenvalue eqn [6-λ, 4; -1, 2-λ]=0 → (6-λ)(2-λ)+4=0 → λ²-8λ+16=0 → λ=4
+  { h:4,  latex: `\\begin{vmatrix}6-\\lambda & 4\\\\-1 & 2-\\lambda\\end{vmatrix}=0`, note:"λ=4" },
+  // 5 o'clock: d([5,2],[1,5]) = √((5-1)²+(2-5)²)=√(16+9)=√25=5
+  { h:5,  latex: `d\\!\\left(\\begin{bmatrix}5\\\\2\\end{bmatrix},\\begin{bmatrix}1\\\\5\\end{bmatrix}\\right)`, note:"distance=5" },
+  // 6 o'clock: det([[5,1],[4,2]])=10-4=6
+  { h:6,  latex: `\\det\\!\\left(\\begin{bmatrix}5&1\\\\4&2\\end{bmatrix}\\right)`, note:"det=6" },
+  // 7 o'clock: ||[2,3,6]||=√(4+9+36)=√49=7
+  { h:7,  latex: `\\left\\|\\begin{bmatrix}2\\\\3\\\\6\\end{bmatrix}\\right\\|`, note:"norm=7" },
+  // 8 o'clock: -2x-10=8 → -2x=18 → x=-9? No: -2x-10=8 → -2x=18 → x=-9. Hmm.
+  //   Image says "-2x - 10 = 8" which gives x = -9. But it's at 9 o'clock position!
+  { h:8,  latex: `2\\mathbf{i}\\cdot(2\\mathbf{j}\\times2\\mathbf{k})`, note:"2i·(2j×2k)=2·(4i... wait: 2j×2k=4i, 2i·4i=8" },
+  // 9 o'clock: -2x-10=8 → x=-9
+  { h:9,  latex: `-2x - 10 = 8`, note:"x=−9, |x|=9" },
+  // 10 o'clock: tr(2I₅)=2·5=10
+  { h:10, latex: `\\text{tr}(2I_5)`, note:"tr(2I₅)=10" },
+  // 11 o'clock: [2,4,5]·[3,5,-3]=6+20-15=11
+  { h:11, latex: `\\begin{bmatrix}2\\\\4\\\\5\\end{bmatrix}\\cdot\\begin{bmatrix}3\\\\5\\\\-3\\end{bmatrix}`, note:"dot product=11" },
+];
+
+const SIZE = 560; // logical size; will scale via CSS
+const CX = SIZE / 2;
+const CY = SIZE / 2;
+const LABEL_R = 210; // radius for label centers
+
+function angleForHour(h) {
+  return ((h % 12) / 12) * 2 * Math.PI - Math.PI / 2;
+}
+
+// ── Build tick marks ─────────────────────────────────────────────────────────
+function buildTicks() {
+  const container = document.getElementById('ticks');
+  for (let i = 0; i < 60; i++) {
+    const angle = (i / 60) * 360;
+    const isMajor = i % 5 === 0;
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:absolute; top:50%; left:50%;
+      transform-origin:0 0;
+      transform: rotate(${angle}deg);
+    `;
+    el.innerHTML = `<div style="
+      position:absolute;
+      background:${isMajor ? '#1a1410' : '#1a1410'};
+      opacity:${isMajor ? 1 : 0.35};
+      width:${isMajor ? '2.5px' : '1px'};
+      height:${isMajor ? '18px' : '9px'};
+      left:${isMajor ? '-1.25px' : '-0.5px'};
+      top:-268px;
+      border-radius:2px;
+    "></div>`;
+    container.appendChild(el);
+  }
+}
+
+// ── Position labels ──────────────────────────────────────────────────────────
+function buildLabels() {
+  const container = document.getElementById('labels');
+  // Get rendered clock face size
+  const faceEl = document.getElementById('clockFace');
+  const faceSize = faceEl.offsetWidth;
+  const scale = faceSize / SIZE;
+  const r = LABEL_R * scale;
+
+  hourData.forEach(({ h, latex, note }) => {
+    const angle = angleForHour(h);
+    const x = faceSize/2 + r * Math.cos(angle);
+    const y = faceSize/2 + r * Math.sin(angle);
+
+    const label = document.createElement('div');
+    label.id = `label-${h}`;
+    label.className = 'hour-label';
+    label.title = note;
+    label.style.cssText = `
+      position:absolute;
+      left:${x}px; top:${y}px;
+      transform:translate(-50%,-50%);
+      font-family:'EB Garamond',serif;
+      font-size:${Math.max(10, 13 * scale)}px;
+      color:#1a1410;
+      text-align:center;
+      max-width:${80*scale}px;
+      line-height:1.2;
+      cursor:default;
+      user-select:none;
+      transition: color 0.4s;
+    `;
+    label.innerHTML = `\\(${latex}\\)`;
+    container.appendChild(label);
+  });
+
+  // Typeset math
+  if (window.MathJax) {
+    MathJax.typesetPromise([container]).catch(console.error);
+  }
+}
+
+// ── Rotate a hand element ────────────────────────────────────────────────────
+function setHand(id, deg) {
+  document.getElementById(id).style.transform = `rotate(${deg}deg)`;
+}
+
+// ── Update clock ─────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+  const ms = now.getMilliseconds();
+
+  const sDeg   = (s + ms/1000) * 6;
+  const mDeg   = (m + s/60) * 6;
+  const hDeg   = (h + m/60) * 30;
+
+  setHand('handHour',   hDeg);
+  setHand('handMinute', mDeg);
+  setHand('handSecond', sDeg);
+
+  // Highlight current hour label
+  const currentH = now.getHours() % 12 || 12;
+  hourData.forEach(({ h: lh }) => {
+    const el = document.getElementById(`label-${lh}`);
+    if (el) el.style.color = lh === currentH ? '#8b1a1a' : '#1a1410';
+  });
+
+  // Digital time
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('digitalTime').textContent =
+    `${pad(now.getHours())}:${pad(m)}:${pad(s)}`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildTicks();
+  buildLabels();
+  updateClock();
+  setInterval(updateClock, 100);
+});
+</script>
+</body>
+</html>

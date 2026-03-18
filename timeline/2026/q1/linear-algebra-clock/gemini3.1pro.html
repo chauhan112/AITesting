@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Algebra Clock</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX CSS & JS for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        /* Ensures block math doesn't add unwanted vertical margins */
+        .katex-display { margin: 0 !important; }
+        .math-container { position: absolute; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen py-8 font-sans overflow-hidden">
+
+    <!-- Title mimicking the image -->
+    <h1 class="text-4xl md:text-6xl font-bold text-[#3B3044] mb-8 font-serif tracking-tight text-center">
+        Linear Algebra clock
+    </h1>
+
+    <!-- Responsive scaling wrapper -->
+    <div class="w-full max-w-[700px] flex justify-center items-center px-4">
+        
+        <!-- The Clock Face -->
+        <div id="clock-container" class="relative w-[600px] h-[600px] rounded-full border-[6px] border-black bg-white shadow-2xl origin-center transition-transform duration-300">
+            
+            <!-- Center Dot -->
+            <div class="absolute top-1/2 left-1/2 w-4 h-4 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 z-40"></div>
+
+            <!-- Hands -->
+            <!-- Hour Hand -->
+            <div id="hour-wrapper" class="absolute top-1/2 left-1/2 w-0 h-0 z-30">
+                <div class="absolute bottom-0 -left-1.5 w-3 h-32 bg-black rounded-full origin-bottom"></div>
+            </div>
+            <!-- Minute Hand -->
+            <div id="minute-wrapper" class="absolute top-1/2 left-1/2 w-0 h-0 z-30">
+                <div class="absolute bottom-0 -left-1 w-2 h-48 bg-gray-800 rounded-full origin-bottom"></div>
+            </div>
+            <!-- Second Hand -->
+            <div id="second-wrapper" class="absolute top-1/2 left-1/2 w-0 h-0 z-30">
+                <div class="absolute bottom-0 -left-[1.5px] w-[3px] h-56 bg-red-600 rounded-full origin-bottom"></div>
+                <!-- Tail for second hand -->
+                <div class="absolute top-0 -left-[1.5px] w-[3px] h-10 bg-red-600 rounded-full origin-top"></div>
+            </div>
+
+            <div id="clock-face" class="absolute inset-0 w-full h-full">
+                <!-- Tick marks and Math equations injected via JS -->
+            </div>
+            
+            <!-- Faint background image overlay (optional, mimicking the Descartes background) -->
+            <div class="absolute inset-0 w-full h-full bg-[url('https://upload.wikimedia.org/wikipedia/commons/7/73/Frans_Hals_-_Portret_van_Ren%C3%A9_Descartes.jpg')] bg-cover bg-center opacity-[0.04] rounded-full pointer-events-none z-0"></div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for KaTeX to load
+        window.addEventListener('DOMContentLoaded', () => {
+            const clockFace = document.getElementById('clock-face');
+
+            // 1. Generate the 60 Tick Marks
+            for (let i = 0; i < 60; i++) {
+                const isHour = i % 5 === 0;
+                const angle = i * 6;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'absolute top-0 left-0 w-full h-full flex justify-center z-10';
+                wrapper.style.transform = `rotate(${angle}deg)`;
+
+                const tickMark = document.createElement('div');
+                // Make the 3, 6, 9, 12 ticks slightly longer if preferred, but keeping standard here
+                tickMark.className = `bg-black ${isHour ? 'w-[4px] h-6 mt-1' : 'w-[2px] h-3 mt-1'}`;
+
+                wrapper.appendChild(tickMark);
+                clockFace.appendChild(wrapper);
+            }
+
+            // 2. Define and map the Math Equations to hours
+            const equations =[
+                { text: '\\delta_{33}', hour: 1, scale: 2 },
+                { text: '\\text{Nullity} \\begin{pmatrix} 1 & 2 & 3 \\\\ 2 & 4 & 6 \\\\ 3 & 6 & 9 \\end{pmatrix}', hour: 2, scale: 0.9 },
+                { text: '\\text{Rank} \\begin{pmatrix} 1 & 2 & 3 \\\\ 0 & 4 & 5 \\\\ 0 & 0 & 6 \\end{pmatrix}', hour: 3, scale: 0.9 },
+                { text: '\\begin{bmatrix} 6 - \\lambda & 4 \\\\ -1 & 2 - \\lambda \\end{bmatrix} = 0', hour: 4, scale: 1 },
+                { text: 'd\\left(\\begin{bmatrix} 5 \\\\ 2 \\end{bmatrix}, \\begin{bmatrix} 1 \\\\ 5 \\end{bmatrix}\\right)', hour: 5, scale: 1 },
+                { text: '\\det \\begin{pmatrix} 5 & 1 \\\\ 4 & 2 \\end{pmatrix}', hour: 6, scale: 1.1 },
+                { text: '\\left\\| \\begin{bmatrix} 2 \\\\ 3 \\\\ 6 \\end{bmatrix} \\right\\|', hour: 7, scale: 1.1 },
+                { text: '2i \\cdot (2j \\times 2k)', hour: 8, scale: 1.2 },
+                { text: '2x - 10 = 8', hour: 9, scale: 1.4 },
+                { text: '\\text{tr}(2I_5)', hour: 10, scale: 1.4 },
+                { text: '\\begin{bmatrix} 2 \\\\ 4 \\\\ 5 \\end{bmatrix} \\cdot \\begin{bmatrix} 3 \\\\ 5 \\\\ -3 \\end{bmatrix}', hour: 11, scale: 0.9 },
+                { text: '\\dim_{\\mathbb{R}}(\\mathbb{C}^6)', hour: 12, scale: 1.5 }
+            ];
+
+            const radius = 215; // Distance from center
+
+            equations.forEach(eq => {
+                const angle = eq.hour * 30; // 360 degrees / 12 hours
+                const rad = (angle - 90) * (Math.PI / 180); // -90 to start at top (12 o'clock)
+
+                const x = Math.cos(rad) * radius;
+                const y = Math.sin(rad) * radius;
+
+                const el = document.createElement('div');
+                el.className = 'math-container z-20 text-black';
+                el.style.left = `calc(50% + ${x}px)`;
+                el.style.top = `calc(50% + ${y}px)`;
+                el.style.transform = `translate(-50%, -50%) scale(${eq.scale})`;
+
+                // Render KaTeX
+                el.innerHTML = katex.renderToString(eq.text, {
+                    displayMode: true,
+                    throwOnError: false
+                });
+                clockFace.appendChild(el);
+            });
+
+            // 3. Functional Clock Logic
+            function updateClock() {
+                const now = new Date();
+                const ms = now.getMilliseconds();
+                const seconds = now.getSeconds();
+                const minutes = now.getMinutes();
+                const hours = now.getHours();
+
+                // Calculate angles (using ms for smooth sweeping second hand)
+                const secondAngle = (seconds + ms / 1000) * 6;
+                const minuteAngle = minutes * 6 + seconds * 0.1;
+                const hourAngle = (hours % 12) * 30 + minutes * 0.5;
+
+                // Apply Rotations
+                document.getElementById('second-wrapper').style.transform = `rotate(${secondAngle}deg)`;
+                document.getElementById('minute-wrapper').style.transform = `rotate(${minuteAngle}deg)`;
+                document.getElementById('hour-wrapper').style.transform = `rotate(${hourAngle}deg)`;
+            }
+
+            // Run updates frequently for a smooth second-hand
+            setInterval(updateClock, 30);
+            updateClock();
+
+            // 4. Responsive Scaling to fit all screen sizes perfectly
+            function resizeClock() {
+                const container = document.getElementById('clock-container');
+                const parentWidth = container.parentElement.clientWidth - 32; // -32 for padding
+                // Base width is 600px. Scale it down if screen is smaller
+                const scale = parentWidth < 600 ? parentWidth / 600 : 1; 
+                container.style.transform = `scale(${scale})`;
+            }
+
+            window.addEventListener('resize', resizeClock);
+            resizeClock(); // Call once on initialize
+        });
+    </script>
+</body>
+</html>
