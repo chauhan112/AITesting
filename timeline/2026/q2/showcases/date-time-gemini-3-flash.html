@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind Date/Time Showcases</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8 font-sans">
+
+    <div class="max-w-6xl mx-auto space-y-16">
+        
+        <!-- SECTION 1: DATE COMPONENTS -->
+        <section>
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 border-b pb-2">1. Date Components</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Showcase 1: Minimalist -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Minimalist Date</label>
+                    <input type="date" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+
+                <!-- Showcase 2: Floating Label -->
+                <div class="relative bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-end">
+                    <div class="relative w-full">
+                        <input type="date" id="date_floating" placeholder=" " class="peer w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-indigo-600 placeholder-transparent py-1">
+                        <label for="date_floating" class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-1 peer-focus:-top-3.5 peer-focus:text-indigo-600 peer-focus:text-sm">Select Date</label>
+                    </div>
+                </div>
+
+                <!-- Showcase 3: Left Icon -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Booking Date</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        </div>
+                        <input type="date" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Showcase 4: Dark Mode Card -->
+                <div class="bg-gray-900 p-6 rounded-xl shadow-lg text-white">
+                    <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2">Deadline</label>
+                    <input type="date" class="w-full bg-gray-800 border-none text-white rounded-lg p-3 focus:ring-2 focus:ring-purple-500 cursor-pointer [color-scheme:dark]">
+                </div>
+
+                <!-- Showcase 5: Inline Highlight -->
+                <div class="bg-blue-50 p-6 rounded-xl border-2 border-dashed border-blue-200">
+                    <p class="text-sm text-blue-800 mb-3 font-medium">Auto-set to Today:</p>
+                    <input type="date" id="today-picker" class="w-full bg-transparent text-blue-900 font-bold text-lg focus:outline-none cursor-pointer">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DATETIME-LOCAL COMPONENTS -->
+        <section>
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 border-b pb-2">2. DateTime Components</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Showcase 1: Glassmorphism -->
+                <div class="bg-white/30 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-xl bg-gradient-to-br from-white/40 to-white/10">
+                    <label class="block text-sm font-bold text-gray-600 mb-2">Event Schedule</label>
+                    <input type="datetime-local" class="w-full bg-white/60 border-none rounded-xl p-2 focus:ring-2 focus:ring-pink-400">
+                </div>
+
+                <!-- Showcase 2: Bold Accent -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-8 border-emerald-500">
+                    <label class="block text-xs font-black text-emerald-700 uppercase mb-1">Meeting Time</label>
+                    <input type="datetime-local" class="text-xl font-light text-gray-800 focus:outline-none w-full">
+                </div>
+
+                <!-- Showcase 3: Two-Column Layout (Split via CSS) -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <span class="text-sm text-gray-500 mb-2 block">Precise Timestamp</span>
+                    <input type="datetime-local" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-orange-500 appearance-none">
+                </div>
+
+                <!-- Showcase 4: Rounded Pill -->
+                <div class="bg-gray-100 p-6 rounded-full flex items-center px-10">
+                    <input type="datetime-local" class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-gray-700 w-full">
+                </div>
+
+                <!-- Showcase 5: Modal Style Card -->
+                <div class="bg-white p-6 rounded-xl shadow-2xl border border-blue-100 scale-105 transform">
+                    <h3 class="text-lg font-bold text-blue-600 mb-4">Set Reminder</h3>
+                    <input type="datetime-local" class="w-full border-2 border-blue-50 py-3 px-4 rounded-xl focus:border-blue-500 outline-none">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: TIME COMPONENTS -->
+        <section>
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 border-b pb-2">3. Time Components</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Showcase 1: Simple Time -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <input type="time" class="text-4xl font-mono text-gray-800 border-none focus:ring-0 cursor-pointer">
+                    <p class="text-xs text-gray-400 mt-2 uppercase">Select Hour & Minute</p>
+                </div>
+
+                <!-- Showcase 2: Time Slots (JS Enhanced) -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <label class="block text-sm font-semibold mb-3">Quick Select</label>
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="setTime('09:00')" class="px-3 py-1 bg-gray-100 hover:bg-blue-500 hover:text-white rounded-full text-xs transition">09:00</button>
+                        <button onclick="setTime('13:00')" class="px-3 py-1 bg-gray-100 hover:bg-blue-500 hover:text-white rounded-full text-xs transition">13:00</button>
+                    </div>
+                    <input type="time" id="quick-time" class="w-full p-2 border rounded-lg">
+                </div>
+
+                <!-- Showcase 3: Soft Gradient -->
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-1 rounded-xl">
+                    <div class="bg-white p-5 rounded-lg">
+                        <label class="text-xs font-bold text-indigo-600 block mb-1">Shift Start</label>
+                        <input type="time" class="w-full font-bold text-gray-700 text-lg border-none focus:ring-0">
+                    </div>
+                </div>
+
+                <!-- Showcase 4: Double Border Modern -->
+                <div class="p-6 border-4 border-double border-gray-200 rounded-2xl bg-white">
+                    <input type="time" class="w-full bg-gray-50 p-2 rounded border-gray-200 text-gray-600 focus:bg-white transition-colors">
+                </div>
+
+                <!-- Showcase 5: Simple Underline -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <input type="time" class="w-full border-b-2 border-gray-100 focus:border-red-400 transition-all py-2 text-2xl font-serif text-red-500 outline-none">
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // JS Logic for Showcase 5 (Date): Set to today's date automatically
+        document.getElementById('today-picker').valueAsDate = new Date();
+
+        // JS Logic for Showcase 2 (Time): Quick select buttons
+        function setTime(val) {
+            document.getElementById('quick-time').value = val;
+        }
+    </script>
+</body>
+</html>

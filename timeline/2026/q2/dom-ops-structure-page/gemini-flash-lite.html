@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Mapping Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md" x-data="tableManager()">
+        <h1 class="text-2xl font-bold mb-6">Database Table Mapping</h1>
+
+        <!-- Table Selection -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium mb-2">Select Table Source</label>
+            <select x-model="selectedType" class="w-full p-2 border rounded border-gray-300">
+                <option value="default">Default (didNext)</option>
+                <option value="directus">Directus Table</option>
+                <option value="custom">Custom Fields</option>
+            </select>
+        </div>
+
+        <!-- Dynamic Form Area -->
+        <div class="space-y-4">
+            <template x-for="(field, index) in fields" :key="index">
+                <div class="flex gap-2 items-center">
+                    <input type="text" x-model="field.name" placeholder="Field Name" class="flex-1 p-2 border rounded">
+                    <select x-model="field.type" class="p-2 border rounded">
+                        <option value="string">String</option>
+                        <option value="integer">Integer</option>
+                        <option value="boolean">Boolean</option>
+                        <option value="date">Date</option>
+                    </select>
+                    <button @click="removeField(index)" class="text-red-500 font-bold px-2">X</button>
+                </div>
+            </template>
+        </div>
+
+        <button @click="addField()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Add Field
+        </button>
+
+        <div class="mt-8 border-t pt-4">
+            <button @click="submitData()" class="w-full bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700">
+                Save Configuration
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function tableManager() {
+            return {
+                selectedType: 'default',
+                fields: [{ name: '', type: 'string' }],
+                
+                addField() {
+                    this.fields.push({ name: '', type: 'string' });
+                },
+                removeField(index) {
+                    this.fields.splice(index, 1);
+                },
+                submitData() {
+                    const payload = {
+                        source: this.selectedType,
+                        mapping: this.fields
+                    };
+                    console.log('Submitting Config:', payload);
+                    alert('Configuration saved to console!');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

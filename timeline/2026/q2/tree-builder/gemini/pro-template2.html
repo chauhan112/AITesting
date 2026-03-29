@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberTree Node Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Using a tech/monospace font for the futuristic look -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'JetBrains Mono', monospace; 
+            background-color: #030712; /* Tailwind gray-950 */
+            color: #e5e7eb;
+        }
+        
+        /* Neon Cyber Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 0px; }
+        ::-webkit-scrollbar-thumb:hover { background: #22d3ee; }
+
+        /* Circuit/Cyber Grid Background */
+        .cyber-grid {
+            background-image: linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+        }
+
+        /* Tech Tree Connecting Lines */
+        .cyber-tree-line {
+            position: relative;
+        }
+        .cyber-tree-line::before {
+            content: '';
+            position: absolute;
+            top: -10px; bottom: 15px; left: 15px;
+            width: 1px;
+            background: linear-gradient(to bottom, #06b6d4, transparent);
+            z-index: 0;
+            opacity: 0.5;
+        }
+        .cyber-tree-line::after {
+            content: '';
+            position: absolute;
+            top: 24px; left: 15px;
+            width: 15px;
+            height: 1px;
+            background-color: #06b6d4;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        /* Glitch Hover Effect Utility */
+        .hover-glitch:hover {
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.2);
+            border-color: #22d3ee;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- App Mount Point -->
+    <div id="app" class="flex w-full h-full"></div>
+
+    <script>
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES (UNCHANGED)
+        // ==========================================
+        
+        const generateId = () => Math.random().toString(36).substring(2, 9);
+
+        class PropertyItem {
+            constructor(key = "", value = "", order = 0) {
+                this.id = generateId();
+                this.key = key;
+                this.value = value;
+                this.order = order;
+            }
+        }
+
+        class TreeNode {
+            constructor(name) {
+                this.id = generateId();
+                this.name = name;
+                this.properties = [];
+                this.children =[];
+                this.isExpanded = true;
+            }
+            add_new_prop(prop) { this.properties.push(prop); this.sort_props(); }
+            remove_prop(key) { this.properties = this.properties.filter(p => p.key !== key); }
+            get_props() { this.sort_props(); return this.properties; }
+            is_leaf() { return this.children.length === 0; }
+            sort_props() { this.properties.sort((a, b) => a.order - b.order); }
+            addChild(node) { this.children.push(node); }
+            removeChild(nodeId) { this.children = this.children.filter(c => c.id !== nodeId); }
+        }
+
+        class Tree {
+            constructor(rootName = "SYSTEM_ROOT") {
+                this.root = new TreeNode(rootName);
+            }
+            get_all() {
+                const serialize = (node) => ({
+                    id: node.id,
+                    name: node.name,
+                    is_leaf: node.is_leaf(),
+                    properties: node.get_props().map(({ key, value, order }) => ({ key, value, order })),
+                    children: node.children.map(serialize)
+                });
+                return JSON.stringify(serialize(this.root), null, 2);
+            }
+            findNode(id, node = this.root) {
+                if (node.id === id) return node;
+                for (let child of node.children) {
+                    let found = this.findNode(id, child);
+                    if (found) return found;
+                }
+                return null;
+            }
+            findParent(childId, node = this.root) {
+                for (let child of node.children) {
+                    if (child.id === childId) return node;
+                    let found = this.findParent(childId, child);
+                    if (found) return found;
+                }
+                return null;
+            }
+        }
+
+        class InMemoryDatamodel {
+            constructor() { this.data = new Map(); }
+            async read_all() { return Array.from(this.data.values()); }
+            async read(id) { return this.data.get(id); }
+            async deleteIt(id) { this.data.delete(id); }
+            async update(id, vals) {
+                if(this.data.has(id)) this.data.set(id, { ...this.data.get(id), ...vals });
+            }
+            async create(vals) {
+                const id = generateId();
+                this.data.set(id, { id, ...vals });
+                return id;
+            }
+        }
+
+        // ==========================================
+        // 2. APPLICATION STATE
+        // ==========================================
+        const state = {
+            tree: new Tree("CORE_MAINFRAME"),
+            selectedNodeId: null,
+            draggedNodeId: null,
+            maxDepth: 3,
+            db: new InMemoryDatamodel()
+        };
+        state.selectedNodeId = state.tree.root.id;
+
+        // Seed initial data
+        const child1 = new TreeNode("AUTH_SERVICE");
+        child1.add_new_prop(new PropertyItem("protocol", "OAuth2", 1));
+        child1.add_new_prop(new PropertyItem("port", "8080", 2));
+        
+        const child2 = new TreeNode("DATA_LAKE");
+        child2.add_new_prop(new PropertyItem("cluster_nodes", "16", 1));
+        
+        const subChild1 = new TreeNode("TOKEN_GENERATOR");
+        subChild1.add_new_prop(new PropertyItem("algorithm", "HS256", 1));
+
+        child1.addChild(subChild1);
+        state.tree.root.addChild(child1);
+        state.tree.root.addChild(child2);
+
+        // ==========================================
+        // 3. UI COMPONENTS (CYBERPUNK LOOK)
+        // ==========================================
+
+        class LeftNavigation {
+            get_comp() {
+                const container = document.createElement('aside');
+                container.className = "w-72 bg-gray-900 border-r border-cyan-900/50 flex flex-col z-20 flex-shrink-0 shadow-[4px_0_20px_rgba(0,0,0,0.5)]";
+                
+                container.innerHTML = `
+                    <div class="p-6 border-b border-cyan-900/50 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-fuchsia-500"></div>
+                        <h1 class="text-xl font-bold tracking-widest text-white flex items-center gap-3">
+                            <i class="fa-solid fa-microchip text-cyan-400"></i> CYBER<span class="text-fuchsia-500">TREE</span>
+                        </h1>
+                        <p class="text-[10px] text-cyan-600/80 mt-2 uppercase tracking-[0.2em]">Sys_Arch_Visualizer v2.0</p>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col gap-8">
+                        <!-- Depth Control -->
+                        <div class="bg-gray-950 p-4 border border-gray-800 rounded-sm">
+                            <label class="text-[10px] font-bold text-cyan-500 uppercase tracking-widest mb-4 block flex justify-between items-center">
+                                <span><i class="fa-solid fa-layer-group mr-2"></i>Render Depth</span>
+                                <span class="bg-cyan-900/30 text-cyan-400 px-2 py-0.5 rounded text-[10px]">[ ${state.maxDepth} ]</span>
+                            </label>
+                            <input type="range" id="depthSlider" min="1" max="6" value="${state.maxDepth}" 
+                                class="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-500">
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">System Operations</label>
+                            
+                            <button id="btnExport" class="w-full bg-gray-950 border border-cyan-500/50 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-900/20 transition-all py-3 px-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between group">
+                                <span>Export JSON</span>
+                                <i class="fa-solid fa-download group-hover:-translate-y-1 transition-transform"></i>
+                            </button>
+                            
+                            <button id="btnSaveDb" class="w-full bg-gray-950 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-400 hover:text-fuchsia-300 hover:bg-fuchsia-900/20 transition-all py-3 px-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between group">
+                                <span>Commit to DB</span>
+                                <i class="fa-solid fa-database group-hover:scale-110 transition-transform"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-800 text-[9px] text-gray-600 text-center uppercase tracking-widest">
+                        SECURE CONNECTION ESTABLISHED
+                    </div>
+                `;
+
+                // Event Listeners
+                container.querySelector('#depthSlider').addEventListener('input', (e) => {
+                    state.maxDepth = parseInt(e.target.value);
+                    renderApp();
+                });
+
+                container.querySelector('#btnExport').addEventListener('click', () => {
+                    showModal("DATA_DUMP // JSON_FORMAT", `<pre class="text-[11px] text-cyan-400 p-2 overflow-auto max-h-96">${state.tree.get_all()}</pre>`);
+                });
+
+                container.querySelector('#btnSaveDb').addEventListener('click', async () => {
+                    const id = await state.db.create({ tree: JSON.parse(state.tree.get_all()) });
+                    alert(`>>> DATA COMMITTED TO MEMORY BLOCK: [${id}]`);
+                });
+
+                return container;
+            }
+        }
+
+        class Body {
+            get_comp() {
+                const container = document.createElement('main');
+                container.className = "flex-1 flex flex-col relative cyber-grid overflow-auto z-10 droppable bg-[#030712]";
+
+                const header = document.createElement('div');
+                header.className = "p-6 sticky top-0 z-10 bg-gradient-to-b from-[#030712] to-transparent backdrop-blur-[2px]";
+                header.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 bg-fuchsia-500 animate-pulse rounded-full shadow-[0_0_10px_#d946ef]"></div>
+                        <h2 class="text-sm font-bold text-gray-300 tracking-[0.2em] uppercase">Topology Canvas</h2>
+                    </div>
+                `;
+                
+                const canvas = document.createElement('div');
+                canvas.className = "p-8 pb-32 flex-1 pt-4";
+                
+                // Build visual tree recursion
+                canvas.appendChild(this.buildNodeDOM(state.tree.root, 1));
+
+                container.appendChild(header);
+                container.appendChild(canvas);
+                return container;
+            }
+
+            buildNodeDOM(node, currentDepth) {
+                const wrapper = document.createElement('div');
+                const isRoot = node.id === state.tree.root.id;
+                
+                wrapper.className = `relative mt-4 group ${!isRoot ? 'ml-8 cyber-tree-line' : ''}`;
+                
+                // DRAG & DROP
+                wrapper.addEventListener('dragover', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.add('shadow-[0_0_15px_rgba(217,70,239,0.5)]', 'border-fuchsia-500');
+                });
+                wrapper.addEventListener('dragleave', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.remove('shadow-[0_0_15px_rgba(217,70,239,0.5)]', 'border-fuchsia-500');
+                });
+                wrapper.addEventListener('drop', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.remove('shadow-[0_0_15px_rgba(217,70,239,0.5)]', 'border-fuchsia-500');
+                    this.handleDrop(node.id);
+                });
+
+                // Visual Node Block
+                const nodeDiv = document.createElement('div');
+                const isSelected = state.selectedNodeId === node.id;
+                
+                nodeDiv.className = `relative z-10 flex items-center gap-4 p-3 pr-4 w-80 bg-gray-900/90 backdrop-blur-sm cursor-pointer transition-all duration-300 hover-glitch
+                    ${isSelected 
+                        ? 'border-l-4 border-l-fuchsia-500 border-t border-r border-b border-gray-700 shadow-[0_0_15px_rgba(217,70,239,0.15)] bg-gray-800' 
+                        : 'border border-gray-800 border-l-4 border-l-cyan-500'}
+                `;
+                
+                if (!isRoot) {
+                    nodeDiv.draggable = true;
+                    nodeDiv.addEventListener('dragstart', (e) => {
+                        e.stopPropagation();
+                        state.draggedNodeId = node.id;
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => nodeDiv.classList.add('opacity-30', 'scale-95'), 0);
+                    });
+                    nodeDiv.addEventListener('dragend', (e) => {
+                        nodeDiv.classList.remove('opacity-30', 'scale-95');
+                        state.draggedNodeId = null;
+                    });
+                }
+
+                nodeDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    state.selectedNodeId = node.id;
+                    renderApp();
+                };
+
+                const leafStatus = node.is_leaf() ? '<span class="text-cyan-600">[LEAF]</span>' : '<span class="text-fuchsia-600">[NODE]</span>';
+
+                nodeDiv.innerHTML = `
+                    <div class="text-gray-600 cursor-crosshair hover:text-cyan-400 ${isRoot ? 'hidden' : ''}">
+                        <i class="fa-solid fa-braille"></i>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="font-bold text-sm text-gray-200 truncate font-mono">${node.name || 'UNNAMED_ENTITY'}</div>
+                        <div class="text-[10px] font-mono text-gray-500 mt-1 flex gap-2">
+                            ${leafStatus} <span>${node.properties.length} PROPS</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="add-child-btn w-7 h-7 bg-gray-800 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500 hover:text-gray-900 transition-colors flex items-center justify-center text-xs" title="Instantiate Child">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        ${!isRoot ? `
+                        <button class="delete-node-btn w-7 h-7 bg-gray-800 border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-gray-900 transition-colors flex items-center justify-center text-xs" title="Terminate Entity">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+
+                nodeDiv.querySelector('.add-child-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    node.addChild(new TreeNode("NEW_ENTITY"));
+                    node.isExpanded = true;
+                    renderApp();
+                };
+
+                if (!isRoot) {
+                    nodeDiv.querySelector('.delete-node-btn').onclick = (e) => {
+                        e.stopPropagation();
+                        const parent = state.tree.findParent(node.id);
+                        if(parent) {
+                            parent.removeChild(node.id);
+                            if(state.selectedNodeId === node.id) state.selectedNodeId = state.tree.root.id;
+                            renderApp();
+                        }
+                    };
+                }
+
+                wrapper.appendChild(nodeDiv);
+
+                // Children rendering
+                if (currentDepth < state.maxDepth && node.isExpanded && node.children.length > 0) {
+                    const childrenContainer = document.createElement('div');
+                    node.children.forEach(child => {
+                        childrenContainer.appendChild(this.buildNodeDOM(child, currentDepth + 1));
+                    });
+                    wrapper.appendChild(childrenContainer);
+                } else if (currentDepth >= state.maxDepth && node.children.length > 0) {
+                    const depthWarning = document.createElement('div');
+                    depthWarning.className = "text-[10px] text-fuchsia-500/70 ml-12 mt-3 uppercase tracking-widest flex items-center gap-2";
+                    depthWarning.innerHTML = `<i class="fa-solid fa-link-slash"></i>[ ${node.children.length} ENTITIES MASKED BY DEPTH_LIMIT ]`;
+                    wrapper.appendChild(depthWarning);
+                }
+
+                return wrapper;
+            }
+
+            handleDrop(targetNodeId) {
+                const draggedId = state.draggedNodeId;
+                if (!draggedId || draggedId === targetNodeId) return;
+
+                const isDescendant = (targetId, potentialAncestorId) => {
+                    const ancestor = state.tree.findNode(potentialAncestorId);
+                    if (!ancestor) return false;
+                    const search = (n) => {
+                        if(n.id === targetId) return true;
+                        return n.children.some(search);
+                    }
+                    return search(ancestor);
+                };
+
+                if (isDescendant(targetNodeId, draggedId)) {
+                    alert(">>> ERROR: RECURSIVE LOOP DETECTED. ABORTING.");
+                    return;
+                }
+
+                const draggedNode = state.tree.findNode(draggedId);
+                const oldParent = state.tree.findParent(draggedId);
+                const newParent = state.tree.findNode(targetNodeId);
+
+                if(oldParent) oldParent.removeChild(draggedId);
+                if(newParent) {
+                    newParent.addChild(draggedNode);
+                    newParent.isExpanded = true;
+                }
+                renderApp();
+            }
+        }
+
+        class RightNavigation {
+            get_comp() {
+                const container = document.createElement('aside');
+                container.className = "w-[400px] bg-gray-900 border-l border-cyan-900/50 flex flex-col shadow-[-4px_0_20px_rgba(0,0,0,0.5)] z-20 flex-shrink-0";
+                
+                const node = state.tree.findNode(state.selectedNodeId);
+
+                if (!node) {
+                    container.innerHTML = `<div class="p-8 text-center text-gray-700 mt-20 flex flex-col items-center"><i class="fa-solid fa-radar text-4xl mb-4 text-gray-800 animate-spin-slow"></i><p class="text-xs uppercase tracking-widest">Awaiting Entity Selection...</p></div>`;
+                    return container;
+                }
+
+                container.innerHTML = `
+                    <div class="p-6 bg-gray-950 border-b border-cyan-900/50">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="text-[10px] font-bold text-cyan-500 uppercase tracking-widest block">Entity Editor</label>
+                            <span class="text-[9px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded border border-cyan-800">ID: ${node.id}</span>
+                        </div>
+                        
+                        <div class="relative">
+                            <i class="fa-solid fa-terminal absolute left-3 top-3.5 text-gray-500 text-xs"></i>
+                            <input type="text" id="nodeNameInput" value="${node.name}" placeholder="ENTITY_NAME" 
+                                class="w-full bg-gray-900 border border-gray-700 focus:border-fuchsia-500 rounded-sm pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:shadow-[0_0_10px_rgba(217,70,239,0.2)] font-mono text-gray-200 transition-all uppercase placeholder-gray-700">
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 flex-1 overflow-y-auto">
+                        <div class="flex justify-between items-end mb-6 border-b border-gray-800 pb-2">
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 tracking-widest uppercase">Data Payload</h3>
+                                <p class="text-[9px] text-gray-600 mt-1">KEY_VALUE PAIRS DEFINITION</p>
+                            </div>
+                            <button id="addPropBtn" class="text-[10px] bg-cyan-900/20 text-cyan-400 border border-cyan-500/50 hover:bg-cyan-500 hover:text-gray-900 px-3 py-1.5 rounded-sm transition-all uppercase font-bold tracking-wider">
+                                + Inject Var
+                            </button>
+                        </div>
+                        
+                        <div id="propsList" class="flex flex-col gap-4">
+                            <!-- properties -->
+                        </div>
+                    </div>
+                `;
+
+                container.querySelector('#nodeNameInput').addEventListener('input', (e) => {
+                    node.name = e.target.value;
+                    renderApp(); 
+                });
+
+                container.querySelector('#addPropBtn').addEventListener('click', () => {
+                    const newOrder = node.properties.length > 0 ? Math.max(...node.properties.map(p => p.order)) + 1 : 1;
+                    node.add_new_prop(new PropertyItem("NEW_VAR", "NULL", newOrder));
+                    renderApp();
+                });
+
+                const propsList = container.querySelector('#propsList');
+                if (node.properties.length === 0) {
+                    propsList.innerHTML = `<p class="text-[10px] text-gray-600 text-center py-6 border border-dashed border-gray-800 bg-gray-950 uppercase tracking-widest">No variables injected.</p>`;
+                } else {
+                    node.get_props().forEach(prop => {
+                        const propDiv = document.createElement('div');
+                        propDiv.className = "bg-gray-950 border border-gray-800 p-4 relative group hover:border-cyan-900 transition-colors";
+                        
+                        propDiv.innerHTML = `
+                            <div class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="delete-prop-btn text-gray-600 hover:text-red-500 text-xs" title="Drop Variable">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-[2fr_1fr] gap-3 mb-3 pr-4">
+                                <div>
+                                    <label class="text-[9px] text-cyan-600 uppercase font-bold tracking-widest block mb-1">Var_Key</label>
+                                    <input type="text" class="prop-key w-full bg-transparent border-b border-gray-700 px-1 py-1 text-xs text-gray-300 focus:outline-none focus:border-cyan-500 font-mono transition-colors" value="${prop.key}">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-cyan-600 uppercase font-bold tracking-widest block mb-1">Sequence</label>
+                                    <input type="number" class="prop-order w-full bg-transparent border-b border-gray-700 px-1 py-1 text-xs text-fuchsia-400 focus:outline-none focus:border-fuchsia-500 font-mono transition-colors text-center" value="${prop.order}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-cyan-600 uppercase font-bold tracking-widest block mb-1">Value_Data</label>
+                                <textarea rows="1" class="prop-val w-full bg-gray-900 border border-gray-800 rounded-sm px-2 py-2 text-xs text-gray-300 focus:outline-none focus:border-cyan-500 font-mono resize-y min-h-[40px] transition-colors">${prop.value}</textarea>
+                            </div>
+                        `;
+
+                        propDiv.querySelector('.prop-key').addEventListener('change', (e) => { prop.key = e.target.value; });
+                        propDiv.querySelector('.prop-val').addEventListener('change', (e) => { prop.value = e.target.value; });
+                        propDiv.querySelector('.prop-order').addEventListener('change', (e) => { 
+                            prop.order = parseInt(e.target.value) || 0; 
+                            node.sort_props();
+                            renderApp(); 
+                        });
+
+                        propDiv.querySelector('.delete-prop-btn').addEventListener('click', () => {
+                            node.remove_prop(prop.key);
+                            renderApp();
+                        });
+
+                        propsList.appendChild(propDiv);
+                    });
+                }
+
+                return container;
+            }
+        }
+
+        // ==========================================
+        // 4. MAIN RENDER FUNCTION & HELPERS
+        // ==========================================
+        const appMount = document.getElementById('app');
+        
+        const leftNav = new LeftNavigation();
+        const mainBody = new Body();
+        const rightNav = new RightNavigation();
+
+        function renderApp() {
+            appMount.innerHTML = '';
+            appMount.appendChild(leftNav.get_comp());
+            appMount.appendChild(mainBody.get_comp());
+            appMount.appendChild(rightNav.get_comp());
+        }
+
+        // Cyberpunk Modal
+        function showModal(title, htmlContent) {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4";
+            
+            const modal = document.createElement('div');
+            modal.className = "bg-gray-900 border-2 border-cyan-500 w-[700px] max-w-full shadow-[0_0_30px_rgba(6,182,212,0.3)] flex flex-col relative";
+            
+            // Decorative corner markers
+            modal.innerHTML = `
+                <div class="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-fuchsia-500"></div>
+                <div class="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-fuchsia-500"></div>
+                <div class="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-fuchsia-500"></div>
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-fuchsia-500"></div>
+
+                <div class="px-6 py-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
+                    <h3 class="font-bold text-cyan-400 text-xs tracking-widest uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-terminal"></i> ${title}
+                    </h3>
+                    <button class="close-btn text-gray-500 hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6 bg-[#030712] cyber-grid">
+                    <div class="bg-gray-950/90 border border-gray-800 p-4 rounded-sm">
+                        ${htmlContent}
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-800 bg-gray-950 flex justify-end">
+                    <button class="close-btn px-6 py-2 bg-transparent border border-cyan-500 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:bg-cyan-500 hover:text-gray-900 transition-colors">Acknowledge</button>
+                </div>
+            `;
+
+            const closeFns = modal.querySelectorAll('.close-btn');
+            closeFns.forEach(btn => btn.onclick = () => document.body.removeChild(overlay));
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        // ==========================================
+        // 5. INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderApp();
+        });
+
+    </script>
+</body>
+</html>

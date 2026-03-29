@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Tree Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for sleek icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Canvas Grid Background */
+        .canvas-bg {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: #f8fafc;
+        }
+
+        /* Tree Connecting Lines */
+        .tree-line-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 16px;
+            width: 2px;
+            background-color: #e2e8f0;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-gray-800 bg-white">
+
+    <!-- App Mount Point -->
+    <div id="app" class="flex w-full h-full"></div>
+
+    <script>
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES
+        // ==========================================
+        
+        const generateId = () => Math.random().toString(36).substring(2, 9);
+
+        // implements PropertyItem
+        class PropertyItem {
+            constructor(key = "", value = "", order = 0) {
+                this.id = generateId(); // internal id for ui rendering
+                this.key = key;
+                this.value = value;
+                this.order = order;
+            }
+        }
+
+        // implements INode
+        class TreeNode {
+            constructor(name) {
+                this.id = generateId();
+                this.name = name;
+                this.properties =[];
+                this.children =[];
+                this.isExpanded = true;
+            }
+            
+            add_new_prop(prop) {
+                this.properties.push(prop);
+                this.sort_props();
+            }
+            
+            remove_prop(key) {
+                this.properties = this.properties.filter(p => p.key !== key);
+            }
+            
+            get_props() {
+                this.sort_props();
+                return this.properties;
+            }
+            
+            is_leaf() {
+                return this.children.length === 0;
+            }
+
+            sort_props() {
+                this.properties.sort((a, b) => a.order - b.order);
+            }
+
+            addChild(node) {
+                this.children.push(node);
+            }
+
+            removeChild(nodeId) {
+                this.children = this.children.filter(c => c.id !== nodeId);
+            }
+        }
+
+        // implements ITree
+        class Tree {
+            constructor(rootName = "Root") {
+                this.root = new TreeNode(rootName);
+            }
+            
+            get_all() {
+                const serialize = (node) => ({
+                    id: node.id,
+                    name: node.name,
+                    is_leaf: node.is_leaf(),
+                    properties: node.get_props().map(({ key, value, order }) => ({ key, value, order })),
+                    children: node.children.map(serialize)
+                });
+                return JSON.stringify(serialize(this.root), null, 2);
+            }
+
+            findNode(id, node = this.root) {
+                if (node.id === id) return node;
+                for (let child of node.children) {
+                    let found = this.findNode(id, child);
+                    if (found) return found;
+                }
+                return null;
+            }
+
+            findParent(childId, node = this.root) {
+                for (let child of node.children) {
+                    if (child.id === childId) return node;
+                    let found = this.findParent(childId, child);
+                    if (found) return found;
+                }
+                return null;
+            }
+        }
+
+        // implements IDatamodel<T>
+        class InMemoryDatamodel {
+            constructor() {
+                this.data = new Map();
+            }
+            async read_all() { return Array.from(this.data.values()); }
+            async read(id) { return this.data.get(id); }
+            async deleteIt(id) { this.data.delete(id); }
+            async update(id, vals) {
+                if(this.data.has(id)){
+                    this.data.set(id, { ...this.data.get(id), ...vals });
+                }
+            }
+            async create(vals) {
+                const id = generateId();
+                this.data.set(id, { id, ...vals });
+                return id;
+            }
+        }
+
+        // ==========================================
+        // 2. APPLICATION STATE
+        // ==========================================
+        const state = {
+            tree: new Tree("Application Config"),
+            selectedNodeId: null,
+            draggedNodeId: null,
+            maxDepth: 3,
+            db: new InMemoryDatamodel()
+        };
+        state.selectedNodeId = state.tree.root.id;
+
+        // Seed some dummy data so it looks dashing on load
+        const child1 = new TreeNode("Database");
+        child1.add_new_prop(new PropertyItem("host", "localhost", 1));
+        child1.add_new_prop(new PropertyItem("port", "5432", 2));
+        
+        const child2 = new TreeNode("Cache");
+        child2.add_new_prop(new PropertyItem("ttl", "3600", 1));
+        
+        const subChild1 = new TreeNode("Replicas");
+        subChild1.add_new_prop(new PropertyItem("count", "3", 1));
+
+        child1.addChild(subChild1);
+        state.tree.root.addChild(child1);
+        state.tree.root.addChild(child2);
+
+        // ==========================================
+        // 3. UI COMPONENTS (implements IComponent concept)
+        // ==========================================
+
+        class LeftNavigation {
+            get_comp() {
+                const container = document.createElement('aside');
+                container.className = "w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 flex-shrink-0";
+                
+                container.innerHTML = `
+                    <div class="p-5 border-b border-slate-700">
+                        <h1 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-network-wired text-indigo-400"></i> TreeBuild.
+                        </h1>
+                        <p class="text-xs text-slate-400 mt-1">Visual JSON structures</p>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col gap-6">
+                        <!-- Depth Control -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">View Depth Level</label>
+                            <input type="range" id="depthSlider" min="1" max="6" value="${state.maxDepth}" class="w-full accent-indigo-500">
+                            <div class="flex justify-between text-xs text-slate-400 mt-1">
+                                <span>1</span><span>Showing max ${state.maxDepth} layers</span><span>6</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Actions</label>
+                            <button id="btnExport" class="w-full bg-slate-800 hover:bg-indigo-600 transition-colors py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2 mb-2 border border-slate-700 hover:border-indigo-500 text-left">
+                                <i class="fa-solid fa-code"></i> Export JSON
+                            </button>
+                            <button id="btnSaveDb" class="w-full bg-slate-800 hover:bg-emerald-600 transition-colors py-2 px-3 rounded-md text-sm flex items-center justify-center gap-2 border border-slate-700 hover:border-emerald-500 text-left">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Save to DB (Test)
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Event Listeners
+                container.querySelector('#depthSlider').addEventListener('input', (e) => {
+                    state.maxDepth = parseInt(e.target.value);
+                    renderApp();
+                });
+
+                container.querySelector('#btnExport').addEventListener('click', () => {
+                    alert("JSON Exported! Check console for full raw output.");
+                    console.log(state.tree.get_all());
+                    // Alternatively, show a nice modal window
+                    showModal("JSON Export", `<pre class="text-xs bg-slate-900 text-emerald-400 p-4 rounded overflow-auto max-h-96">${state.tree.get_all()}</pre>`);
+                });
+
+                container.querySelector('#btnSaveDb').addEventListener('click', async () => {
+                    const id = await state.db.create({ tree: JSON.parse(state.tree.get_all()) });
+                    alert(`Tree successfully saved to InMemoryDatamodel! \nAssigned ID: ${id}`);
+                });
+
+                return container;
+            }
+        }
+
+        class Body {
+            get_comp() {
+                const container = document.createElement('main');
+                container.className = "flex-1 flex flex-col relative canvas-bg overflow-auto z-10 droppable";
+
+                const header = document.createElement('div');
+                header.className = "p-6 sticky top-0 bg-gradient-to-b from-slate-50 to-transparent z-10";
+                header.innerHTML = `
+                    <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">Tree Builder Canvas</h2>
+                    <p class="text-sm text-slate-500">Drag and drop nodes to organize. Select a node to edit properties.</p>
+                `;
+                
+                const canvas = document.createElement('div');
+                canvas.className = "p-8 pb-32 flex-1";
+                
+                // Build visual tree recursion
+                canvas.appendChild(this.buildNodeDOM(state.tree.root, 1));
+
+                container.appendChild(header);
+                container.appendChild(canvas);
+                return container;
+            }
+
+            buildNodeDOM(node, currentDepth) {
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative ml-6 mt-3 group tree-line-wrapper";
+                
+                // DRAG & DROP Event Handlers
+                wrapper.addEventListener('dragover', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.add('ring-2', 'ring-indigo-400', 'bg-indigo-50');
+                });
+                wrapper.addEventListener('dragleave', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.remove('ring-2', 'ring-indigo-400', 'bg-indigo-50');
+                });
+                wrapper.addEventListener('drop', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    nodeDiv.classList.remove('ring-2', 'ring-indigo-400', 'bg-indigo-50');
+                    this.handleDrop(node.id);
+                });
+
+                // Visual Node Block
+                const nodeDiv = document.createElement('div');
+                const isSelected = state.selectedNodeId === node.id;
+                
+                nodeDiv.className = `relative z-10 flex items-center gap-3 p-2.5 pr-4 w-72 bg-white rounded-lg border shadow-sm cursor-pointer transition-all duration-200
+                    ${isSelected ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'}
+                `;
+                
+                // Only allow dragging if not root
+                if (node.id !== state.tree.root.id) {
+                    nodeDiv.draggable = true;
+                    nodeDiv.addEventListener('dragstart', (e) => {
+                        e.stopPropagation();
+                        state.draggedNodeId = node.id;
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => nodeDiv.classList.add('opacity-50'), 0);
+                    });
+                    nodeDiv.addEventListener('dragend', (e) => {
+                        nodeDiv.classList.remove('opacity-50');
+                        state.draggedNodeId = null;
+                    });
+                }
+
+                nodeDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    state.selectedNodeId = node.id;
+                    renderApp(); // re-render to reflect selection
+                };
+
+                // Node content layout
+                const isRoot = node.id === state.tree.root.id;
+                
+                nodeDiv.innerHTML = `
+                    <div class="text-slate-400 cursor-grab active:cursor-grabbing hover:text-slate-600 ${isRoot ? 'invisible' : ''}">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="font-medium text-sm text-slate-800 truncate">${node.name || 'Unnamed Node'}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${node.properties.length} Props</div>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="add-child-btn w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center text-xs" title="Add Child">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        ${!isRoot ? `
+                        <button class="delete-node-btn w-6 h-6 rounded-md bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center text-xs" title="Delete Node">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+
+                nodeDiv.querySelector('.add-child-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    node.addChild(new TreeNode("New Node"));
+                    node.isExpanded = true;
+                    renderApp();
+                };
+
+                if (!isRoot) {
+                    nodeDiv.querySelector('.delete-node-btn').onclick = (e) => {
+                        e.stopPropagation();
+                        const parent = state.tree.findParent(node.id);
+                        if(parent) {
+                            parent.removeChild(node.id);
+                            if(state.selectedNodeId === node.id) state.selectedNodeId = state.tree.root.id;
+                            renderApp();
+                        }
+                    };
+                }
+
+                wrapper.appendChild(nodeDiv);
+
+                // Children rendering based on depth
+                if (currentDepth < state.maxDepth && node.isExpanded && node.children.length > 0) {
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = "pl-4"; // Indentation handles visual nesting
+                    node.children.forEach(child => {
+                        childrenContainer.appendChild(this.buildNodeDOM(child, currentDepth + 1));
+                    });
+                    wrapper.appendChild(childrenContainer);
+                } else if (currentDepth >= state.maxDepth && node.children.length > 0) {
+                    const depthWarning = document.createElement('div');
+                    depthWarning.className = "text-xs text-slate-400 italic ml-10 mt-2";
+                    depthWarning.innerHTML = `+ ${node.children.length} hidden children (Increase depth to view)`;
+                    wrapper.appendChild(depthWarning);
+                }
+
+                return wrapper;
+            }
+
+            handleDrop(targetNodeId) {
+                const draggedId = state.draggedNodeId;
+                if (!draggedId || draggedId === targetNodeId) return;
+
+                // Circular dependency check
+                const isDescendant = (targetId, potentialAncestorId) => {
+                    const ancestor = state.tree.findNode(potentialAncestorId);
+                    if (!ancestor) return false;
+                    const search = (n) => {
+                        if(n.id === targetId) return true;
+                        return n.children.some(search);
+                    }
+                    return search(ancestor);
+                };
+
+                if (isDescendant(targetNodeId, draggedId)) {
+                    alert("Cannot drop a parent node into its own child!");
+                    return;
+                }
+
+                const draggedNode = state.tree.findNode(draggedId);
+                const oldParent = state.tree.findParent(draggedId);
+                const newParent = state.tree.findNode(targetNodeId);
+
+                if(oldParent) oldParent.removeChild(draggedId);
+                if(newParent) {
+                    newParent.addChild(draggedNode);
+                    newParent.isExpanded = true;
+                }
+
+                renderApp();
+            }
+        }
+
+        class RightNavigation {
+            get_comp() {
+                const container = document.createElement('aside');
+                container.className = "w-96 bg-white border-l border-slate-200 flex flex-col shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-20 flex-shrink-0";
+                
+                const node = state.tree.findNode(state.selectedNodeId);
+
+                if (!node) {
+                    container.innerHTML = `<div class="p-8 text-center text-slate-400 mt-20"><i class="fa-solid fa-mouse-pointer text-4xl mb-4"></i><p>Select a node to edit properties</p></div>`;
+                    return container;
+                }
+
+                container.innerHTML = `
+                    <div class="p-5 border-b border-slate-100 bg-slate-50">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Node Settings</label>
+                        <input type="text" id="nodeNameInput" value="${node.name}" placeholder="Node Name" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium text-slate-800">
+                        <div class="mt-2 text-xs text-slate-500 flex items-center justify-between">
+                            <span>ID: <span class="font-mono bg-slate-200 px-1 py-0.5 rounded text-slate-600">${node.id}</span></span>
+                            <span class="${node.is_leaf() ? 'text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full font-medium' : ''}">${node.is_leaf() ? 'Leaf Node' : 'Has Children'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 flex-1 overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-semibold text-slate-800 tracking-wide">Properties Data</h3>
+                            <button id="addPropBtn" class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-2.5 py-1.5 rounded-md transition-colors font-medium">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Prop
+                            </button>
+                        </div>
+                        
+                        <div id="propsList" class="flex flex-col gap-3">
+                            <!-- properties populated by JS -->
+                        </div>
+                    </div>
+                `;
+
+                // Update Name
+                container.querySelector('#nodeNameInput').addEventListener('input', (e) => {
+                    node.name = e.target.value;
+                    renderApp(); // Update the visual canvas live
+                });
+
+                // Add prop
+                container.querySelector('#addPropBtn').addEventListener('click', () => {
+                    const newOrder = node.properties.length > 0 ? Math.max(...node.properties.map(p => p.order)) + 1 : 1;
+                    node.add_new_prop(new PropertyItem("new_key", "value", newOrder));
+                    renderApp();
+                });
+
+                // Render properties list
+                const propsList = container.querySelector('#propsList');
+                if (node.properties.length === 0) {
+                    propsList.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4 border-2 border-dashed border-slate-200 rounded-md">No properties added yet.</p>`;
+                } else {
+                    node.get_props().forEach(prop => {
+                        const propDiv = document.createElement('div');
+                        propDiv.className = "bg-white border border-slate-200 rounded-lg p-3 shadow-sm relative group";
+                        
+                        propDiv.innerHTML = `
+                            <div class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="delete-prop-btn text-slate-400 hover:text-red-500" title="Remove Property">
+                                    <i class="fa-solid fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-2 pr-4">
+                                <div>
+                                    <label class="text-[10px] text-slate-500 uppercase font-semibold">Key</label>
+                                    <input type="text" class="prop-key w-full border-b border-slate-200 px-1 py-1 text-sm focus:outline-none focus:border-indigo-500 bg-transparent" value="${prop.key}">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-500 uppercase font-semibold">Order</label>
+                                    <input type="number" class="prop-order w-full border-b border-slate-200 px-1 py-1 text-sm focus:outline-none focus:border-indigo-500 bg-transparent" value="${prop.order}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 uppercase font-semibold">Value</label>
+                                <textarea rows="1" class="prop-val w-full border border-slate-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50 mt-1 resize-none overflow-hidden">${prop.value}</textarea>
+                            </div>
+                        `;
+
+                        // Data Binding Events
+                        propDiv.querySelector('.prop-key').addEventListener('change', (e) => { prop.key = e.target.value; });
+                        propDiv.querySelector('.prop-val').addEventListener('change', (e) => { prop.value = e.target.value; });
+                        propDiv.querySelector('.prop-order').addEventListener('change', (e) => { 
+                            prop.order = parseInt(e.target.value) || 0; 
+                            node.sort_props();
+                            renderApp(); // re-order visually
+                        });
+
+                        propDiv.querySelector('.delete-prop-btn').addEventListener('click', () => {
+                            node.remove_prop(prop.key);
+                            renderApp();
+                        });
+
+                        propsList.appendChild(propDiv);
+                    });
+                }
+
+                return container;
+            }
+        }
+
+        // ==========================================
+        // 4. MAIN RENDER FUNCTION & HELPERS
+        // ==========================================
+        const appMount = document.getElementById('app');
+        
+        // Instances of UI components
+        const leftNav = new LeftNavigation();
+        const mainBody = new Body();
+        const rightNav = new RightNavigation();
+
+        function renderApp() {
+            // Clear current DOM
+            appMount.innerHTML = '';
+            
+            // Re-mount components
+            appMount.appendChild(leftNav.get_comp());
+            appMount.appendChild(mainBody.get_comp());
+            appMount.appendChild(rightNav.get_comp());
+        }
+
+        // Helper for simple Modal Window
+        function showModal(title, htmlContent) {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50";
+            
+            const modal = document.createElement('div');
+            modal.className = "bg-white rounded-xl shadow-2xl w-[600px] max-w-full overflow-hidden flex flex-col";
+            modal.innerHTML = `
+                <div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
+                    <h3 class="font-semibold text-slate-800">${title}</h3>
+                    <button class="close-btn text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6">
+                    ${htmlContent}
+                </div>
+                <div class="px-6 py-4 border-t bg-slate-50 flex justify-end">
+                    <button class="close-btn px-4 py-2 bg-slate-800 text-white rounded-md text-sm hover:bg-slate-700">Close</button>
+                </div>
+            `;
+
+            const closeFns = modal.querySelectorAll('.close-btn');
+            closeFns.forEach(btn => btn.onclick = () => document.body.removeChild(overlay));
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        // ==========================================
+        // 5. INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderApp();
+        });
+
+    </script>
+</body>
+</html>

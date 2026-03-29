@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5 Tailwind Search Showcases</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for visual polish */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+    <div class="max-w-6xl mx-auto p-8">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Search Component Showcases</h1>
+            <p class="text-gray-500">5 different responsive search behaviors built with Tailwind CSS & Vanilla JS.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            
+            <!-- ==========================================
+                 SHOWCASE 1: Dropdown Search
+            =========================================== -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center min-h-[250px]">
+                <h2 class="text-lg font-semibold text-gray-400 mb-6 text-center w-full">1. Dropdown Search</h2>
+                
+                <div class="relative w-full flex justify-center">
+                    <!-- Trigger -->
+                    <button id="s1-trigger" class="p-3 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </button>
+
+                    <!-- Target Dropdown -->
+                    <div id="s1-target" class="hidden absolute top-14 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20 transition-all">
+                        <div class="flex items-center p-2">
+                            <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                            <input id="s1-input" type="text" placeholder="Search articles..." class="w-full px-3 py-2 outline-none text-gray-700 bg-transparent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SHOWCASE 2: Expandable Pill Search
+            =========================================== -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center min-h-[250px]">
+                <h2 class="text-lg font-semibold text-gray-400 mb-6 text-center w-full">2. Expandable Pill Search</h2>
+                
+                <div id="s2-container" class="flex items-center bg-gray-50 shadow-inner rounded-full p-1 border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent transition-all">
+                    <!-- Expandable Input -->
+                    <input id="s2-input" type="text" placeholder="Type to search..." class="bg-transparent outline-none text-gray-700 transition-all duration-300 w-0 opacity-0 px-0 h-10">
+                    
+                    <!-- Trigger -->
+                    <button id="s2-trigger" class="p-2.5 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors focus:outline-none flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SHOWCASE 3: Fullscreen Overlay Search
+            =========================================== -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center min-h-[250px]">
+                <h2 class="text-lg font-semibold text-gray-400 mb-6 text-center w-full">3. Fullscreen Overlay</h2>
+                
+                <button id="s3-trigger" class="px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition shadow-lg flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    Open Fullscreen Search
+                </button>
+            </div>
+
+            <!-- ==========================================
+                 SHOWCASE 4: Command Palette Modal
+            =========================================== -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center min-h-[250px]">
+                <h2 class="text-lg font-semibold text-gray-400 mb-6 text-center w-full">4. Command Palette (Modal)</h2>
+                
+                <button id="s4-trigger" class="w-full max-w-sm px-4 py-3 bg-gray-50 border border-gray-300 text-gray-500 rounded-lg hover:border-gray-400 hover:bg-gray-100 transition flex items-center justify-between text-sm">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                        Quick search...
+                    </span>
+                    <span class="bg-gray-200 px-2 py-1 rounded text-xs font-semibold">Cmd + K</span>
+                </button>
+            </div>
+
+            <!-- ==========================================
+                 SHOWCASE 5: Slide-out Panel Search
+            =========================================== -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center min-h-[250px] md:col-span-2">
+                <h2 class="text-lg font-semibold text-gray-400 mb-6 text-center w-full">5. Slide-out Sidebar Panel</h2>
+                
+                <button id="s5-trigger" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    Open Slide-out Search
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==========================================
+         OVERLAY/MODAL DOM ELEMENTS (Initially Hidden)
+    =========================================== -->
+
+    <!-- Showcase 3 Overlay -->
+    <div id="s3-target" class="hidden fixed inset-0 bg-white/95 backdrop-blur-sm z-50 flex-col items-center justify-center p-4">
+        <button id="s3-close" class="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition p-2">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <div class="w-full max-w-4xl relative">
+            <input id="s3-input" type="text" placeholder="What are you looking for?" class="w-full bg-transparent text-4xl sm:text-6xl text-gray-900 border-b-4 border-gray-200 focus:border-gray-900 outline-none py-4 placeholder-gray-300 transition-colors">
+            <p class="text-gray-400 mt-4 text-sm font-medium">Press <kbd class="bg-gray-100 border px-2 py-1 rounded">ESC</kbd> to close</p>
+        </div>
+    </div>
+
+    <!-- Showcase 4 Modal -->
+    <div id="s4-target" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-start justify-center pt-20 sm:pt-32 px-4 transition-opacity">
+        <div id="s4-modal" class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-transform">
+            <div class="flex items-center border-b border-gray-100 p-4">
+                <svg class="w-6 h-6 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <input id="s4-input" type="text" placeholder="Search docs, components, or files..." class="w-full text-lg outline-none text-gray-800 placeholder-gray-400 bg-transparent">
+                <span class="text-xs text-gray-400 border border-gray-200 px-2 py-1 rounded">ESC</span>
+            </div>
+            <div class="p-4 bg-gray-50 h-64 overflow-y-auto">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Searches</p>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="p-3 bg-white rounded-lg border border-gray-100 shadow-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition">How to install Tailwind CSS</li>
+                    <li class="p-3 bg-white rounded-lg border border-gray-100 shadow-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition">JavaScript Click Outside event</li>
+                    <li class="p-3 bg-white rounded-lg border border-gray-100 shadow-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition">Responsive UI design patterns</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Showcase 5 Slide-out -->
+    <!-- Backdrop -->
+    <div id="s5-backdrop" class="hidden fixed inset-0 bg-gray-900/50 z-40 transition-opacity"></div>
+    <!-- Panel -->
+    <div id="s5-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-800">Search Store</h3>
+            <button id="s5-close" class="p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-200 rounded-full transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-5 flex-grow">
+            <div class="relative mb-6">
+                <input id="s5-input" type="text" placeholder="Search products..." class="w-full bg-gray-100 border border-transparent focus:border-blue-500 focus:bg-white rounded-lg pl-10 pr-4 py-3 outline-none transition-colors">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">Result Item</div>
+                <div class="h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">Result Item</div>
+                <div class="h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">Result Item</div>
+                <div class="h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-sm text-gray-400">Result Item</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         JAVASCRIPT LOGIC
+    =========================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Showcase 1: Dropdown Logic ---
+            const s1Trigger = document.getElementById('s1-trigger');
+            const s1Target = document.getElementById('s1-target');
+            const s1Input = document.getElementById('s1-input');
+
+            s1Trigger.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent document click
+                s1Target.classList.toggle('hidden');
+                if(!s1Target.classList.contains('hidden')) s1Input.focus();
+            });
+
+            s1Target.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent clicks inside dropdown from closing it
+            });
+
+            document.addEventListener('click', () => {
+                s1Target.classList.add('hidden');
+            });
+
+
+            // --- Showcase 2: Expandable Logic ---
+            const s2Container = document.getElementById('s2-container');
+            const s2Trigger = document.getElementById('s2-trigger');
+            const s2Input = document.getElementById('s2-input');
+
+            s2Trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Expand the input via classes
+                s2Input.classList.remove('w-0', 'opacity-0', 'px-0');
+                s2Input.classList.add('w-48', 'sm:w-64', 'opacity-100', 'px-3', 'ml-2');
+                s2Input.focus();
+            });
+
+            s2Container.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            document.addEventListener('click', () => {
+                s2Input.classList.remove('w-48', 'sm:w-64', 'opacity-100', 'px-3', 'ml-2');
+                s2Input.classList.add('w-0', 'opacity-0', 'px-0');
+            });
+
+
+            // --- Showcase 3: Fullscreen Logic ---
+            const s3Trigger = document.getElementById('s3-trigger');
+            const s3Target = document.getElementById('s3-target');
+            const s3Close = document.getElementById('s3-close');
+            const s3Input = document.getElementById('s3-input');
+
+            const openS3 = () => { s3Target.classList.remove('hidden'); s3Target.classList.add('flex'); s3Input.focus(); };
+            const closeS3 = () => { s3Target.classList.add('hidden'); s3Target.classList.remove('flex'); };
+
+            s3Trigger.addEventListener('click', (e) => { e.stopPropagation(); openS3(); });
+            s3Close.addEventListener('click', closeS3);
+            
+            // Close when clicking the backdrop, but not the input
+            s3Target.addEventListener('click', (e) => {
+                if(e.target === s3Target) closeS3();
+            });
+
+
+            // --- Showcase 4: Modal Logic ---
+            const s4Trigger = document.getElementById('s4-trigger');
+            const s4Target = document.getElementById('s4-target');
+            const s4Modal = document.getElementById('s4-modal');
+            const s4Input = document.getElementById('s4-input');
+
+            s4Trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                s4Target.classList.remove('hidden');
+                s4Input.focus();
+            });
+
+            // Close when clicking outside the modal box
+            s4Target.addEventListener('click', (e) => {
+                if (!s4Modal.contains(e.target)) {
+                    s4Target.classList.add('hidden');
+                }
+            });
+
+
+            // --- Showcase 5: Slide-out Logic ---
+            const s5Trigger = document.getElementById('s5-trigger');
+            const s5Panel = document.getElementById('s5-panel');
+            const s5Backdrop = document.getElementById('s5-backdrop');
+            const s5Close = document.getElementById('s5-close');
+            const s5Input = document.getElementById('s5-input');
+
+            const openS5 = () => {
+                s5Backdrop.classList.remove('hidden');
+                // Tiny delay to ensure display:block is rendered before animating transform
+                setTimeout(() => {
+                    s5Panel.classList.remove('translate-x-full');
+                    s5Input.focus();
+                }, 10);
+            };
+
+            const closeS5 = () => {
+                s5Panel.classList.add('translate-x-full');
+                // Wait for the slide out transition to finish before hiding backdrop
+                setTimeout(() => s5Backdrop.classList.add('hidden'), 300);
+            };
+
+            s5Trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openS5();
+            });
+
+            s5Close.addEventListener('click', closeS5);
+            s5Backdrop.addEventListener('click', closeS5); // Click outside (backdrop) closes it
+
+
+            // --- Global Keyboard Accessibility (ESC to close overlays) ---
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    // Close Showcase 1
+                    s1Target.classList.add('hidden');
+                    // Close Showcase 2
+                    s2Input.classList.remove('w-48', 'sm:w-64', 'opacity-100', 'px-3', 'ml-2');
+                    s2Input.classList.add('w-0', 'opacity-0', 'px-0');
+                    // Close Showcase 3
+                    closeS3();
+                    // Close Showcase 4
+                    s4Target.classList.add('hidden');
+                    // Close Showcase 5
+                    if(!s5Panel.classList.contains('translate-x-full')) closeS5();
+                }
+            });
+            
+            // Extra Feature: Quick trigger CMD+K for Showcase 4
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    s4Target.classList.remove('hidden');
+                    s4Input.focus();
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

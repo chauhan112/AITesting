@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Mapping Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-10">
+
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">Database Configuration</h1>
+
+        <!-- Toggle Component Container -->
+        <div class="mb-8">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Select Table Source</label>
+            <div id="toggle-root"></div>
+        </div>
+
+        <!-- Field Mapping Section -->
+        <div id="mapping-section" class="space-y-4">
+            <h2 class="text-lg font-semibold text-gray-700">Field Mapping</h2>
+            <div id="fields-list" class="space-y-3">
+                <!-- Rows injected here -->
+            </div>
+            <button id="add-btn" class="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100">
+                + Add Field
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class ToggleButtons {
+            constructor() {
+                this.options = [];
+                this.currentValue = "";
+                this.container = document.createElement("div");
+                this.container.className = "flex rounded-lg overflow-hidden border border-gray-300 w-fit";
+            }
+
+            set_option(options) {
+                this.options = options;
+                this.currentValue = options[0];
+                this.render();
+            }
+
+            render() {
+                this.container.innerHTML = "";
+                this.options.forEach(option => {
+                    const btn = document.createElement("button");
+                    btn.innerText = option;
+                    btn.className = `px-6 py-2 text-sm font-semibold transition-all ${
+                        this.currentValue === option 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`;
+                    btn.onclick = (e) => {
+                        this.set_value(option);
+                        this.on_change(e);
+                    };
+                    this.container.appendChild(btn);
+                });
+            }
+
+            set_value(val) {
+                this.currentValue = val;
+                this.render();
+            }
+
+            get_value() { return this.currentValue; }
+            get_component() { return this.container; }
+            on_change(e) {} // To be overridden
+        }
+
+        // --- Implementation Logic ---
+        const fieldsList = document.getElementById('fields-list');
+        const toggle = new ToggleButtons();
+        
+        // Define Behavior
+        toggle.on_change = (e) => {
+            console.log("Mode changed to:", toggle.get_value());
+            // Clear fields when mode switches
+            fieldsList.innerHTML = '';
+        };
+
+        toggle.set_option(["Default", "Directus", "Custom"]);
+        document.getElementById('toggle-root').appendChild(toggle.get_component());
+
+        // Field Management
+        document.getElementById('add-btn').onclick = () => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 animate-in fade-in duration-300';
+            div.innerHTML = `
+                <input type="text" placeholder="Field Name" class="flex-1 p-2 border border-gray-300 rounded-lg text-sm">
+                <select class="p-2 border border-gray-300 rounded-lg text-sm bg-white">
+                    <option>String</option>
+                    <option>Integer</option>
+                    <option>Boolean</option>
+                </select>
+                <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 px-2">✕</button>
+            `;
+            fieldsList.appendChild(div);
+        };
+    </script>
+</body>
+</html>

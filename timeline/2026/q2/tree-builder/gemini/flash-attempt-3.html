@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeStudio Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .canvas-bg {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .node-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .node-card:hover { transform: translateY(-2px) scale(1.02); }
+        .drop-zone { border: 2px dashed #6366f1 !important; background: #e0e7ff !important; transform: scale(1.05); }
+        .connector { position: absolute; height: 2px; background: #cbd5e1; z-index: -1; transform-origin: left center; }
+        
+        /* Depth-based border colors */
+        .depth-0 { border-left: 4px solid #6366f1; }
+        .depth-1 { border-left: 4px solid #8b5cf6; }
+        .depth-2 { border-left: 4px solid #ec4899; }
+        .depth-3 { border-left: 4px solid #f59e0b; }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col overflow-hidden text-slate-900">
+
+    <!-- TOP BAR -->
+    <nav class="h-16 bg-white/80 backdrop-blur-md border-b flex items-center justify-between px-6 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-indigo-200 shadow-lg">
+                <i data-lucide="layers" class="text-white w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight">TreeStudio <span class="text-indigo-600">Pro</span></h1>
+                <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Visual Schema Builder</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex items-center bg-slate-100 rounded-full px-4 py-1.5 border border-slate-200">
+                <span class="text-xs font-bold text-slate-500 mr-3 uppercase">Visible Depth</span>
+                <input type="range" id="depth-control" min="1" max="5" value="3" class="w-24 accent-indigo-600">
+                <span id="depth-val" class="ml-2 text-xs font-bold text-indigo-600 w-4">3</span>
+            </div>
+            <button id="export-json" class="flex items-center gap-2 bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-xl active:scale-95">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Export JSON
+            </button>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- LEFT: TOOLS -->
+        <aside class="w-72 bg-white border-r flex flex-col p-6 shadow-sm z-40">
+            <div class="mb-8">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Construction</h3>
+                <button id="add-root-node" class="group flex items-center justify-between w-full bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white p-4 rounded-2xl transition duration-300 shadow-sm border border-indigo-100">
+                    <span class="font-bold">New Tree Root</span>
+                    <i data-lucide="plus-circle" class="w-5 h-5 group-hover:rotate-90 transition"></i>
+                </button>
+            </div>
+
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
+                <p class="text-xs text-slate-500 leading-relaxed italic">
+                    <i data-lucide="info" class="w-3 h-3 inline mb-0.5"></i>
+                    Drag cards and drop them onto others to build your hierarchy.
+                </p>
+            </div>
+        </aside>
+
+        <!-- CENTER: CANVAS -->
+        <main class="flex-1 overflow-auto canvas-bg p-12 relative" id="canvas">
+            <div id="tree-root-container" class="flex flex-col gap-20">
+                <!-- Trees will render horizontally here -->
+            </div>
+        </main>
+
+        <!-- RIGHT: INSPECTOR -->
+        <aside class="w-80 bg-white border-l shadow-2xl z-40 flex flex-col">
+            <div id="prop-empty" class="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-40">
+                <i data-lucide="mouse-pointer-2" class="w-12 h-12 mb-4"></i>
+                <p class="text-sm font-medium">Select a node to inspect properties</p>
+            </div>
+
+            <div id="prop-editor" class="hidden flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
+                <div class="p-6 border-b bg-slate-50/50">
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded uppercase">Node Inspector</span>
+                        <button id="btn-delete-node" class="text-slate-400 hover:text-red-500 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Display Name</label>
+                    <input type="text" id="edit-node-name" class="w-full bg-white border border-slate-200 rounded-xl p-3 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition font-medium">
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Properties</h3>
+                    <div id="props-list" class="grid grid-cols-1 gap-3">
+                        <!-- Props -->
+                    </div>
+                </div>
+
+                <div class="p-6 border-t bg-slate-50/50">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-3">Add Custom Data</h3>
+                    <div class="flex flex-col gap-2 mb-4">
+                        <input type="text" id="new-prop-key" placeholder="Key (e.g. Type)" class="border rounded-xl p-2.5 text-sm outline-none focus:border-indigo-400">
+                        <input type="text" id="new-prop-value" placeholder="Value" class="border rounded-xl p-2.5 text-sm outline-none focus:border-indigo-400">
+                    </div>
+                    <button id="btn-add-prop" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition active:scale-95">
+                        Update Properties
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        /** MODEL & STORAGE **/
+        class DataModel {
+            constructor() { this.data = new Map(); }
+            async create(v) { 
+                const id = Math.random().toString(36).substr(2, 9);
+                const item = { ...v, id, props: v.props || [] };
+                this.data.set(id, item); 
+                return item;
+            }
+            async readAll() { return Array.from(this.data.values()); }
+            async read(id) { return this.data.get(id); }
+            async update(id, v) { this.data.set(id, { ...this.data.get(id), ...v }); }
+            async delete(id) { this.data.delete(id); }
+        }
+
+        const storage = new DataModel();
+
+        /** UI CONTROLLER **/
+        const App = {
+            selectedId: null,
+            maxDepth: 3,
+
+            init() {
+                this.cacheDOM();
+                this.bindEvents();
+                this.render();
+                lucide.createIcons();
+            },
+
+            cacheDOM() {
+                this.container = document.getElementById('tree-root-container');
+                this.depthInput = document.getElementById('depth-control');
+                this.depthVal = document.getElementById('depth-val');
+                this.propEmpty = document.getElementById('prop-empty');
+                this.propEditor = document.getElementById('prop-editor');
+                this.nodeNameInput = document.getElementById('edit-node-name');
+                this.propsList = document.getElementById('props-list');
+            },
+
+            bindEvents() {
+                this.depthInput.oninput = (e) => {
+                    this.maxDepth = e.target.value;
+                    this.depthVal.innerText = e.target.value;
+                    this.render();
+                };
+
+                document.getElementById('add-root-node').onclick = async () => {
+                    await storage.create({ name: "Root Logic", parentId: null });
+                    this.render();
+                };
+
+                document.getElementById('btn-add-prop').onclick = () => this.addProperty();
+                this.nodeNameInput.oninput = (e) => this.updateName(e.target.value);
+                document.getElementById('btn-delete-node').onclick = () => this.deleteNode();
+                document.getElementById('export-json').onclick = () => this.export();
+            },
+
+            async render() {
+                this.container.innerHTML = '';
+                const all = await storage.readAll();
+                const roots = all.filter(n => !n.parentId);
+                
+                roots.forEach(root => {
+                    const treeWrapper = document.createElement('div');
+                    treeWrapper.className = "flex gap-16 items-start relative mb-20";
+                    this.renderNode(root, 0, all, treeWrapper);
+                    this.container.appendChild(treeWrapper);
+                });
+                lucide.createIcons();
+            },
+
+            renderNode(node, depth, all, parentEl) {
+                const nodeCol = document.createElement('div');
+                nodeCol.className = "flex flex-col gap-6 relative";
+                
+                // The Node Card
+                const card = document.createElement('div');
+                card.draggable = true;
+                card.className = `node-card min-w-[220px] bg-white p-5 rounded-3xl border-2 cursor-grab active:cursor-grabbing shadow-sm depth-${depth % 4}
+                    ${this.selectedId === node.id ? 'border-indigo-500 ring-4 ring-indigo-50 shadow-xl' : 'border-white'} 
+                    ${depth >= this.maxDepth ? 'opacity-20 scale-90 pointer-events-none' : ''}`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                             <i data-lucide="${depth === 0 ? 'zap' : 'box'}" class="w-4 h-4 text-slate-500"></i>
+                        </div>
+                        <span class="text-[10px] font-black text-slate-300">#${node.id.toUpperCase()}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-1">${node.name}</h4>
+                    <div class="flex gap-1">
+                        ${node.props.slice(0, 2).map(p => `<span class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold">${p.key}</span>`).join('')}
+                        ${node.props.length > 2 ? `<span class="text-[9px] text-slate-400 font-bold">+${node.props.length-2}</span>` : ''}
+                    </div>
+                `;
+
+                // Events
+                card.onclick = (e) => { e.stopPropagation(); this.select(node.id); };
+                card.ondragstart = (e) => e.dataTransfer.setData('nodeId', node.id);
+                card.ondragover = (e) => { e.preventDefault(); card.classList.add('drop-zone'); };
+                card.ondragleave = () => card.classList.remove('drop-zone');
+                card.ondrop = async (e) => {
+                    e.preventDefault();
+                    card.classList.remove('drop-zone');
+                    const draggedId = e.dataTransfer.getData('nodeId');
+                    if (draggedId !== node.id && !this.isCircular(draggedId, node.id, all)) {
+                        await storage.update(draggedId, { parentId: node.id });
+                        this.render();
+                    }
+                };
+
+                nodeCol.appendChild(card);
+                parentEl.appendChild(nodeCol);
+
+                // Recursion: Children in a new column to the right
+                if (depth < this.maxDepth) {
+                    const children = all.filter(n => n.parentId === node.id);
+                    if (children.length > 0) {
+                        const childGroup = document.createElement('div');
+                        childGroup.className = "flex flex-col gap-6 ml-16";
+                        children.forEach(child => this.renderNode(child, depth + 1, all, childGroup));
+                        parentEl.appendChild(childGroup);
+                    }
+                }
+            },
+
+            isCircular(draggedId, targetId, all) {
+                if (draggedId === targetId) return true;
+                const target = all.find(n => n.id === targetId);
+                if (!target.parentId) return false;
+                return this.isCircular(draggedId, target.parentId, all);
+            },
+
+            async select(id) {
+                this.selectedId = id;
+                const node = await storage.read(id);
+                this.propEmpty.classList.add('hidden');
+                this.propEditor.classList.remove('hidden');
+                this.nodeNameInput.value = node.name;
+                this.renderProps(node);
+                this.render();
+            },
+
+            renderProps(node) {
+                this.propsList.innerHTML = '';
+                node.props.forEach(p => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl shadow-sm hover:border-indigo-200 transition";
+                    row.innerHTML = `
+                        <div class="text-xs">
+                            <span class="font-bold text-slate-400 uppercase mr-1">${p.key}:</span>
+                            <span class="font-semibold text-slate-700">${p.value}</span>
+                        </div>
+                        <button onclick="App.deleteProp('${p.key}')" class="text-slate-300 hover:text-red-500 transition">
+                             <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                    `;
+                    this.propsList.appendChild(row);
+                });
+                lucide.createIcons();
+            },
+
+            async addProperty() {
+                const k = document.getElementById('new-prop-key');
+                const v = document.getElementById('new-prop-value');
+                if (!k.value || !this.selectedId) return;
+                const node = await storage.read(this.selectedId);
+                node.props.push({ key: k.value, value: v.value });
+                await storage.update(this.selectedId, { props: node.props });
+                k.value = ''; v.value = '';
+                this.select(this.selectedId);
+            },
+
+            async deleteProp(key) {
+                const node = await storage.read(this.selectedId);
+                node.props = node.props.filter(p => p.key !== key);
+                await storage.update(this.selectedId, { props: node.props });
+                this.select(this.selectedId);
+            },
+
+            async updateName(val) {
+                if (this.selectedId) {
+                    await storage.update(this.selectedId, { name: val });
+                    this.render();
+                }
+            },
+
+            async deleteNode() {
+                if (!this.selectedId) return;
+                const all = await storage.readAll();
+                const children = all.filter(n => n.parentId === this.selectedId);
+                for (let c of children) await storage.update(c.id, { parentId: null });
+                await storage.delete(this.selectedId);
+                this.selectedId = null;
+                this.propEmpty.classList.remove('hidden');
+                this.propEditor.classList.add('hidden');
+                this.render();
+            },
+
+            async export() {
+                const all = await storage.readAll();
+                const map = (pid = null) => all.filter(n => n.parentId === pid).map(n => ({
+                    id: n.id,
+                    name: n.name,
+                    properties: n.props.reduce((acc, p) => ({...acc, [p.key]: p.value}), {}),
+                    children: map(n.id)
+                }));
+                const blob = new Blob([JSON.stringify(map(), null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `tree-schema-${Date.now()}.json`;
+                a.click();
+            }
+        };
+
+        window.App = App;
+        App.init();
+    </script>
+</body>
+</html>

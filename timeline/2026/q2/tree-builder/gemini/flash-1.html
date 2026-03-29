@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drop-target { border: 2px dashed #3b82f6 !important; background-color: #eff6ff !important; }
+        .node-item { transition: all 0.2s ease; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden font-sans text-slate-900">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-10">
+        <div class="flex items-center gap-2">
+            <div class="bg-blue-600 p-1.5 rounded-lg text-white font-bold">T</div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-800">TreeBuilder</h1>
+        </div>
+        
+        <div class="flex gap-6 items-center">
+            <div class="flex items-center gap-3 bg-slate-50 border rounded-lg px-3 py-1">
+                <label class="text-xs font-bold uppercase text-slate-500">Max Depth</label>
+                <input type="number" id="depth-control" value="3" min="1" max="10" class="w-12 bg-transparent font-bold text-blue-600 focus:outline-none">
+            </div>
+            <button id="export-json" class="bg-slate-900 text-white px-5 py-2 rounded-lg font-medium hover:bg-slate-800 transition shadow-lg active:scale-95">
+                Export JSON
+            </button>
+        </div>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden">
+        
+        <!-- LEFT NAVIGATION -->
+        <aside class="w-64 bg-white border-r p-5 flex flex-col gap-4">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Actions</h2>
+            <button id="add-root-node" class="w-full bg-blue-50 text-blue-700 border border-blue-200 py-3 rounded-xl font-semibold hover:bg-blue-100 transition active:scale-95">
+                + Add Root Node
+            </button>
+        </aside>
+
+        <!-- BODY (Canvas) -->
+        <section class="flex-1 overflow-auto p-10 bg-slate-50">
+            <div id="tree-container" class="max-w-2xl mx-auto space-y-2"></div>
+        </section>
+
+        <!-- RIGHT NAVIGATION (Properties) -->
+        <aside class="w-80 bg-white border-l shadow-xl flex flex-col">
+            <!-- Empty State -->
+            <div id="prop-editor-empty" class="flex-1 flex flex-col items-center justify-center text-slate-400 p-10 text-center">
+                <p>Select a node to edit properties</p>
+            </div>
+
+            <!-- Content State -->
+            <div id="prop-editor-content" class="hidden flex-1 flex flex-col overflow-hidden">
+                <div class="p-6 border-b bg-slate-50">
+                    <h2 class="font-bold text-lg mb-4">Node Editor</h2>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
+                    <input type="text" id="edit-node-name" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-6">
+                    <h3 class="font-bold text-sm mb-3">Properties</h3>
+                    <div id="props-list" class="space-y-2"></div>
+                </div>
+
+                <div class="p-6 border-t bg-slate-50 mt-auto">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" id="new-prop-key" placeholder="Key" class="border rounded-lg p-2 text-sm">
+                        <input type="text" id="new-prop-value" placeholder="Value" class="border rounded-lg p-2 text-sm">
+                    </div>
+                    <button id="btn-add-prop" class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">Add Property</button>
+                    <button id="btn-delete-node" class="w-full mt-4 text-red-500 text-xs font-bold uppercase hover:bg-red-50 py-2 rounded-lg transition">Delete Node</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        /** MODEL **/
+        class InMemoryDatamodel {
+            constructor() { this.data = new Map(); }
+            async read_all() { return Array.from(this.data.values()); }
+            async read(id) { return this.data.get(id); }
+            async deleteIt(id) { this.data.delete(id); }
+            async update(id, vals) {
+                const existing = this.data.get(id);
+                if (existing) this.data.set(id, { ...existing, ...vals });
+            }
+            async create(vals) {
+                const id = vals.id || Math.random().toString(36).substr(2, 9);
+                const newItem = { ...vals, id };
+                this.data.set(id, newItem);
+                return newItem;
+            }
+        }
+
+        const storage = new InMemoryDatamodel();
+
+        /** BUSINESS LOGIC **/
+        class TreeNode {
+            constructor(id, name, parentId = null) {
+                this.id = id;
+                this.name = name;
+                this.parentId = parentId;
+                this.properties = [];
+            }
+        }
+
+        /** APP CONTROLLER **/
+        const App = {
+            selectedNodeId: null,
+            maxDepth: 3,
+
+            init() {
+                // Fixed IDs to match HTML exactly
+                this.treeContainer = document.getElementById('tree-container');
+                this.depthInput = document.getElementById('depth-control');
+                this.propEditorEmpty = document.getElementById('prop-editor-empty');
+                this.propEditorContent = document.getElementById('prop-editor-content');
+                this.propsList = document.getElementById('props-list');
+                this.nodeNameInput = document.getElementById('edit-node-name');
+
+                this.bindEvents();
+                this.render();
+            },
+
+            bindEvents() {
+                this.depthInput.addEventListener('change', (e) => {
+                    this.maxDepth = parseInt(e.target.value) || 3;
+                    this.render();
+                });
+
+                document.getElementById('add-root-node').addEventListener('click', async () => {
+                    await storage.create(new TreeNode(null, "New Node"));
+                    this.render();
+                });
+
+                document.getElementById('btn-add-prop').addEventListener('click', () => this.handlePropertyAdd());
+                this.nodeNameInput.addEventListener('input', (e) => this.handleNameUpdate(e.target.value));
+                document.getElementById('btn-delete-node').addEventListener('click', () => this.handleNodeDelete());
+                document.getElementById('export-json').addEventListener('click', () => this.exportToJson());
+            },
+
+            async render() {
+                this.treeContainer.innerHTML = '';
+                const allNodes = await storage.read_all();
+                const roots = allNodes.filter(n => !n.parentId);
+                roots.forEach(root => this.treeContainer.appendChild(this.createNodeUI(root, 0, allNodes)));
+            },
+
+            createNodeUI(node, depth, allNodes) {
+                const wrapper = document.createElement('div');
+                wrapper.className = "ml-6 mt-2 relative";
+                
+                const isVisible = depth < this.maxDepth;
+                
+                const el = document.createElement('div');
+                el.draggable = true;
+                el.className = `node-item p-3 rounded-lg border bg-white flex justify-between items-center cursor-pointer 
+                    ${this.selectedNodeId === node.id ? 'border-blue-500 ring-2 ring-blue-100' : 'hover:border-slate-300'}
+                    ${!isVisible ? 'opacity-30 pointer-events-none' : ''}`;
+
+                el.innerHTML = `<span class="font-medium">${node.name}</span>
+                                <span class="text-[10px] text-slate-400">Depth ${depth}</span>`;
+
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    this.selectNode(node.id);
+                };
+
+                // DRAG & DROP
+                el.ondragstart = (e) => e.dataTransfer.setData('nodeId', node.id);
+                el.ondragover = (e) => { e.preventDefault(); el.classList.add('drop-target'); };
+                el.ondragleave = () => el.classList.remove('drop-target');
+                el.ondrop = async (e) => {
+                    e.preventDefault();
+                    el.classList.remove('drop-target');
+                    const draggedId = e.dataTransfer.getData('nodeId');
+                    if (draggedId === node.id || this.isDescendant(draggedId, node.id, allNodes)) return;
+                    await storage.update(draggedId, { parentId: node.id });
+                    this.render();
+                };
+
+                wrapper.appendChild(el);
+
+                if (isVisible) {
+                    const children = allNodes.filter(n => n.parentId === node.id);
+                    children.forEach(child => wrapper.appendChild(this.createNodeUI(child, depth + 1, allNodes)));
+                }
+
+                return wrapper;
+            },
+
+            // Prevent nesting a parent inside its own child
+            isDescendant(parentId, targetId, allNodes) {
+                const children = allNodes.filter(n => n.parentId === parentId);
+                for (let child of children) {
+                    if (child.id === targetId) return true;
+                    if (this.isDescendant(child.id, targetId, allNodes)) return true;
+                }
+                return false;
+            },
+
+            async selectNode(id) {
+                this.selectedNodeId = id;
+                const node = await storage.read(id);
+                
+                if (!node) return;
+
+                // Toggle views
+                this.propEditorEmpty.classList.add('hidden');
+                this.propEditorContent.classList.remove('hidden');
+                
+                this.nodeNameInput.value = node.name;
+                this.renderPropsList(node);
+                this.render(); // Update visual selection
+            },
+
+            renderPropsList(node) {
+                this.propsList.innerHTML = '';
+                node.properties.forEach(prop => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center bg-slate-50 p-2 rounded text-sm border";
+                    div.innerHTML = `<div><b class="text-slate-700">${prop.key}:</b> ${prop.value}</div>
+                                     <button class="text-red-400 hover:text-red-600" onclick="App.handlePropertyDelete('${prop.key}')">×</button>`;
+                    this.propsList.appendChild(div);
+                });
+            },
+
+            async handlePropertyAdd() {
+                const k = document.getElementById('new-prop-key');
+                const v = document.getElementById('new-prop-value');
+                if (!k.value || !this.selectedNodeId) return;
+
+                const node = await storage.read(this.selectedNodeId);
+                node.properties.push({ key: k.value, value: v.value, order: node.properties.length });
+                await storage.update(this.selectedNodeId, { properties: node.properties });
+                
+                k.value = ''; v.value = '';
+                this.selectNode(this.selectedNodeId);
+            },
+
+            async handlePropertyDelete(key) {
+                const node = await storage.read(this.selectedNodeId);
+                node.properties = node.properties.filter(p => p.key !== key);
+                await storage.update(this.selectedNodeId, { properties: node.properties });
+                this.selectNode(this.selectedNodeId);
+            },
+
+            async handleNameUpdate(val) {
+                if (this.selectedNodeId) {
+                    await storage.update(this.selectedNodeId, { name: val });
+                    this.render();
+                }
+            },
+
+            async handleNodeDelete() {
+                const all = await storage.read_all();
+                const children = all.filter(n => n.parentId === this.selectedNodeId);
+                for (let c of children) await storage.update(c.id, { parentId: null });
+                
+                await storage.deleteIt(this.selectedNodeId);
+                this.selectedNodeId = null;
+                this.propEditorEmpty.classList.remove('hidden');
+                this.propEditorContent.classList.add('hidden');
+                this.render();
+            },
+
+            async exportToJson() {
+                const all = await storage.read_all();
+                const build = (pid = null) => all.filter(n => n.parentId === pid).map(n => ({
+                    name: n.name,
+                    props: n.properties.reduce((acc, p) => ({...acc, [p.key]: p.value}), {}),
+                    children: build(n.id)
+                }));
+                const blob = new Blob([JSON.stringify(build(), null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'tree.json';
+                a.click();
+            }
+        };
+
+        window.App = App;
+        App.init();
+    </script>
+</body>
+</html>

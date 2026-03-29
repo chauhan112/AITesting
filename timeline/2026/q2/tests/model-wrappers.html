@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Logger Cache Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-8 font-sans">
+
+    <div class="max-w-3xl mx-auto">
+        <header class="mb-8 border-b border-slate-700 pb-4">
+            <h1 class="text-3xl font-bold text-sky-400">Modular Cache Simulator</h1>
+            <p class="text-slate-400">Simulating Directus with Unstable Connection</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Sidebar Controls -->
+            <div class="space-y-4">
+                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Storage Strategy</label>
+                    <select id="strat" class="w-full bg-slate-700 border-none rounded p-2 text-sm focus:ring-2 focus:ring-sky-500">
+                        <option value="memory">In-Memory (Fastest)</option>
+                        <option value="local">LocalStorage (Persistent)</option>
+                        <option value="secure">SecureStorage (AES)</option>
+                    </select>
+                </div>
+
+                <button onclick="simulateRead()" class="w-full bg-sky-600 hover:bg-sky-500 p-3 rounded font-bold transition">Read All Logs</button>
+                <button onclick="simulateCreate()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-3 rounded font-bold transition">Create New Log</button>
+                <button onclick="location.reload()" class="w-full border border-slate-600 hover:bg-slate-800 p-3 rounded font-bold transition">Hard Reload</button>
+            </div>
+
+            <!-- Main Log Display -->
+            <div class="md:col-span-2 space-y-4">
+                <div id="status" class="text-xs font-mono text-emerald-400 h-4"></div>
+                
+                <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+                    <div class="bg-slate-700 px-4 py-2 text-xs font-bold flex justify-between">
+                        <span>DATA LOGS</span>
+                        <span id="latency-tag"></span>
+                    </div>
+                    <div id="output" class="p-4 space-y-2 min-h-[300px] max-h-[500px] overflow-y-auto">
+                        <p class="text-slate-500 italic text-center py-10">No data fetched yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MODULAR CLASSES (Simulated for Browser) ---
+        const MemoryStorage = {
+            map: new Map(),
+            set_value(k, v) { this.map.set(k, v) },
+            get_value(k) { return this.map.get(k) },
+            remove_value(k) { this.map.delete(k) },
+            clear_all(p) { this.map.clear() }
+        };
+
+        const LocalStorage = {
+            set_value(k, v) { localStorage.setItem(k, JSON.stringify(v)) },
+            get_value(k) { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null },
+            remove_value(k) { localStorage.removeItem(k) },
+            clear_all(p) { Object.keys(localStorage).forEach(k => k.startsWith(p) && localStorage.removeItem(k)) }
+        };
+
+        const SecureStorage = {
+            ...LocalStorage,
+            set_value(k, v) { 
+                const enc = CryptoJS.AES.encrypt(JSON.stringify(v), "secret").toString();
+                localStorage.setItem(k, enc);
+            },
+            get_value(k) {
+                const v = localStorage.getItem(k);
+                if(!v) return null;
+                const dec = CryptoJS.AES.decrypt(v, "secret").toString(CryptoJS.enc.Utf8);
+                return JSON.parse(dec);
+            }
+        };
+
+        // Mock Backend
+        const Backend = {
+            data: [{id: '1', msg: 'Init session'}],
+            async read_all() { 
+                await new Promise(r => setTimeout(r, 1200)); // Simulate Network Lag
+                return this.data; 
+            },
+            async create(v) {
+                await new Promise(r => setTimeout(r, 1200));
+                const item = {id: Math.random().toString(36).substring(7), ...v};
+                this.data.push(item);
+                return item;
+            }
+        }
+
+        // The Orchestrator
+        class UIController {
+            constructor() {
+                this.storage = MemoryStorage;
+                this.cache = {}; // Simple object cache tracking
+                this.prefix = "cache_logs";
+            }
+
+            setStorage(type) {
+                if(type === 'memory') this.storage = MemoryStorage;
+                if(type === 'local') this.storage = LocalStorage;
+                if(type === 'secure') this.storage = SecureStorage;
+                this.storage.clear_all(this.prefix);
+                renderOutput([], "Storage Switched & Cache Cleared");
+            }
+
+            async readAll() {
+                const start = performance.now();
+                const cached = this.storage.get_value(this.prefix + "_all");
+                
+                if (cached && Date.now() < cached.expiry) {
+                    return { data: cached.data, source: 'CACHE', time: performance.now() - start };
+                }
+
+                const data = await Backend.read_all();
+                this.storage.set_value(this.prefix + "_all", { data, expiry: Date.now() + 60000 });
+                return { data, source: 'NETWORK', time: performance.now() - start };
+            }
+
+            async create(msg) {
+                const item = await Backend.create({ msg });
+                this.storage.remove_value(this.prefix + "_all");
+                return item;
+            }
+        }
+
+        // --- UI INTERACTION ---
+        const ctrl = new UIController();
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+
+        document.getElementById('strat').onchange = (e) => ctrl.setStorage(e.target.value);
+
+        function renderOutput(data, source, time) {
+            if (data.length === 0) {
+                output.innerHTML = `<p class="text-slate-500 italic text-center py-10">${source}</p>`;
+                return;
+            }
+            document.getElementById('latency-tag').innerText = `${source} - ${Math.round(time)}ms`;
+            output.innerHTML = data.map(item => `
+                <div class="flex justify-between items-center bg-slate-900 p-3 rounded border-l-4 ${source === 'CACHE' ? 'border-orange-500' : 'border-sky-500'}">
+                    <span class="text-sm">${item.msg}</span>
+                    <span class="text-[10px] font-mono text-slate-500">${item.id}</span>
+                </div>
+            `).join('');
+        }
+
+        async function simulateRead() {
+            status.innerText = "Requesting data...";
+            const res = await ctrl.readAll();
+            renderOutput(res.data, res.source, res.time);
+            status.innerText = "Done.";
+        }
+
+        async function simulateCreate() {
+            status.innerText = "Sending to backend...";
+            await ctrl.create("User log at " + new Date().toLocaleTimeString());
+            status.innerText = "Created. Cache Invalidated.";
+            simulateRead();
+        }
+    </script>
+</body>
+</html>
