@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Sift Query Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sift@13.5.2/sift.min.js"></script>
+    <style>
+        .group-container { border-left: 4px solid #3b82f6; }
+        .group-or { border-left-color: #ef4444; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-10">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900">Vanilla Query Builder</h1>
+            <p class="text-gray-600">Supports nested groups, AND/OR logic, and Sift.js filtering.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Side: Builder -->
+            <div class="lg:col-span-2 space-y-4">
+                <div id="query-root" class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <!-- Root Group will be injected here -->
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="runSearch()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition">
+                        Run Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: Data & Output -->
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Generated Query</h2>
+                    <pre id="query-json" class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-auto max-h-60">{}</pre>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Search Results</h2>
+                    <div id="results" class="bg-white border rounded-lg divide-y text-sm max-h-80 overflow-auto">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Template for a Rule Row -->
+    <template id="rule-template">
+        <div class="rule-row flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded border border-gray-100 group">
+            <select class="field-node p-1.5 border rounded text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="name">Name</option>
+                <option value="category">Category</option>
+                <option value="price">Price</option>
+                <option value="stock">Stock</option>
+            </select>
+            <select class="operator-node p-1.5 border rounded text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="$eq">Equals</option>
+                <option value="$ne">Not Equals</option>
+                <option value="$gt">&gt; Greater Than</option>
+                <option value="$lt">&lt; Less Than</option>
+                <option value="$regex">Contains</option>
+            </select>
+            <input type="text" class="value-node p-1.5 border rounded text-sm flex-1 outline-none focus:ring-2 focus:ring-blue-400" placeholder="Value">
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-red-500 transition px-2">✕</button>
+        </div>
+    </template>
+
+    <!-- Template for a Group Box -->
+    <template id="group-template">
+        <div class="group-node group-container bg-white p-4 rounded-lg border border-gray-200 mt-4">
+            <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+                <div class="flex items-center gap-2">
+                    <select class="logic-node p-1.5 bg-blue-50 border border-blue-200 rounded font-bold text-blue-700 text-xs uppercase tracking-widest outline-none" onchange="updateGroupStyle(this)">
+                        <option value="$and">AND</option>
+                        <option value="$or">OR</option>
+                    </select>
+                    <span class="text-xs text-gray-400 font-medium">Match all/any of the following:</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="addRule(this)" class="text-xs bg-gray-100 hover:bg-gray-200 py-1 px-3 rounded font-semibold text-gray-600 border">+ Rule</button>
+                    <button onclick="addGroup(this)" class="text-xs bg-gray-100 hover:bg-gray-200 py-1 px-3 rounded font-semibold text-gray-600 border">+ Group</button>
+                    <button onclick="removeGroup(this)" class="delete-group-btn text-xs text-red-400 hover:text-red-600 py-1 px-2 font-semibold">Delete Group</button>
+                </div>
+            </div>
+            <div class="children-container space-y-3 ml-2 border-l-2 border-gray-50 pl-4">
+                <!-- Rules and Sub-groups go here -->
+            </div>
+        </div>
+    </template>
+
+    <script>
+        const products = [
+            { id: 1, name: "iPhone 15", category: "Electronics", price: 999, stock: 10 },
+            { id: 2, name: "MacBook Pro", category: "Electronics", price: 2400, stock: 5 },
+            { id: 3, name: "Coffee Maker", category: "Home", price: 120, stock: 20 },
+            { id: 4, name: "Desk Chair", category: "Furniture", price: 350, stock: 15 },
+            { id: 5, name: "Yoga Mat", category: "Fitness", price: 50, stock: 50 },
+            { id: 6, name: "iPhone 13", category: "Electronics", price: 600, stock: 2 },
+        ];
+
+        // --- UI Logic ---
+
+        function init() {
+            const root = document.getElementById('query-root');
+            const group = createGroup();
+            group.querySelector('.delete-group-btn').remove(); // Root group cannot be deleted
+            root.appendChild(group);
+            addRule(group.querySelector('.bg-gray-100')); // Add one initial rule
+        }
+
+        function createGroup() {
+            const template = document.getElementById('group-template');
+            return template.content.cloneNode(true).firstElementChild;
+        }
+
+        function addGroup(btn) {
+            const parentGroup = btn.closest('.group-node');
+            const container = parentGroup.querySelector('.children-container');
+            container.appendChild(createGroup());
+        }
+
+        function addRule(btn) {
+            const parentGroup = btn.closest('.group-node');
+            const container = parentGroup.querySelector('.children-container');
+            const template = document.getElementById('rule-template');
+            container.appendChild(template.content.cloneNode(true));
+        }
+
+        function removeGroup(btn) {
+            btn.closest('.group-node').remove();
+        }
+
+        function updateGroupStyle(select) {
+            const groupNode = select.closest('.group-node');
+            if (select.value === '$or') {
+                groupNode.classList.add('group-or');
+                select.classList.replace('bg-blue-50', 'bg-red-50');
+                select.classList.replace('text-blue-700', 'text-red-700');
+            } else {
+                groupNode.classList.remove('group-or');
+                select.classList.replace('bg-red-50', 'bg-blue-50');
+                select.classList.replace('text-red-700', 'text-blue-700');
+            }
+        }
+
+        // --- Query Compiler (The Magic) ---
+
+        function buildQuery(element) {
+            // If it's a group node
+            if (element.classList.contains('group-node')) {
+                const logic = element.querySelector('.logic-node').value;
+                const childrenElements = element.querySelector('.children-container').children;
+                
+                const childrenQueries = [];
+                for (let child of childrenElements) {
+                    const result = buildQuery(child);
+                    if (result) childrenQueries.push(result);
+                }
+
+                if (childrenQueries.length === 0) return null;
+                return { [logic]: childrenQueries };
+            } 
+            
+            // If it's a rule row
+            if (element.classList.contains('rule-row')) {
+                const field = element.querySelector('.field-node').value;
+                const operator = element.querySelector('.operator-node').value;
+                let value = element.querySelector('.value-node').value;
+
+                // Simple auto-casting for numbers
+                if (value !== "" && !isNaN(value)) value = parseFloat(value);
+                
+                if (operator === '$regex') {
+                    return { [field]: { $regex: new RegExp(value, 'i') } };
+                }
+                return { [field]: { [operator]: value } };
+            }
+
+            return null;
+        }
+
+        function runSearch() {
+            const rootNode = document.querySelector('.group-node');
+            const query = buildQuery(rootNode) || {};
+
+            // Log Query
+            document.getElementById('query-json').textContent = JSON.stringify(query, (key, value) => {
+                if (value instanceof RegExp) return value.toString();
+                return value;
+            }, 2);
+
+            // Execute Sift
+            try {
+                const filterFn = sift.default ? sift.default(query) : sift(query);
+                const filtered = products.filter(filterFn);
+                
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = filtered.length 
+                    ? filtered.map(p => `<div class="p-3 hover:bg-gray-50">
+                        <div class="font-bold">${p.name}</div>
+                        <div class="text-xs text-gray-500">$${p.price} • ${p.category} • Stock: ${p.stock}</div>
+                      </div>`).join('')
+                    : `<div class="p-4 text-gray-400 italic">No matches found</div>`;
+            } catch (e) {
+                console.error(e);
+                alert("Error in query logic");
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

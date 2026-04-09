@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Showcase 2 - Side Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden font-sans">
+
+    <!-- Navbar -->
+    <header class="bg-purple-800 text-white p-4 shadow-md z-10 flex justify-between items-center shrink-0">
+        <h1 class="text-xl font-bold">Workspace</h1>
+        <button onclick="togglePanel('create')" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded shadow transition text-sm font-semibold">
+            + New Record
+        </button>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- List Area -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 w-full">
+            <div id="grid-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Cards injected here -->
+            </div>
+        </main>
+
+        <!-- Side Panel Form (Hidden by default) -->
+        <aside id="side-panel" class="hidden absolute inset-y-0 right-0 w-full md:w-96 bg-white shadow-2xl border-l border-gray-200 z-20 flex-col md:relative md:flex transition-all">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 id="panel-title" class="text-lg font-bold text-gray-800">Add Record</h2>
+                <button onclick="closePanel()" class="text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <form id="side-form" onsubmit="saveRecord(event)" class="p-6 flex-1 overflow-y-auto flex flex-col gap-5">
+                <input type="hidden" id="rec-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Component Title</label>
+                    <input type="text" id="rec-title" required class="w-full bg-gray-100 border-transparent focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-md p-3 transition-colors">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Status</label>
+                    <select id="rec-status" class="w-full bg-gray-100 border-transparent focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-md p-3 transition-colors">
+                        <option value="Active">Active</option>
+                        <option value="Draft">Draft</option>
+                    </select>
+                </div>
+
+                <div class="mt-auto pt-6 border-t border-gray-100">
+                    <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 px-4 rounded shadow-lg transition transform hover:-translate-y-0.5">
+                        Save Record
+                    </button>
+                </div>
+            </form>
+        </aside>
+    </div>
+
+    <script>
+        let records = [
+            { id: 101, title: 'Hero Section', status: 'Active' },
+            { id: 102, title: 'Pricing Table', status: 'Draft' }
+        ];
+
+        const gridContainer = document.getElementById('grid-container');
+        const sidePanel = document.getElementById('side-panel');
+        const sideForm = document.getElementById('side-form');
+
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            records.forEach(rec => {
+                const badgeColor = rec.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800';
+                gridContainer.innerHTML += `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition group relative">
+                        <span class="absolute top-6 right-6 px-2 py-1 text-xs font-bold rounded-full ${badgeColor}">${rec.status}</span>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4 pr-16">${rec.title}</h3>
+                        <div class="flex gap-3 pt-4 border-t border-gray-100 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="togglePanel('edit', ${rec.id})" class="text-purple-600 hover:text-purple-800 text-sm font-semibold">Edit</button>
+                            <button onclick="removeRecord(${rec.id})" class="text-red-500 hover:text-red-700 text-sm font-semibold">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function togglePanel(mode, id = null) {
+            sidePanel.classList.remove('hidden');
+            sidePanel.classList.add('flex'); // Ensure flex behavior is restored
+            
+            if (mode === 'create') {
+                document.getElementById('panel-title').innerText = 'New Record';
+                sideForm.reset();
+                document.getElementById('rec-id').value = '';
+            } else {
+                document.getElementById('panel-title').innerText = 'Edit Record';
+                const rec = records.find(r => r.id === id);
+                document.getElementById('rec-id').value = rec.id;
+                document.getElementById('rec-title').value = rec.title;
+                document.getElementById('rec-status').value = rec.status;
+            }
+        }
+
+        function closePanel() {
+            sidePanel.classList.add('hidden');
+            sidePanel.classList.remove('flex');
+        }
+
+        function saveRecord(e) {
+            e.preventDefault();
+            const id = document.getElementById('rec-id').value;
+            const title = document.getElementById('rec-title').value;
+            const status = document.getElementById('rec-status').value;
+
+            if (id) {
+                const index = records.findIndex(r => r.id == id);
+                records[index] = { id: parseInt(id), title, status };
+            } else {
+                records.push({ id: Date.now(), title, status });
+            }
+            
+            closePanel();
+            renderGrid();
+        }
+
+        function removeRecord(id) {
+            if(confirm('Delete this record?')) {
+                records = records.filter(r => r.id !== id);
+                renderGrid();
+                closePanel(); // close if it was open
+            }
+        }
+
+        renderGrid();
+    </script>
+</body>
+</html>

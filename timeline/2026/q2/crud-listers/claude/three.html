@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notes — Sidebar Panel CRUD</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .serif { font-family: 'Lora', serif; }
+  input, textarea, select { outline: none; }
+  input:focus, textarea:focus { border-color: #78716c !important; }
+  .note-item { transition: background 0.1s; }
+  .sidebar-scroll { max-height: calc(100vh - 180px); overflow-y: auto; }
+  .main-scroll { max-height: calc(100vh - 140px); overflow-y: auto; }
+  @media (max-width: 640px) {
+    .sidebar-scroll, .main-scroll { max-height: none; }
+  }
+  .fade-in { animation: fi 0.2s ease; }
+  @keyframes fi { from { opacity:0; } to { opacity:1; } }
+</style>
+</head>
+<body class="bg-stone-100 min-h-screen">
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <!-- App Shell -->
+  <div class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden" style="min-height: 560px;">
+    <div class="flex flex-col sm:flex-row h-full">
+
+      <!-- Sidebar -->
+      <div class="sm:w-64 border-b sm:border-b-0 sm:border-r border-stone-100 flex flex-col">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+          <div>
+            <h1 class="serif text-base font-semibold text-stone-800">Notes</h1>
+            <p class="text-xs text-stone-400 mt-0.5" id="note-count">0 notes</p>
+          </div>
+          <button onclick="startCreate()" title="New note" class="w-8 h-8 flex items-center justify-center rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-500 hover:text-stone-800 text-lg transition-colors leading-none">+</button>
+        </div>
+        <div class="sidebar-scroll" id="sidebar-list"></div>
+      </div>
+
+      <!-- Main Panel -->
+      <div class="flex-1 flex flex-col">
+        <div class="main-scroll flex-1" id="main-panel">
+          <div class="flex items-center justify-center h-64 sm:h-full">
+            <div class="text-center">
+              <div class="serif text-3xl text-stone-200 mb-2">✦</div>
+              <p class="text-sm text-stone-400">Select a note or create a new one</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const uid = () => Math.random().toString(36).slice(2,8);
+let items = [
+  {id:uid(), title:'Meeting recap', cat:'Work', body:'Discussed Q2 goals and assigned owners. Follow up with the design team by Friday regarding the new component library rollout. Also need to schedule a retrospective for last sprint.'},
+  {id:uid(), title:'Book list', cat:'Personal', body:'Thinking Fast and Slow by Daniel Kahneman. The Pragmatic Programmer. Shape Up by Basecamp. Designing Data-Intensive Applications. Maybe re-read Atomic Habits.'},
+  {id:uid(), title:'Weekend recipe ideas', cat:'Personal', body:'Try shakshuka with feta, bao buns from scratch, and miso ramen. Also want to attempt croissants — need butter and patience.'},
+  {id:uid(), title:'Blog post draft', cat:'Writing', body:'Working title: "Why interfaces should feel inevitable." Main thesis: great UX isn\'t noticed — it removes friction so thoroughly the user focuses only on their goal.'},
+];
+let selected = null;
+let mode = null;
+
+const catColors = {
+  Work: 'bg-blue-50 text-blue-600',
+  Personal: 'bg-rose-50 text-rose-600',
+  Writing: 'bg-violet-50 text-violet-600',
+  General: 'bg-stone-100 text-stone-500',
+};
+function catClass(c){ return catColors[c] || 'bg-emerald-50 text-emerald-600'; }
+
+function renderSidebar(){
+  document.getElementById('note-count').textContent = `${items.length} note${items.length!==1?'s':''}`;
+  document.getElementById('sidebar-list').innerHTML = items.map(it => `
+    <div class="note-item px-5 py-3.5 cursor-pointer border-b border-stone-50 ${selected===it.id ? 'bg-stone-50 border-l-2 border-l-stone-400' : 'hover:bg-stone-50 border-l-2 border-l-transparent'}" onclick="selectNote('${it.id}')">
+      <div class="text-sm font-medium text-stone-800 mb-0.5 truncate">${it.title}</div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs px-1.5 py-0.5 rounded-md ${catClass(it.cat)}">${it.cat}</span>
+        <span class="text-xs text-stone-400 truncate">${it.body.slice(0,30)}…</span>
+      </div>
+    </div>`).join('') || `<p class="text-xs text-stone-400 px-5 py-4">No notes yet.</p>`;
+}
+
+function renderMain(){
+  const el = document.getElementById('main-panel');
+  if (mode === 'create') {
+    el.innerHTML = `<div class="p-7 fade-in">
+      <p class="text-xs text-stone-400 uppercase tracking-widest mb-5">New note</p>
+      <div class="mb-4">
+        <label class="block text-xs text-stone-400 mb-1.5">Title</label>
+        <input id="c-title" type="text" placeholder="Give it a title…" class="w-full serif text-lg border-0 border-b border-stone-200 pb-2 bg-transparent text-stone-800 placeholder-stone-300 focus:border-stone-400" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-stone-400 mb-1.5">Category</label>
+        <input id="c-cat" type="text" placeholder="e.g. Work, Personal" class="w-full text-sm border border-stone-200 rounded-xl px-3 py-2 text-stone-700 placeholder-stone-300" />
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs text-stone-400 mb-1.5">Content</label>
+        <textarea id="c-body" placeholder="Start writing…" rows="7" class="w-full text-sm border border-stone-200 rounded-xl px-3 py-2.5 text-stone-700 placeholder-stone-300 resize-none leading-relaxed"></textarea>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="cancelMode()" class="text-sm text-stone-400 hover:text-stone-600 px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors">Cancel</button>
+        <button onclick="createNote()" class="text-sm bg-stone-800 hover:bg-stone-700 text-white px-5 py-2 rounded-xl transition-colors">Save note</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (mode === 'edit' && selected) {
+    const it = items.find(x=>x.id===selected);
+    el.innerHTML = `<div class="p-7 fade-in">
+      <p class="text-xs text-stone-400 uppercase tracking-widest mb-5">Editing</p>
+      <div class="mb-4">
+        <label class="block text-xs text-stone-400 mb-1.5">Title</label>
+        <input id="e-title" type="text" value="${it.title}" class="w-full serif text-lg border-0 border-b border-stone-200 pb-2 bg-transparent text-stone-800" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-stone-400 mb-1.5">Category</label>
+        <input id="e-cat" type="text" value="${it.cat}" class="w-full text-sm border border-stone-200 rounded-xl px-3 py-2 text-stone-700" />
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs text-stone-400 mb-1.5">Content</label>
+        <textarea id="e-body" rows="7" class="w-full text-sm border border-stone-200 rounded-xl px-3 py-2.5 text-stone-700 resize-none leading-relaxed">${it.body}</textarea>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="cancelMode()" class="text-sm text-stone-400 hover:text-stone-600 px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors">Cancel</button>
+        <button onclick="deleteNote('${it.id}')" class="text-sm text-red-400 hover:text-red-600 px-4 py-2 rounded-xl border border-red-100 hover:bg-red-50 transition-colors">Delete</button>
+        <button onclick="saveNote()" class="text-sm bg-stone-800 hover:bg-stone-700 text-white px-5 py-2 rounded-xl transition-colors">Save changes</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (selected) {
+    const it = items.find(x=>x.id===selected);
+    if (!it) { selected=null; renderMain(); return; }
+    el.innerHTML = `<div class="p-7 fade-in">
+      <div class="flex items-start justify-between mb-1">
+        <h2 class="serif text-xl font-semibold text-stone-800 leading-snug">${it.title}</h2>
+        <div class="flex gap-2 ml-4 flex-shrink-0">
+          <button onclick="startEdit()" class="text-xs text-stone-400 hover:text-stone-700 px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 transition-colors">Edit</button>
+          <button onclick="deleteNote('${it.id}')" class="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-50 transition-colors">Delete</button>
+        </div>
+      </div>
+      <span class="inline-block text-xs px-2 py-0.5 rounded-md ${catClass(it.cat)} mb-5">${it.cat}</span>
+      <p class="text-sm text-stone-600 leading-relaxed">${it.body}</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="flex items-center justify-center h-64 sm:h-full">
+    <div class="text-center">
+      <div class="serif text-3xl text-stone-200 mb-2">✦</div>
+      <p class="text-sm text-stone-400">Select a note or create a new one</p>
+    </div>
+  </div>`;
+}
+
+function selectNote(id){ selected=id; mode=null; renderSidebar(); renderMain(); }
+function startCreate(){ mode='create'; renderMain(); }
+function cancelMode(){ mode=null; renderMain(); }
+function createNote(){
+  const t=document.getElementById('c-title').value.trim(); if(!t) return;
+  const it={id:uid(),title:t,cat:document.getElementById('c-cat').value.trim()||'General',body:document.getElementById('c-body').value.trim()};
+  items.push(it); selected=it.id; mode=null; renderSidebar(); renderMain();
+}
+function startEdit(){ mode='edit'; renderMain(); }
+function saveNote(){
+  const it=items.find(x=>x.id===selected); if(!it) return;
+  it.title=document.getElementById('e-title').value.trim()||it.title;
+  it.cat=document.getElementById('e-cat').value.trim()||it.cat;
+  it.body=document.getElementById('e-body').value.trim();
+  mode=null; renderSidebar(); renderMain();
+}
+function deleteNote(id){ items=items.filter(x=>x.id!==id); if(selected===id){selected=null;} mode=null; renderSidebar(); renderMain(); }
+
+renderSidebar(); renderMain();
+</script>
+</body>
+</html>

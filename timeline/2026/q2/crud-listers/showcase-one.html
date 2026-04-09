@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple CRUD List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Component List</h1>
+            <button onclick="openModal('create')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition shadow-md">
+                + Create New
+            </button>
+        </div>
+
+        <!-- List Display -->
+        <div id="componentList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Items will be injected here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-10">
+            <p class="text-gray-500">No components found. Click "Create New" to add one.</p>
+        </div>
+    </div>
+
+    <!-- Modal Overlay (Shared for Create and Edit) -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        
+        <!-- Create Form -->
+        <div id="createForm" class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 hidden">
+            <h2 class="text-xl font-bold mb-4">Create Component</h2>
+            <form onsubmit="handleCreate(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="createName" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="createDesc" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-24"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Edit Form -->
+        <div id="editForm" class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 hidden">
+            <h2 class="text-xl font-bold mb-4">Edit Component</h2>
+            <form onsubmit="handleUpdate(event)">
+                <input type="hidden" id="editId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="editName" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="editDesc" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 h-24"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let components = [
+            { id: 1, name: 'Navbar', description: 'Responsive navigation bar with logo and links.' },
+            { id: 2, name: 'Hero Section', description: 'Main landing page section with CTA.' }
+        ];
+
+        // Selectors
+        const listContainer = document.getElementById('componentList');
+        const emptyState = document.getElementById('emptyState');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const createForm = document.getElementById('createForm');
+        const editForm = document.getElementById('editForm');
+
+        // Initial Render
+        render();
+
+        function render() {
+            listContainer.innerHTML = '';
+            
+            if (components.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                components.forEach(item => {
+                    const card = `
+                        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${item.name}</h3>
+                                <p class="text-gray-600 text-sm mt-1">${item.description}</p>
+                            </div>
+                            <div class="mt-4 flex space-x-2">
+                                <button onclick="prepareEdit(${item.id})" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded">Edit</button>
+                                <button onclick="deleteItem(${item.id})" class="text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1 rounded">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.innerHTML += card;
+                });
+            }
+        }
+
+        // Modal Logic
+        function openModal(type) {
+            modalOverlay.classList.remove('hidden');
+            if (type === 'create') {
+                createForm.classList.remove('hidden');
+                editForm.classList.add('hidden');
+            } else {
+                editForm.classList.remove('hidden');
+                createForm.classList.add('hidden');
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.add('hidden');
+            createForm.classList.add('hidden');
+            editForm.classList.add('hidden');
+            // Clear inputs
+            document.getElementById('createName').value = '';
+            document.getElementById('createDesc').value = '';
+        }
+
+        // CRUD Actions
+        function handleCreate(e) {
+            e.preventDefault();
+            const name = document.getElementById('createName').value;
+            const description = document.getElementById('createDesc').value;
+            
+            const newItem = {
+                id: Date.now(),
+                name,
+                description
+            };
+
+            components.push(newItem);
+            render();
+            closeModal();
+        }
+
+        function prepareEdit(id) {
+            const item = components.find(c => c.id === id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editDesc').value = item.description;
+            
+            openModal('edit');
+        }
+
+        function handleUpdate(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('editId').value);
+            const name = document.getElementById('editName').value;
+            const description = document.getElementById('editDesc').value;
+
+            components = components.map(item => 
+                item.id === id ? { ...item, name, description } : item
+            );
+
+            render();
+            closeModal();
+        }
+
+        function deleteItem(id) {
+            if (confirm('Are you sure you want to delete this?')) {
+                components = components.filter(item => item.id !== id);
+                render();
+            }
+        }
+
+        // Close modal on clicking outside the white box
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+    </script>
+</body>
+</html>

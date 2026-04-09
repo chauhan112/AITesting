@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Showcase 3 - Inline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 p-4 md:p-10 font-sans min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-end mb-6">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Elements</h1>
+                <p class="text-slate-500 mt-1">Manage your design system</p>
+            </div>
+            <button onclick="toggleCreateForm()" class="bg-teal-500 hover:bg-teal-600 text-white rounded-full px-5 py-2 font-semibold shadow-sm transition transform active:scale-95">
+                Add Element
+            </button>
+        </div>
+
+        <!-- Create Form (Hidden) -->
+        <div id="create-wrapper" class="hidden bg-white p-5 rounded-xl shadow-md mb-6 border-t-4 border-teal-500">
+            <h3 class="font-bold mb-3 text-slate-700">New Element</h3>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="new-tag" placeholder="Tag (e.g. Button)" class="flex-1 bg-slate-50 border border-slate-200 rounded px-3 py-2 focus:outline-none focus:border-teal-500">
+                <input type="text" id="new-val" placeholder="Value" class="flex-1 bg-slate-50 border border-slate-200 rounded px-3 py-2 focus:outline-none focus:border-teal-500">
+                <button onclick="submitCreate()" class="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800 transition">Save</button>
+                <button onclick="toggleCreateForm()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded hover:bg-slate-300 transition">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Data List -->
+        <div id="data-list" class="flex flex-col gap-3">
+            <!-- Rows injected here -->
+        </div>
+
+    </div>
+
+    <script>
+        let elements = [
+            { id: 1, tag: 'Primary Button', val: '<button class="btn"></button>' },
+            { id: 2, tag: 'Text Input', val: '<input type="text" />' }
+        ];
+
+        let editingId = null;
+
+        const dataList = document.getElementById('data-list');
+        const createWrapper = document.getElementById('create-wrapper');
+
+        function renderRows() {
+            dataList.innerHTML = '';
+            
+            elements.forEach(el => {
+                // If this row is currently being edited, show the Inline Form
+                if (el.id === editingId) {
+                    dataList.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-amber-500 flex flex-col sm:flex-row gap-3 items-center">
+                            <input type="text" id="edit-tag-${el.id}" value="${el.tag}" class="w-full sm:flex-1 bg-amber-50 border border-amber-200 rounded px-3 py-2 focus:outline-none focus:border-amber-500">
+                            <input type="text" id="edit-val-${el.id}" value="${escapeHtml(el.val)}" class="w-full sm:flex-1 bg-amber-50 border border-amber-200 rounded px-3 py-2 focus:outline-none focus:border-amber-500 font-mono text-sm">
+                            <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                <button onclick="submitEdit(${el.id})" class="flex-1 sm:flex-none bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600 transition">Update</button>
+                                <button onclick="cancelEdit()" class="flex-1 sm:flex-none bg-slate-200 text-slate-700 px-3 py-2 rounded hover:bg-slate-300 transition">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Normal Display Row
+                    dataList.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-teal-300 transition">
+                            <div class="flex-1 overflow-hidden">
+                                <h4 class="font-bold text-slate-800">${el.tag}</h4>
+                                <code class="text-sm text-teal-600 bg-teal-50 px-2 py-1 rounded block mt-1 truncate">${escapeHtml(el.val)}</code>
+                            </div>
+                            <div class="flex gap-3 w-full sm:w-auto">
+                                <button onclick="startEdit(${el.id})" class="text-slate-500 hover:text-teal-600 font-medium px-2 py-1">Edit</button>
+                                <button onclick="deleteEl(${el.id})" class="text-slate-500 hover:text-red-500 font-medium px-2 py-1">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // --- Create Logic ---
+        function toggleCreateForm() {
+            createWrapper.classList.toggle('hidden');
+            document.getElementById('new-tag').value = '';
+            document.getElementById('new-val').value = '';
+            editingId = null; // Close any open inline edits
+            renderRows();
+        }
+
+        function submitCreate() {
+            const tag = document.getElementById('new-tag').value;
+            const val = document.getElementById('new-val').value;
+            if(!tag || !val) return alert("Fill in all fields!");
+            
+            elements.unshift({ id: Date.now(), tag, val });
+            createWrapper.classList.add('hidden');
+            renderRows();
+        }
+
+        // --- Edit Logic ---
+        function startEdit(id) {
+            createWrapper.classList.add('hidden'); // Close create form if open
+            editingId = id;
+            renderRows();
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            renderRows();
+        }
+
+        function submitEdit(id) {
+            const tag = document.getElementById(`edit-tag-${id}`).value;
+            const val = document.getElementById(`edit-val-${id}`).value;
+            
+            const index = elements.findIndex(e => e.id === id);
+            elements[index] = { id, tag, val };
+            
+            editingId = null; // Hide edit form
+            renderRows();
+        }
+
+        // --- Delete Logic ---
+        function deleteEl(id) {
+            if(confirm('Delete component?')) {
+                elements = elements.filter(e => e.id !== id);
+                renderRows();
+            }
+        }
+
+        // Utility to escape HTML entities for the inline code display
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        renderRows();
+    </script>
+</body>
+</html>

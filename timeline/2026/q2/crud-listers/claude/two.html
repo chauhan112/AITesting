@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tasks — Data Table CRUD</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { font-family: 'IBM Plex Sans', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  input, textarea, select { outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: #0ea5e9 !important; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+  tr.editing td { background: #f0f9ff !important; }
+  tbody tr { transition: background 0.1s; }
+  .form-slide { animation: down 0.18s ease; }
+  @keyframes down { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body class="bg-gray-950 min-h-screen text-white">
+
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <p class="mono text-xs text-sky-400 mb-1 tracking-widest uppercase">Task manager</p>
+      <h1 class="text-2xl font-semibold text-white">Sprint backlog</h1>
+    </div>
+    <button onclick="toggleCreate()" class="flex items-center gap-2 border border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-white text-sm px-4 py-2.5 rounded-lg transition-all mono">
+      + new task
+    </button>
+  </div>
+
+  <!-- Create Form -->
+  <div id="create-form" class="hidden form-slide mb-6">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl p-5">
+      <p class="mono text-xs text-sky-400 mb-4">// new task</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 mono">task_name</label>
+          <input id="new-name" type="text" placeholder="Describe the task" class="w-full text-sm border border-gray-700 rounded-lg px-3 py-2 bg-gray-800 text-white placeholder-gray-600" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 mono">assignee</label>
+          <input id="new-who" type="text" placeholder="Name" class="w-full text-sm border border-gray-700 rounded-lg px-3 py-2 bg-gray-800 text-white placeholder-gray-600" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 mono">priority</label>
+          <select id="new-pri" class="w-full text-sm border border-gray-700 rounded-lg px-3 py-2 bg-gray-800 text-white">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5 mono">due_date</label>
+          <input id="new-due" type="text" placeholder="e.g. Apr 20" class="w-full text-sm border border-gray-700 rounded-lg px-3 py-2 bg-gray-800 text-white placeholder-gray-600" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="cancelCreate()" class="mono text-xs text-gray-400 hover:text-white px-4 py-2 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors">cancel</button>
+        <button onclick="createItem()" class="mono text-xs bg-sky-500 hover:bg-sky-400 text-white px-4 py-2 rounded-lg transition-colors">add_task()</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800">
+            <th class="mono text-left text-xs text-gray-500 px-5 py-3 font-medium">task</th>
+            <th class="mono text-left text-xs text-gray-500 px-5 py-3 font-medium hidden sm:table-cell">assignee</th>
+            <th class="mono text-left text-xs text-gray-500 px-5 py-3 font-medium">priority</th>
+            <th class="mono text-left text-xs text-gray-500 px-5 py-3 font-medium hidden md:table-cell">due</th>
+            <th class="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const uid = () => Math.random().toString(36).slice(2,8);
+let items = [
+  {id:uid(), name:'Redesign homepage hero', who:'Alex', pri:'high', due:'Apr 12'},
+  {id:uid(), name:'Fix auth token refresh bug', who:'Sam', pri:'high', due:'Apr 10'},
+  {id:uid(), name:'Write API documentation', who:'Jamie', pri:'low', due:'Apr 22'},
+  {id:uid(), name:'Setup CI/CD pipeline', who:'Morgan', pri:'medium', due:'Apr 18'},
+  {id:uid(), name:'Accessibility audit', who:'Riley', pri:'medium', due:'Apr 25'},
+];
+let editId = null;
+
+const priMap = {
+  low:  { label:'low',    cls:'bg-emerald-900 text-emerald-400 border border-emerald-800' },
+  medium:{ label:'med',   cls:'bg-amber-900 text-amber-400 border border-amber-800' },
+  high: { label:'high',   cls:'bg-red-900 text-red-400 border border-red-800' },
+};
+
+function render(){
+  document.getElementById('tbody').innerHTML = items.map(it => {
+    if (editId === it.id) return `
+      <tr class="editing border-b border-gray-800">
+        <td class="px-5 py-2"><input id="e-name" value="${it.name}" class="w-full text-sm border border-sky-500 rounded-lg px-3 py-1.5 bg-gray-800 text-white" /></td>
+        <td class="px-5 py-2 hidden sm:table-cell"><input id="e-who" value="${it.who}" class="w-full text-sm border border-gray-700 rounded-lg px-3 py-1.5 bg-gray-800 text-white" /></td>
+        <td class="px-5 py-2"><select id="e-pri" class="text-sm border border-gray-700 rounded-lg px-2 py-1.5 bg-gray-800 text-white">
+          <option value="low"${it.pri==='low'?' selected':''}>Low</option>
+          <option value="medium"${it.pri==='medium'?' selected':''}>Medium</option>
+          <option value="high"${it.pri==='high'?' selected':''}>High</option>
+        </select></td>
+        <td class="px-5 py-2 hidden md:table-cell"><input id="e-due" value="${it.due}" class="w-24 text-sm border border-gray-700 rounded-lg px-3 py-1.5 bg-gray-800 text-white" /></td>
+        <td class="px-5 py-2 text-right whitespace-nowrap">
+          <button onclick="saveEdit()" class="mono text-xs text-sky-400 hover:text-sky-300 mr-3">save</button>
+          <button onclick="cancelEdit()" class="mono text-xs text-gray-500 hover:text-gray-300">cancel</button>
+        </td>
+      </tr>`;
+    const p = priMap[it.pri] || priMap.low;
+    return `<tr class="border-b border-gray-800 hover:bg-gray-800/50" id="row-${it.id}">
+      <td class="px-5 py-3.5 font-medium text-white">${it.name}</td>
+      <td class="px-5 py-3.5 text-gray-400 hidden sm:table-cell">${it.who}</td>
+      <td class="px-5 py-3.5"><span class="mono text-xs px-2 py-0.5 rounded ${p.cls}">${p.label}</span></td>
+      <td class="px-5 py-3.5 text-gray-400 mono text-xs hidden md:table-cell">${it.due}</td>
+      <td class="px-5 py-3.5 text-right whitespace-nowrap">
+        <button onclick="startEdit('${it.id}')" class="mono text-xs text-gray-400 hover:text-sky-400 mr-3 transition-colors">edit</button>
+        <button onclick="deleteItem('${it.id}')" class="mono text-xs text-gray-600 hover:text-red-400 transition-colors">del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleCreate(){
+  const f=document.getElementById('create-form');
+  const hidden=f.classList.contains('hidden');
+  f.classList.toggle('hidden',!hidden);
+  if(!hidden) return; cancelEdit();
+}
+function cancelCreate(){ document.getElementById('create-form').classList.add('hidden'); }
+function createItem(){
+  const n=document.getElementById('new-name').value.trim(); if(!n) return;
+  items.push({id:uid(),name:n,who:document.getElementById('new-who').value.trim()||'—',pri:document.getElementById('new-pri').value,due:document.getElementById('new-due').value.trim()||'TBD'});
+  ['new-name','new-who','new-due'].forEach(id=>document.getElementById(id).value='');
+  cancelCreate(); render();
+}
+function startEdit(id){ editId=id; cancelCreate(); render(); }
+function cancelEdit(){ editId=null; render(); }
+function saveEdit(){
+  const it=items.find(x=>x.id===editId); if(!it) return;
+  it.name=document.getElementById('e-name').value.trim()||it.name;
+  it.who=document.getElementById('e-who')?.value.trim()||it.who;
+  it.pri=document.getElementById('e-pri').value;
+  it.due=document.getElementById('e-due')?.value.trim()||it.due;
+  editId=null; render();
+}
+function deleteItem(id){ items=items.filter(x=>x.id!==id); render(); }
+
+render();
+</script>
+</body>
+</html>

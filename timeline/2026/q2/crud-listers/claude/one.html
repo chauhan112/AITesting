@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects — Card Grid CRUD</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .card {
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .form-slide {
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        input,
+        textarea,
+        select {
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #6366f1 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-800">Projects</h1>
+                <p class="text-sm text-slate-400 mt-0.5">Manage your active projects</p>
+            </div>
+            <button onclick="toggleCreate()"
+                class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                New project
+            </button>
+        </div>
+
+        <!-- Create Form -->
+        <div id="create-form" class="hidden form-slide mb-6">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h2 class="text-sm font-medium text-slate-700 mb-4">New project</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5">Title</label>
+                        <input id="new-title" type="text" placeholder="Project name"
+                            class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5">Tag</label>
+                        <input id="new-tag" type="text" placeholder="e.g. Design"
+                            class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800" />
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs text-slate-500 mb-1.5">Description</label>
+                    <textarea id="new-desc" placeholder="What is this project about?" rows="3"
+                        class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 resize-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="cancelCreate()"
+                        class="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onclick="createItem()"
+                        class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">Create
+                        project</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Edit Form -->
+        <div id="edit-form" class="hidden form-slide mt-6">
+            <div class="bg-white border border-indigo-100 rounded-2xl p-6 shadow-sm ring-1 ring-indigo-200">
+                <h2 class="text-sm font-medium text-slate-700 mb-4">Edit project</h2>
+                <input type="hidden" id="edit-id" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5">Title</label>
+                        <input id="edit-title" type="text"
+                            class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5">Tag</label>
+                        <input id="edit-tag" type="text"
+                            class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800" />
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs text-slate-500 mb-1.5">Description</label>
+                    <textarea id="edit-desc" rows="3"
+                        class="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 resize-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="cancelEdit()"
+                        class="text-sm text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onclick="saveEdit()"
+                        class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">Save
+                        changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uid = () => Math.random().toString(36).slice(2, 8);
+        let items = [
+            { id: uid(), title: 'Brand refresh', tag: 'Design', desc: 'Revamp logo, colors, and typography for the new identity.' },
+            { id: uid(), title: 'API integration', tag: 'Dev', desc: 'Connect payment gateway and handle webhooks.' },
+            { id: uid(), title: 'User research', tag: 'Research', desc: 'Interview 10 users and compile insights report.' },
+        ];
+        let editId = null;
+
+        const tagColors = {
+            Design: 'bg-violet-100 text-violet-700',
+            Dev: 'bg-blue-100 text-blue-700',
+            Research: 'bg-amber-100 text-amber-700',
+            General: 'bg-slate-100 text-slate-600',
+        };
+        function tagClass(t) { return tagColors[t] || 'bg-emerald-100 text-emerald-700'; }
+
+        function render() {
+            const g = document.getElementById('cards-grid');
+            g.innerHTML = items.map(it => `
+    <div class="card bg-white border border-slate-200 rounded-2xl p-5">
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="text-sm font-semibold text-slate-800 leading-tight">${it.title}</h3>
+        <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${tagClass(it.tag)} ml-2 whitespace-nowrap">${it.tag}</span>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed mb-4">${it.desc}</p>
+      <div class="flex gap-2 pt-3 border-t border-slate-100">
+        <button onclick="startEdit('${it.id}')" class="flex-1 text-xs text-slate-600 hover:text-indigo-600 border border-slate-200 hover:border-indigo-300 rounded-lg py-1.5 transition-colors">Edit</button>
+        <button onclick="deleteItem('${it.id}')" class="flex-1 text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-200 hover:bg-red-50 rounded-lg py-1.5 transition-colors">Delete</button>
+      </div>
+    </div>`).join('');
+        }
+
+        function toggleCreate() {
+            const f = document.getElementById('create-form');
+            const hidden = f.classList.contains('hidden');
+            f.classList.toggle('hidden', !hidden);
+            if (!hidden) return;
+            cancelEdit();
+        }
+        function cancelCreate() { document.getElementById('create-form').classList.add('hidden'); }
+        function createItem() {
+            const t = document.getElementById('new-title').value.trim(); if (!t) return;
+            items.push({ id: uid(), title: t, tag: document.getElementById('new-tag').value.trim() || 'General', desc: document.getElementById('new-desc').value.trim() });
+            ['new-title', 'new-tag', 'new-desc'].forEach(id => document.getElementById(id).value = '');
+            cancelCreate(); render();
+        }
+        function startEdit(id) {
+            editId = id;
+            const it = items.find(x => x.id === id);
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-title').value = it.title;
+            document.getElementById('edit-tag').value = it.tag;
+            document.getElementById('edit-desc').value = it.desc;
+            const ef = document.getElementById('edit-form');
+            ef.classList.remove('hidden');
+            cancelCreate();
+            ef.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        function cancelEdit() { document.getElementById('edit-form').classList.add('hidden'); editId = null; }
+        function saveEdit() {
+            const it = items.find(x => x.id === editId); if (!it) return;
+            it.title = document.getElementById('edit-title').value.trim() || it.title;
+            it.tag = document.getElementById('edit-tag').value.trim() || it.tag;
+            it.desc = document.getElementById('edit-desc').value.trim();
+            cancelEdit(); render();
+        }
+        function deleteItem(id) { items = items.filter(x => x.id !== id); render(); }
+
+        render();
+    </script>
+</body>
+
+</html>

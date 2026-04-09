@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Showcase 1 - Modal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-6">
+
+    <!-- Main Container -->
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Components list</h1>
+            <button onclick="openModal('create')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                + Create New
+            </button>
+        </div>
+        
+        <!-- List Display -->
+        <div class="p-6">
+            <div id="list-container" class="grid gap-4">
+                <!-- Items will be injected here -->
+            </div>
+            <div id="empty-state" class="text-center text-gray-500 py-8 hidden">No components found. Create one!</div>
+        </div>
+    </div>
+
+    <!-- Modal Form (Hidden by default) -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 transition-opacity">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 id="modal-title" class="text-xl font-bold mb-4">Create Component</h2>
+            <form id="crud-form" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="item-id">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="item-name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="item-desc" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let items = [
+            { id: 1, name: 'Navbar Widget', desc: 'Top navigation bar with dropdowns.' },
+            { id: 2, name: 'Footer Module', desc: 'Standard site footer with links.' }
+        ];
+
+        const listContainer = document.getElementById('list-container');
+        const emptyState = document.getElementById('empty-state');
+        const modal = document.getElementById('modal');
+        const form = document.getElementById('crud-form');
+
+        function renderList() {
+            listContainer.innerHTML = '';
+            if (items.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                items.forEach(item => {
+                    listContainer.innerHTML += `
+                        <div class="border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-sm transition">
+                            <div>
+                                <h3 class="font-semibold text-lg text-gray-800">${item.name}</h3>
+                                <p class="text-gray-500 text-sm">${item.desc}</p>
+                            </div>
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <button onclick="openModal('edit', ${item.id})" class="flex-1 sm:flex-none px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition">Edit</button>
+                                <button onclick="deleteItem(${item.id})" class="flex-1 sm:flex-none px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function openModal(mode, id = null) {
+            modal.classList.remove('hidden');
+            if (mode === 'create') {
+                document.getElementById('modal-title').innerText = 'Create Component';
+                form.reset();
+                document.getElementById('item-id').value = '';
+            } else {
+                document.getElementById('modal-title').innerText = 'Edit Component';
+                const item = items.find(i => i.id === id);
+                document.getElementById('item-id').value = item.id;
+                document.getElementById('item-name').value = item.name;
+                document.getElementById('item-desc').value = item.desc;
+            }
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('item-id').value;
+            const name = document.getElementById('item-name').value;
+            const desc = document.getElementById('item-desc').value;
+
+            if (id) { // Edit
+                const index = items.findIndex(i => i.id == id);
+                items[index] = { id: parseInt(id), name, desc };
+            } else { // Create
+                items.push({ id: Date.now(), name, desc });
+            }
+            
+            closeModal();
+            renderList();
+        }
+
+        function deleteItem(id) {
+            if(confirm('Are you sure?')) {
+                items = items.filter(i => i.id !== id);
+                renderList();
+            }
+        }
+
+        renderList();
+    </script>
+</body>
+</html>

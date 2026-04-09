@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark CRUD Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen p-4">
+
+    <div class="max-w-2xl mx-auto mt-10">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">Tasks</h1>
+            <button onclick="showForm('create')" class="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/30 flex items-center justify-center text-2xl transition-transform hover:scale-110">
+                +
+            </button>
+        </div>
+
+        <!-- Task List -->
+        <div id="taskList" class="space-y-4">
+            <!-- Items injected here -->
+        </div>
+
+        <!-- Form Modal (Hidden by Default) -->
+        <div id="modal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/60">
+            <div class="bg-[#1e293b] border border-slate-700 w-full max-w-md rounded-2xl p-8 shadow-2xl">
+                <h3 id="formTitle" class="text-xl font-bold mb-6 text-white">Create New Task</h3>
+                <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4">
+                    <input type="hidden" id="taskId">
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Task Title</label>
+                        <input type="text" id="taskTitle" required class="w-full bg-[#0f172a] border border-slate-700 rounded-xl px-4 py-3 mt-2 outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div class="flex gap-4 pt-4">
+                        <button type="button" onclick="hideForm()" class="flex-1 py-3 text-slate-400 hover:text-white transition">Cancel</button>
+                        <button type="submit" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold transition">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [
+            { id: 1, title: 'Design System Update' },
+            { id: 2, title: 'API Integration' }
+        ];
+
+        function render() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = tasks.map(t => `
+                <div class="group bg-[#1e293b] border border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-purple-500/50 transition duration-300">
+                    <span class="text-lg font-medium">${t.title}</span>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                        <button onclick="showForm('edit', ${t.id})" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button onclick="deleteTask(${t.id})" class="p-2 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showForm(mode, id = null) {
+            document.getElementById('modal').classList.remove('hidden');
+            if (mode === 'edit') {
+                const task = tasks.find(t => t.id === id);
+                document.getElementById('formTitle').innerText = 'Edit Task';
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskTitle').value = task.title;
+            } else {
+                document.getElementById('formTitle').innerText = 'Create New Task';
+                document.getElementById('taskForm').reset();
+                document.getElementById('taskId').value = '';
+            }
+        }
+
+        function hideForm() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function saveTask(e) {
+            e.preventDefault();
+            const id = document.getElementById('taskId').value;
+            const title = document.getElementById('taskTitle').value;
+
+            if (id) {
+                tasks = tasks.map(t => t.id == id ? { ...t, title } : t);
+            } else {
+                tasks.push({ id: Date.now(), title });
+            }
+            render();
+            hideForm();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            render();
+        }
+
+        render();
+    </script>
+</body>
+</html>
