@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Filter Builder + Complex Search</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.min.js"></script>
+
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+
+    input, select, textarea {
+      background: #0f172a;
+      color: white;
+      border: 1px solid #475569;
+    }
+
+    table {
+      font-size: 14px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-6">
+
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex gap-4 mb-6">
+      <button
+        onclick="showPage('crud')"
+        class="px-4 py-2 bg-blue-600 rounded"
+      >
+        Filter CRUD
+      </button>
+
+      <button
+        onclick="showPage('search')"
+        class="px-4 py-2 bg-green-600 rounded"
+      >
+        Complex Search
+      </button>
+    </div>
+
+    <!-- CRUD PAGE -->
+    <div id="crudPage">
+
+      <h1 class="text-3xl font-bold mb-6">
+        InMemoryFilterItemModel CRUD
+      </h1>
+
+      <div class="card rounded-xl p-4 mb-6">
+        <h2 class="text-xl mb-4 font-semibold">Create Filter</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <input id="filterLabel" placeholder="Label" class="p-2 rounded"/>
+
+          <input id="filterId" placeholder="ID" class="p-2 rounded"/>
+
+          <input id="filterParent" placeholder="Parent" class="p-2 rounded"/>
+
+          <select id="subType" class="p-2 rounded">
+            <option value="search">search</option>
+            <option value="sort">sort</option>
+            <option value="slice">slice</option>
+          </select>
+
+          <textarea
+            id="subValue"
+            rows="6"
+            class="p-2 rounded col-span-1 md:col-span-2"
+            placeholder='Example:
+For search:
+{
+  "type":"key-val",
+  "value":"age:>30"
+}
+
+For sort:
+{
+  "key":"age",
+  "asc":true
+}
+
+For slice:
+5'
+          ></textarea>
+
+        </div>
+
+        <button
+          onclick="createFilter()"
+          class="mt-4 px-4 py-2 bg-blue-500 rounded"
+        >
+          Save Filter
+        </button>
+      </div>
+
+      <div class="card rounded-xl p-4">
+
+        <h2 class="text-xl font-semibold mb-4">
+          Filters
+        </h2>
+
+        <div id="filterList" class="space-y-4"></div>
+
+      </div>
+
+    </div>
+
+    <!-- SEARCH PAGE -->
+    <div id="searchPage" class="hidden">
+
+      <h1 class="text-3xl font-bold mb-6">
+        Complex Search
+      </h1>
+
+      <div class="card p-4 rounded-xl mb-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div>
+            <label class="block mb-2">Search Operation</label>
+
+            <select id="searchOp" class="w-full p-2 rounded">
+              <option value="key-val">key-val</option>
+              <option value="sift">sift</option>
+              <option value="reg">reg</option>
+              <option value="case">case</option>
+              <option value="any">any</option>
+              <option value="word">word</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block mb-2">Search Value</label>
+
+            <input
+              id="searchValue"
+              class="w-full p-2 rounded"
+              placeholder='Example: age:>30'
+            />
+          </div>
+
+        </div>
+
+        <div class="mt-4">
+          <label class="block mb-2">
+            Apply Saved Filter
+          </label>
+
+          <select id="savedFilterSelect" class="w-full p-2 rounded">
+            <option value="">-- none --</option>
+          </select>
+        </div>
+
+        <div class="flex gap-4 mt-6">
+
+          <button
+            onclick="runSearch()"
+            class="px-4 py-2 bg-green-600 rounded"
+          >
+            Run Search
+          </button>
+
+          <button
+            onclick="resetSearch()"
+            class="px-4 py-2 bg-gray-600 rounded"
+          >
+            Reset
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="card rounded-xl p-4 overflow-auto">
+
+        <h2 class="text-xl font-semibold mb-4">
+          Results
+        </h2>
+
+        <div id="resultCount" class="mb-4"></div>
+
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-700">
+              <th class="p-2 border border-slate-600">Name</th>
+              <th class="p-2 border border-slate-600">Email</th>
+              <th class="p-2 border border-slate-600">Age</th>
+              <th class="p-2 border border-slate-600">City</th>
+              <th class="p-2 border border-slate-600">Company</th>
+            </tr>
+          </thead>
+
+          <tbody id="resultsTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    // =========================================================
+    // TYPES
+    // =========================================================
+
+    /**
+     * FilterItem
+     * {
+     *   label: string;
+     *   value: json-stringified FilterSubItem[]
+     *   id: string;
+     *   parent: string;
+     * }
+     */
+
+    /**
+     * FilterSubItem
+     * {
+     *   type: "search" | "sort" | "slice"
+     *   value: string
+     * }
+     */
+
+
+    // =========================================================
+    // DATA MODEL
+    // =========================================================
+
+    class InMemoryFilterItemModel {
+
+      constructor() {
+        this.items = [];
+      }
+
+      async read_all() {
+        return this.items;
+      }
+
+      async read(id) {
+        return this.items.find(x => x.id === id);
+      }
+
+      async create(data) {
+        this.items.push(data);
+        return data;
+      }
+
+      async update(id, data) {
+        const idx = this.items.findIndex(x => x.id === id);
+
+        if (idx === -1) return;
+
+        this.items[idx] = {
+          ...this.items[idx],
+          ...data
+        };
+      }
+
+      async deleteIt(id) {
+        this.items = this.items.filter(x => x.id !== id);
+      }
+
+    }
+
+    class SomeListData {
+
+      constructor() {
+        this.items = [];
+      }
+
+      async read_all() {
+        return this.items;
+      }
+
+      async read(id) {
+        return this.items.find(x => x.id === id);
+      }
+
+      async create(data) {
+        this.items.push(data);
+      }
+
+      async update(id, data) {
+        const idx = this.items.findIndex(x => x.id === id);
+
+        if (idx === -1) return;
+
+        this.items[idx] = {
+          ...this.items[idx],
+          ...data
+        };
+      }
+
+      async deleteIt(id) {
+        this.items = this.items.filter(x => x.id !== id);
+      }
+
+    }
+
+    const filterModel = new InMemoryFilterItemModel();
+    const listData = new SomeListData();
+
+    // =========================================================
+    // FAKE DATA
+    // =========================================================
+
+    function generateFakeData() {
+
+      for (let i = 0; i < 200; i++) {
+
+        listData.create({
+          id: faker.random.uuid(),
+          name: faker.name.findName(),
+          email: faker.internet.email(),
+          age: faker.random.number({
+            min: 18,
+            max: 70
+          }),
+          city: faker.address.city(),
+          company: faker.company.companyName()
+        });
+
+      }
+
+    }
+
+    generateFakeData();
+
+    // =========================================================
+    // PAGE NAV
+    // =========================================================
+
+    function showPage(page) {
+
+      document.getElementById("crudPage").classList.add("hidden");
+      document.getElementById("searchPage").classList.add("hidden");
+
+      if (page === "crud") {
+        document.getElementById("crudPage").classList.remove("hidden");
+      }
+
+      if (page === "search") {
+        document.getElementById("searchPage").classList.remove("hidden");
+      }
+
+    }
+
+    // =========================================================
+    // FILTER CRUD
+    // =========================================================
+
+    async function createFilter() {
+
+      const label = document.getElementById("filterLabel").value;
+      const id = document.getElementById("filterId").value;
+      const parent = document.getElementById("filterParent").value;
+
+      const subType = document.getElementById("subType").value;
+      const subValue = document.getElementById("subValue").value;
+
+      const filterItem = {
+        label,
+        id,
+        parent,
+        value: JSON.stringify([
+          {
+            type: subType,
+            value: subValue
+          }
+        ])
+      };
+
+      await filterModel.create(filterItem);
+
+      renderFilters();
+      populateSavedFilters();
+
+      alert("Filter created");
+
+    }
+
+    async function renderFilters() {
+
+      const container = document.getElementById("filterList");
+
+      const items = await filterModel.read_all();
+
+      container.innerHTML = "";
+
+      for (const item of items) {
+
+        const div = document.createElement("div");
+
+        div.className = "border border-slate-600 rounded p-4";
+
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+
+            <div>
+              <div class="font-bold text-lg">${item.label}</div>
+              <div>ID: ${item.id}</div>
+              <div>Parent: ${item.parent}</div>
+
+              <pre class="mt-2 text-sm bg-slate-900 p-2 rounded">
+${item.value}
+              </pre>
+            </div>
+
+            <button
+              class="bg-red-600 px-3 py-1 rounded"
+              onclick="deleteFilter('${item.id}')"
+            >
+              Delete
+            </button>
+
+          </div>
+        `;
+
+        container.appendChild(div);
+
+      }
+
+    }
+
+    async function deleteFilter(id) {
+
+      await filterModel.deleteIt(id);
+
+      renderFilters();
+      populateSavedFilters();
+
+    }
+
+    async function populateSavedFilters() {
+
+      const select = document.getElementById("savedFilterSelect");
+
+      const filters = await filterModel.read_all();
+
+      select.innerHTML = `
+        <option value="">-- none --</option>
+      `;
+
+      for (const filter of filters) {
+
+        const option = document.createElement("option");
+
+        option.value = filter.id;
+        option.innerText = filter.label;
+
+        select.appendChild(option);
+
+      }
+
+    }
+
+    // =========================================================
+    // SEARCH ENGINE
+    // =========================================================
+
+    function applySearch(data, op, value) {
+
+      switch (op) {
+
+        // =========================================
+        // key-value
+        // =========================================
+
+        case "key-val": {
+
+          const [key, val] = value.split(":");
+
+          return data.filter(item => {
+
+            const itemVal = item[key];
+
+            if (val.startsWith(">")) {
+              return itemVal > Number(val.substring(1));
+            }
+
+            if (val.startsWith("<")) {
+              return itemVal < Number(val.substring(1));
+            }
+
+            return String(itemVal)
+              .toLowerCase()
+              .includes(val.toLowerCase());
+
+          });
+
+        }
+
+        // =========================================
+        // sift (simple mongo-like)
+        // =========================================
+
+        case "sift": {
+
+          const query = JSON.parse(value);
+
+          return data.filter(item => {
+
+            return Object.entries(query).every(([k, v]) => {
+
+              if (typeof v === "object") {
+
+                if (v.$gt !== undefined) {
+                  return item[k] > v.$gt;
+                }
+
+                if (v.$lt !== undefined) {
+                  return item[k] < v.$lt;
+                }
+
+              }
+
+              return item[k] === v;
+
+            });
+
+          });
+
+        }
+
+        // =========================================
+        // reg
+        // =========================================
+
+        case "reg": {
+
+          const reg = new RegExp(value);
+
+          return data.filter(item => {
+
+            return reg.test(JSON.stringify(item));
+
+          });
+
+        }
+
+        // =========================================
+        // case
+        // =========================================
+
+        case "case": {
+
+          return data.filter(item => {
+
+            return JSON.stringify(item).includes(value);
+
+          });
+
+        }
+
+        // =========================================
+        // any
+        // =========================================
+
+        case "any": {
+
+          return data.filter(item => {
+
+            return JSON.stringify(item)
+              .toLowerCase()
+              .includes(value.toLowerCase());
+
+          });
+
+        }
+
+        // =========================================
+        // word
+        // =========================================
+
+        case "word": {
+
+          const reg = new RegExp(`\\b${value}\\b`, "i");
+
+          return data.filter(item => {
+
+            return reg.test(JSON.stringify(item));
+
+          });
+
+        }
+
+      }
+
+      return data;
+
+    }
+
+    function applySubItems(data, subItems) {
+
+      let result = [...data];
+
+      for (const sub of subItems) {
+
+        // =========================================
+        // SEARCH
+        // =========================================
+
+        if (sub.type === "search") {
+
+          const parsed = JSON.parse(sub.value);
+
+          result = applySearch(
+            result,
+            parsed.type,
+            parsed.value
+          );
+
+        }
+
+        // =========================================
+        // SORT
+        // =========================================
+
+        if (sub.type === "sort") {
+
+          const parsed = JSON.parse(sub.value);
+
+          result.sort((a, b) => {
+
+            if (a[parsed.key] > b[parsed.key]) {
+              return parsed.asc ? 1 : -1;
+            }
+
+            if (a[parsed.key] < b[parsed.key]) {
+              return parsed.asc ? -1 : 1;
+            }
+
+            return 0;
+
+          });
+
+        }
+
+        // =========================================
+        // SLICE
+        // =========================================
+
+        if (sub.type === "slice") {
+
+          const n = Number(sub.value);
+
+          result = result.slice(0, n);
+
+        }
+
+      }
+
+      return result;
+
+    }
+
+    // =========================================================
+    // RUN SEARCH
+    // =========================================================
+
+    async function runSearch() {
+
+      let data = await listData.read_all();
+
+      const op = document.getElementById("searchOp").value;
+      const value = document.getElementById("searchValue").value;
+
+      if (value.trim()) {
+        data = applySearch(data, op, value);
+      }
+
+      const filterId = document.getElementById("savedFilterSelect").value;
+
+      if (filterId) {
+
+        const filter = await filterModel.read(filterId);
+
+        if (filter) {
+
+          const subItems = JSON.parse(filter.value);
+
+          data = applySubItems(data, subItems);
+
+        }
+
+      }
+
+      renderResults(data);
+
+    }
+
+    async function resetSearch() {
+
+      const data = await listData.read_all();
+
+      renderResults(data);
+
+    }
+
+    // =========================================================
+    // RENDER RESULTS
+    // =========================================================
+
+    function renderResults(data) {
+
+      const tbody = document.getElementById("resultsTable");
+
+      tbody.innerHTML = "";
+
+      document.getElementById("resultCount").innerHTML =
+        `Found ${data.length} results`;
+
+      for (const item of data) {
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="p-2 border border-slate-700">${item.name}</td>
+          <td class="p-2 border border-slate-700">${item.email}</td>
+          <td class="p-2 border border-slate-700">${item.age}</td>
+          <td class="p-2 border border-slate-700">${item.city}</td>
+          <td class="p-2 border border-slate-700">${item.company}</td>
+        `;
+
+        tbody.appendChild(tr);
+
+      }
+
+    }
+
+    // =========================================================
+    // INIT
+    // =========================================================
+
+    renderFilters();
+    populateSavedFilters();
+    resetSearch();
+
+  </script>
+
+</body>
+</html>

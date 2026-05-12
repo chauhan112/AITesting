@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DataSift | Artistic Edition</title>
+    
+    <!-- Elegant Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans:['Outfit', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'blob': 'blob 10s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base / Environment */
+        body { overscroll-behavior-y: none; background-color: #fcfcfc; }
+        
+        /* Custom Artistic Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.7); }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            color: #334155;
+        }
+        .glass-input:focus { background: rgba(255, 255, 255, 0.7); border-color: #a78bfa; outline: none; box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Nav Buttons */
+        .nav-btn.active {
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+            border: 1px solid transparent;
+        }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.5);
+            color: #475569;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* Buttons */
+        .btn-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            background-size: 200% 200%;
+            transition: background-position 0.5s ease;
+        }
+        .btn-gradient:hover { background-position: right center; box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Dropdown fix for glass UI */
+        select option { background: #ffffff; color: #334155; }
+    </style>
+</head>
+<body class="font-sans text-slate-800 h-[100dvh] flex flex-col overflow-hidden relative">
+
+    <!-- Ethereal Animated Background Blobs -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob" style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob" style="animation-delay: 4s;"></div>
+        <div class="absolute bottom-[10%] right-[20%] w-96 h-96 bg-teal-200 rounded-full mix-blend-multiply filter blur-[100px] opacity-50 animate-blob" style="animation-delay: 6s;"></div>
+        <div class="absolute inset-0 bg-white/20 backdrop-blur-[2px]"></div>
+    </div>
+
+    <!-- Floating Elegant Navigation -->
+    <div class="p-3 sm:p-5 pb-0 shrink-0 z-10">
+        <nav class="glass rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3 w-full">
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start px-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center shadow-lg">
+                    <span class="text-white font-serif italic font-bold text-lg leading-none">D</span>
+                </div>
+                <h1 class="text-2xl font-serif font-bold tracking-wide text-slate-800">Data<span class="text-pink-500 italic">Sift</span></h1>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto p-1 bg-white/30 rounded-xl">
+                <button id="nav-data" class="nav-btn active flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium text-sm transition-all duration-300">
+                    Explorer
+                </button>
+                <button id="nav-crud" class="nav-btn flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium text-sm transition-all duration-300 hover:bg-white/80">
+                    Alchemy
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden p-3 sm:p-5 relative z-10">
+        
+        <!-- ============================== -->
+        <!-- VIEW 1: DATA EXPLORER          -->
+        <!-- ============================== -->
+        <div id="view-data" class="h-full flex flex-col gap-3 sm:gap-5 fade-in">
+            <!-- Glass Controls -->
+            <div class="glass p-4 sm:p-6 rounded-3xl flex flex-col lg:flex-row gap-4 items-start lg:items-end shrink-0">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-[11px] uppercase tracking-widest font-semibold text-slate-500 mb-2 pl-1">Lens & Filters</label>
+                    <div class="relative">
+                        <select id="filter-dropdown" class="glass-input w-full rounded-xl p-3 text-sm appearance-none cursor-pointer transition-all">
+                            <option value="">✨ Reveal All Data (Unfiltered)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 w-full lg:w-auto">
+                    <button id="btn-apply-filter" class="flex-1 lg:flex-none btn-gradient text-white px-8 py-3 rounded-xl font-medium text-sm transition-all active:scale-95 shadow-lg">
+                        Cast Filter
+                    </button>
+                    <button id="btn-reset-filter" class="flex-1 lg:flex-none glass-input px-8 py-3 rounded-xl hover:bg-white/70 font-medium text-sm transition-all active:scale-95 text-slate-700">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Glass Table Container -->
+            <div class="glass rounded-3xl flex-1 flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-4 sm:p-5 border-b border-white/40 flex justify-between items-center shrink-0">
+                    <h2 class="text-xl font-serif font-bold text-slate-800">Manifested Records</h2>
+                    <span class="text-xs font-semibold bg-white/50 backdrop-blur-sm text-indigo-700 py-1.5 px-4 rounded-full border border-white/60 shadow-sm">
+                        <span id="data-count">0</span> entities
+                    </span>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                        <thead class="glass-header sticky top-0 z-10 border-b border-white/50 shadow-sm">
+                            <tr class="text-slate-500 uppercase tracking-widest text-[10px] sm:text-[11px]">
+                                <th class="p-4 font-semibold">Identifier</th>
+                                <th class="p-4 font-semibold">Entity Name</th>
+                                <th class="p-4 font-semibold">Cycles</th>
+                                <th class="p-4 font-semibold">Aether Address</th>
+                                <th class="p-4 font-semibold">Domain</th>
+                                <th class="p-4 font-semibold text-center">Resonance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="divide-y divide-white/20">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================== -->
+        <!-- VIEW 2: FILTER ALCHEMY (CRUD)  -->
+        <!-- ============================== -->
+        <div id="view-crud" class="h-full flex flex-col md:flex-row gap-4 sm:gap-5 hidden fade-in">
+            
+            <!-- Left Side: Glass Form -->
+            <div class="w-full md:w-1/3 glass p-5 sm:p-6 rounded-3xl flex flex-col shrink-0 md:shrink shadow-2xl">
+                <h2 class="text-2xl font-serif font-bold text-slate-800 mb-5 border-b border-white/40 pb-3" id="form-title">Forge New Filter</h2>
+                <form id="form-filter" class="space-y-4 sm:space-y-5 flex flex-col flex-1 overflow-y-auto pr-2">
+                    <input type="hidden" id="f-id">
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-slate-500 mb-1.5 pl-1">Incantation Name (Label)</label>
+                        <input type="text" id="f-label" required class="glass-input w-full rounded-xl p-3 text-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-slate-500 mb-1.5 pl-1">Lineage (Parent)</label>
+                        <input type="text" id="f-parent" class="glass-input w-full rounded-xl p-3 text-sm transition-all">
+                    </div>
+                    <div class="flex-1 flex flex-col min-h-[150px]">
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-slate-500 mb-1.5 pl-1 flex justify-between">
+                            <span>Logic Matrix (Value)</span>
+                            <span class="text-slate-400 font-normal lowercase tracking-normal text-[10px]">{JSON array}</span>
+                        </label>
+                        <textarea id="f-value" required placeholder='[{"type":"search","searchType":"key-val","value":"age:>30"}]' 
+                            class="glass-input w-full flex-1 rounded-xl p-4 font-mono text-[11px] sm:text-xs leading-relaxed resize-none transition-all"></textarea>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2 shrink-0">
+                        <button type="submit" class="w-full sm:flex-1 btn-gradient text-white py-3 rounded-xl font-medium text-sm transition-all active:scale-95 shadow-lg">Inscribe</button>
+                        <button type="button" id="btn-cancel-edit" class="hidden w-full sm:w-auto sm:flex-1 glass-input py-3 px-4 rounded-xl hover:bg-white/70 font-medium text-sm transition-all active:scale-95 text-slate-700">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Glass Grimoire (List) -->
+            <div class="w-full md:w-2/3 glass rounded-3xl flex flex-col flex-1 overflow-hidden shadow-2xl">
+                <div class="p-4 sm:p-5 border-b border-white/40 flex justify-between items-center shrink-0">
+                    <h2 class="text-xl font-serif font-bold text-slate-800">Grimoire of Filters</h2>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[550px]">
+                        <thead class="glass-header sticky top-0 z-10 border-b border-white/50 shadow-sm">
+                            <tr class="text-slate-500 uppercase tracking-widest text-[10px] sm:text-[11px]">
+                                <th class="p-4 font-semibold w-1/4">Label</th>
+                                <th class="p-4 font-semibold w-1/6">Parent</th>
+                                <th class="p-4 font-semibold w-2/4">JSON Architecture</th>
+                                <th class="p-4 font-semibold w-1/6 text-right">Runes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filter-table-body" class="divide-y divide-white/20">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Application Logic (ESM module) -->
+    <script type="module">
+        import { faker } from 'https://esm.sh/@faker-js/faker@8.4.1';
+        import sift from 'https://esm.sh/sift@17.1.3';
+
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES
+        // ==========================================
+        class BaseDataModel {
+            constructor() { this.db =[]; }
+            async read_all() { return [...this.db]; }
+            async read(id) { return this.db.find(x => x.id === id); }
+            async create(data) {
+                const newRec = { id: crypto.randomUUID(), ...data };
+                this.db.push(newRec);
+                return newRec;
+            }
+            async update(id, data) {
+                const idx = this.db.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    this.db[idx] = { ...this.db[idx], ...data };
+                    return this.db[idx];
+                }
+                throw new Error("Item not found");
+            }
+            async deleteIt(id) {
+                this.db = this.db.filter(x => x.id !== id);
+                return true;
+            }
+        }
+
+        class InMemoryFilterItemModel extends BaseDataModel {}
+        class SomeListData extends BaseDataModel {}
+
+        const filterModel = new InMemoryFilterItemModel();
+        const dataModel = new SomeListData();
+
+        // ==========================================
+        // 2. DATA SEEDING
+        // ==========================================
+        async function seedData() {
+            for (let i = 0; i < 200; i++) {
+                await dataModel.create({
+                    name: faker.person.fullName(),
+                    age: faker.number.int({ min: 18, max: 99 }),
+                    email: faker.internet.email().toLowerCase(),
+                    city: faker.location.city(),
+                    status: faker.helpers.arrayElement(['Harmonic', 'Dissonant', 'Void'])
+                });
+            }
+
+            await filterModel.create({
+                label: "Elders (Age >= 50), Top 10",
+                parent: "Genesis",
+                value: JSON.stringify([
+                    { type: "search", searchType: "key-val", value: "age:>=50" },
+                    { type: "sort", value: JSON.stringify({ key: "age", asc: false }) },
+                    { type: "slice", value: "10" }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Harmonic OR Youth < 25",
+                parent: "Genesis",
+                value: JSON.stringify([
+                    { type: "search", searchType: "sift", value: JSON.stringify({ $or:[{status: "Harmonic"}, {age: {$lt: 25}}] }) }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Echoes of 'Aura'",
+                parent: "Genesis",
+                value: JSON.stringify([
+                    { type: "search", searchType: "any", value: "Aura" }
+                ], null, 2)
+            });
+        }
+
+        // ==========================================
+        // 3. FILTER / SEARCH EXECUTION ENGINE
+        // ==========================================
+        function executeFilters(data, filtersConfig) {
+            let result = [...data];
+            
+            for (const step of filtersConfig) {
+                if (step.type === 'search') {
+                    const op = step.searchType;
+                    const val = step.value;
+                    
+                    if (op === 'key-val') {
+                        const colonIdx = val.indexOf(':');
+                        if (colonIdx > -1) {
+                            const k = val.substring(0, colonIdx);
+                            const v = val.substring(colonIdx + 1);
+                            const match = v.match(/^(>=|<=|>|<|!|)(.*)$/);
+                            const oper = match[1];
+                            let target = match[2];
+
+                            result = result.filter(el => {
+                                let ev = el[k];
+                                if (ev === undefined || ev === null) return false;
+                                if (typeof ev === 'number' && !isNaN(Number(target))) target = Number(target);
+                                
+                                if (oper === '>') return ev > target;
+                                if (oper === '>=') return ev >= target;
+                                if (oper === '<') return ev < target;
+                                if (oper === '<=') return ev <= target;
+                                if (oper === '!') return ev != target;
+                                return String(ev).toLowerCase() === String(target).toLowerCase();
+                            });
+                        }
+                    } else if (op === 'sift') {
+                        try { result = result.filter(sift(JSON.parse(val))); } catch (e) { }
+                    } else if (op === 'reg') {
+                        try { const r = new RegExp(val); result = result.filter(el => r.test(JSON.stringify(el))); } catch(e) { }
+                    } else if (op === 'case') {
+                        result = result.filter(el => JSON.stringify(el).includes(val));
+                    } else if (op === 'any') {
+                        const lowerVal = val.toLowerCase(); result = result.filter(el => JSON.stringify(el).toLowerCase().includes(lowerVal));
+                    } else if (op === 'word') {
+                        try { const rw = new RegExp("\\b" + val + "\\b", "i"); result = result.filter(el => rw.test(JSON.stringify(el))); } catch(e) { }
+                    }
+                } else if (step.type === 'sort') {
+                    try {
+                        const { key, asc } = JSON.parse(step.value);
+                        result.sort((a, b) => {
+                            if (a[key] < b[key]) return asc ? -1 : 1;
+                            if (a[key] > b[key]) return asc ? 1 : -1;
+                            return 0;
+                        });
+                    } catch(e) { }
+                } else if (step.type === 'slice') {
+                    const parts = String(step.value).split(',').map(n => parseInt(n.trim(), 10));
+                    if (parts.length === 1 && !isNaN(parts[0])) result = result.slice(0, parts[0]);
+                    else if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) result = result.slice(parts[0], parts[1]);
+                }
+            }
+            return result;
+        }
+
+        // ==========================================
+        // 4. UI LOGIC & RENDERING
+        // ==========================================
+        
+        document.getElementById('nav-data').addEventListener('click', (e) => switchView('data', e.target));
+        document.getElementById('nav-crud').addEventListener('click', (e) => switchView('crud', e.target));
+
+        function switchView(viewName, btnNode) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            btnNode.classList.add('active');
+            
+            document.getElementById('view-data').classList.add('hidden');
+            document.getElementById('view-crud').classList.add('hidden');
+            
+            // Trigger animation reflow
+            const viewToOpen = document.getElementById(`view-${viewName}`);
+            viewToOpen.classList.remove('fade-in');
+            void viewToOpen.offsetWidth; // trigger reflow
+            viewToOpen.classList.add('fade-in');
+            viewToOpen.classList.remove('hidden');
+        }
+
+        async function renderData(dataSet = null) {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            
+            const list = dataSet || await dataModel.read_all();
+            
+            // Animate counter
+            const counter = document.getElementById('data-count');
+            counter.innerText = list.length;
+            counter.classList.add('scale-125', 'text-pink-600');
+            setTimeout(() => counter.classList.remove('scale-125', 'text-pink-600'), 300);
+
+            list.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-white/30 transition-colors duration-200";
+                // Staggered entrance animation for rows
+                tr.style.animation = `fadeIn 0.3s ease-out ${index * 0.01}s forwards`;
+                tr.style.opacity = '0';
+                
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-400 font-mono text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-[80px]" title="${item.id}">${item.id.split('-')[0]}..</td>
+                    <td class="p-4 font-medium text-slate-800 truncate max-w-[120px]" title="${item.name}">${item.name}</td>
+                    <td class="p-4 text-slate-600">${item.age}</td>
+                    <td class="p-4 text-slate-500 truncate max-w-[120px] sm:max-w-none" title="${item.email}">${item.email}</td>
+                    <td class="p-4 text-slate-600 truncate max-w-[100px] sm:max-w-none" title="${item.city}">${item.city}</td>
+                    <td class="p-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest backdrop-blur-md border shadow-sm
+                            ${item.status === 'Harmonic' ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50' : 
+                              item.status === 'Void' ? 'bg-rose-100/50 text-rose-700 border-rose-200/50' : 'bg-amber-100/50 text-amber-700 border-amber-200/50'}">
+                            ${item.status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function renderFilters() {
+            const filters = await filterModel.read_all();
+            
+            const select = document.getElementById('filter-dropdown');
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">✨ Reveal All Data (Unfiltered)</option>';
+            filters.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `🔮 ${f.label} ${f.parent ? `[${f.parent}]` : ''}`;
+                select.appendChild(opt);
+            });
+            select.value = currentSelection;
+
+            const tbody = document.getElementById('filter-table-body');
+            tbody.innerHTML = '';
+            filters.forEach((f, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-white/30 transition-colors duration-200";
+                tr.style.animation = `fadeIn 0.3s ease-out ${index * 0.05}s forwards`;
+                tr.style.opacity = '0';
+                
+                tr.innerHTML = `
+                    <td class="p-4 font-serif font-bold text-indigo-800 align-top">${f.label}</td>
+                    <td class="p-4 text-slate-500 align-top italic">${f.parent || '-'}</td>
+                    <td class="p-4 align-top">
+                        <div class="glass-input p-3 rounded-xl text-[10px] sm:text-[11px] font-mono max-h-32 overflow-auto whitespace-pre-wrap break-all shadow-inner">${f.value}</div>
+                    </td>
+                    <td class="p-4 text-right align-top whitespace-nowrap">
+                        <button class="text-indigo-600 hover:text-indigo-900 font-bold text-[11px] uppercase tracking-wider btn-edit mx-1 p-2 bg-white/40 hover:bg-white/80 rounded-lg backdrop-blur-sm transition-all shadow-sm" data-id="${f.id}">Transmute</button>
+                        <button class="text-rose-500 hover:text-rose-800 font-bold text-[11px] uppercase tracking-wider btn-del mx-1 p-2 bg-white/40 hover:bg-white/80 rounded-lg backdrop-blur-sm transition-all shadow-sm" data-id="${f.id}">Banish</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEditFilter));
+            document.querySelectorAll('.btn-del').forEach(btn => btn.addEventListener('click', handleDeleteFilter));
+        }
+
+        // ==========================================
+        // 5. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('form-filter').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('f-id').value;
+            const label = document.getElementById('f-label').value;
+            const parent = document.getElementById('f-parent').value;
+            const valueStr = document.getElementById('f-value').value;
+
+            try { JSON.parse(valueStr); } catch(err) {
+                alert("The Matrix is flawed. Invalid JSON architecture.");
+                return;
+            }
+
+            const data = { label, parent, value: valueStr };
+            if (id) await filterModel.update(id, data);
+            else await filterModel.create(data);
+
+            resetForm();
+            await renderFilters();
+        });
+
+        async function handleEditFilter(e) {
+            const id = e.target.getAttribute('data-id');
+            const item = await filterModel.read(id);
+            if (item) {
+                document.getElementById('f-id').value = item.id;
+                document.getElementById('f-label').value = item.label;
+                document.getElementById('f-parent').value = item.parent;
+                document.getElementById('f-value').value = item.value;
+                document.getElementById('form-title').innerText = "Transmute Filter";
+                document.getElementById('btn-cancel-edit').classList.remove('hidden');
+                
+                if (window.innerWidth < 768) document.getElementById('view-crud').scrollTop = 0;
+            }
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
+
+        function resetForm() {
+            document.getElementById('form-filter').reset();
+            document.getElementById('f-id').value = '';
+            document.getElementById('form-title').innerText = "Forge New Filter";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function handleDeleteFilter(e) {
+            if (confirm("Are you certain you wish to banish this filter to the void?")) {
+                const id = e.target.getAttribute('data-id');
+                await filterModel.deleteIt(id);
+                await renderFilters();
+                if (document.getElementById('filter-dropdown').value === id) {
+                    document.getElementById('btn-reset-filter').click();
+                }
+            }
+        }
+
+        document.getElementById('btn-apply-filter').addEventListener('click', async () => {
+            const filterId = document.getElementById('filter-dropdown').value;
+            const fullData = await dataModel.read_all();
+            
+            if (!filterId) return renderData(fullData);
+
+            const filterDef = await filterModel.read(filterId);
+            if (filterDef) {
+                try {
+                    const config = JSON.parse(filterDef.value);
+                    const filteredData = executeFilters(fullData, config);
+                    renderData(filteredData);
+                } catch(err) {
+                    alert("A fracture occurred while casting. Check console.");
+                }
+            }
+        });
+
+        document.getElementById('btn-reset-filter').addEventListener('click', async () => {
+            document.getElementById('filter-dropdown').value = '';
+            renderData();
+        });
+
+        // ==========================================
+        // 6. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await seedData();
+            await renderFilters();
+            await renderData();
+        });
+
+    </script>
+</body>
+</html>

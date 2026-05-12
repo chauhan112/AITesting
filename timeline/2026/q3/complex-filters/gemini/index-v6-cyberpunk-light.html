@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DataSift // CORP_NET</title>
+    
+    <!-- Cyberpunk Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cyber:['Orbitron', 'sans-serif'],
+                        mono:['"Share Tech Mono"', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#f8fafc',
+                            panel: '#ffffff',
+                            cyan: '#0077cc',  /* Deepened for light mode contrast */
+                            pink: '#d60055',  /* Deepened for light mode contrast */
+                            orange: '#ea580c', /* Replaced yellow for better visibility */
+                            green: '#059669',
+                            border: '#cbd5e1',
+                            text: '#0f172a',
+                            muted: '#64748b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base / Environment */
+        body { 
+            overscroll-behavior-y: none; 
+            background-color: #f8fafc;
+            color: #0f172a;
+            /* Clinical Light Grid */
+            background-image: 
+                linear-gradient(rgba(0, 119, 204, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 119, 204, 0.08) 1px, transparent 1px);
+            background-size: 30px 30px;
+            position: relative;
+        }
+
+        /* Subtle LCD Scanline */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.02) 50%);
+            z-index: 50;
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        
+        /* Cyberpunk Scrollbar - Light */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-left: 1px solid #cbd5e1; }
+        ::-webkit-scrollbar-thumb { background: #0077cc; border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: #d60055; }
+
+        /* Panels and Clipped Corners */
+        .cyber-panel {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 30px rgba(0, 119, 204, 0.05);
+            backdrop-filter: blur(8px);
+            position: relative;
+        }
+        .cyber-panel::before { /* Decorative top-left corner */
+            content: ''; position: absolute; top: -1px; left: -1px; width: 12px; height: 12px; border-top: 3px solid #0077cc; border-left: 3px solid #0077cc;
+        }
+        .cyber-panel::after { /* Decorative bottom-right corner */
+            content: ''; position: absolute; bottom: -1px; right: -1px; width: 12px; height: 12px; border-bottom: 3px solid #d60055; border-right: 3px solid #d60055;
+        }
+
+        /* Cyberpunk Inputs - Light */
+        .cyber-input {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            font-family: '"Share Tech Mono"', monospace;
+            transition: all 0.2s;
+            border-left: 4px solid #cbd5e1;
+        }
+        .cyber-input:focus {
+            outline: none;
+            border-color: #0077cc;
+            border-left: 4px solid #ea580c;
+            box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+            background: #ffffff;
+        }
+
+        /* Buttons with Clip Path - Light */
+        .btn-cyber {
+            font-family: 'Orbitron', sans-serif;
+            background: #f8fafc;
+            border: 2px solid #0077cc;
+            color: #0077cc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.15s ease-in-out;
+            position: relative;
+        }
+        .btn-cyber:hover {
+            background: #0077cc;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+        }
+        .btn-cyber:active { transform: scale(0.97); }
+        
+        .btn-cyber.active-nav {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
+        }
+        .btn-cyber.active-nav:hover { box-shadow: 0 4px 15px rgba(15, 23, 42, 0.3); }
+        
+        .btn-cyber.danger { border-color: #d60055; color: #d60055; }
+        .btn-cyber.danger:hover { background: #d60055; color: #ffffff; box-shadow: 0 4px 15px rgba(214, 0, 85, 0.3); }
+
+        /* Tables & Rows */
+        .cyber-row { border-bottom: 1px solid #e2e8f0; transition: all 0.2s; background: #ffffff; }
+        .cyber-row:hover { background-color: #f1f8ff; border-left: 3px solid #0077cc; }
+        
+        /* Dropdown fix for light UI */
+        select option { background: #ffffff; color: #0f172a; }
+
+        /* Status Badges - Corporate */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            font-size: 10px;
+            border: 1px solid;
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        .status-verified { color: #059669; border-color: #059669; background: #ecfdf5; }
+        .status-flagged { color: #d60055; border-color: #d60055; background: #fff1f2; }
+        .status-pending { color: #ea580c; border-color: #ea580c; background: #fff7ed; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-mono h-[100dvh] flex flex-col overflow-hidden">
+
+    <!-- Corporate Header / Nav -->
+    <div class="p-3 sm:p-5 pb-0 shrink-0 z-10">
+        <header class="cyber-panel p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
+            <div class="flex flex-col items-center sm:items-start text-center sm:text-left w-full sm:w-auto relative">
+                <div class="absolute -top-3 -left-2 text-[8px] text-cyber-orange hidden sm:block font-bold">AERIS_OS // EXECUTIVE_ACCESS</div>
+                <h1 class="text-2xl sm:text-3xl font-cyber font-black text-cyber-text uppercase tracking-tight relative">
+                    <span class="text-cyber-cyan">DATA</span>SIFT <span class="text-xs text-cyber-muted ml-1 tracking-widest">v7.0</span>
+                </h1>
+                <span class="text-[10px] sm:text-xs text-cyber-pink tracking-widest mt-1 font-bold">CONN_SECURE :: GLOBAL_CORP_NET</span>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button id="nav-data" class="btn-cyber active-nav flex-1 sm:flex-none px-5 py-2.5 text-xs sm:text-sm">
+                    NET_VIEW
+                </button>
+                <button id="nav-crud" class="btn-cyber flex-1 sm:flex-none px-5 py-2.5 text-xs sm:text-sm">
+                    SYS_RULES
+                </button>
+            </div>
+        </header>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden p-3 sm:p-5 relative z-10">
+        
+        <!-- ============================== -->
+        <!-- VIEW 1: DATA EXPLORER          -->
+        <!-- ============================== -->
+        <div id="view-data" class="h-full flex flex-col gap-4 sm:gap-5 fade-in">
+            <!-- Cyber Controls -->
+            <div class="cyber-panel p-4 sm:p-5 flex flex-col lg:flex-row gap-4 items-start lg:items-end shrink-0">
+                <div class="w-full lg:flex-1">
+                    <label class="block font-cyber text-xs uppercase tracking-widest text-cyber-cyan mb-2 font-bold">
+                        &gt; SELECT_QUERY_CONSTRUCT
+                    </label>
+                    <div class="relative">
+                        <select id="filter-dropdown" class="cyber-input w-full p-2.5 text-sm appearance-none cursor-pointer">
+                            <option value="">[ /ROOT/ALL_RECORDS ]</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-cyber-muted">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 w-full lg:w-auto">
+                    <button id="btn-apply-filter" class="flex-1 lg:flex-none btn-cyber px-8 py-2.5 text-xs sm:text-sm">
+                        EXECUTE
+                    </button>
+                    <button id="btn-reset-filter" class="flex-1 lg:flex-none btn-cyber danger px-8 py-2.5 text-xs sm:text-sm">
+                        FLUSH
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terminal Data Table -->
+            <div class="cyber-panel flex-1 flex flex-col overflow-hidden">
+                <div class="p-3 sm:p-4 border-b border-cyber-border flex justify-between items-center shrink-0 bg-slate-50">
+                    <h2 class="text-sm sm:text-base font-cyber font-bold text-cyber-text tracking-widest uppercase flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 bg-cyber-pink animate-pulse"></span> DB_INDEX
+                    </h2>
+                    <div class="text-[10px] sm:text-xs text-cyber-text font-bold border border-cyber-border bg-white px-3 py-1.5 shadow-sm">
+                        ENTITIES: <span id="data-count" class="text-cyber-cyan">0</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative bg-white">
+                    <table class="w-full text-left border-collapse whitespace-nowrap text-xs sm:text-sm">
+                        <thead class="bg-slate-50 sticky top-0 z-10 border-b-2 border-cyber-border shadow-sm">
+                            <tr class="uppercase tracking-widest text-[10px] sm:text-xs text-cyber-muted">
+                                <th class="p-4 font-bold">UUID</th>
+                                <th class="p-4 font-bold">ALIAS</th>
+                                <th class="p-4 font-bold">CYCLES</th>
+                                <th class="p-4 font-bold">COMMLINK</th>
+                                <th class="p-4 font-bold">SECTOR</th>
+                                <th class="p-4 font-bold text-center">NETWORK_STAT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================== -->
+        <!-- VIEW 2: FILTER ALCHEMY (CRUD)  -->
+        <!-- ============================== -->
+        <div id="view-crud" class="h-full flex flex-col md:flex-row gap-4 sm:gap-5 hidden fade-in">
+            
+            <!-- Left Side: Terminal Form -->
+            <div class="w-full md:w-1/3 cyber-panel p-4 sm:p-6 flex flex-col shrink-0 md:shrink">
+                <h2 class="text-sm sm:text-base font-cyber font-bold text-cyber-cyan mb-5 border-b-2 border-cyber-border pb-2 uppercase tracking-widest" id="form-title">
+                    &gt; INITIATE_NEW_RULE
+                </h2>
+                <form id="form-filter" class="space-y-4 sm:space-y-5 flex flex-col flex-1 overflow-y-auto pr-2">
+                    <input type="hidden" id="f-id">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs uppercase tracking-widest text-cyber-muted font-bold mb-1.5">
+                            // LABEL_IDENTIFIER
+                        </label>
+                        <input type="text" id="f-label" required class="cyber-input w-full p-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs uppercase tracking-widest text-cyber-muted font-bold mb-1.5">
+                            // PARENT_NODE
+                        </label>
+                        <input type="text" id="f-parent" class="cyber-input w-full p-2.5 text-sm">
+                    </div>
+                    <div class="flex-1 flex flex-col min-h-[150px]">
+                        <label class="block text-[10px] sm:text-xs uppercase tracking-widest text-cyber-muted font-bold mb-1.5">
+                            // JSON_MATRIX_PAYLOAD
+                        </label>
+                        <textarea id="f-value" required placeholder='[{"type":"search","searchType":"key-val","value":"age:>30"}]' 
+                            class="cyber-input w-full flex-1 p-3 text-[11px] sm:text-xs leading-relaxed resize-none"></textarea>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2 shrink-0">
+                        <button type="submit" class="w-full sm:flex-1 btn-cyber py-3 text-xs sm:text-sm">COMPILE</button>
+                        <button type="button" id="btn-cancel-edit" class="hidden w-full sm:w-auto sm:flex-1 btn-cyber danger py-3 px-4 text-xs sm:text-sm">ABORT</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Cyber Table (List) -->
+            <div class="w-full md:w-2/3 cyber-panel flex flex-col flex-1 overflow-hidden">
+                <div class="p-3 sm:p-4 border-b border-cyber-border bg-slate-50 flex justify-between items-center shrink-0">
+                    <h2 class="text-sm sm:text-base font-cyber font-bold text-cyber-text tracking-widest uppercase">
+                        // COMPILED_RULES_CACHE
+                    </h2>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative bg-white">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[550px]">
+                        <thead class="bg-slate-50 sticky top-0 z-10 border-b-2 border-cyber-border shadow-sm">
+                            <tr class="uppercase tracking-widest text-[10px] sm:text-[11px] text-cyber-muted">
+                                <th class="p-4 font-bold w-1/4">IDENTIFIER</th>
+                                <th class="p-4 font-bold w-1/6">NODE</th>
+                                <th class="p-4 font-bold w-2/4">JSON_ARCHITECTURE</th>
+                                <th class="p-4 font-bold w-1/6 text-right">OVERRIDE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filter-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Application Logic (ESM module) -->
+    <script type="module">
+        import { faker } from 'https://esm.sh/@faker-js/faker@8.4.1';
+        import sift from 'https://esm.sh/sift@17.1.3';
+
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES
+        // ==========================================
+        class BaseDataModel {
+            constructor() { this.db =[]; }
+            async read_all() { return [...this.db]; }
+            async read(id) { return this.db.find(x => x.id === id); }
+            async create(data) {
+                const newRec = { id: crypto.randomUUID(), ...data };
+                this.db.push(newRec);
+                return newRec;
+            }
+            async update(id, data) {
+                const idx = this.db.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    this.db[idx] = { ...this.db[idx], ...data };
+                    return this.db[idx];
+                }
+                throw new Error("Item not found");
+            }
+            async deleteIt(id) {
+                this.db = this.db.filter(x => x.id !== id);
+                return true;
+            }
+        }
+
+        class InMemoryFilterItemModel extends BaseDataModel {}
+        class SomeListData extends BaseDataModel {}
+
+        const filterModel = new InMemoryFilterItemModel();
+        const dataModel = new SomeListData();
+
+        // ==========================================
+        // 2. DATA SEEDING (Corporate Cyberpunk Context)
+        // ==========================================
+        async function seedData() {
+            for (let i = 0; i < 200; i++) {
+                await dataModel.create({
+                    name: faker.internet.userName().toUpperCase(),
+                    age: faker.number.int({ min: 18, max: 99 }),
+                    email: faker.internet.email().toLowerCase(), 
+                    city: `SEC-${faker.number.int({min:1, max:99})} // ${faker.location.city()}`,
+                    status: faker.helpers.arrayElement(['VERIFIED', 'PENDING', 'FLAGGED'])
+                });
+            }
+
+            await filterModel.create({
+                label: "VETERANS[AGE >= 50] LIM 10",
+                parent: "DEMO_NODE",
+                value: JSON.stringify([
+                    { type: "search", searchType: "key-val", value: "age:>=50" },
+                    { type: "sort", value: JSON.stringify({ key: "age", asc: false }) },
+                    { type: "slice", value: "10" }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "VERIFIED_ACCOUNTS OR AGE < 25",
+                parent: "SEC_NODE",
+                value: JSON.stringify([
+                    { type: "search", searchType: "sift", value: JSON.stringify({ $or:[{status: "VERIFIED"}, {age: {$lt: 25}}] }) }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "SYS_GREP: 'NEW'",
+                parent: "LOG_NODE",
+                value: JSON.stringify([
+                    { type: "search", searchType: "any", value: "NEW" }
+                ], null, 2)
+            });
+        }
+
+        // ==========================================
+        // 3. FILTER / SEARCH EXECUTION ENGINE
+        // ==========================================
+        function executeFilters(data, filtersConfig) {
+            let result = [...data];
+            
+            for (const step of filtersConfig) {
+                if (step.type === 'search') {
+                    const op = step.searchType;
+                    const val = step.value;
+                    
+                    if (op === 'key-val') {
+                        const colonIdx = val.indexOf(':');
+                        if (colonIdx > -1) {
+                            const k = val.substring(0, colonIdx);
+                            const v = val.substring(colonIdx + 1);
+                            const match = v.match(/^(>=|<=|>|<|!|)(.*)$/);
+                            const oper = match[1];
+                            let target = match[2];
+
+                            result = result.filter(el => {
+                                let ev = el[k];
+                                if (ev === undefined || ev === null) return false;
+                                if (typeof ev === 'number' && !isNaN(Number(target))) target = Number(target);
+                                
+                                if (oper === '>') return ev > target;
+                                if (oper === '>=') return ev >= target;
+                                if (oper === '<') return ev < target;
+                                if (oper === '<=') return ev <= target;
+                                if (oper === '!') return ev != target;
+                                return String(ev).toLowerCase() === String(target).toLowerCase();
+                            });
+                        }
+                    } else if (op === 'sift') {
+                        try { result = result.filter(sift(JSON.parse(val))); } catch (e) { }
+                    } else if (op === 'reg') {
+                        try { const r = new RegExp(val); result = result.filter(el => r.test(JSON.stringify(el))); } catch(e) { }
+                    } else if (op === 'case') {
+                        result = result.filter(el => JSON.stringify(el).includes(val));
+                    } else if (op === 'any') {
+                        const lowerVal = val.toLowerCase(); result = result.filter(el => JSON.stringify(el).toLowerCase().includes(lowerVal));
+                    } else if (op === 'word') {
+                        try { const rw = new RegExp("\\b" + val + "\\b", "i"); result = result.filter(el => rw.test(JSON.stringify(el))); } catch(e) { }
+                    }
+                } else if (step.type === 'sort') {
+                    try {
+                        const { key, asc } = JSON.parse(step.value);
+                        result.sort((a, b) => {
+                            if (a[key] < b[key]) return asc ? -1 : 1;
+                            if (a[key] > b[key]) return asc ? 1 : -1;
+                            return 0;
+                        });
+                    } catch(e) { }
+                } else if (step.type === 'slice') {
+                    const parts = String(step.value).split(',').map(n => parseInt(n.trim(), 10));
+                    if (parts.length === 1 && !isNaN(parts[0])) result = result.slice(0, parts[0]);
+                    else if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) result = result.slice(parts[0], parts[1]);
+                }
+            }
+            return result;
+        }
+
+        // ==========================================
+        // 4. UI LOGIC & RENDERING
+        // ==========================================
+        
+        document.getElementById('nav-data').addEventListener('click', (e) => switchView('data', e.target));
+        document.getElementById('nav-crud').addEventListener('click', (e) => switchView('crud', e.target));
+
+        function switchView(viewName, btnNode) {
+            document.querySelectorAll('.btn-cyber').forEach(btn => {
+                btn.classList.remove('active-nav');
+            });
+            btnNode.classList.add('active-nav');
+            
+            document.getElementById('view-data').classList.add('hidden');
+            document.getElementById('view-crud').classList.add('hidden');
+            
+            const viewToOpen = document.getElementById(`view-${viewName}`);
+            viewToOpen.classList.remove('fade-in');
+            void viewToOpen.offsetWidth; 
+            viewToOpen.classList.add('fade-in');
+            viewToOpen.classList.remove('hidden');
+        }
+
+        async function renderData(dataSet = null) {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            
+            const list = dataSet || await dataModel.read_all();
+            
+            const countEl = document.getElementById('data-count');
+            countEl.innerText = list.length;
+
+            list.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "cyber-row";
+                
+                let stampClass = 'status-pending';
+                if (item.status === 'VERIFIED') stampClass = 'status-verified';
+                if (item.status === 'FLAGGED') stampClass = 'status-flagged';
+
+                tr.innerHTML = `
+                    <td class="p-4 text-[10px] text-cyber-muted truncate max-w-[80px]" title="${item.id}">0x${item.id.substring(0,6)}</td>
+                    <td class="p-4 text-cyber-cyan font-bold truncate max-w-[150px]" title="${item.name}">@${item.name}</td>
+                    <td class="p-4 text-cyber-text">${item.age}</td>
+                    <td class="p-4 text-cyber-text truncate max-w-[120px] sm:max-w-none" title="${item.email}">${item.email}</td>
+                    <td class="p-4 text-cyber-text truncate max-w-[100px] sm:max-w-none" title="${item.city}">${item.city}</td>
+                    <td class="p-4 text-center">
+                        <span class="status-badge ${stampClass}">[ ${item.status} ]</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function renderFilters() {
+            const filters = await filterModel.read_all();
+            
+            const select = document.getElementById('filter-dropdown');
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">[ /ROOT/ALL_RECORDS ]</option>';
+            filters.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `> ${f.label} ${f.parent ? `//${f.parent}` : ''}`;
+                select.appendChild(opt);
+            });
+            select.value = currentSelection;
+
+            const tbody = document.getElementById('filter-table-body');
+            tbody.innerHTML = '';
+            filters.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "cyber-row";
+                
+                tr.innerHTML = `
+                    <td class="p-4 text-cyber-cyan font-bold align-top whitespace-normal break-words">${f.label}</td>
+                    <td class="p-4 text-cyber-muted font-bold align-top">${f.parent || 'NULL'}</td>
+                    <td class="p-4 align-top">
+                        <div class="bg-slate-50 border border-cyber-border p-3 text-[10px] sm:text-[11px] max-h-32 overflow-auto whitespace-pre-wrap break-all text-cyber-text">
+${f.value}
+                        </div>
+                    </td>
+                    <td class="p-4 text-right align-top whitespace-nowrap space-y-2">
+                        <button class="text-cyber-orange hover:text-cyber-text font-bold text-[10px] sm:text-[11px] btn-edit block ml-auto tracking-widest transition-colors" data-id="${f.id}">[MOD]</button>
+                        <button class="text-cyber-pink hover:text-cyber-text font-bold text-[10px] sm:text-[11px] btn-del block ml-auto tracking-widest transition-colors" data-id="${f.id}">[DEL]</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEditFilter));
+            document.querySelectorAll('.btn-del').forEach(btn => btn.addEventListener('click', handleDeleteFilter));
+        }
+
+        // ==========================================
+        // 5. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('form-filter').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('f-id').value;
+            const label = document.getElementById('f-label').value;
+            const parent = document.getElementById('f-parent').value;
+            const valueStr = document.getElementById('f-value').value;
+
+            try { JSON.parse(valueStr); } catch(err) {
+                alert("ERR 0x01: SYNTAX_FAULT. Verify JSON payload matrix.");
+                return;
+            }
+
+            const data = { label, parent, value: valueStr };
+            if (id) await filterModel.update(id, data);
+            else await filterModel.create(data);
+
+            resetForm();
+            await renderFilters();
+        });
+
+        async function handleEditFilter(e) {
+            const id = e.target.getAttribute('data-id');
+            const item = await filterModel.read(id);
+            if (item) {
+                document.getElementById('f-id').value = item.id;
+                document.getElementById('f-label').value = item.label;
+                document.getElementById('f-parent').value = item.parent;
+                document.getElementById('f-value').value = item.value;
+                document.getElementById('form-title').innerText = "> MODIFY_EXISTING_RULE";
+                document.getElementById('btn-cancel-edit').classList.remove('hidden');
+                
+                if (window.innerWidth < 768) document.getElementById('view-crud').scrollTop = 0;
+            }
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
+
+        function resetForm() {
+            document.getElementById('form-filter').reset();
+            document.getElementById('f-id').value = '';
+            document.getElementById('form-title').innerText = "> INITIATE_NEW_RULE";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function handleDeleteFilter(e) {
+            if (confirm("WARNING: Entity deletion is permanent. Proceed?")) {
+                const id = e.target.getAttribute('data-id');
+                await filterModel.deleteIt(id);
+                await renderFilters();
+                if (document.getElementById('filter-dropdown').value === id) {
+                    document.getElementById('btn-reset-filter').click();
+                }
+            }
+        }
+
+        document.getElementById('btn-apply-filter').addEventListener('click', async () => {
+            const filterId = document.getElementById('filter-dropdown').value;
+            const fullData = await dataModel.read_all();
+            
+            if (!filterId) return renderData(fullData);
+
+            const filterDef = await filterModel.read(filterId);
+            if (filterDef) {
+                try {
+                    const config = JSON.parse(filterDef.value);
+                    const filteredData = executeFilters(fullData, config);
+                    renderData(filteredData);
+                } catch(err) {
+                    alert("SYS_CRASH: Rule logic failure.");
+                }
+            }
+        });
+
+        document.getElementById('btn-reset-filter').addEventListener('click', async () => {
+            document.getElementById('filter-dropdown').value = '';
+            renderData();
+        });
+
+        // ==========================================
+        // 6. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await seedData();
+            await renderFilters();
+            await renderData();
+        });
+
+    </script>
+</body>
+</html>

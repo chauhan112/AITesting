@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFuchs - Dein Partner für Autoankauf</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Customization to match your screenshots -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans:['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            orange: '#FF5722', // The orange from your screenshot
+                            dark: '#111111',
+                            darker: '#0a0a0a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for hidden elements and smooth transitions */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-brand-darker text-gray-200 font-sans antialiased selection:bg-brand-orange selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-panel border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="#" class="text-2xl font-bold text-white tracking-tight">
+                        Auto<span class="text-brand-orange">Fuchs</span>
+                    </a>
+                </div>
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#vorteile" class="text-gray-300 hover:text-brand-orange transition-colors">Vorteile</a>
+                    <a href="#ablauf" class="text-gray-300 hover:text-brand-orange transition-colors">Ablauf</a>
+                    <a href="tel:+49123456789" class="text-white flex items-center gap-2 hover:text-brand-orange transition-colors">
+                        <i class="fa-solid fa-phone"></i> 0800 123 456
+                    </a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none text-2xl">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-brand-dark border-b border-gray-800">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#vorteile" class="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md">Vorteile</a>
+                <a href="#ablauf" class="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md">Ablauf</a>
+                <a href="tel:+49123456789" class="block px-3 py-2 text-base font-medium text-brand-orange flex items-center gap-2">
+                    <i class="fa-solid fa-phone"></i> Anrufen
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-24 pb-12 lg:pt-32 lg:pb-24 overflow-hidden">
+        <!-- Background Gradient -->
+        <div class="absolute inset-0 bg-gradient-to-b from-gray-900 to-brand-darker -z-10"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col lg:flex-row items-center">
+            
+            <!-- Text Content -->
+            <div class="lg:w-1/2 lg:pr-12 text-center lg:text-left mb-10 lg:mb-0">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+                    Dein Partner für <br>
+                    <span class="text-brand-orange">Autoankauf!</span>
+                </h1>
+                <p class="text-lg text-gray-400 mb-8 leading-relaxed">
+                    Du möchtest dein Auto verkaufen, ohne dich mit langwierigen und komplizierten Prozessen herumschlagen zu müssen? Unser Service überzeugt mit einer <span class="text-white font-semibold">fairen Fahrzeugbewertung</span>, <span class="text-white font-semibold">sofortiger Auszahlung</span> und <span class="text-white font-semibold">kostenloser Abmeldung</span>.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <a href="#ankaufsformular" class="bg-brand-orange hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-lg shadow-lg shadow-orange-500/30 transition-all transform hover:-translate-y-1">
+                        Jetzt Auto bewerten
+                    </a>
+                </div>
+            </div>
+
+            <!-- Image Content (Car Image) -->
+            <div class="lg:w-1/2 relative">
+                <!-- Using a placeholder car image similar to the red BMW -->
+                <img src="https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=1200&auto=format&fit=crop" alt="Rotes Sportauto" class="rounded-xl shadow-2xl object-cover border border-gray-800 opacity-90 hover:opacity-100 transition-opacity">
+                <!-- Decorative element -->
+                <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-brand-orange opacity-20 blur-3xl rounded-full"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="vorteile" class="py-20 bg-brand-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-white mb-4">Der Autoverkauf muss nicht stressig sein.</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Maximiere den Wert deines Gebrauchten – stressfrei, transparent und ohne nerviges Verhandeln.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Feature 1 -->
+                <div class="glass-panel p-8 rounded-2xl text-center hover:border-brand-orange transition-colors">
+                    <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-orange text-2xl">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Faire Bewertung</h3>
+                    <p class="text-gray-400 text-sm">Bei uns erhältst du einen fairen Preis, auch ohne selbst Experte zu sein!</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-panel p-8 rounded-2xl text-center hover:border-brand-orange transition-colors">
+                    <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-orange text-2xl">
+                        <i class="fa-solid fa-stopwatch"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">In 24h verkauft</h3>
+                    <p class="text-gray-400 text-sm">Verkaufe dein Auto innerhalb eines einzigen Tages - ganz ohne Verhandeln.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-panel p-8 rounded-2xl text-center hover:border-brand-orange transition-colors">
+                    <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-orange text-2xl">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Spitzen Preis</h3>
+                    <p class="text-gray-400 text-sm">Verkaufe dein Auto an uns und sichere dir einen garantierten Mega-Preis.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass-panel p-8 rounded-2xl text-center hover:border-brand-orange transition-colors">
+                    <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-orange text-2xl">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Kostenlose Abmeldung</h3>
+                    <p class="text-gray-400 text-sm">Wir übernehmen den kompletten lästigen Papierkram und die Abmeldung für dich.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Section -->
+    <section id="ankaufsformular" class="py-20 relative">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="bg-gray-900 border border-gray-700 rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+                <!-- Decorative top border -->
+                <div class="absolute top-0 left-0 w-full h-2 bg-brand-orange"></div>
+                
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-white mb-2">Ankaufsformular</h2>
+                    <p class="text-gray-400">Trage deine Daten ein. Wir melden uns mit einem Top-Angebot.</p>
+                </div>
+
+                <form id="carForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Marke -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Marke</label>
+                            <input type="text" placeholder="z.B. BMW, VW, Audi" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                        </div>
+                        <!-- Modell -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Modell</label>
+                            <input type="text" placeholder="z.B. 3er, Golf, A4" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                        </div>
+                        <!-- Baujahr -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Baujahr</label>
+                            <input type="number" placeholder="z.B. 2018" min="1990" max="2026" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                        </div>
+                        <!-- Kilometerstand -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Kilometerstand</label>
+                            <input type="number" placeholder="z.B. 85000" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-800 my-8">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Dein Name</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa-regular fa-user text-gray-500"></i>
+                                </div>
+                                <input type="text" placeholder="Max Mustermann" class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                            </div>
+                        </div>
+                        <!-- Telefon -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Telefonnummer</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-phone text-gray-500"></i>
+                                </div>
+                                <input type="tel" placeholder="0151 12345678" class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 px-4 py-3 text-white focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-colors" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6">
+                        <button type="submit" class="w-full bg-brand-orange hover:bg-orange-600 text-white font-bold py-4 rounded-lg shadow-lg transition-colors flex justify-center items-center gap-2 text-lg">
+                            Kostenloses Angebot einholen <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <p class="text-center text-xs text-gray-500 mt-4">Deine Daten werden sicher übertragen und nur zur Angebotserstellung genutzt.</p>
+                    </div>
+                </form>
+
+                <!-- Success Message (Hidden) -->
+                <div id="successMessage" class="hidden absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-8 text-center z-20">
+                    <div class="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center text-4xl mb-6">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Anfrage erfolgreich!</h3>
+                    <p class="text-gray-400">Wir haben deine Fahrzeugdaten erhalten und melden uns in Kürze telefonisch bei dir mit einem Angebot.</p>
+                    <button onclick="resetForm()" class="mt-8 text-brand-orange hover:text-white underline">Weitere Anfrage stellen</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black py-12 border-t border-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-6 md:mb-0">
+                <span class="text-2xl font-bold text-white tracking-tight">Auto<span class="text-brand-orange">Fuchs</span></span>
+                <p class="text-gray-500 text-sm mt-2">© 2026 AutoFuchs Ankauf. Alle Rechte vorbehalten.</p>
+            </div>
+            <div class="flex space-x-6 text-sm">
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">Impressum</a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">Datenschutz</a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">AGB</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Interactivity -->
+    <script>
+        // Mobile Menu Toggle
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        const mobileLinks = menu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
+
+        // Form Submission Simulation
+        const form = document.getElementById('carForm');
+        const successMessage = document.getElementById('successMessage');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent page reload
+            
+            // Here you would normally send the data via AJAX/Fetch to your backend
+            // Example: fetch('/api/submit', { method: 'POST', body: new FormData(form) })
+            
+            // Show Success Screen
+            successMessage.classList.remove('hidden');
+        });
+
+        function resetForm() {
+            form.reset();
+            successMessage.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

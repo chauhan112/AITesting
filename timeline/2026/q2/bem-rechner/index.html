@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEM-Rechner - GIB21</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Small utility to ensure hidden elements stay hidden */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden relative">
+        
+        <!-- Header -->
+        <div class="bg-blue-900 text-white p-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">BEM-Rechner</h1>
+                    <p class="text-blue-200 text-sm mt-1">Web-Tool zur Prüfung der BEM-Voraussetzungen nach § 167 Abs. 2 SGB IX</p>
+                </div>
+                <div class="text-right hidden md:block">
+                    <span class="font-bold text-xl">GIB21</span><br>
+                    <span class="text-xs text-blue-200">Gesundheit im Betrieb</span>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="mt-6 bg-blue-800 rounded-full h-2 w-full">
+                <div id="progress-bar" class="bg-teal-400 h-2 rounded-full transition-all duration-300" style="width: 16.6%;"></div>
+            </div>
+            <p class="text-xs text-blue-200 mt-2" id="step-indicator">Schritt 1 von 6</p>
+        </div>
+
+        <div class="p-6 md:p-8" id="app-content">
+
+            <!-- STEP 1: Begrüßung -->
+            <div id="step-1" class="step-container">
+                <h2 class="text-xl font-semibold mb-4">1. Datenschutz-Hinweis & Start</h2>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 mb-6 rounded">
+                    <p class="italic">„Ihre Eingaben werden weder gespeichert noch übertragen. Die Berechnung erfolgt ausschließlich in Ihrem Browser. Das Ergebnis bleibt nur so lange sichtbar, wie Sie dieses Fenster geöffnet halten.“</p>
+                </div>
+                <p class="mb-6 text-sm text-gray-600">Das Tool ermöglicht eine strukturierte Vorprüfung, ob nach den eingegebenen Arbeitsunfähigkeitszeiten die Voraussetzungen für ein Betriebliches Eingliederungsmanagement (BEM) vorliegen. Es ersetzt keine rechtliche Einzelfallbewertung.</p>
+                <div class="flex justify-end">
+                    <button onclick="nextStep()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded shadow transition">Rechner starten</button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Stichtag -->
+            <div id="step-2" class="step-container hidden">
+                <h2 class="text-xl font-semibold mb-4">2. Stichtag der Prüfung</h2>
+                <p class="mb-4 text-sm text-gray-600">Zu welchem Datum möchten Sie die BEM-Voraussetzungen prüfen? (Standardmäßig ist der heutige Tag ausgewählt).</p>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stichtag</label>
+                    <input type="date" id="input-stichtag" class="border border-gray-300 rounded-md p-2 w-full max-w-xs focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <div class="flex justify-between mt-8">
+                    <button onclick="prevStep()" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4 border border-gray-300 rounded transition">Zurück</button>
+                    <button onclick="nextStep()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded shadow transition">Weiter</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Vor-BEM-Historie -->
+            <div id="step-3" class="step-container hidden">
+                <h2 class="text-xl font-semibold mb-4">3. Vor-BEM-Historie</h2>
+                <p class="mb-4 text-sm text-gray-600">Gab es bei der betroffenen Person in den letzten zwölf Monaten...</p>
+                
+                <div class="space-y-3 mb-6">
+                    <label class="flex items-start">
+                        <input type="radio" name="historyOption" value="a" class="mt-1 mr-3 text-teal-600 focus:ring-teal-500" onchange="updateStep3UI()">
+                        <span>... ein abgeschlossenes BEM-Verfahren (mit oder ohne Ergebnis)?</span>
+                    </label>
+                    <label class="flex items-start">
+                        <input type="radio" name="historyOption" value="b" class="mt-1 mr-3 text-teal-600 focus:ring-teal-500" onchange="updateStep3UI()">
+                        <span>... ein BEM-Angebot, das die betroffene Person abgelehnt hat?</span>
+                    </label>
+                    <label class="flex items-start">
+                        <input type="radio" name="historyOption" value="c" class="mt-1 mr-3 text-teal-600 focus:ring-teal-500" checked onchange="updateStep3UI()">
+                        <span>... keines von beiden?</span>
+                    </label>
+                </div>
+
+                <div id="history-date-container" class="mb-6 hidden bg-gray-50 p-4 rounded border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Abschluss- bzw. Ablehnungsdatum</label>
+                    <input type="date" id="input-history-date" class="border border-gray-300 rounded-md p-2 w-full max-w-xs focus:ring-teal-500 focus:border-teal-500" onchange="updateStep3UI()">
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-sm text-blue-800 rounded">
+                    <strong>Ermittelter Referenzzeitraum:</strong><br>
+                    Maßgeblich sind die Arbeitsunfähigkeitszeiten ab dem <strong id="ref-start-display">-</strong> bis zum <strong id="ref-end-display">-</strong>.
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button onclick="prevStep()" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4 border border-gray-300 rounded transition">Zurück</button>
+                    <button onclick="nextStep()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded shadow transition">Weiter</button>
+                </div>
+            </div>
+
+            <!-- STEP 4: Erfassungsmodus -->
+            <div id="step-4" class="step-container hidden">
+                <h2 class="text-xl font-semibold mb-4">4. Erfassungsmodus</h2>
+                <p class="mb-4 text-sm text-gray-600">Wie möchten Sie die Fehlzeiten im nächsten Schritt erfassen?</p>
+
+                <div class="space-y-4 mb-6">
+                    <label class="flex items-start bg-gray-50 p-3 rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                        <input type="radio" name="inputMode" value="calendar" class="mt-1 mr-3 text-teal-600 focus:ring-teal-500" checked onchange="updateStep4UI()">
+                        <div>
+                            <span class="font-medium block">Kalendertage (empfohlen)</span>
+                            <span class="text-sm text-gray-500">Genaue Berechnung. Entspricht der gesetzlichen Grundlage.</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start bg-gray-50 p-3 rounded border border-gray-200 cursor-pointer hover:bg-gray-100">
+                        <input type="radio" name="inputMode" value="workdays" class="mt-1 mr-3 text-teal-600 focus:ring-teal-500" onchange="updateStep4UI()">
+                        <div>
+                            <span class="font-medium block">Arbeitstage (vereinfachte Schätzung)</span>
+                            <span class="text-sm text-gray-500">Automatische Hochrechnung der Arbeitstage in Kalendertage.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="workdays-select-container" class="mb-6 hidden bg-gray-50 p-4 rounded border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wie viele Arbeitstage hat eine reguläre Arbeitswoche der Person?</label>
+                    <select id="input-workdays-per-week" class="border border-gray-300 rounded-md p-2 w-full max-w-xs focus:ring-teal-500">
+                        <option value="6">6-Tage-Woche</option>
+                        <option value="5" selected>5-Tage-Woche</option>
+                        <option value="4">4-Tage-Woche</option>
+                        <option value="3">3-Tage-Woche</option>
+                    </select>
+                </div>
+
+                <!-- Info Box dynamically changing -->
+                <div id="mode-info-box" class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 text-sm text-blue-800 rounded">
+                    <strong>Empfehlung:</strong> Verwenden Sie Kalendertage. Diese liefern die verlässlichste Grundlage für die Prüfung.
+                </div>
+                <div id="mode-warning-box" class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 text-sm text-yellow-800 rounded hidden">
+                    <strong>Hinweis:</strong> Bei unregelmäßigen Arbeitszeiten, Schichtmodellen oder Feiertagen kann die Umrechnung von Arbeitstagen in Kalendertage abweichen. Für eine möglichst genaue Prüfung empfehlen wir die Eingabe von Zeiträumen (Von–Bis) in Kalendertagen.
+                </div>
+
+                <div class="bg-gray-100 p-4 mb-6 text-sm text-gray-700 rounded border border-gray-200">
+                    Bitte erfassen Sie auch einzelne Krankheitstage <strong>ohne ärztliche Bescheinigung</strong> (z. B. 1–3 Tage ohne AU-Bescheinigung) – diese zählen nach § 167 SGB IX ebenfalls mit.
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button onclick="prevStep()" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4 border border-gray-300 rounded transition">Zurück</button>
+                    <button onclick="nextStep()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded shadow transition">Weiter</button>
+                </div>
+            </div>
+
+            <!-- STEP 5: AU-Zeiten erfassen -->
+            <div id="step-5" class="step-container hidden">
+                <h2 class="text-xl font-semibold mb-2">5. AU-Zeiten erfassen</h2>
+                <p class="text-sm text-gray-600 mb-6">Bitte erfassen Sie die Fehlzeiten. Zeiträume außerhalb des Referenzzeitraums (<span class="font-semibold" id="step5-ref-display"></span>) werden automatisch abgeschnitten.</p>
+
+                <div id="entries-container" class="space-y-4 mb-4">
+                    <!-- Dynamic Entry Rows will be injected here -->
+                </div>
+
+                <button onclick="addEntryRow()" class="text-teal-600 font-medium hover:text-teal-800 flex items-center text-sm mb-6">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Zeitraum hinzufügen
+                </button>
+
+                <!-- Laufende Summe -->
+                <div class="bg-gray-50 border border-gray-300 p-4 rounded flex justify-between items-center mb-6">
+                    <span class="font-medium text-gray-700">Laufende Summe (informativ):</span>
+                    <span class="text-xl font-bold text-teal-700" id="running-sum-display">0 Kalendertage</span>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button onclick="prevStep()" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4 border border-gray-300 rounded transition">Zurück</button>
+                    <button onclick="nextStep()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded shadow transition">Berechnen</button>
+                </div>
+            </div>
+
+            <!-- STEP 6: Ergebnis -->
+            <div id="step-6" class="step-container hidden">
+                <h2 class="text-2xl font-bold mb-6">Ergebnis</h2>
+
+                <div id="result-box" class="p-6 rounded-lg border-2 mb-6 shadow-sm">
+                    <!-- Injected dynamically -->
+                </div>
+
+                <!-- Grenzfall Box -->
+                <div id="grenzfall-box" class="bg-yellow-50 border-l-4 border-yellow-500 p-5 mb-6 rounded hidden">
+                    <h3 class="font-bold text-yellow-800 mb-2">Grenzfall-Hinweis</h3>
+                    <p class="text-sm text-yellow-800">Dieser Fall liegt nahe an der gesetzlichen Schwelle. Bitte prüfen Sie die Eingaben sorgfältig und berücksichtigen Sie auch einzelne Krankheitstage ohne ärztliche Bescheinigung.</p>
+                </div>
+
+                <!-- Allgemeine Hinweise -->
+                <div class="bg-gray-50 p-4 rounded border border-gray-200 text-sm text-gray-700 mb-8 space-y-2">
+                    <p>• Haben Sie auch einzelne Krankheitstage ohne AU-Bescheinigung berücksichtigt? Diese zählen mit.</p>
+                    <p>• Diese Prüfung ersetzt keine rechtliche Einzelfallbewertung. Maßgeblich sind vollständige und zutreffende Angaben zu den Arbeitsunfähigkeitszeiten.</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <button onclick="resetTool()" class="text-gray-600 hover:text-gray-900 font-medium py-2 px-4 border border-gray-300 rounded transition w-full md:w-auto text-center">Neue Prüfung starten</button>
+                    
+                    <a id="cta-standard" href="#" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded shadow transition w-full md:w-auto text-center hidden">Externe BEM-Beratung anfragen</a>
+                    
+                    <a id="cta-grenzfall" href="#" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-6 rounded shadow transition w-full md:w-auto text-center hidden">Grenzfall – fachlich prüfen lassen<br><span class="text-xs font-normal">Jetzt unverbindlich klären</span></a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Templates for JS injection -->
+    <template id="entry-row-template">
+        <div class="entry-row bg-white border border-gray-200 p-4 rounded shadow-sm relative flex flex-col md:flex-row gap-4 items-end">
+            <div class="w-full md:w-1/3">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Eingabe-Format</label>
+                <select class="entry-type border border-gray-300 rounded-md p-2 w-full text-sm focus:ring-teal-500" onchange="toggleEntryInputs(this)">
+                    <option value="range">Von-Bis-Datum</option>
+                    <option value="days">Anzahl Tage</option>
+                </select>
+            </div>
+            
+            <div class="w-full md:w-2/3 flex gap-4 entry-range-inputs">
+                <div class="w-1/2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Von</label>
+                    <input type="date" class="entry-start border border-gray-300 rounded-md p-2 w-full text-sm focus:ring-teal-500" onchange="calculateRunningSum()">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Bis</label>
+                    <input type="date" class="entry-end border border-gray-300 rounded-md p-2 w-full text-sm focus:ring-teal-500" onchange="calculateRunningSum()">
+                </div>
+            </div>
+
+            <div class="w-full md:w-2/3 entry-days-inputs hidden">
+                <div class="w-full">
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dynamic-days-label">Anzahl</label>
+                    <input type="number" min="0" step="0.5" placeholder="z.B. 5" class="entry-count border border-gray-300 rounded-md p-2 w-full text-sm focus:ring-teal-500" oninput="calculateRunningSum()">
+                </div>
+            </div>
+
+            <button onclick="removeEntryRow(this)" class="mt-4 md:mt-0 text-red-500 hover:text-red-700 p-2" title="Zeitraum entfernen">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+        </div>
+    </template>
+
+    <script>
+        // State variables
+        let currentStep = 1;
+        const totalSteps = 6;
+        let inactivityTimer = null;
+        
+        let stichtag = new Date();
+        let refStart = new Date();
+        let refEnd = new Date();
+        
+        // Setup Date correctly handling timezones (set to midnight)
+        function getMidnightDate(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function formatDateDE(date) {
+            return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function init() {
+            // Set default Stichtag to today
+            stichtag = getMidnightDate(new Date());
+            document.getElementById('input-stichtag').value = stichtag.toISOString().split('T')[0];
+            
+            updateStep3UI();
+            updateStep4UI();
+            addEntryRow(); // Add first empty row
+            resetInactivityTimer();
+            setupActivityListeners();
+        }
+
+        // Navigation Logic
+        function showStep(step) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+            document.getElementById('progress-bar').style.width = `${(step / totalSteps) * 100}%`;
+            document.getElementById('step-indicator').innerText = `Schritt ${step} von ${totalSteps}`;
+            window.scrollTo(0, 0);
+        }
+
+        function nextStep() {
+            if (currentStep === 2) {
+                // Save Stichtag
+                const val = document.getElementById('input-stichtag').value;
+                if (val) stichtag = getMidnightDate(new Date(val));
+                calculateReferencePeriod();
+            }
+            if (currentStep === 3) {
+                // Validate if history date is needed
+                const opt = document.querySelector('input[name="historyOption"]:checked').value;
+                if ((opt === 'a' || opt === 'b') && !document.getElementById('input-history-date').value) {
+                    alert('Bitte geben Sie das Abschluss- bzw. Ablehnungsdatum ein.');
+                    return;
+                }
+                calculateReferencePeriod();
+            }
+            if (currentStep === 5) {
+                renderResult();
+            }
+
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+                if(currentStep === 5) {
+                    document.getElementById('step5-ref-display').innerText = `${formatDateDE(refStart)} – ${formatDateDE(refEnd)}`;
+                    calculateRunningSum();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        // Step 3 Logic
+        function updateStep3UI() {
+            const opt = document.querySelector('input[name="historyOption"]:checked').value;
+            const dateContainer = document.getElementById('history-date-container');
+            if (opt === 'a' || opt === 'b') {
+                dateContainer.classList.remove('hidden');
+            } else {
+                dateContainer.classList.add('hidden');
+                document.getElementById('input-history-date').value = '';
+            }
+            calculateReferencePeriod();
+        }
+
+        function calculateReferencePeriod() {
+            const opt = document.querySelector('input[name="historyOption"]:checked').value;
+            refEnd = getMidnightDate(stichtag);
+            
+            if (opt === 'c') {
+                // Stichtag minus 12 Monate
+                refStart = new Date(refEnd);
+                refStart.setFullYear(refStart.getFullYear() - 1);
+            } else {
+                // Tag nach Abschlussdatum
+                const hDateStr = document.getElementById('input-history-date').value;
+                if (hDateStr) {
+                    let hDate = getMidnightDate(new Date(hDateStr));
+                    refStart = new Date(hDate);
+                    refStart.setDate(refStart.getDate() + 1);
+                    
+                    // If the history date is more than a year ago, cap it at 12 months? 
+                    // The spec doesn't explicitly restrict "Tag nach Abschlussdatum" to be within 12 months if selected, 
+                    // but question asks "Gab es in den letzten 12 Monaten...".
+                } else {
+                    refStart = new Date(refEnd);
+                    refStart.setFullYear(refStart.getFullYear() - 1);
+                }
+            }
+
+            document.getElementById('ref-start-display').innerText = formatDateDE(refStart);
+            document.getElementById('ref-end-display').innerText = formatDateDE(refEnd);
+        }
+
+        // Step 4 Logic
+        function updateStep4UI() {
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            const selectContainer = document.getElementById('workdays-select-container');
+            const warningBox = document.getElementById('mode-warning-box');
+            
+            if (mode === 'workdays') {
+                selectContainer.classList.remove('hidden');
+                warningBox.classList.remove('hidden');
+            } else {
+                selectContainer.classList.add('hidden');
+                warningBox.classList.add('hidden');
+            }
+            updateDynamicLabels();
+            calculateRunningSum();
+        }
+
+        // Step 5 Logic
+        function addEntryRow() {
+            const container = document.getElementById('entries-container');
+            const template = document.getElementById('entry-row-template').content.cloneNode(true);
+            container.appendChild(template);
+            updateDynamicLabels();
+        }
+
+        function removeEntryRow(btn) {
+            btn.closest('.entry-row').remove();
+            calculateRunningSum();
+            if(document.querySelectorAll('.entry-row').length === 0) {
+                addEntryRow();
+            }
+        }
+
+        function toggleEntryInputs(selectElement) {
+            const row = selectElement.closest('.entry-row');
+            const rangeInputs = row.querySelector('.entry-range-inputs');
+            const daysInputs = row.querySelector('.entry-days-inputs');
+
+            if (selectElement.value === 'range') {
+                rangeInputs.classList.remove('hidden');
+                daysInputs.classList.add('hidden');
+            } else {
+                rangeInputs.classList.add('hidden');
+                daysInputs.classList.remove('hidden');
+            }
+            calculateRunningSum();
+        }
+
+        function updateDynamicLabels() {
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            const labels = document.querySelectorAll('.dynamic-days-label');
+            labels.forEach(label => {
+                label.innerText = mode === 'workdays' ? 'Anzahl Arbeitstage' : 'Anzahl Kalendertage';
+            });
+        }
+
+        function calculateDays() {
+            const rows = document.querySelectorAll('.entry-row');
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            const workdaysPerWeek = parseInt(document.getElementById('input-workdays-per-week').value) || 5;
+            
+            let totalCalendarDays = 0;
+
+            rows.forEach(row => {
+                const type = row.querySelector('.entry-type').value;
+                
+                if (type === 'range') {
+                    const startVal = row.querySelector('.entry-start').value;
+                    const endVal = row.querySelector('.entry-end').value;
+                    
+                    if (startVal && endVal) {
+                        let start = getMidnightDate(new Date(startVal));
+                        let end = getMidnightDate(new Date(endVal));
+                        
+                        if (start <= end) {
+                            // Cut off at reference boundaries
+                            let overlapStart = start < refStart ? refStart : start;
+                            let overlapEnd = end > refEnd ? refEnd : end;
+                            
+                            if (overlapStart <= overlapEnd) {
+                                let days = Math.round((overlapEnd - overlapStart) / 86400000) + 1;
+                                totalCalendarDays += days;
+                            }
+                        }
+                    }
+                } else if (type === 'days') {
+                    const countVal = parseFloat(row.querySelector('.entry-count').value);
+                    if (!isNaN(countVal) && countVal > 0) {
+                        let days = countVal;
+                        if (mode === 'workdays') {
+                            days = days * (7 / workdaysPerWeek);
+                        }
+                        totalCalendarDays += days;
+                    }
+                }
+            });
+
+            return totalCalendarDays;
+        }
+
+        function calculateRunningSum() {
+            const total = calculateDays();
+            // Show rounded to 1 decimal place if needed, but spec generally uses integers.
+            // Using Math.round() for display clarity as per spec "≈ 43 Kalendertage"
+            const displayVal = Math.round(total * 10) / 10; 
+            document.getElementById('running-sum-display').innerText = `${displayVal} Kalendertage`;
+        }
+
+        // Step 6 Logic
+        function renderResult() {
+            const exactTotal = calculateDays();
+            const total = Math.round(exactTotal); // rounding for exact threshold check
+            
+            const resultBox = document.getElementById('result-box');
+            const grenzfallBox = document.getElementById('grenzfall-box');
+            const ctaStandard = document.getElementById('cta-standard');
+            const ctaGrenzfall = document.getElementById('cta-grenzfall');
+
+            let html = '';
+
+            if (total > 42) {
+                // Fall 1
+                resultBox.className = 'p-6 rounded-lg border-2 mb-6 shadow-sm bg-green-50 border-green-500';
+                html = `
+                    <h3 class="text-xl font-bold text-green-900 mb-2">Fall 1 – BEM-Voraussetzungen erfüllt</h3>
+                    <p class="font-medium text-green-800 mb-4">Ergebnis: Nach den eingegebenen Daten sind die Voraussetzungen für ein BEM-Angebot erfüllt.</p>
+                    <p class="text-sm text-green-800 mb-4">Der Arbeitgeber ist in diesem Fall verpflichtet, ein Betriebliches Eingliederungsmanagement anzubieten.</p>
+                `;
+            } else {
+                // Fall 2
+                resultBox.className = 'p-6 rounded-lg border-2 mb-6 shadow-sm bg-gray-50 border-gray-300';
+                html = `
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Fall 2 – BEM-Schwelle nicht erreicht</h3>
+                    <p class="font-medium text-gray-800 mb-4">Ergebnis: Nach den eingegebenen Daten liegt die BEM-Schwelle derzeit nicht vor.</p>
+                `;
+            }
+
+            html += `
+                <ul class="text-sm space-y-1 text-gray-700">
+                    <li><strong>Referenzzeitraum:</strong> ${formatDateDE(refStart)} – ${formatDateDE(refEnd)}</li>
+                    <li><strong>Erfasste AU-Tage (Kalendertage):</strong> ${total}</li>
+                    <li><strong>Schwelle nach § 167 Abs. 2 SGB IX:</strong> mehr als 42 Kalendertage</li>
+                </ul>
+            `;
+            resultBox.innerHTML = html;
+
+            // Grenzfall Check (37 to 47 days)
+            if (total >= 37 && total <= 47) {
+                grenzfallBox.classList.remove('hidden');
+                ctaGrenzfall.classList.remove('hidden');
+                ctaGrenzfall.classList.add('inline-block');
+                ctaStandard.classList.add('hidden');
+            } else {
+                grenzfallBox.classList.add('hidden');
+                ctaStandard.classList.remove('hidden');
+                ctaStandard.classList.add('inline-block');
+                ctaGrenzfall.classList.add('hidden');
+            }
+        }
+
+        function resetTool() {
+            currentStep = 1;
+            document.querySelector('input[name="historyOption"][value="c"]').checked = true;
+            document.querySelector('input[name="inputMode"][value="calendar"]').checked = true;
+            document.getElementById('input-workdays-per-week').value = "5";
+            document.getElementById('entries-container').innerHTML = '';
+            
+            init();
+            showStep(1);
+        }
+
+        // Privacy & Inactivity Timer Logic
+        function resetInactivityTimer() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            // 15 Minutes = 15 * 60 * 1000 ms = 900000 ms
+            inactivityTimer = setTimeout(() => {
+                resetTool();
+                alert('Ihre Sitzung wurde aus Datenschutzgründen nach 15 Minuten Inaktivität zurückgesetzt.');
+            }, 900000);
+        }
+
+        function setupActivityListeners() {
+            const events = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+            events.forEach(event => {
+                document.addEventListener(event, resetInactivityTimer, { passive: true });
+            });
+        }
+
+        // Run Init on Load
+        window.onload = init;
+    </script>
+</body>
+</html>

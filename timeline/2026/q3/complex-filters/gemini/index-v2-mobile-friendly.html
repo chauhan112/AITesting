@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Filter & Data Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better mobile/desktop hybrid feel */
+        ::-webkit-scrollbar { width: 4px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Prevent body bounce on iOS */
+        body { overscroll-behavior-y: none; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 h-[100dvh] flex flex-col overflow-hidden">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-indigo-600 text-white p-3 sm:p-4 shadow-md flex flex-col sm:flex-row justify-between items-center gap-3 z-10 shrink-0">
+        <h1 class="text-xl font-bold tracking-wide w-full sm:w-auto text-center sm:text-left">DataSift</h1>
+        <div class="flex gap-2 w-full sm:w-auto">
+            <button id="nav-data" class="nav-btn flex-1 sm:flex-none bg-indigo-700 px-4 py-2 rounded-md font-semibold text-sm transition hover:bg-indigo-800 active:scale-95">
+                Data View
+            </button>
+            <button id="nav-crud" class="nav-btn flex-1 sm:flex-none px-4 py-2 rounded-md font-semibold text-sm transition hover:bg-indigo-700 active:scale-95">
+                Manage Filters
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden p-3 sm:p-6 relative">
+        
+        <!-- ============================== -->
+        <!-- VIEW 1: DATA SEARCH & APPLY    -->
+        <!-- ============================== -->
+        <div id="view-data" class="h-full flex flex-col gap-3 sm:gap-4 fade-view">
+            <!-- Controls -->
+            <div class="bg-white p-3 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-3 items-start lg:items-end shrink-0">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1.5">Select an existing Filter</label>
+                    <select id="filter-dropdown" class="w-full border-slate-300 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        <option value="">-- View All Data (No Filters) --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 w-full lg:w-auto">
+                    <button id="btn-apply-filter" class="flex-1 lg:flex-none bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 shadow-sm font-semibold text-sm transition active:scale-95">
+                        Apply
+                    </button>
+                    <button id="btn-reset-filter" class="flex-1 lg:flex-none bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg hover:bg-slate-300 font-semibold text-sm transition active:scale-95">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+                <div class="p-3 sm:p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-700">Data Records</h2>
+                    <span class="text-xs sm:text-sm font-medium bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full">
+                        <span id="data-count">0</span> rows
+                    </span>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                        <thead class="bg-white sticky top-0 shadow-sm z-10">
+                            <tr class="text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs">
+                                <th class="p-3 border-b font-semibold">ID</th>
+                                <th class="p-3 border-b font-semibold">Name</th>
+                                <th class="p-3 border-b font-semibold">Age</th>
+                                <th class="p-3 border-b font-semibold">Email</th>
+                                <th class="p-3 border-b font-semibold">City</th>
+                                <th class="p-3 border-b font-semibold text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================== -->
+        <!-- VIEW 2: FILTER CRUD MANAGEMENT -->
+        <!-- ============================== -->
+        <div id="view-crud" class="h-full flex flex-col md:flex-row gap-4 sm:gap-6 hidden fade-view">
+            
+            <!-- Left Side: Form -->
+            <div class="w-full md:w-1/3 bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col shrink-0 md:shrink">
+                <h2 class="text-base sm:text-lg font-bold text-slate-700 mb-3 sm:mb-4 border-b pb-2" id="form-title">Create New Filter</h2>
+                <form id="form-filter" class="space-y-3 sm:space-y-4 flex flex-col flex-1 overflow-y-auto pr-1">
+                    <input type="hidden" id="f-id">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1">Label</label>
+                        <input type="text" id="f-label" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1">Parent</label>
+                        <input type="text" id="f-parent" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div class="flex-1 flex flex-col min-h-[150px]">
+                        <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1">
+                            Value <span class="text-[10px] text-slate-400 font-normal">(JSON Array)</span>
+                        </label>
+                        <textarea id="f-value" required placeholder='[{"type":"search","searchType":"key-val","value":"age:>30"}]' 
+                            class="w-full flex-1 border border-slate-300 rounded-lg p-2.5 font-mono text-[11px] sm:text-xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 pt-2 shrink-0">
+                        <button type="submit" class="w-full sm:flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 font-semibold text-sm transition active:scale-95">Save</button>
+                        <button type="button" id="btn-cancel-edit" class="hidden w-full sm:w-auto sm:flex-1 bg-slate-200 text-slate-700 py-2.5 px-4 rounded-lg hover:bg-slate-300 font-semibold text-sm transition active:scale-95">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: List of Filters -->
+            <div class="w-full md:w-2/3 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
+                <div class="p-3 sm:p-4 border-b border-slate-100 bg-slate-50 shrink-0">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-700">Saved Filters</h2>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto flex-1 w-full relative">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[500px]">
+                        <thead class="bg-white sticky top-0 shadow-sm z-10">
+                            <tr class="text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs">
+                                <th class="p-3 border-b font-semibold w-1/4">Label</th>
+                                <th class="p-3 border-b font-semibold w-1/6">Parent</th>
+                                <th class="p-3 border-b font-semibold w-2/4">JSON Config</th>
+                                <th class="p-3 border-b font-semibold w-1/6 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filter-table-body" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Application Logic (ESM module) -->
+    <script type="module">
+        import { faker } from 'https://esm.sh/@faker-js/faker@8.4.1';
+        import sift from 'https://esm.sh/sift@17.1.3';
+
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES (Simulated)
+        // ==========================================
+        class BaseDataModel {
+            constructor() { this.db =[]; }
+            async read_all() { return [...this.db]; }
+            async read(id) { return this.db.find(x => x.id === id); }
+            async create(data) {
+                const newRec = { id: crypto.randomUUID(), ...data };
+                this.db.push(newRec);
+                return newRec;
+            }
+            async update(id, data) {
+                const idx = this.db.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    this.db[idx] = { ...this.db[idx], ...data };
+                    return this.db[idx];
+                }
+                throw new Error("Item not found");
+            }
+            async deleteIt(id) {
+                this.db = this.db.filter(x => x.id !== id);
+                return true;
+            }
+        }
+
+        class InMemoryFilterItemModel extends BaseDataModel {}
+        class SomeListData extends BaseDataModel {}
+
+        const filterModel = new InMemoryFilterItemModel();
+        const dataModel = new SomeListData();
+
+        // ==========================================
+        // 2. FAKE DATA GENERATION (Seed 200 records)
+        // ==========================================
+        async function seedData() {
+            for (let i = 0; i < 200; i++) {
+                await dataModel.create({
+                    name: faker.person.fullName(),
+                    age: faker.number.int({ min: 18, max: 70 }),
+                    email: faker.internet.email().toLowerCase(),
+                    city: faker.location.city(),
+                    status: faker.helpers.arrayElement(['Active', 'Pending', 'Banned'])
+                });
+            }
+
+            await filterModel.create({
+                label: "Adults >= 30, Top 10",
+                parent: "Root",
+                value: JSON.stringify([
+                    { type: "search", searchType: "key-val", value: "age:>=30" },
+                    { type: "sort", value: JSON.stringify({ key: "age", asc: false }) },
+                    { type: "slice", value: "10" }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Active OR Age < 25 (Sift)",
+                parent: "Root",
+                value: JSON.stringify([
+                    { type: "search", searchType: "sift", value: JSON.stringify({ $or:[{status: "Active"}, {age: {$lt: 25}}] }) }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Any text matching 'New'",
+                parent: "Root",
+                value: JSON.stringify([
+                    { type: "search", searchType: "any", value: "New" }
+                ], null, 2)
+            });
+        }
+
+        // ==========================================
+        // 3. FILTER / SEARCH EXECUTION ENGINE
+        // ==========================================
+        function executeFilters(data, filtersConfig) {
+            let result = [...data];
+            
+            for (const step of filtersConfig) {
+                if (step.type === 'search') {
+                    const op = step.searchType;
+                    const val = step.value;
+                    
+                    if (op === 'key-val') {
+                        const colonIdx = val.indexOf(':');
+                        if (colonIdx > -1) {
+                            const k = val.substring(0, colonIdx);
+                            const v = val.substring(colonIdx + 1);
+                            const match = v.match(/^(>=|<=|>|<|!|)(.*)$/);
+                            const oper = match[1];
+                            let target = match[2];
+
+                            result = result.filter(el => {
+                                let ev = el[k];
+                                if (ev === undefined || ev === null) return false;
+                                if (typeof ev === 'number' && !isNaN(Number(target))) target = Number(target);
+                                
+                                if (oper === '>') return ev > target;
+                                if (oper === '>=') return ev >= target;
+                                if (oper === '<') return ev < target;
+                                if (oper === '<=') return ev <= target;
+                                if (oper === '!') return ev != target;
+                                return String(ev).toLowerCase() === String(target).toLowerCase();
+                            });
+                        }
+                    } else if (op === 'sift') {
+                        try {
+                            const query = JSON.parse(val);
+                            result = result.filter(sift(query));
+                        } catch (e) { console.error("Sift Error:", e); }
+                    } else if (op === 'reg') {
+                        try {
+                            const r = new RegExp(val);
+                            result = result.filter(el => r.test(JSON.stringify(el)));
+                        } catch(e) { console.error("Regex Error:", e); }
+                    } else if (op === 'case') {
+                        result = result.filter(el => JSON.stringify(el).includes(val));
+                    } else if (op === 'any') {
+                        const lowerVal = val.toLowerCase();
+                        result = result.filter(el => JSON.stringify(el).toLowerCase().includes(lowerVal));
+                    } else if (op === 'word') {
+                        try {
+                            const rw = new RegExp("\\b" + val + "\\b", "i");
+                            result = result.filter(el => rw.test(JSON.stringify(el)));
+                        } catch(e) { console.error("Word Regex Error", e); }
+                    }
+                } else if (step.type === 'sort') {
+                    try {
+                        const { key, asc } = JSON.parse(step.value);
+                        result.sort((a, b) => {
+                            if (a[key] < b[key]) return asc ? -1 : 1;
+                            if (a[key] > b[key]) return asc ? 1 : -1;
+                            return 0;
+                        });
+                    } catch(e) { console.error("Sort Parse Error:", e); }
+                } else if (step.type === 'slice') {
+                    const parts = String(step.value).split(',').map(n => parseInt(n.trim(), 10));
+                    if (parts.length === 1 && !isNaN(parts[0])) {
+                        result = result.slice(0, parts[0]);
+                    } else if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        result = result.slice(parts[0], parts[1]);
+                    }
+                }
+            }
+            return result;
+        }
+
+        // ==========================================
+        // 4. UI LOGIC & RENDER BINDINGS
+        // ==========================================
+        
+        document.getElementById('nav-data').addEventListener('click', (e) => switchView('data', e.target));
+        document.getElementById('nav-crud').addEventListener('click', (e) => switchView('crud', e.target));
+
+        function switchView(viewName, btnNode) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-700');
+            });
+            btnNode.classList.add('bg-indigo-700');
+            
+            document.getElementById('view-data').classList.add('hidden');
+            document.getElementById('view-crud').classList.add('hidden');
+            
+            if (viewName === 'data') {
+                document.getElementById('view-data').classList.remove('hidden');
+            } else {
+                document.getElementById('view-crud').classList.remove('hidden');
+            }
+        }
+
+        async function renderData(dataSet = null) {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            
+            const list = dataSet || await dataModel.read_all();
+            document.getElementById('data-count').innerText = list.length;
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-indigo-50/80 transition duration-150";
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 font-mono text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-[80px]" title="${item.id}">${item.id.split('-')[0]}..</td>
+                    <td class="p-3 font-medium text-slate-700 truncate max-w-[120px]" title="${item.name}">${item.name}</td>
+                    <td class="p-3">${item.age}</td>
+                    <td class="p-3 text-slate-500 truncate max-w-[120px] sm:max-w-none" title="${item.email}">${item.email}</td>
+                    <td class="p-3 truncate max-w-[100px] sm:max-w-none" title="${item.city}">${item.city}</td>
+                    <td class="p-3 text-center">
+                        <span class="px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase tracking-wide
+                            ${item.status === 'Active' ? 'bg-green-100 text-green-700' : 
+                              item.status === 'Banned' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">
+                            ${item.status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function renderFilters() {
+            const filters = await filterModel.read_all();
+            
+            const select = document.getElementById('filter-dropdown');
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">-- View All Data (No Filters) --</option>';
+            filters.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.label} ${f.parent ? `[${f.parent}]` : ''}`;
+                select.appendChild(opt);
+            });
+            select.value = currentSelection;
+
+            const tbody = document.getElementById('filter-table-body');
+            tbody.innerHTML = '';
+            filters.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-indigo-700 align-top">${f.label}</td>
+                    <td class="p-3 text-slate-500 align-top">${f.parent || '-'}</td>
+                    <td class="p-3 align-top">
+                        <div class="bg-slate-100 p-2 rounded text-[10px] sm:text-xs font-mono max-h-28 overflow-auto whitespace-pre-wrap break-all">${f.value}</div>
+                    </td>
+                    <td class="p-3 text-right align-top whitespace-nowrap">
+                        <button class="text-blue-600 hover:text-blue-800 font-bold text-xs btn-edit mx-1 p-2 bg-blue-50 rounded" data-id="${f.id}">Edit</button>
+                        <button class="text-red-600 hover:text-red-800 font-bold text-xs btn-del mx-1 p-2 bg-red-50 rounded" data-id="${f.id}">Del</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEditFilter));
+            document.querySelectorAll('.btn-del').forEach(btn => btn.addEventListener('click', handleDeleteFilter));
+        }
+
+        // ==========================================
+        // 5. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('form-filter').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('f-id').value;
+            const label = document.getElementById('f-label').value;
+            const parent = document.getElementById('f-parent').value;
+            const valueStr = document.getElementById('f-value').value;
+
+            try { JSON.parse(valueStr); } catch(err) {
+                alert("Invalid JSON configuration in Value field.");
+                return;
+            }
+
+            const data = { label, parent, value: valueStr };
+            if (id) await filterModel.update(id, data);
+            else await filterModel.create(data);
+
+            resetForm();
+            await renderFilters();
+        });
+
+        async function handleEditFilter(e) {
+            const id = e.target.getAttribute('data-id');
+            const item = await filterModel.read(id);
+            if (item) {
+                document.getElementById('f-id').value = item.id;
+                document.getElementById('f-label').value = item.label;
+                document.getElementById('f-parent').value = item.parent;
+                document.getElementById('f-value').value = item.value;
+                document.getElementById('form-title').innerText = "Edit Filter";
+                document.getElementById('btn-cancel-edit').classList.remove('hidden');
+                
+                // On mobile, scroll form into view
+                if (window.innerWidth < 768) {
+                    document.getElementById('view-crud').scrollTop = 0;
+                }
+            }
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
+
+        function resetForm() {
+            document.getElementById('form-filter').reset();
+            document.getElementById('f-id').value = '';
+            document.getElementById('form-title').innerText = "Create New Filter";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function handleDeleteFilter(e) {
+            if (confirm("Are you sure you want to delete this filter?")) {
+                const id = e.target.getAttribute('data-id');
+                await filterModel.deleteIt(id);
+                await renderFilters();
+                if (document.getElementById('filter-dropdown').value === id) {
+                    document.getElementById('btn-reset-filter').click();
+                }
+            }
+        }
+
+        document.getElementById('btn-apply-filter').addEventListener('click', async () => {
+            const filterId = document.getElementById('filter-dropdown').value;
+            const fullData = await dataModel.read_all();
+            
+            if (!filterId) return renderData(fullData);
+
+            const filterDef = await filterModel.read(filterId);
+            if (filterDef) {
+                try {
+                    const config = JSON.parse(filterDef.value);
+                    const filteredData = executeFilters(fullData, config);
+                    renderData(filteredData);
+                } catch(err) {
+                    alert("Error applying filter. Check console for details.");
+                    console.error(err);
+                }
+            }
+        });
+
+        document.getElementById('btn-reset-filter').addEventListener('click', async () => {
+            document.getElementById('filter-dropdown').value = '';
+            renderData();
+        });
+
+        // ==========================================
+        // 6. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await seedData();
+            await renderFilters();
+            await renderData();
+        });
+
+    </script>
+</body>
+</html>

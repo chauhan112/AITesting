@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DataSift | Neumorphic UI</title>
+    
+    <!-- Modern Soft Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        neu: {
+                            bg: '#e0e5ec',
+                            text: '#4a5568',
+                            muted: '#a0aec0',
+                            primary: '#667eea',
+                            danger: '#fc8181',
+                            success: '#68d391'
+                        }
+                    },
+                    boxShadow: {
+                        /* Neumorphic outer shadow (popping out) */
+                        'neu-flat': '9px 9px 16px rgba(163, 177, 198, 0.6), -9px -9px 16px rgba(255, 255, 255, 0.6)',
+                        'neu-flat-sm': '5px 5px 10px rgba(163, 177, 198, 0.5), -5px -5px 10px rgba(255, 255, 255, 0.6)',
+                        /* Neumorphic inset shadow (pressed in) */
+                        'neu-pressed': 'inset 6px 6px 10px 0 rgba(163, 177, 198, 0.7), inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8)',
+                        'neu-pressed-sm': 'inset 3px 3px 6px 0 rgba(163, 177, 198, 0.6), inset -3px -3px 6px 0 rgba(255, 255, 255, 0.7)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base / Environment */
+        body { 
+            overscroll-behavior-y: none; 
+            background-color: #e0e5ec;
+            color: #4a5568;
+        }
+        
+        /* Neumorphic Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #e0e5ec; box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.5); border-radius: 10px; margin: 4px; }
+        ::-webkit-scrollbar-thumb { background: #e0e5ec; box-shadow: 3px 3px 6px rgba(163, 177, 198, 0.5), -3px -3px 6px rgba(255, 255, 255, 0.6); border-radius: 10px; border: 2px solid #e0e5ec; }
+        ::-webkit-scrollbar-thumb:hover { background: #d1d9e6; }
+
+        /* Neumorphic Inputs & Selects */
+        .neu-input {
+            background-color: #e0e5ec;
+            border: none;
+            outline: none;
+            color: #4a5568;
+            transition: all 0.2s ease;
+            box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 8px rgba(255, 255, 255, 0.7);
+        }
+        .neu-input:focus {
+            box-shadow: inset 6px 6px 10px rgba(163, 177, 198, 0.8), inset -6px -6px 10px rgba(255, 255, 255, 0.9);
+        }
+
+        /* Neumorphic Buttons */
+        .neu-btn {
+            background-color: #e0e5ec;
+            border: none;
+            outline: none;
+            color: #4a5568;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.6), -6px -6px 12px rgba(255, 255, 255, 0.7);
+        }
+        .neu-btn:hover {
+            color: #667eea;
+        }
+        .neu-btn:active, .neu-btn.active-nav {
+            box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.7), inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+            color: #667eea;
+        }
+
+        /* Action Specific Colors */
+        .neu-btn.danger:hover { color: #fc8181; }
+        .neu-btn.danger:active { color: #fc8181; }
+
+        /* Table specific styles */
+        .neu-row { transition: background 0.2s; border-bottom: 1px solid rgba(255, 255, 255, 0.4); }
+        .neu-row:hover { background-color: rgba(255, 255, 255, 0.2); }
+        
+        select option { background: #e0e5ec; color: #4a5568; }
+
+        /* Status Badges */
+        .neu-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 9999px;
+            box-shadow: 3px 3px 6px rgba(163, 177, 198, 0.5), -3px -3px 6px rgba(255, 255, 255, 0.6);
+        }
+        .status-active { color: #48bb78; }
+        .status-pending { color: #ed8936; }
+        .status-banned { color: #f56565; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="h-[100dvh] flex flex-col overflow-hidden">
+
+    <!-- Neumorphic Header / Nav -->
+    <div class="p-4 sm:p-6 pb-0 shrink-0 z-10">
+        <header class="rounded-3xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-6 w-full shadow-neu-flat">
+            <div class="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                <div class="w-10 h-10 rounded-full shadow-neu-flat flex items-center justify-center">
+                    <span class="text-neu-primary font-bold text-xl leading-none">D</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-wide text-neu-text">
+                    Data<span class="text-neu-primary font-light">Sift</span>
+                </h1>
+            </div>
+            <div class="flex gap-4 w-full sm:w-auto p-2 rounded-full shadow-neu-pressed-sm">
+                <button id="nav-data" class="neu-btn active-nav flex-1 sm:flex-none px-6 py-2.5 rounded-full text-sm">
+                    Explorer
+                </button>
+                <button id="nav-crud" class="neu-btn flex-1 sm:flex-none px-6 py-2.5 rounded-full text-sm">
+                    Filters
+                </button>
+            </div>
+        </header>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden p-4 sm:p-6 relative z-10">
+        
+        <!-- ============================== -->
+        <!-- VIEW 1: DATA EXPLORER          -->
+        <!-- ============================== -->
+        <div id="view-data" class="h-full flex flex-col gap-6 fade-in">
+            <!-- Neumorphic Controls -->
+            <div class="rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row gap-5 items-start lg:items-end shrink-0 shadow-neu-flat">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-xs uppercase tracking-widest font-semibold text-neu-muted mb-2 ml-2">
+                        Select Filter Logic
+                    </label>
+                    <div class="relative">
+                        <select id="filter-dropdown" class="neu-input w-full rounded-2xl p-3.5 text-sm appearance-none cursor-pointer">
+                            <option value="">View All Records (No Filters)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neu-muted">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-4 w-full lg:w-auto">
+                    <button id="btn-apply-filter" class="flex-1 lg:flex-none neu-btn px-8 py-3.5 rounded-2xl text-sm text-neu-primary">
+                        Apply Filter
+                    </button>
+                    <button id="btn-reset-filter" class="flex-1 lg:flex-none neu-btn px-8 py-3.5 rounded-2xl text-sm">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Neumorphic Data Table Container -->
+            <div class="rounded-3xl flex-1 flex flex-col overflow-hidden shadow-neu-flat p-2 sm:p-3">
+                <div class="p-3 sm:p-4 pb-2 flex justify-between items-center shrink-0">
+                    <h2 class="text-lg font-bold text-neu-text ml-2">Data Records</h2>
+                    <div class="text-xs font-semibold text-neu-muted shadow-neu-pressed-sm px-4 py-2 rounded-full">
+                        Showing <span id="data-count" class="text-neu-primary font-bold">0</span> entries
+                    </div>
+                </div>
+                <!-- Sunken well for the actual table -->
+                <div class="rounded-2xl shadow-neu-pressed overflow-x-auto overflow-y-auto flex-1 w-full relative m-2">
+                    <table class="w-full text-left border-collapse whitespace-nowrap text-xs sm:text-sm">
+                        <thead class="sticky top-0 z-10 backdrop-blur-md bg-[#e0e5ec]/80 border-b border-white/50">
+                            <tr class="uppercase tracking-wider text-[10px] sm:text-xs text-neu-muted">
+                                <th class="p-4 font-semibold">ID</th>
+                                <th class="p-4 font-semibold">Name</th>
+                                <th class="p-4 font-semibold">Age</th>
+                                <th class="p-4 font-semibold">Email</th>
+                                <th class="p-4 font-semibold">City</th>
+                                <th class="p-4 font-semibold text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================== -->
+        <!-- VIEW 2: FILTER ALCHEMY (CRUD)  -->
+        <!-- ============================== -->
+        <div id="view-crud" class="h-full flex flex-col md:flex-row gap-6 hidden fade-in">
+            
+            <!-- Left Side: Neumorphic Form -->
+            <div class="w-full md:w-1/3 rounded-3xl shadow-neu-flat p-5 sm:p-6 flex flex-col shrink-0 md:shrink">
+                <h2 class="text-lg font-bold text-neu-text mb-6 ml-2" id="form-title">
+                    Create New Filter
+                </h2>
+                <form id="form-filter" class="space-y-5 flex flex-col flex-1 overflow-y-auto px-2 pb-2">
+                    <input type="hidden" id="f-id">
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-neu-muted mb-2 ml-2">Label</label>
+                        <input type="text" id="f-label" required class="neu-input w-full rounded-2xl p-3.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-neu-muted mb-2 ml-2">Parent Group</label>
+                        <input type="text" id="f-parent" class="neu-input w-full rounded-2xl p-3.5 text-sm">
+                    </div>
+                    <div class="flex-1 flex flex-col min-h-[150px]">
+                        <label class="block text-[11px] uppercase tracking-widest font-semibold text-neu-muted mb-2 ml-2">
+                            JSON Value Array
+                        </label>
+                        <textarea id="f-value" required placeholder='[{"type":"search","searchType":"key-val","value":"age:>30"}]' 
+                            class="neu-input w-full flex-1 rounded-2xl p-4 text-xs font-mono leading-relaxed resize-none"></textarea>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4 shrink-0">
+                        <button type="submit" class="w-full sm:flex-1 neu-btn py-3.5 rounded-2xl text-sm text-neu-primary">Save Filter</button>
+                        <button type="button" id="btn-cancel-edit" class="hidden w-full sm:w-auto sm:flex-1 neu-btn py-3.5 px-4 rounded-2xl text-sm">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Neumorphic List -->
+            <div class="w-full md:w-2/3 rounded-3xl shadow-neu-flat flex flex-col flex-1 overflow-hidden p-2 sm:p-3">
+                <div class="p-3 sm:p-4 pb-2 flex justify-between items-center shrink-0">
+                    <h2 class="text-lg font-bold text-neu-text ml-2">Saved Filters</h2>
+                </div>
+                <!-- Sunken well for the table -->
+                <div class="rounded-2xl shadow-neu-pressed overflow-x-auto overflow-y-auto flex-1 w-full relative m-2">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[550px]">
+                        <thead class="sticky top-0 z-10 backdrop-blur-md bg-[#e0e5ec]/80 border-b border-white/50">
+                            <tr class="uppercase tracking-wider text-[10px] sm:text-xs text-neu-muted">
+                                <th class="p-4 font-semibold w-1/4">Label</th>
+                                <th class="p-4 font-semibold w-1/6">Parent</th>
+                                <th class="p-4 font-semibold w-2/4">JSON Config</th>
+                                <th class="p-4 font-semibold w-1/6 text-right pr-6">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filter-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Application Logic (ESM module) -->
+    <script type="module">
+        import { faker } from 'https://esm.sh/@faker-js/faker@8.4.1';
+        import sift from 'https://esm.sh/sift@17.1.3';
+
+        // ==========================================
+        // 1. DATA MODELS & INTERFACES
+        // ==========================================
+        class BaseDataModel {
+            constructor() { this.db =[]; }
+            async read_all() { return [...this.db]; }
+            async read(id) { return this.db.find(x => x.id === id); }
+            async create(data) {
+                const newRec = { id: crypto.randomUUID(), ...data };
+                this.db.push(newRec);
+                return newRec;
+            }
+            async update(id, data) {
+                const idx = this.db.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    this.db[idx] = { ...this.db[idx], ...data };
+                    return this.db[idx];
+                }
+                throw new Error("Item not found");
+            }
+            async deleteIt(id) {
+                this.db = this.db.filter(x => x.id !== id);
+                return true;
+            }
+        }
+
+        class InMemoryFilterItemModel extends BaseDataModel {}
+        class SomeListData extends BaseDataModel {}
+
+        const filterModel = new InMemoryFilterItemModel();
+        const dataModel = new SomeListData();
+
+        // ==========================================
+        // 2. DATA SEEDING
+        // ==========================================
+        async function seedData() {
+            for (let i = 0; i < 200; i++) {
+                await dataModel.create({
+                    name: faker.person.fullName(),
+                    age: faker.number.int({ min: 18, max: 80 }),
+                    email: faker.internet.email().toLowerCase(), 
+                    city: faker.location.city(),
+                    status: faker.helpers.arrayElement(['Active', 'Pending', 'Banned'])
+                });
+            }
+
+            await filterModel.create({
+                label: "Adults (Age >= 30), Top 10",
+                parent: "Demographics",
+                value: JSON.stringify([
+                    { type: "search", searchType: "key-val", value: "age:>=30" },
+                    { type: "sort", value: JSON.stringify({ key: "age", asc: false }) },
+                    { type: "slice", value: "10" }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Active OR Age < 25 (Sift)",
+                parent: "System",
+                value: JSON.stringify([
+                    { type: "search", searchType: "sift", value: JSON.stringify({ $or:[{status: "Active"}, {age: {$lt: 25}}] }) }
+                ], null, 2)
+            });
+
+            await filterModel.create({
+                label: "Any match containing 'New'",
+                parent: "Text Search",
+                value: JSON.stringify([
+                    { type: "search", searchType: "any", value: "New" }
+                ], null, 2)
+            });
+        }
+
+        // ==========================================
+        // 3. FILTER / SEARCH EXECUTION ENGINE
+        // ==========================================
+        function executeFilters(data, filtersConfig) {
+            let result = [...data];
+            
+            for (const step of filtersConfig) {
+                if (step.type === 'search') {
+                    const op = step.searchType;
+                    const val = step.value;
+                    
+                    if (op === 'key-val') {
+                        const colonIdx = val.indexOf(':');
+                        if (colonIdx > -1) {
+                            const k = val.substring(0, colonIdx);
+                            const v = val.substring(colonIdx + 1);
+                            const match = v.match(/^(>=|<=|>|<|!|)(.*)$/);
+                            const oper = match[1];
+                            let target = match[2];
+
+                            result = result.filter(el => {
+                                let ev = el[k];
+                                if (ev === undefined || ev === null) return false;
+                                if (typeof ev === 'number' && !isNaN(Number(target))) target = Number(target);
+                                
+                                if (oper === '>') return ev > target;
+                                if (oper === '>=') return ev >= target;
+                                if (oper === '<') return ev < target;
+                                if (oper === '<=') return ev <= target;
+                                if (oper === '!') return ev != target;
+                                return String(ev).toLowerCase() === String(target).toLowerCase();
+                            });
+                        }
+                    } else if (op === 'sift') {
+                        try { result = result.filter(sift(JSON.parse(val))); } catch (e) { }
+                    } else if (op === 'reg') {
+                        try { const r = new RegExp(val); result = result.filter(el => r.test(JSON.stringify(el))); } catch(e) { }
+                    } else if (op === 'case') {
+                        result = result.filter(el => JSON.stringify(el).includes(val));
+                    } else if (op === 'any') {
+                        const lowerVal = val.toLowerCase(); result = result.filter(el => JSON.stringify(el).toLowerCase().includes(lowerVal));
+                    } else if (op === 'word') {
+                        try { const rw = new RegExp("\\b" + val + "\\b", "i"); result = result.filter(el => rw.test(JSON.stringify(el))); } catch(e) { }
+                    }
+                } else if (step.type === 'sort') {
+                    try {
+                        const { key, asc } = JSON.parse(step.value);
+                        result.sort((a, b) => {
+                            if (a[key] < b[key]) return asc ? -1 : 1;
+                            if (a[key] > b[key]) return asc ? 1 : -1;
+                            return 0;
+                        });
+                    } catch(e) { }
+                } else if (step.type === 'slice') {
+                    const parts = String(step.value).split(',').map(n => parseInt(n.trim(), 10));
+                    if (parts.length === 1 && !isNaN(parts[0])) result = result.slice(0, parts[0]);
+                    else if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) result = result.slice(parts[0], parts[1]);
+                }
+            }
+            return result;
+        }
+
+        // ==========================================
+        // 4. UI LOGIC & RENDERING
+        // ==========================================
+        
+        document.getElementById('nav-data').addEventListener('click', (e) => switchView('data', e.target));
+        document.getElementById('nav-crud').addEventListener('click', (e) => switchView('crud', e.target));
+
+        function switchView(viewName, btnNode) {
+            document.querySelectorAll('.neu-btn').forEach(btn => {
+                if(btn.id.startsWith('nav-')) btn.classList.remove('active-nav');
+            });
+            btnNode.classList.add('active-nav');
+            
+            document.getElementById('view-data').classList.add('hidden');
+            document.getElementById('view-crud').classList.add('hidden');
+            
+            const viewToOpen = document.getElementById(`view-${viewName}`);
+            viewToOpen.classList.remove('fade-in');
+            void viewToOpen.offsetWidth; 
+            viewToOpen.classList.add('fade-in');
+            viewToOpen.classList.remove('hidden');
+        }
+
+        async function renderData(dataSet = null) {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            
+            const list = dataSet || await dataModel.read_all();
+            
+            const countEl = document.getElementById('data-count');
+            countEl.innerText = list.length;
+
+            list.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "neu-row";
+                
+                let stampClass = 'status-pending';
+                if (item.status === 'Active') stampClass = 'status-active';
+                if (item.status === 'Banned') stampClass = 'status-banned';
+
+                tr.innerHTML = `
+                    <td class="p-4 text-neu-muted text-[10px] font-mono truncate max-w-[80px]" title="${item.id}">${item.id.split('-')[0]}</td>
+                    <td class="p-4 font-semibold text-neu-text truncate max-w-[150px]" title="${item.name}">${item.name}</td>
+                    <td class="p-4 text-neu-text">${item.age}</td>
+                    <td class="p-4 text-neu-muted truncate max-w-[120px] sm:max-w-none" title="${item.email}">${item.email}</td>
+                    <td class="p-4 text-neu-muted truncate max-w-[100px] sm:max-w-none" title="${item.city}">${item.city}</td>
+                    <td class="p-4 text-center">
+                        <span class="neu-badge ${stampClass}">${item.status}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function renderFilters() {
+            const filters = await filterModel.read_all();
+            
+            const select = document.getElementById('filter-dropdown');
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">View All Records (No Filters)</option>';
+            filters.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.label} ${f.parent ? `[${f.parent}]` : ''}`;
+                select.appendChild(opt);
+            });
+            select.value = currentSelection;
+
+            const tbody = document.getElementById('filter-table-body');
+            tbody.innerHTML = '';
+            filters.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "neu-row";
+                
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-neu-primary align-top whitespace-normal break-words">${f.label}</td>
+                    <td class="p-4 text-neu-muted align-top">${f.parent || '-'}</td>
+                    <td class="p-4 align-top">
+                        <div class="shadow-neu-pressed rounded-xl p-3 max-h-32 overflow-auto whitespace-pre-wrap break-all text-neu-text text-[10px] sm:text-xs font-mono">
+${f.value}
+                        </div>
+                    </td>
+                    <td class="p-4 text-right align-top whitespace-nowrap space-y-3 pr-4">
+                        <button class="neu-btn px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold block ml-auto" data-id="${f.id}">Edit</button>
+                        <button class="neu-btn danger px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold block ml-auto" data-id="${f.id}">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.neu-btn:not(#nav-data):not(#nav-crud)').forEach(btn => {
+                if(btn.innerText === "Edit") btn.addEventListener('click', handleEditFilter);
+                if(btn.innerText === "Delete") btn.addEventListener('click', handleDeleteFilter);
+            });
+        }
+
+        // ==========================================
+        // 5. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('form-filter').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('f-id').value;
+            const label = document.getElementById('f-label').value;
+            const parent = document.getElementById('f-parent').value;
+            const valueStr = document.getElementById('f-value').value;
+
+            try { JSON.parse(valueStr); } catch(err) {
+                alert("Invalid JSON format in the value array.");
+                return;
+            }
+
+            const data = { label, parent, value: valueStr };
+            if (id) await filterModel.update(id, data);
+            else await filterModel.create(data);
+
+            resetForm();
+            await renderFilters();
+        });
+
+        async function handleEditFilter(e) {
+            const id = e.target.getAttribute('data-id');
+            const item = await filterModel.read(id);
+            if (item) {
+                document.getElementById('f-id').value = item.id;
+                document.getElementById('f-label').value = item.label;
+                document.getElementById('f-parent').value = item.parent;
+                document.getElementById('f-value').value = item.value;
+                document.getElementById('form-title').innerText = "Edit Existing Filter";
+                document.getElementById('btn-cancel-edit').classList.remove('hidden');
+                
+                if (window.innerWidth < 768) document.getElementById('view-crud').scrollTop = 0;
+            }
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
+
+        function resetForm() {
+            document.getElementById('form-filter').reset();
+            document.getElementById('f-id').value = '';
+            document.getElementById('form-title').innerText = "Create New Filter";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function handleDeleteFilter(e) {
+            if (confirm("Are you sure you want to permanently delete this filter?")) {
+                const id = e.target.getAttribute('data-id');
+                await filterModel.deleteIt(id);
+                await renderFilters();
+                if (document.getElementById('filter-dropdown').value === id) {
+                    document.getElementById('btn-reset-filter').click();
+                }
+            }
+        }
+
+        document.getElementById('btn-apply-filter').addEventListener('click', async () => {
+            const filterId = document.getElementById('filter-dropdown').value;
+            const fullData = await dataModel.read_all();
+            
+            if (!filterId) return renderData(fullData);
+
+            const filterDef = await filterModel.read(filterId);
+            if (filterDef) {
+                try {
+                    const config = JSON.parse(filterDef.value);
+                    const filteredData = executeFilters(fullData, config);
+                    renderData(filteredData);
+                } catch(err) {
+                    alert("Error applying filter. Review JSON configuration.");
+                }
+            }
+        });
+
+        document.getElementById('btn-reset-filter').addEventListener('click', async () => {
+            document.getElementById('filter-dropdown').value = '';
+            renderData();
+        });
+
+        // ==========================================
+        // 6. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await seedData();
+            await renderFilters();
+            await renderData();
+        });
+
+    </script>
+</body>
+</html>

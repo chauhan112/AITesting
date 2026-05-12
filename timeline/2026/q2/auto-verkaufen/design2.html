@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth bg-[#050507]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFuchs - Premium Autoankauf</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Outfit (Very modern, geometric) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            orange: '#FF5722',
+                            glow: '#ff7b00',
+                            dark: '#050507',
+                            surface: '#0f0f13',
+                            border: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Artistic Additions */
+        body { background-color: #050507; color: #e2e8f0; overflow-x: hidden; }
+        
+        /* Glass/Surface panels */
+        .glass-card {
+            background: rgba(15, 15, 19, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Subtle glowing aura behind elements */
+        .aura {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.15;
+            background: linear-gradient(45deg, #FF5722, #ff2a00);
+            animation: pulse-aura 8s infinite alternate;
+        }
+
+        @keyframes pulse-aura {
+            0% { transform: scale(1); opacity: 0.1; }
+            100% { transform: scale(1.2); opacity: 0.2; }
+        }
+
+        /* Text Gradients */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+        }
+        .text-gradient-brand {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(135deg, #FF5722 0%, #ff9500 100%);
+        }
+
+        /* Form Inputs Premium Look */
+        .input-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .input-premium:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 87, 34, 0.5);
+            box-shadow: 0 0 15px rgba(255, 87, 34, 0.1);
+            outline: none;
+        }
+
+        /* Scroll Animation Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-orange selection:text-white relative">
+
+    <!-- Ambient Background Light -->
+    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] aura bg-brand-orange pointer-events-none"></div>
+
+    <!-- Floating Navigation -->
+    <nav class="fixed w-full z-50 top-4 px-4 sm:px-6 lg:px-8 transition-all duration-300" id="navbar">
+        <div class="max-w-5xl mx-auto glass-card rounded-full px-6 py-3 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="text-2xl font-black text-white tracking-tighter">
+                AUTO<span class="text-brand-orange">FUCHS.</span>
+            </a>
+            <!-- Links -->
+            <div class="hidden md:flex space-x-8 items-center font-medium text-sm text-gray-400">
+                <a href="#prozess" class="hover:text-white transition-colors">Prozess</a>
+                <a href="#vorteile" class="hover:text-white transition-colors">Philosophie</a>
+                <a href="#ankauf" class="bg-white text-black px-5 py-2 rounded-full hover:bg-gray-200 transition-colors">
+                    Bewertung starten
+                </a>
+            </div>
+            <!-- Mobile Menu -->
+            <button class="md:hidden text-white"><i class="fa-solid fa-bars text-xl"></i></button>
+        </div>
+    </nav>
+
+    <!-- Artistic Hero Section -->
+    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col items-center text-center">
+            
+            <div class="inline-block border border-white/10 rounded-full px-4 py-1.5 mb-6 glass-card reveal">
+                <span class="text-xs font-semibold text-brand-orange uppercase tracking-widest"><i class="fa-solid fa-bolt mr-2"></i>Verkauf in 24h</span>
+            </div>
+
+            <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-6 reveal" style="transition-delay: 100ms;">
+                <span class="text-gradient">Verkaufe dein</span> <br>
+                <span class="text-white">Auto.</span> <span class="text-gradient-brand italic pr-2">Stressfrei.</span>
+            </h1>
+            
+            <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 font-light reveal" style="transition-delay: 200ms;">
+                Kein langes Warten. Keine frechen Gegenangebote. Wir bieten dir ein revolutionäres Ankauferlebnis mit sofortiger Auszahlung.
+            </p>
+
+            <a href="#ankauf" class="reveal group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-brand-orange rounded-full hover:bg-brand-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" style="transition-delay: 300ms;">
+                <span class="mr-2">Fahrzeugwert ermitteln</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                <div class="absolute inset-0 h-full w-full rounded-full blur-md bg-brand-orange opacity-40 group-hover:opacity-60 transition-opacity -z-10"></div>
+            </a>
+
+            <!-- Artistic Car Image Presentation -->
+            <div class="mt-16 sm:mt-24 w-full relative reveal" style="transition-delay: 400ms;">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-transparent z-10"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 aura opacity-30"></div>
+                <!-- Stylish moody car image -->
+                <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2000&auto=format&fit=crop" alt="Premium Sportwagen Dunkel" class="w-full max-w-5xl mx-auto rounded-3xl object-cover h-[40vh] sm:h-[60vh] opacity-80 border border-white/5 grayscale-[20%]">
+            </div>
+        </div>
+    </header>
+
+    <!-- Editorial Process Section -->
+    <section id="prozess" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-4xl sm:text-5xl font-black text-white mb-20 text-center reveal tracking-tight">Wie es <span class="text-brand-orange">funktioniert</span>.</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-6 relative">
+                <!-- Line connecting steps (Desktop) -->
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 -z-10"></div>
+
+                <!-- Step 1 -->
+                <div class="relative glass-card p-8 rounded-[2rem] reveal hover:-translate-y-2 transition-transform duration-500">
+                    <span class="text-[8rem] font-black absolute -top-12 -right-4 text-white/[0.02] select-none">01</span>
+                    <div class="w-12 h-12 rounded-full bg-brand-surface border border-white/10 flex items-center justify-center text-brand-orange mb-6 shadow-[0_0_15px_rgba(255,87,34,0.2)]">
+                        <i class="fa-solid fa-car-side"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Daten eingeben</h3>
+                    <p class="text-gray-400 font-light leading-relaxed">Trage die grundlegenden Fahrzeugdaten in unser smartes Formular ein. Dauert nur 2 Minuten.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative glass-card p-8 rounded-[2rem] reveal hover:-translate-y-2 transition-transform duration-500" style="transition-delay: 100ms;">
+                    <span class="text-[8rem] font-black absolute -top-12 -right-4 text-white/[0.02] select-none">02</span>
+                    <div class="w-12 h-12 rounded-full bg-brand-surface border border-white/10 flex items-center justify-center text-brand-orange mb-6 shadow-[0_0_15px_rgba(255,87,34,0.2)]">
+                        <i class="fa-solid fa-handshake"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Angebot erhalten</h3>
+                    <p class="text-gray-400 font-light leading-relaxed">Unsere Experten analysieren den Markt in Echtzeit und machen dir ein unschlagbares Angebot.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative glass-card p-8 rounded-[2rem] reveal hover:-translate-y-2 transition-transform duration-500" style="transition-delay: 200ms;">
+                    <span class="text-[8rem] font-black absolute -top-12 -right-4 text-white/[0.02] select-none">03</span>
+                    <div class="w-12 h-12 rounded-full bg-brand-surface border border-white/10 flex items-center justify-center text-brand-orange mb-6 shadow-[0_0_15px_rgba(255,87,34,0.2)]">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Sofortauszahlung</h3>
+                    <p class="text-gray-400 font-light leading-relaxed">Geld aufs Konto, Auto weg. Wir holen das Fahrzeug ab und kümmern uns um die kostenlose Abmeldung.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Artistic Form Section -->
+    <section id="ankauf" class="py-32 relative overflow-hidden">
+        <!-- Background elements for form -->
+        <div class="absolute right-0 bottom-0 w-[40vw] h-[40vw] aura bg-orange-600 opacity-10"></div>
+        
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="glass-card rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-16 reveal flex flex-col md:flex-row gap-12">
+                
+                <!-- Left Text Side -->
+                <div class="md:w-5/12 flex flex-col justify-center">
+                    <h2 class="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight">Mach dein <br><span class="text-gradient-brand">Auto zu Geld.</span></h2>
+                    <p class="text-gray-400 mb-8 font-light">Unverbindlich. Kostenlos. Fair. Fülle das Formular aus und wir melden uns umgehend bei dir.</p>
+                    
+                    <ul class="space-y-4 text-sm text-gray-300">
+                        <li class="flex items-center"><i class="fa-solid fa-check text-brand-orange mr-3"></i> Keine versteckten Gebühren</li>
+                        <li class="flex items-center"><i class="fa-solid fa-check text-brand-orange mr-3"></i> Kostenlose Abmeldung inklusive</li>
+                        <li class="flex items-center"><i class="fa-solid fa-check text-brand-orange mr-3"></i> Begutachtung bei dir vor Ort</li>
+                    </ul>
+                </div>
+
+                <!-- Right Form Side -->
+                <div class="md:w-7/12 relative">
+                    <!-- The form container -->
+                    <form id="carForm" class="bg-brand-dark p-8 rounded-3xl border border-white/5 relative z-10 shadow-2xl">
+                        <div class="space-y-5">
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Marke</label>
+                                    <input type="text" placeholder="BMW" class="w-full input-premium rounded-xl px-4 py-3 text-white placeholder-gray-600" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Modell</label>
+                                    <input type="text" placeholder="M3" class="w-full input-premium rounded-xl px-4 py-3 text-white placeholder-gray-600" required>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Baujahr</label>
+                                    <input type="number" placeholder="2020" class="w-full input-premium rounded-xl px-4 py-3 text-white placeholder-gray-600" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">KM-Stand</label>
+                                    <input type="number" placeholder="45.000" class="w-full input-premium rounded-xl px-4 py-3 text-white placeholder-gray-600" required>
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Telefonnummer</label>
+                                <input type="tel" placeholder="+49 123 456789" class="w-full input-premium rounded-xl px-4 py-3 text-white placeholder-gray-600" required>
+                            </div>
+
+                            <button type="submit" class="w-full mt-4 bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors flex justify-center items-center gap-2 group">
+                                Kostenlos bewerten <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Success State -->
+                    <div id="successMessage" class="hidden absolute inset-0 bg-brand-dark border border-white/5 rounded-3xl z-20 flex flex-col items-center justify-center p-8 text-center shadow-2xl">
+                        <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-500 text-2xl mb-4">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-2 tracking-tight">Angebot in Arbeit</h3>
+                        <p class="text-gray-400 text-sm font-light">Wir analysieren deine Daten. Ein Experte meldet sich in Kürze bei dir.</p>
+                        <button onclick="resetForm()" class="mt-6 text-xs uppercase tracking-widest text-brand-orange hover:text-white transition-colors">Neue Anfrage</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Minimalist Footer -->
+    <footer class="py-12 border-t border-white/5 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-xl font-black text-white tracking-tighter">
+                AUTO<span class="text-brand-orange">FUCHS.</span>
+            </div>
+            <div class="flex space-x-6 text-sm font-light text-gray-500">
+                <a href="#" class="hover:text-white transition-colors">Impressum</a>
+                <a href="#" class="hover:text-white transition-colors">Datenschutz</a>
+                <a href="#" class="hover:text-white transition-colors">AGB</a>
+            </div>
+            <p class="text-gray-600 text-sm font-light">© 2026 AutoFuchs. Designed for excellence.</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // 1. Scroll Animations (Intersection Observer)
+        // This makes elements slide up smoothly when they enter the screen
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // Run once
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach((el) => {
+            observer.observe(el);
+        });
+
+        // 2. Navbar transparency effect on scroll
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2');
+                navbar.classList.remove('py-4');
+            } else {
+                navbar.classList.add('py-4');
+                navbar.classList.remove('py-2');
+            }
+        });
+
+        // 3. Form Handling (Simulation)
+        const form = document.getElementById('carForm');
+        const successMessage = document.getElementById('successMessage');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Add a little loading effect to button (optional enhancement)
+            const btn = form.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analysiere...';
+            
+            // Simulate network request
+            setTimeout(() => {
+                successMessage.classList.remove('hidden');
+                successMessage.classList.add('flex');
+                btn.innerHTML = originalText;
+            }, 1000);
+        });
+
+        function resetForm() {
+            form.reset();
+            successMessage.classList.add('hidden');
+            successMessage.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
