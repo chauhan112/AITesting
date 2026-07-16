@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTask - Cozy Botanical Garden</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: #f4efdf; /* Warm Ghibli watercolor bone-cream background */
+      color: #3b3a30; /* Cozy earth-tone charcoal ink */
+    }
+    .serif-header {
+      font-family: 'Lora', serif;
+    }
+    .paper-card {
+      background: #fdfbf7; /* Off-white warm parchment */
+      border: 2px solid #e1d8bf;
+      box-shadow: 0 8px 30px rgba(59, 58, 48, 0.05);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #6b8f71; /* Forest Green Scroll */
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative pb-20">
+
+  <div class="max-w-4xl mx-auto px-6 sm:px-8 pt-10 sm:pt-14">
+    
+    <!-- Cozy Botanical Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-[#6b8f71]/30 pb-6 mb-8 gap-4">
+      <div>
+        <h1 onclick="selectTask('root')" class="serif-header text-3xl font-bold tracking-tight text-[#476a4e] cursor-pointer hover:opacity-80 transition-all flex items-center gap-2">
+          <span>🌿</span> AuraTask
+        </h1>
+        <p class="text-[11px] text-stone-500 uppercase tracking-widest font-semibold mt-1">Cozy Planning & Botanical Garden Workspace</p>
+      </div>
+
+      <button onclick="selectTask('root')" id="home-btn" class="flex items-center gap-1.5 border-2 border-[#6b8f71] hover:bg-[#6b8f71]/10 py-1.5 px-4 rounded-full text-xs font-bold text-[#4a6d51] transition-all">
+        🏡 Garden Directory
+      </button>
+    </header>
+
+    <!-- Path Watercolor Breadcrumbs -->
+    <nav id="breadcrumbs" class="flex items-center gap-1.5 text-xs text-[#527958] flex-wrap py-2.5 px-4 bg-[#e9e3cc] rounded-2xl border border-[#d9d0b5] mb-8">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <!-- Botanical Workspace Split -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left side Focus (7 columns) -->
+      <main class="md:col-span-7 space-y-8">
+        
+        <!-- Active Note Panel -->
+        <section class="paper-card p-6 rounded-3xl space-y-4">
+          <div class="flex justify-between items-start gap-4 flex-wrap sm:flex-nowrap">
+            <div class="flex-1 space-y-2">
+              <span class="text-[10px] text-[#6b8f71] uppercase tracking-wider font-bold block">Current Station:</span>
+              <input type="text" id="task-title" class="serif-header w-full bg-transparent text-3xl font-semibold tracking-tight text-[#2d4d34] border-b-2 border-transparent focus:border-[#6b8f71]/30 focus:outline-none transition-all py-0.5" onchange="updateTaskTitle(this.value)">
+              
+              <!-- Watercolor toggle descriptions -->
+              <div id="desc-display-box" class="space-y-1">
+                <p id="desc-text" class="text-sm text-stone-600 leading-relaxed font-medium"></p>
+                <button onclick="toggleEditDescription(true)" class="text-xs text-[#6b8f71] hover:text-[#4a6d51] underline font-bold mt-1">
+                  Edit journal scope
+                </button>
+              </div>
+              
+              <div id="desc-input-box" class="hidden space-y-2">
+                <textarea id="desc-input" class="w-full bg-[#fcfbf9] border-2 border-[#e1d8bf] text-xs p-3 rounded-2xl text-stone-800 focus:outline-none focus:border-[#6b8f71] resize-y h-24 font-medium" placeholder="Add some notes..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="saveDescription()" class="text-xs bg-[#6b8f71] text-white px-3.5 py-1.5 rounded-full hover:bg-[#4a6d51] transition-colors font-bold shadow-sm">Save Note</button>
+                  <button onclick="toggleEditDescription(false)" class="text-xs text-stone-500 hover:text-stone-800 px-3.5 py-1.5">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Soft status checkbox button -->
+            <button onclick="toggleActiveTaskDone()" id="active-done-btn" class="flex items-center gap-1.5 border-2 px-3 py-2 rounded-full hover:bg-stone-50 transition-all text-xs font-bold shrink-0">
+              <span id="active-done-indicator" class="w-2 h-2 rounded-full"></span>
+              <span id="active-done-label">Pending</span>
+            </button>
+          </div>
+
+          <!-- Natural Tag List -->
+          <div class="pt-3 border-t border-stone-200 flex flex-wrap items-center gap-2 text-[11px] text-stone-600">
+            <span class="font-bold opacity-60 uppercase tracking-wide">Leaf Tags:</span>
+            <div id="tags-wrapper" class="flex flex-wrap gap-1.5"></div>
+            <input type="text" id="new-tag" placeholder="+ leaf" class="bg-transparent border-b border-transparent focus:border-[#6b8f71] focus:outline-none px-1 text-stone-700 w-16 text-center text-[10px]" onkeydown="if(event.key==='Enter') addTag(this.value)">
+          </div>
+        </section>
+
+        <!-- Dynamic Objectives Area -->
+        <section class="space-y-4 pt-6 border-t-2 border-[#6b8f71]/20">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 class="serif-header font-semibold text-[#2d4d34] text-xl">Nest Objectives</h3>
+            
+            <!-- Scope Selector (Immediate vs Recursive Descendants) -->
+            <div class="flex border-2 border-[#6b8f71] bg-white rounded-full overflow-hidden p-0.5">
+              <button onclick="setScope('immediate')" id="scope-immediate" class="text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold transition-all">Direct</button>
+              <button onclick="setScope('descendants')" id="scope-descendants" class="text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold transition-all">All Leaves</button>
+            </div>
+          </div>
+
+          <!-- Subtask Quick Creator -->
+          <div class="relative">
+            <input type="text" id="new-subtask" placeholder="Sow a new sub-objective leaf..." class="w-full bg-[#fdfbf7] border-2 border-[#e1d8bf] focus:border-[#6b8f71] focus:outline-none p-3.5 pr-12 rounded-2xl text-xs text-stone-800" onkeydown="if(event.key==='Enter') addSubtask()">
+            <button onclick="addSubtask()" class="absolute right-3.5 top-3.5 text-[#6b8f71] hover:text-[#4a6d51]">
+              🌱
+            </button>
+          </div>
+
+          <!-- Dynamic search/filter controls -->
+          <div class="paper-card p-4 rounded-2xl space-y-3">
+            <div class="relative">
+              <input type="text" id="objective-search" placeholder="Search leaves in garden..." class="w-full bg-white border-2 border-[#e1d8bf] focus:border-[#6b8f71] focus:outline-none p-2 pl-8 text-xs text-stone-800 rounded-lg font-medium" oninput="handleSearchChange(this.value)">
+              <span class="absolute left-2.5 top-2.5 text-[#6b8f71]">
+                🌸
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <!-- Filters Segment -->
+              <div class="flex gap-1">
+                <button onclick="setStatusFilter('all')" id="status-all" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all text-[#6b8f71]">ALL</button>
+                <button onclick="setStatusFilter('pending')" id="status-pending" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all text-[#6b8f71]">PENDING</button>
+                <button onclick="setStatusFilter('completed')" id="status-completed" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all text-[#6b8f71]">BLOOMED</button>
+              </div>
+              <span id="list-count" class="text-[10px] text-[#4a6d51] font-bold uppercase tracking-wider">0 Leaves</span>
+            </div>
+          </div>
+
+          <!-- Objectives Children list -->
+          <div id="objectives-list" class="space-y-2.5">
+            <!-- Dynamic elements loaded -->
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right Side Cozy logs (5 columns) -->
+      <aside class="md:col-span-5 bg-[#e9e3cc] border-2 border-[#d9d0b5] p-6 rounded-3xl space-y-4 shadow-sm">
+        <div class="flex justify-between items-center pb-2 border-b border-[#6b8f71]/30">
+          <h3 class="serif-header text-sm font-semibold text-[#2d4d34] flex items-center gap-2">
+            🪵 Journal Thoughts
+          </h3>
+          <span id="log-count" class="text-[10px] bg-[#6b8f71] text-white px-2 py-0.5 rounded-full font-bold">0</span>
+        </div>
+
+        <div id="logs-timeline" class="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scroll text-stone-700">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-stone-300">
+          <textarea id="log-input" class="w-full bg-white border-2 border-[#e1d8bf] text-xs p-3 rounded-2xl focus:outline-none focus:border-[#6b8f71] resize-none h-16 text-stone-800" placeholder="Jot down a watercolor diary entry..."></textarea>
+          <button onclick="saveLog()" class="w-full bg-[#6b8f71] hover:bg-[#4a6d51] text-white text-xs py-2 rounded-full font-semibold transition-all shadow-sm">
+            Log Progress Note
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 bg-[#3b3a30] text-[#f4efdf] px-4 py-2.5 text-xs rounded-full shadow-lg opacity-0 transition-opacity duration-300 z-50 pointer-events-none font-bold"></div>
+
+  <footer class="fixed bottom-0 left-0 w-full bg-[#e9e3cc] border-t-2 border-[#d9d0b5] py-2.5 px-6 flex justify-between items-center text-[10px] text-stone-500 z-30">
+    <span>GARDEN_DATABASE_ACTIVE</span>
+    <button onclick="resetDefaults()" class="underline text-[#4a6d51] hover:text-[#2d4d34] font-bold">Compost Garden (Reset)</button>
+  </footer>
+
+  <script>
+    let state = { tasks: {}, keyValues: {}, logs: {} };
+    let currentTaskId = 'root';
+    let scopeMode = 'descendants';
+    let searchQuery = '';
+    let statusFilter = 'all';
+
+    function saveState() {
+      localStorage.setItem('ghibli_workspace_db', JSON.stringify(state));
+    }
+
+    function seedData() {
+      if (localStorage.getItem('ghibli_workspace_db')) {
+        state = JSON.parse(localStorage.getItem('ghibli_workspace_db'));
+        return;
+      }
+
+      state.tasks['root'] = {
+        id: 'root',
+        title: "Totoro's Garden",
+        description: "Cozy meadow directory mapping botanical leaf objectives.",
+        parent_id: null,
+        sub_tasks: ['item-1', 'item-2'],
+        tags: "cozy, meadow"
+      };
+
+      state.tasks['item-1'] = {
+        id: 'item-1',
+        title: "Tend to the watercolor seeds",
+        description: "Nurture visual designs with warm clay highlights.",
+        parent_id: 'root',
+        sub_tasks: ['item-1-1'],
+        tags: "garden, seeds"
+      };
+
+      state.tasks['item-2'] = {
+        id: 'item-2',
+        title: "Gather acorns for catalog schema",
+        description: "Arrange storage models in tidy organic folders.",
+        parent_id: 'root',
+        sub_tasks: [],
+        tags: "acorns, archive"
+      };
+
+      state.tasks['item-1-1'] = {
+        id: 'item-1-1',
+        title: "Measure rainfall metrics",
+        description: "Track cozy moisture levels under moss leaves.",
+        parent_id: 'item-1',
+        sub_tasks: [],
+        tags: "moss, water"
+      };
+
+      state.keyValues['root'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-1'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-2'] = [{ key: "done", type: "boolean", value: "true" }];
+      state.keyValues['item-1-1'] = [{ key: "done", type: "boolean", value: "false" }];
+
+      state.logs['root'] = [
+        { id: 'l-0', content: "Garden seeded. Windmill is turning nicely.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-1'] = [
+        { id: 'l-1', content: "Sprouts seen near Lora serif margins.", timestamp: new Date().toLocaleTimeString() }
+      ];
+
+      saveState();
+    }
+
+    function isTaskDone(id) {
+      const kvs = state.keyValues[id] || [];
+      const doneKv = kvs.find(kv => kv.key === 'done');
+      return doneKv ? doneKv.value === 'true' : false;
+    }
+
+    function getDescendantTasks(parentTaskId) {
+      const list = [];
+      function traverse(id) {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(subId => {
+          const subTask = state.tasks[subId];
+          if (subTask) {
+            list.push(subTask);
+            traverse(subId);
+          }
+        });
+      }
+      traverse(parentTaskId);
+      return list;
+    }
+
+    function getRelativePath(id, relativeToId) {
+      const path = [];
+      let temp = state.tasks[id];
+      while (temp && temp.parent_id && temp.id !== relativeToId) {
+        const parent = state.tasks[temp.parent_id];
+        if (parent && parent.id !== relativeToId) {
+          path.unshift(parent.title);
+        }
+        temp = parent;
+      }
+      return path.join(' ➔ ');
+    }
+
+    function selectTask(id) {
+      currentTaskId = id;
+      localStorage.setItem('ghibli_workspace_active_id', id);
+      searchQuery = '';
+      statusFilter = 'all';
+      const searchBox = document.getElementById('objective-search');
+      if (searchBox) searchBox.value = '';
+      if (id === 'root') scopeMode = 'descendants';
+      render();
+    }
+
+    function setScope(mode) {
+      scopeMode = mode;
+      render();
+    }
+
+    function setStatusFilter(filter) {
+      statusFilter = filter;
+      render();
+    }
+
+    function handleSearchChange(query) {
+      searchQuery = query;
+      render();
+    }
+
+    async function render() {
+      const activeTask = state.tasks[currentTaskId];
+      if (!activeTask) {
+        currentTaskId = 'root';
+        render();
+        return;
+      }
+
+      const homeBtn = document.getElementById('home-btn');
+      if (currentTaskId === 'root') homeBtn.classList.add('hidden');
+      else homeBtn.classList.remove('hidden');
+
+      document.getElementById('task-title').value = activeTask.title;
+      
+      const textBlock = document.getElementById('desc-text');
+      const textInput = document.getElementById('desc-input');
+      if (activeTask.description) {
+        textBlock.innerText = activeTask.description;
+        textBlock.classList.remove('italic', 'opacity-50');
+      } else {
+        textBlock.innerText = "No acorns gathered in this branch description yet.";
+        textBlock.classList.add('italic', 'opacity-50');
+      }
+      textInput.value = activeTask.description || '';
+
+      const activeDone = isTaskDone(currentTaskId);
+      const indicator = document.getElementById('active-done-indicator');
+      const label = document.getElementById('active-done-label');
+      const activeDoneBtn = document.getElementById('active-done-btn');
+
+      if (activeDone) {
+        indicator.className = "w-2 h-2 rounded-full bg-[#6b8f71]";
+        label.className = "font-bold text-[#4a6d51]";
+        label.innerText = "Bloomed";
+        activeDoneBtn.className = "flex items-center gap-1.5 border-2 border-[#6b8f71] bg-[#e9e3cc]/40 px-3 py-2 rounded-full text-xs font-bold shrink-0";
+      } else {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        label.className = "font-bold text-stone-700";
+        label.innerText = "Sprouting";
+        activeDoneBtn.className = "flex items-center gap-1.5 border-2 border-[#d9d0b5] bg-white px-3 py-2 rounded-full text-xs font-bold shrink-0";
+      }
+
+      const breadContainer = document.getElementById('breadcrumbs');
+      breadContainer.innerHTML = '';
+      
+      const path = [];
+      let temp = activeTask;
+      while (temp) {
+        path.unshift(temp);
+        temp = temp.parent_id ? state.tasks[temp.parent_id] : null;
+      }
+
+      path.forEach((pTask, index) => {
+        const isLast = index === path.length - 1;
+        const btn = document.createElement('button');
+        btn.innerText = pTask.title;
+        btn.className = isLast 
+          ? "font-bold text-stone-900 cursor-default pointer-events-none" 
+          : "hover:text-[#4a6d51] transition-all font-medium text-xs underline underline-offset-4 decoration-[#6b8f71]/30";
+        
+        if (!isLast) {
+          btn.onclick = () => selectTask(pTask.id);
+        }
+        breadContainer.appendChild(btn);
+
+        if (!isLast) {
+          const arrow = document.createElement('span');
+          arrow.innerText = " ➔ ";
+          arrow.className = "text-[#6b8f71] font-bold px-1";
+          breadContainer.appendChild(arrow);
+        }
+      });
+
+      const tagsWrapper = document.getElementById('tags-wrapper');
+      tagsWrapper.innerHTML = '';
+      const tags = activeTask.tags ? activeTask.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = "bg-[#e9e3cc] text-[#4a6d51] text-xs py-0.5 px-2 rounded-full flex items-center gap-1 font-bold border border-[#d9d0b5]";
+        badge.innerHTML = `
+          <span>${t}</span>
+          <button onclick="removeTag('${t}')" class="text-stone-500 hover:text-stone-900 ml-1">✕</button>
+        `;
+        tagsWrapper.appendChild(badge);
+      });
+
+      document.getElementById('scope-immediate').className = scopeMode === 'immediate'
+        ? "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full bg-[#6b8f71] text-white font-bold transition-all shadow-sm"
+        : "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full text-stone-500 hover:text-stone-900 font-bold transition-all";
+
+      document.getElementById('scope-descendants').className = scopeMode === 'descendants'
+        ? "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full bg-[#6b8f71] text-white font-bold transition-all shadow-sm"
+        : "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full text-stone-500 hover:text-stone-900 font-bold transition-all";
+
+      document.querySelectorAll('[id^="status-"]').forEach(btn => {
+        btn.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent text-stone-500 hover:text-stone-800 transition-all";
+      });
+      const activeStatusBtn = document.getElementById(`status-${statusFilter}`);
+      if (activeStatusBtn) {
+        activeStatusBtn.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-white border border-[#e1d8bf] text-[#4a6d51] shadow-sm transition-all";
+      }
+
+      const objectivesContainer = document.getElementById('objectives-list');
+      objectivesContainer.innerHTML = '';
+
+      let sourceList = [];
+      if (scopeMode === 'immediate') {
+        sourceList = activeTask.sub_tasks.map(sid => state.tasks[sid]).filter(Boolean);
+      } else {
+        sourceList = getDescendantTasks(currentTaskId);
+      }
+
+      const filteredTasks = sourceList.filter(task => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = task.title.toLowerCase().includes(query) || 
+                              (task.description || '').toLowerCase().includes(query) ||
+                              (task.tags || '').toLowerCase().includes(query);
+
+        const done = isTaskDone(task.id);
+        let matchesStatus = true;
+        if (statusFilter === 'pending') matchesStatus = !done;
+        else if (statusFilter === 'completed') matchesStatus = done;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('list-count').innerText = `${filteredTasks.length} LEAVES`;
+
+      if (filteredTasks.length === 0) {
+        objectivesContainer.innerHTML = `
+          <div class="p-8 text-center border-2 border-dashed border-[#e1d8bf] bg-stone-50 rounded-2xl">
+            <p class="text-xs text-stone-500 font-semibold">Rainfall cleared the garden paths. No matching leaves.</p>
+          </div>
+        `;
+      } else {
+        filteredTasks.forEach(task => {
+          const done = isTaskDone(task.id);
+          const localPath = getRelativePath(task.id, currentTaskId);
+
+          const card = document.createElement('div');
+          card.className = "p-4 bg-white border-2 border-[#e1d8bf] hover:border-[#6b8f71] rounded-2xl flex justify-between items-center transition-all cursor-pointer shadow-sm group";
+          
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+              selectTask(task.id);
+            }
+          };
+
+          const miniTagMarkup = task.tags 
+            ? task.tags.split(',').map(t => `<span class="bg-[#e9e3cc] text-[#4a6d51] px-2 py-0.5 rounded-full text-[9px] font-semibold">${t.trim()}</span>`).join(' ')
+            : '';
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <button onclick="event.stopPropagation(); toggleTaskDoneState('${task.id}')" class="w-4 h-4 rounded-full border-2 transition-colors flex items-center justify-center shrink-0 ${done ? 'bg-[#6b8f71] border-[#6b8f71] text-white' : 'border-[#e1d8bf] hover:border-[#6b8f71] bg-white'} text-[10px]">
+                ${done ? '✓' : ''}
+              </button>
+              <div class="min-w-0 flex-1">
+                ${(scopeMode === 'descendants' && localPath) ? `<span class="text-[9px] uppercase tracking-wider text-[#6b8f71] font-bold block mb-0.5">${localPath}</span>` : ''}
+                <span class="text-xs font-bold block truncate ${done ? 'line-through text-stone-400' : 'text-stone-800'}">${task.title}</span>
+                <div class="flex gap-1 mt-1">${miniTagMarkup}</div>
+              </div>
+            </div>
+            <button onclick="deleteSubtask('${task.id}')" class="text-stone-400 hover:text-[#4a6d51] p-1.5 text-xs font-semibold">
+              Prune
+            </button>
+          `;
+          objectivesContainer.appendChild(card);
+        });
+      }
+
+      const timeline = document.getElementById('logs-timeline');
+      timeline.innerHTML = '';
+      const logs = state.logs[currentTaskId] || [];
+      document.getElementById('log-count').innerText = logs.length;
+
+      if (logs.length === 0) {
+        timeline.innerHTML = `<p class="text-[11px] text-stone-400 italic text-center py-12">No leaves gathered in this journal branch.</p>`;
+      } else {
+        logs.forEach(l => {
+          const logBox = document.createElement('div');
+          logBox.className = "p-3 bg-white border-2 border-[#e1d8bf] rounded-2xl text-[11px] space-y-1.5 shadow-sm";
+          logBox.innerHTML = `
+            <div class="flex justify-between text-[9px] text-[#6b8f71] border-b border-[#e1d8bf] pb-1 font-bold">
+              <span>Timestamp</span>
+              <span>${l.timestamp}</span>
+            </div>
+            <p class="text-stone-700 leading-relaxed font-semibold whitespace-pre-line">${l.content}</p>
+          `;
+          timeline.appendChild(logBox);
+        });
+      }
+    }
+
+    function toggleEditDescription(show) {
+      if (show) {
+        document.getElementById('desc-display-box').classList.add('hidden');
+        document.getElementById('desc-input-box').classList.remove('hidden');
+        document.getElementById('desc-input').focus();
+      } else {
+        document.getElementById('desc-display-box').classList.remove('hidden');
+        document.getElementById('desc-input-box').classList.add('hidden');
+      }
+    }
+
+    function saveDescription() {
+      const textVal = document.getElementById('desc-input').value.trim();
+      state.tasks[currentTaskId].description = textVal;
+      saveState();
+      toggleEditDescription(false);
+      render();
+    }
+
+    function toggleTaskDoneState(id) {
+      if (!state.keyValues[id]) state.keyValues[id] = [];
+      const index = state.keyValues[id].findIndex(kv => kv.key === 'done');
+      if (index > -1) {
+        state.keyValues[id][index].value = state.keyValues[id][index].value === 'true' ? 'false' : 'true';
+      } else {
+        state.keyValues[id].push({ key: 'done', type: 'boolean', value: 'true' });
+      }
+      saveState();
+      render();
+    }
+
+    function toggleActiveTaskDone() {
+      toggleTaskDoneState(currentTaskId);
+    }
+
+    function addSubtask() {
+      const input = document.getElementById('new-subtask');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const id = 'task_' + Math.random().toString(36).substr(2, 9);
+      state.tasks[id] = { id, title, description: "", parent_id: currentTaskId, sub_tasks: [], tags: "" };
+      state.keyValues[id] = [{ key: "done", type: "boolean", value: "false" }];
+      state.tasks[currentTaskId].sub_tasks.push(id);
+
+      input.value = '';
+      saveState();
+      showToast(`Objective sown successfully.`);
+      render();
+    }
+
+    function deleteSubtask(subId) {
+      const parentTask = state.tasks[currentTaskId];
+      if (parentTask) {
+        parentTask.sub_tasks = parentTask.sub_tasks.filter(id => id !== subId);
+      }
+      const deleteRecursive = (id) => {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(sid => deleteRecursive(sid));
+        delete state.tasks[id];
+        delete state.keyValues[id];
+        delete state.logs[id];
+      };
+      deleteRecursive(subId);
+      saveState();
+      showToast("Objective pruned.");
+      render();
+    }
+
+    function updateTaskTitle(title) {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      state.tasks[currentTaskId].title = trimmed;
+      saveState();
+      render();
+    }
+
+    function addTag(val) {
+      const raw = val.trim().replace(/,/g, '');
+      if (!raw) return;
+      const active = state.tasks[currentTaskId];
+      const tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      if (!tags.includes(raw)) {
+        tags.push(raw);
+        active.tags = tags.join(', ');
+        saveState();
+      }
+      document.getElementById('new-tag').value = '';
+      render();
+    }
+
+    function removeTag(tag) {
+      const active = state.tasks[currentTaskId];
+      let tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags = tags.filter(t => t !== tag);
+      active.tags = tags.join(', ');
+      saveState();
+      render();
+    }
+
+    function saveLog() {
+      const input = document.getElementById('log-input');
+      const val = input.value.trim();
+      if (!val) return;
+      if (!state.logs[currentTaskId]) state.logs[currentTaskId] = [];
+      state.logs[currentTaskId].push({
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        content: val,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      input.value = '';
+      saveState();
+      render();
+    }
+
+    function resetDefaults() {
+      localStorage.removeItem('ghibli_workspace_db');
+      state = { tasks: {}, keyValues: {}, logs: {} };
+      seedData();
+      selectTask('root');
+      showToast("Garden composted. Seeds replanted.");
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2500);
+    }
+
+    seedData();
+    const cachedId = localStorage.getItem('ghibli_workspace_active_id');
+    if (cachedId && state.tasks[cachedId]) currentTaskId = cachedId;
+    render();
+  </script>
+</body>
+</html>

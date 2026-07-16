@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threadline — Task tracking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { display: ['Georgia', 'serif'], ui: ['Inter', 'ui-sans-serif', 'system-ui'] } } } }
+  </script>
+  <style>
+    :root { --ink:#18231d; --paper:#f7f4ed; --leaf:#2f5b44; --moss:#d6e0c8; --line:#dcd8ce; --muted:#6e766e; --card:#fffdf8; --accent:#db624b; --accent-soft:#f9e3dc; }
+    body { background:var(--paper); color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+    .theme-studio { --ink:#edf0ec; --paper:#131713; --leaf:#a9d8a7; --moss:#253129; --line:#364038; --muted:#98a39a; --card:#1d241e; --accent:#f2b84b; --accent-soft:#44391f; }
+    .theme-studio body { background:var(--paper); }
+    .card { background:var(--card); border-color:var(--line); }
+    .ink { color:var(--ink); } .muted { color:var(--muted); } .leaf { color:var(--leaf); } .bg-leaf { background:var(--leaf); } .border-line { border-color:var(--line); }
+    .task-row { transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .task-row:hover { transform:translateX(3px); border-color:var(--leaf); box-shadow:0 10px 25px rgba(20,30,21,.06); }
+    .theme-studio .task-row:hover { box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .leaf-ring { box-shadow: inset 0 0 0 1px var(--line); }
+    .grain { background-image:radial-gradient(rgba(24,35,29,.08) .7px,transparent .7px); background-size:8px 8px; }
+    .theme-studio .grain { background-image:radial-gradient(rgba(255,255,255,.07) .7px,transparent .7px); }
+    .modal-backdrop { background:rgba(13,19,14,.46); backdrop-filter: blur(4px); }
+    input, textarea, select { color:var(--ink); background:var(--card); border-color:var(--line); }
+    input:focus, textarea:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    @media (prefers-reduced-motion: reduce) { *,*:before,*:after { transition:none!important; scroll-behavior:auto!important; } }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="app" class="min-h-screen">
+    <header class="sticky top-0 z-20 border-b border-line" style="background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(16px)">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <button onclick="goHome()" class="flex items-center gap-3 text-left" aria-label="Go to all workspaces">
+          <span class="grid h-9 w-9 place-items-center rounded-full bg-leaf font-display text-lg italic" style="color:var(--paper)">T</span>
+          <span><span class="block font-display text-lg leading-none ink">Threadline</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-[.18em] muted">work, in context</span></span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleTheme()" id="themeButton" class="rounded-full border border-line px-3 py-2 text-xs font-semibold muted hover:leaf" aria-label="Switch design">Studio design</button>
+          <button onclick="openTaskModal()" class="rounded-full bg-leaf px-4 py-2 text-sm font-semibold" style="color:var(--paper)">+ New task</button>
+        </div>
+      </div>
+    </header>
+    <main class="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:py-10">
+      <div id="view"></div>
+    </main>
+  </div>
+
+  <div id="modal" class="fixed inset-0 z-50 hidden items-end justify-center p-0 sm:items-center sm:p-6">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+    <div class="card relative w-full max-w-xl rounded-t-3xl border p-5 shadow-2xl sm:rounded-3xl sm:p-7">
+      <div class="mb-6 flex items-center justify-between"><div><p id="modalEyebrow" class="text-[11px] font-bold uppercase tracking-[.2em] leaf">New thread</p><h2 id="modalTitle" class="mt-1 font-display text-3xl ink">Capture a task</h2></div><button onclick="closeModal()" class="grid h-9 w-9 place-items-center rounded-full border border-line muted" aria-label="Close">×</button></div>
+      <form onsubmit="saveTask(event)" class="space-y-4">
+        <input id="editingId" type="hidden" />
+        <input id="parentId" type="hidden" />
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold ink">Name</span><input id="taskTitle" required maxlength="100" class="w-full rounded-xl border px-3.5 py-3 text-sm" placeholder="What needs your attention?" /></label>
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold ink">Intent</span><textarea id="taskDescription" rows="3" maxlength="500" class="w-full resize-none rounded-xl border px-3.5 py-3 text-sm" placeholder="A little context helps future you." ></textarea></label>
+        <div class="flex items-center justify-end gap-3 pt-2"><button type="button" onclick="closeModal()" class="px-3 py-2 text-sm font-semibold muted">Cancel</button><button class="rounded-full bg-leaf px-5 py-2.5 text-sm font-semibold" style="color:var(--paper)">Save task</button></div>
+      </form>
+    </div>
+  </div>
+
+<script>
+const KEY='threadline-tasks-v1';
+let memoryStore=null;
+let currentId=null;
+let studio=false;
+function uid(){return 't_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function seed(){const project={id:uid(),title:'Launch the BEM knowledge hub',description:'A calm, useful space for practical BEM guidance.',parentId:null,createdAt:Date.now()-86400000};const research={id:uid(),title:'Shape the first content map',description:'Decide what a new reader needs in their first five minutes.',parentId:project.id,createdAt:Date.now()-76000000};const interview={id:uid(),title:'Interview two BEM advisors',description:'Collect real questions, not assumed ones.',parentId:research.id,createdAt:Date.now()-73000000};const prototype={id:uid(),title:'Sketch the landing page',description:'Turn the map into a focused first impression.',parentId:project.id,createdAt:Date.now()-42000000};const ops={id:uid(),title:'Build a kinder weekly rhythm',description:'Small systems to make team work less noisy.',parentId:null,createdAt:Date.now()-3600000};return {tasks:[project,research,interview,prototype,ops],logs:{[project.id]:[{id:uid(),content:'The hub should answer one question quickly: “What is the next helpful step?”',createdAt:Date.now()-83000000}], [research.id]:[{id:uid(),content:'Done: reviewed the existing materials. Next: collect wording from the people who advise cases every day.',createdAt:Date.now()-70000000}], [prototype.id]:[{id:uid(),content:'Next: make one mobile-first wireframe before adding visual polish.',createdAt:Date.now()-39000000}]},kv:{}}}
+function load(){try{const v=localStorage.getItem(KEY);if(v)return JSON.parse(v)}catch(e){} if(!memoryStore){memoryStore=seed()}return memoryStore}
+function persist(d){memoryStore=d;try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+function getTask(id){return load().tasks.find(t=>t.id===id)}
+function children(id){return load().tasks.filter(t=>t.parentId===id).sort((a,b)=>a.createdAt-b.createdAt)}
+function roots(){return load().tasks.filter(t=>!t.parentId).sort((a,b)=>b.createdAt-a.createdAt)}
+function esc(s=''){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function taskPath(id){let path=[];let t=getTask(id);while(t){path.unshift(t);t=t.parentId?getTask(t.parentId):null}return path}
+function time(ts){const d=Math.max(1,Math.round((Date.now()-ts)/86400000));return d===1?'today':d+'d ago'}
+function openTaskModal(parent=null,edit=null){document.getElementById('modal').classList.replace('hidden','flex');document.getElementById('editingId').value=edit?.id||'';document.getElementById('parentId').value=parent||edit?.parentId||'';document.getElementById('taskTitle').value=edit?.title||'';document.getElementById('taskDescription').value=edit?.description||'';document.getElementById('modalEyebrow').textContent=edit?'Refine thread':parent?'A next step':'New thread';document.getElementById('modalTitle').textContent=edit?'Edit this task':parent?'Add a sub-task':'Capture a task';setTimeout(()=>document.getElementById('taskTitle').focus(),100)}
+function closeModal(){document.getElementById('modal').classList.replace('flex','hidden')}
+function saveTask(e){e.preventDefault();let d=load(),id=document.getElementById('editingId').value,title=document.getElementById('taskTitle').value.trim(),description=document.getElementById('taskDescription').value.trim(),parentId=document.getElementById('parentId').value||null;if(id){let t=getTask(id);t.title=title;t.description=description}else{id=uid();d.tasks.push({id,title,description,parentId,createdAt:Date.now()})}persist(d);closeModal();currentId=id;render()}
+function deleteTask(id){if(!confirm('Delete this task and everything nested inside it?'))return;let d=load(),dead=new Set([id]),changed=true;while(changed){changed=false;d.tasks.forEach(t=>{if(t.parentId&&dead.has(t.parentId)&&!dead.has(t.id)){dead.add(t.id);changed=true}})}d.tasks=d.tasks.filter(t=>!dead.has(t.id));Object.keys(d.logs).forEach(k=>{if(dead.has(k))delete d.logs[k]});persist(d);currentId=null;render()}
+function addLog(e,id){e.preventDefault();let input=document.getElementById('logInput'),content=input.value.trim();if(!content)return;let d=load();d.logs[id]=d.logs[id]||[];d.logs[id].unshift({id:uid(),content,createdAt:Date.now()});persist(d);input.value='';render()}
+function toggleTheme(){studio=!studio;document.documentElement.classList.toggle('theme-studio',studio);document.getElementById('themeButton').textContent=studio?'Field notes design':'Studio design'}
+function goHome(){currentId=null;render()}
+function taskCard(t){let count=children(t.id).length, logs=(load().logs[t.id]||[]).length;return `<button onclick="openTask('${t.id}')" class="task-row card w-full rounded-2xl border p-4 text-left sm:p-5"><div class="flex gap-3"><span class="mt-1 h-2.5 w-2.5 flex-none rounded-full" style="background:var(--accent)"></span><div class="min-w-0 flex-1"><div class="flex items-start justify-between gap-3"><h3 class="font-display text-xl leading-tight ink">${esc(t.title)}</h3><span class="whitespace-nowrap text-[11px] muted">${time(t.createdAt)}</span></div><p class="mt-2 line-clamp-2 text-sm leading-6 muted">${esc(t.description||'No intent recorded yet.')}</p><div class="mt-4 flex gap-4 text-xs font-semibold muted"><span>${count} next ${count===1?'step':'steps'}</span><span>${logs} ${logs===1?'note':'notes'}</span></div></div></div></button>`}
+function home(){const allRoots=roots(), all=load().tasks;return `<section class="grid gap-8 lg:grid-cols-[1fr_320px] lg:gap-14"><div><p class="text-[11px] font-bold uppercase tracking-[.2em] leaf">Your work table</p><div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><h1 class="font-display text-4xl leading-none sm:text-5xl ink">Keep the thread.</h1><p class="mt-3 max-w-xl text-base leading-7 muted">Write what moved. Let the next action become a task. Nothing gets lost in a status update again.</p></div><button onclick="openTaskModal()" class="rounded-full border border-line px-4 py-2.5 text-sm font-semibold ink hover:border-current">New root task</button></div><div class="mt-8 grid gap-3">${allRoots.length?allRoots.map(taskCard).join(''):`<div class="card rounded-2xl border border-dashed p-10 text-center"><p class="font-display text-2xl ink">The table is clear.</p><p class="mt-2 text-sm muted">Start a thread for the work you want to hold onto.</p></div>`}</div></div><aside class="grain card h-fit rounded-3xl border p-6"><p class="text-[11px] font-bold uppercase tracking-[.2em] leaf">A small ritual</p><h2 class="mt-3 font-display text-3xl leading-tight ink">Logs are evidence of progress.</h2><p class="mt-3 text-sm leading-6 muted">Use a task note for what happened. Turn each “next” into a child task. The hierarchy becomes your plan.</p><div class="mt-7 border-t border-line pt-5"><div class="flex items-baseline gap-2"><span class="font-display text-4xl ink">${all.length}</span><span class="text-xs font-semibold uppercase tracking-wider muted">active tasks</span></div></div></aside></section>`}
+function detail(id){const t=getTask(id);if(!t){goHome();return ''}const path=taskPath(id), kids=children(id), logs=(load().logs[id]||[]);return `<section><nav class="mb-7 flex flex-wrap items-center gap-1.5 text-xs font-semibold muted">${path.map((p,i)=>`${i?'<span class="px-1">/</span>':''}<button onclick="openTask('${p.id}')" class="hover:leaf ${i===path.length-1?'leaf':''}">${esc(p.title)}</button>`).join('')}</nav><div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14"><div><div class="flex items-start gap-3"><span class="mt-3 h-3 w-3 flex-none rounded-full" style="background:var(--accent)"></span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-[11px] font-bold uppercase tracking-[.2em] leaf">${t.parentId?'sub-task':'root task'}</p><h1 class="mt-2 font-display text-4xl leading-tight sm:text-5xl ink">${esc(t.title)}</h1></div><div class="flex gap-2"><button onclick="openTaskModal(null,getTask('${id}'))" class="rounded-full border border-line px-3 py-2 text-xs font-semibold muted">Edit</button><button onclick="deleteTask('${id}')" class="rounded-full border border-line px-3 py-2 text-xs font-semibold" style="color:var(--accent)">Delete</button></div></div><p class="mt-4 max-w-2xl text-base leading-7 muted">${esc(t.description||'No intent recorded. Add a few words so this thread stays legible.')}</p></div></div><section class="mt-10"><div class="mb-4 flex items-end justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[.2em] leaf">Next moves</p><h2 class="mt-1 font-display text-3xl ink">What happens from here</h2></div><button onclick="openTaskModal('${id}')" class="rounded-full bg-leaf px-4 py-2 text-sm font-semibold" style="color:var(--paper)">+ Add next step</button></div><div class="grid gap-3">${kids.length?kids.map(taskCard).join(''):`<div class="card rounded-2xl border border-dashed px-5 py-8 text-center"><p class="font-display text-xl ink">No next steps yet.</p><p class="mt-1 text-sm muted">Read your latest note, then give the next action its own thread.</p></div>`}</div></section></div><aside class="lg:pt-2"><div class="card rounded-3xl border p-5 sm:p-6"><p class="text-[11px] font-bold uppercase tracking-[.2em] leaf">Work log</p><h2 class="mt-1 font-display text-3xl ink">What changed?</h2><form onsubmit="addLog(event,'${id}')" class="mt-4"><textarea id="logInput" required rows="4" class="w-full resize-none rounded-xl border p-3 text-sm leading-6" placeholder="Done: …&#10;Next: …"></textarea><button class="mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold" style="background:var(--accent);color:#fff">Add note</button></form><div class="mt-6 space-y-4">${logs.length?logs.map(l=>`<article class="border-t border-line pt-4"><p class="text-sm leading-6 ink">${esc(l.content)}</p><p class="mt-2 text-[11px] font-semibold uppercase tracking-wider muted">${time(l.createdAt)}</p></article>`).join(''):`<p class="border-t border-line pt-5 text-sm leading-6 muted">No notes yet. Leave a trace of what you completed — and turn the next step into a task.</p>`}</div></div></aside></div></section>`}
+function openTask(id){currentId=id;render();window.scrollTo({top:0,behavior:'smooth'})}
+function render(){document.getElementById('view').innerHTML=currentId?detail(currentId):home()}
+render();
+</script>
+</body>
+</html>

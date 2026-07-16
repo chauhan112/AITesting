@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTask - Unified Nordic Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #fbf9f6; /* Soft cream paper background */
+      color: #2b2b2a; /* Warm charcoal ink */
+    }
+    .serif-header {
+      font-family: 'Lora', serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative pb-20">
+
+  <!-- Main Canvas Wrapper -->
+  <div class="max-w-4xl mx-auto px-6 sm:px-8 pt-10 sm:pt-14">
+    
+    <!-- Masthead -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-200 pb-6 mb-8 gap-4">
+      <div>
+        <h1 onclick="selectTask('root')" class="serif-header text-3xl font-medium tracking-tight text-stone-900 cursor-pointer hover:opacity-85 transition-opacity">AuraTask</h1>
+        <p class="text-[11px] text-stone-500 uppercase tracking-widest font-medium mt-1">Hierarchical Task Explorer</p>
+      </div>
+
+      <!-- Quick Home/Root Navigation -->
+      <button onclick="selectTask('root')" id="home-btn" class="flex items-center gap-1.5 border border-stone-300 hover:border-stone-500 py-2 px-4 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+        Master Directory
+      </button>
+    </header>
+
+    <!-- Path / Location Breadcrumbs (Always Visible) -->
+    <nav id="breadcrumbs" class="flex items-center gap-1.5 text-xs text-stone-500 flex-wrap py-2 px-3 bg-[#f5f2eb] rounded-md border border-stone-200/50 mb-8">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <!-- Workspace Grid Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left side Workspace Focus (7 columns) -->
+      <main class="md:col-span-7 space-y-8">
+        
+        <!-- Active Workspace Metadata Info Card -->
+        <section class="space-y-4">
+          <div class="flex justify-between items-start gap-4">
+            <div class="flex-1 space-y-2">
+              <input type="text" id="task-title" class="serif-header w-full bg-transparent text-3xl font-semibold tracking-tight text-stone-900 border-b border-transparent focus:border-stone-300 focus:outline-none transition-all py-0.5" onchange="updateTaskTitle(this.value)">
+              
+              <!-- Description displaying with toggle editors -->
+              <div id="desc-display-box" class="group">
+                <p id="desc-text" class="text-sm text-stone-600 leading-relaxed"></p>
+                <button onclick="toggleEditDescription(true)" class="text-xs text-stone-500 hover:text-stone-800 underline decoration-stone-200 font-medium mt-1 inline-flex items-center gap-1">
+                  Edit description
+                </button>
+              </div>
+              
+              <div id="desc-input-box" class="hidden space-y-2">
+                <textarea id="desc-input" class="w-full bg-white border border-stone-300 text-xs p-3 rounded-md text-stone-800 focus:outline-none focus:border-stone-600 resize-y h-24" placeholder="Add detailed objective parameters..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="saveDescription()" class="text-xs bg-stone-800 text-stone-100 px-3.5 py-1.5 rounded hover:bg-stone-700 transition-colors font-semibold">Save</button>
+                  <button onclick="toggleEditDescription(false)" class="text-xs text-stone-500 hover:text-stone-800 px-3.5 py-1.5 font-medium">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Done status simple checkbox toggle -->
+            <button onclick="toggleActiveTaskDone()" id="active-done-btn" class="flex items-center gap-1.5 border border-stone-300 px-3 py-2 rounded-md hover:bg-stone-50 transition-all text-xs font-semibold shrink-0">
+              <span id="active-done-indicator" class="w-2 h-2 rounded-full"></span>
+              <span id="active-done-label">Pending</span>
+            </button>
+          </div>
+
+          <!-- String Tags -->
+          <div class="pt-3 border-t border-stone-200/80 flex flex-wrap items-center gap-2 text-[11px] text-stone-600">
+            <span class="font-bold opacity-50 uppercase tracking-wide">Tags:</span>
+            <div id="tags-wrapper" class="flex flex-wrap gap-1.5">
+              <!-- Tags populated dynamically -->
+            </div>
+            <input type="text" id="new-tag" placeholder="+ tag" class="bg-transparent border-b border-stone-200/40 hover:border-stone-300 focus:border-stone-600 focus:outline-none px-1 text-stone-700 w-16 text-center text-[10px]" onkeydown="if(event.key==='Enter') addTag(this.value)">
+          </div>
+        </section>
+
+        <!-- Dynamic Objectives Area -->
+        <section class="space-y-4 pt-6 border-t border-stone-200">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 class="serif-header font-semibold text-stone-800 text-lg">Objectives</h3>
+            
+            <!-- Scope Selector (Immediate vs Recursive Descendants) -->
+            <div class="flex border border-stone-300 bg-white rounded-md overflow-hidden p-0.5">
+              <button onclick="setScope('immediate')" id="scope-immediate" class="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded font-bold transition-all">Direct</button>
+              <button onclick="setScope('descendants')" id="scope-descendants" class="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded font-bold transition-all">All Descendants</button>
+            </div>
+          </div>
+
+          <!-- Subtask Quick Inline Creator (Title only given) -->
+          <div class="relative">
+            <input type="text" id="new-subtask" placeholder="Add an immediate subtask..." class="w-full bg-white border border-stone-300 focus:border-stone-600 focus:outline-none p-3.5 pr-12 rounded-md text-xs transition-all text-stone-800 shadow-sm" onkeydown="if(event.key==='Enter') addSubtask()">
+            <button onclick="addSubtask()" class="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-800">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4.5 h-4.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Search & Filter Controls inside Objective Scope -->
+          <div class="bg-[#f5f2eb] border border-stone-200 p-4 rounded-md space-y-3 shadow-sm">
+            <div class="relative">
+              <input type="text" id="objective-search" placeholder="Filter current list by title, description, or tags..." class="w-full bg-white border border-stone-300 focus:border-stone-500 focus:outline-none p-2 pl-8 rounded text-xs text-stone-800" oninput="handleSearchChange(this.value)">
+              <span class="absolute left-2.5 top-2.5 text-stone-400">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.636Z" />
+                </svg>
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <!-- Status Filtering Pills -->
+              <div class="flex gap-1">
+                <button onclick="setStatusFilter('all')" id="status-all" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded border border-transparent hover:border-stone-300 transition-all">All</button>
+                <button onclick="setStatusFilter('pending')" id="status-pending" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded border border-transparent hover:border-stone-300 transition-all">Pending</button>
+                <button onclick="setStatusFilter('completed')" id="status-completed" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded border border-transparent hover:border-stone-300 transition-all">Completed</button>
+              </div>
+              <span id="list-count" class="text-[10px] text-stone-500 font-bold uppercase tracking-wider">0 items</span>
+            </div>
+          </div>
+
+          <!-- Child/Descendant Cards list -->
+          <div id="objectives-list" class="space-y-2.5">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right side Workspace Sidebar (Comments & Logs Pane) -->
+      <aside class="md:col-span-5 bg-[#f5f2eb] border border-stone-200 p-6 rounded-lg space-y-4 shadow-sm">
+        <div class="flex justify-between items-center pb-2 border-b border-stone-200/80">
+          <h3 class="serif-header text-sm font-semibold text-stone-800 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-4 h-4 text-stone-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+            </svg>
+            Comments & Logs
+          </h3>
+          <span id="log-count" class="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded-full font-bold">0</span>
+        </div>
+
+        <!-- Scrollable comments timeline list -->
+        <div id="logs-timeline" class="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scroll">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Add progress log -->
+        <div class="space-y-2 pt-2 border-t border-stone-200">
+          <textarea id="log-input" class="w-full bg-white border border-stone-300 text-xs p-3 rounded-md focus:outline-none focus:border-stone-600 resize-none h-16 text-stone-800 shadow-sm" placeholder="Post progress updates or notes..."></textarea>
+          <button onclick="saveLog()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 text-xs py-2 rounded-md font-semibold transition-all">
+            Add Comment
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+
+  <!-- Toast notification banner -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-stone-900 text-stone-100 px-4 py-2.5 text-xs rounded shadow-lg opacity-0 transition-opacity duration-300 z-50 pointer-events-none font-semibold"></div>
+
+  <!-- Bottom developer drawer bar -->
+  <footer class="fixed bottom-0 left-0 w-full bg-stone-100 border-t border-stone-200 py-2.5 px-6 flex justify-between items-center text-[10px] text-stone-500 z-30">
+    <span>LocalStorage Simulation Active</span>
+    <button onclick="resetDefaults()" class="underline hover:text-stone-800 font-semibold">Reset seed default workspace</button>
+  </footer>
+
+  <script>
+    // State storage variables
+    let state = {
+      tasks: {},
+      keyValues: {},
+      logs: {}
+    };
+
+    // Routing and active filter criteria
+    let currentTaskId = 'root';
+    let scopeMode = 'descendants'; // immediate | descendants
+    let searchQuery = '';
+    let statusFilter = 'all'; // all | pending | completed
+
+    // State persistence
+    function saveState() {
+      localStorage.setItem('nordic_workspace_db_v2', JSON.stringify(state));
+    }
+
+    // Default Seed Data
+    function seedData() {
+      if (localStorage.getItem('nordic_workspace_db_v2')) {
+        state = JSON.parse(localStorage.getItem('nordic_workspace_db_v2'));
+        return;
+      }
+
+      // Root task
+      state.tasks['root'] = {
+        id: 'root',
+        title: "Work Workspace",
+        description: "Main workspace container mapping hierarchical tasks.",
+        parent_id: null,
+        sub_tasks: ['item-1', 'item-2'],
+        tags: "active, system"
+      };
+
+      // Hierarchy Level 1
+      state.tasks['item-1'] = {
+        id: 'item-1',
+        title: "Design System & CSS Typography",
+        description: "Validate readability across serif headers and clean sans-serif bodies.",
+        parent_id: 'root',
+        sub_tasks: ['item-1-1'],
+        tags: "design, typography"
+      };
+
+      state.tasks['item-2'] = {
+        id: 'item-2',
+        title: "Build Directory Database Abstraction",
+        description: "Construct flattening and filtering utilities for easy task querying.",
+        parent_id: 'root',
+        sub_tasks: [],
+        tags: "backend, schema"
+      };
+
+      // Hierarchy Level 2
+      state.tasks['item-1-1'] = {
+        id: 'item-1-1',
+        title: "Fine-tune whitespace alignment",
+        description: "Maintain vertical grid metrics inside margins and card components.",
+        parent_id: 'item-1',
+        sub_tasks: [],
+        tags: "design, polish"
+      };
+
+      // KeyValues Statuses
+      state.keyValues['root'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-1'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-2'] = [{ key: "done", type: "boolean", value: "true" }];
+      state.keyValues['item-1-1'] = [{ key: "done", type: "boolean", value: "false" }];
+
+      // Initial Log records
+      state.logs['root'] = [
+        { id: 'l-0', content: "Workspace seeded and directory schemas configured.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-1'] = [
+        { id: 'l-1', content: "Selected Lora serif pairing for editorial typography.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-2'] = [
+        { id: 'l-2', content: "Wrote array filtration patterns inside keyValues telemetry state.", timestamp: new Date().toLocaleTimeString() }
+      ];
+
+      saveState();
+    }
+
+    // Helper: Determine if task has "done" set to "true"
+    function isTaskDone(id) {
+      const kvs = state.keyValues[id] || [];
+      const doneKv = kvs.find(kv => kv.key === 'done');
+      return doneKv ? doneKv.value === 'true' : false;
+    }
+
+    // Recursive search: Collect all descendant task IDs recursively under a root task
+    function getDescendantTasks(parentTaskId) {
+      const list = [];
+      
+      function traverse(id) {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(subId => {
+          const subTask = state.tasks[subId];
+          if (subTask) {
+            list.push(subTask);
+            traverse(subId);
+          }
+        });
+      }
+
+      traverse(parentTaskId);
+      return list;
+    }
+
+    // Helper: Build the complete path string context starting after relativeToId to indicate hierarchy placement
+    function getRelativePath(id, relativeToId) {
+      const path = [];
+      let temp = state.tasks[id];
+      // Travel up until relativeToId is reached
+      while (temp && temp.parent_id && temp.id !== relativeToId) {
+        const parent = state.tasks[temp.parent_id];
+        if (parent && parent.id !== relativeToId) {
+          path.unshift(parent.title);
+        }
+        temp = parent;
+      }
+      return path.join(' → ');
+    }
+
+    // Navigation and Routing shifts
+    function selectTask(id) {
+      currentTaskId = id;
+      localStorage.setItem('nordic_workspace_active_id', id);
+      
+      // Reset filter variables on navigation
+      searchQuery = '';
+      statusFilter = 'all';
+      
+      const searchBox = document.getElementById('objective-search');
+      if (searchBox) searchBox.value = '';
+
+      // Fallback: Default root tasks to 'descendants' view initially for immediate structural visibility
+      if (id === 'root') {
+        scopeMode = 'descendants';
+      }
+
+      render();
+    }
+
+    // Filtration state triggers
+    function setScope(mode) {
+      scopeMode = mode;
+      render();
+    }
+
+    function setStatusFilter(filter) {
+      statusFilter = filter;
+      render();
+    }
+
+    function handleSearchChange(query) {
+      searchQuery = query;
+      render();
+    }
+
+    // Core workspace renderer
+    async function render() {
+      const activeTask = state.tasks[currentTaskId];
+      if (!activeTask) {
+        currentTaskId = 'root';
+        render();
+        return;
+      }
+
+      // 1. Hide Home trigger button when currently focused on Root node
+      const homeBtn = document.getElementById('home-btn');
+      if (currentTaskId === 'root') homeBtn.classList.add('hidden');
+      else homeBtn.classList.remove('hidden');
+
+      // 2. Active Title & Description Elements
+      document.getElementById('task-title').value = activeTask.title;
+      
+      const textBlock = document.getElementById('desc-text');
+      const textInput = document.getElementById('desc-input');
+      if (activeTask.description) {
+        textBlock.innerText = activeTask.description;
+        textBlock.classList.remove('italic', 'opacity-50');
+      } else {
+        textBlock.innerText = "No descriptive parameters set for this objective task.";
+        textBlock.classList.add('italic', 'opacity-50');
+      }
+      textInput.value = activeTask.description || '';
+
+      // 3. Active Checkbox Toggle Indicators
+      const activeDone = isTaskDone(currentTaskId);
+      const indicator = document.getElementById('active-done-indicator');
+      const label = document.getElementById('active-done-label');
+      const activeDoneBtn = document.getElementById('active-done-btn');
+
+      if (activeDone) {
+        indicator.className = "w-2 h-2 rounded-full bg-emerald-600";
+        label.className = "font-bold text-emerald-800";
+        label.innerText = "Completed";
+        activeDoneBtn.className = "flex items-center gap-1.5 border border-emerald-200 bg-emerald-50/50 px-3 py-2 rounded-md hover:bg-emerald-50 transition-all text-xs shrink-0";
+      } else {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        label.className = "font-bold text-stone-700";
+        label.innerText = "Pending";
+        activeDoneBtn.className = "flex items-center gap-1.5 border border-stone-300 bg-white px-3 py-2 rounded-md hover:bg-stone-50 transition-all text-xs shrink-0";
+      }
+
+      // 4. Location Breadcrumbs Explorer
+      const breadContainer = document.getElementById('breadcrumbs');
+      breadContainer.innerHTML = '';
+      
+      const path = [];
+      let temp = activeTask;
+      while (temp) {
+        path.unshift(temp);
+        temp = temp.parent_id ? state.tasks[temp.parent_id] : null;
+      }
+
+      path.forEach((pTask, index) => {
+        const isLast = index === path.length - 1;
+        const btn = document.createElement('button');
+        btn.innerText = pTask.title;
+        btn.className = isLast 
+          ? "font-bold text-stone-900 pointer-events-none cursor-default" 
+          : "hover:text-stone-900 transition-colors underline underline-offset-4 decoration-stone-200 font-medium";
+        
+        if (!isLast) {
+          btn.onclick = () => selectTask(pTask.id);
+        }
+        breadContainer.appendChild(btn);
+
+        if (!isLast) {
+          const arrow = document.createElement('span');
+          arrow.innerText = "→";
+          arrow.className = "text-stone-300 font-semibold px-1";
+          breadContainer.appendChild(arrow);
+        }
+      });
+
+      // 5. String tags lists
+      const tagsWrapper = document.getElementById('tags-wrapper');
+      tagsWrapper.innerHTML = '';
+      const tags = activeTask.tags ? activeTask.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = "bg-stone-200/80 hover:bg-stone-200 text-stone-700 font-semibold py-0.5 px-2 rounded flex items-center gap-1 transition-colors";
+        badge.innerHTML = `
+          <span>${t}</span>
+          <button onclick="removeTag('${t}')" class="text-stone-400 hover:text-stone-900 ml-1">✕</button>
+        `;
+        tagsWrapper.appendChild(badge);
+      });
+
+      // 6. Highlight active scope toggle button
+      document.getElementById('scope-immediate').className = scopeMode === 'immediate'
+        ? "text-[9px] uppercase tracking-wider px-3 py-1.5 rounded bg-stone-800 text-stone-100 shadow-sm font-bold transition-all"
+        : "text-[9px] uppercase tracking-wider px-3 py-1.5 rounded text-stone-500 hover:text-stone-800 font-bold transition-all";
+
+      document.getElementById('scope-descendants').className = scopeMode === 'descendants'
+        ? "text-[9px] uppercase tracking-wider px-3 py-1.5 rounded bg-stone-800 text-stone-100 shadow-sm font-bold transition-all"
+        : "text-[9px] uppercase tracking-wider px-3 py-1.5 rounded text-stone-500 hover:text-stone-800 font-bold transition-all";
+
+      // 7. Highlight active status filter button
+      document.querySelectorAll('[id^="status-"]').forEach(btn => {
+        btn.className = "text-[9px] uppercase font-bold tracking-wider px-2.5 py-1 rounded border border-transparent text-stone-500 hover:text-stone-800 transition-all";
+      });
+      const activeStatusBtn = document.getElementById(`status-${statusFilter}`);
+      if (activeStatusBtn) {
+        activeStatusBtn.className = "text-[9px] uppercase font-bold tracking-wider px-2.5 py-1 rounded border border-stone-300 bg-white text-stone-800 shadow-sm transition-all";
+      }
+
+      // 8. Populate Objectives list based on Scope Selection
+      const objectivesContainer = document.getElementById('objectives-list');
+      objectivesContainer.innerHTML = '';
+
+      let sourceList = [];
+      if (scopeMode === 'immediate') {
+        sourceList = activeTask.sub_tasks.map(sid => state.tasks[sid]).filter(Boolean);
+      } else {
+        sourceList = getDescendantTasks(currentTaskId);
+      }
+
+      // Apply Filter constraints
+      const filteredTasks = sourceList.filter(task => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = task.title.toLowerCase().includes(query) || 
+                              (task.description || '').toLowerCase().includes(query) ||
+                              (task.tags || '').toLowerCase().includes(query);
+
+        const done = isTaskDone(task.id);
+        let matchesStatus = true;
+        if (statusFilter === 'pending') matchesStatus = !done;
+        else if (statusFilter === 'completed') matchesStatus = done;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('list-count').innerText = `${filteredTasks.length} objective${filteredTasks.length === 1 ? '' : 's'}`;
+
+      if (filteredTasks.length === 0) {
+        objectivesContainer.innerHTML = `
+          <div class="p-8 text-center border border-dashed border-stone-200 rounded-md bg-stone-50/50">
+            <span class="text-sm">🔍</span>
+            <p class="text-xs text-stone-400 mt-1">No matching objectives found. Adjust your filters or add a subtask.</p>
+          </div>
+        `;
+      } else {
+        filteredTasks.forEach(task => {
+          const done = isTaskDone(task.id);
+          const localPath = getRelativePath(task.id, currentTaskId);
+
+          const card = document.createElement('div');
+          card.className = "p-4 bg-white border border-stone-200 hover:border-stone-400 rounded-md flex justify-between items-center transition-all shadow-sm cursor-pointer group";
+          
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+              selectTask(task.id);
+            }
+          };
+
+          const miniTagMarkup = task.tags 
+            ? task.tags.split(',').map(t => `<span class="bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded text-[9px] font-semibold">${t.trim()}</span>`).join(' ')
+            : '';
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <button onclick="event.stopPropagation(); toggleTaskDoneState('${task.id}')" class="w-4 h-4 rounded border transition-colors flex items-center justify-center shrink-0 ${done ? 'bg-stone-800 border-stone-800 text-stone-100' : 'border-stone-300 hover:border-stone-400 bg-white'} text-[10px]">
+                ${done ? '✓' : ''}
+              </button>
+              <div class="min-w-0 flex-1">
+                ${(scopeMode === 'descendants' && localPath) ? `<span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold block mb-0.5">${localPath}</span>` : ''}
+                <span class="text-xs font-semibold block truncate ${done ? 'line-through text-stone-400' : 'text-stone-800 hover:text-stone-950'}">${task.title}</span>
+                <div class="flex gap-1 mt-1">${miniTagMarkup}</div>
+              </div>
+            </div>
+            <button onclick="deleteSubtask('${task.id}')" class="text-stone-400 hover:text-rose-600 transition-colors p-1.5 text-[11px] font-semibold">
+              Remove
+            </button>
+          `;
+          objectivesContainer.appendChild(card);
+        });
+      }
+
+      // 9. Sidebar logs
+      const timeline = document.getElementById('logs-timeline');
+      timeline.innerHTML = '';
+      const logs = state.logs[currentTaskId] || [];
+      document.getElementById('log-count').innerText = logs.length;
+
+      if (logs.length === 0) {
+        timeline.innerHTML = `<p class="text-[11px] text-stone-400 italic text-center py-12">No progress remarks or comments logged yet.</p>`;
+      } else {
+        logs.forEach(l => {
+          const logBox = document.createElement('div');
+          logBox.className = "p-3 bg-white border border-stone-200/60 rounded-md text-[11px] space-y-1.5 shadow-sm";
+          logBox.innerHTML = `
+            <div class="flex justify-between text-[9px] text-stone-400 border-b border-stone-100 pb-1 font-medium">
+              <span>Timestamp</span>
+              <span>${l.timestamp}</span>
+            </div>
+            <p class="text-stone-700 leading-relaxed whitespace-pre-line">${l.content}</p>
+          `;
+          timeline.appendChild(logBox);
+        });
+      }
+    }
+
+    // Toggle description interface parameters
+    function toggleEditDescription(show) {
+      if (show) {
+        document.getElementById('desc-display-box').classList.add('hidden');
+        document.getElementById('desc-input-box').classList.remove('hidden');
+        document.getElementById('desc-input').focus();
+      } else {
+        document.getElementById('desc-display-box').classList.remove('hidden');
+        document.getElementById('desc-input-box').classList.add('hidden');
+      }
+    }
+
+    // Save edited task descriptions
+    function saveDescription() {
+      const textVal = document.getElementById('desc-input').value.trim();
+      state.tasks[currentTaskId].description = textVal;
+      saveState();
+      toggleEditDescription(false);
+      render();
+    }
+
+    // Toggle Done keyValues parameters
+    function toggleTaskDoneState(id) {
+      if (!state.keyValues[id]) state.keyValues[id] = [];
+      const index = state.keyValues[id].findIndex(kv => kv.key === 'done');
+      if (index > -1) {
+        state.keyValues[id][index].value = state.keyValues[id][index].value === 'true' ? 'false' : 'true';
+      } else {
+        state.keyValues[id].push({ key: 'done', type: 'boolean', value: 'true' });
+      }
+      saveState();
+      render();
+    }
+
+    function toggleActiveTaskDone() {
+      toggleTaskDoneState(currentTaskId);
+    }
+
+    // Quick add title-only subtask action
+    function addSubtask() {
+      const input = document.getElementById('new-subtask');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const id = 'task_' + Math.random().toString(36).substr(2, 9);
+      
+      state.tasks[id] = {
+        id,
+        title,
+        description: "",
+        parent_id: currentTaskId,
+        sub_tasks: [],
+        tags: ""
+      };
+
+      state.keyValues[id] = [{ key: "done", type: "boolean", value: "false" }];
+      state.tasks[currentTaskId].sub_tasks.push(id);
+
+      input.value = '';
+      saveState();
+      showToast(`Objective "${title}" added.`);
+      render();
+    }
+
+    // Delete subtask recursively
+    function deleteSubtask(subId) {
+      const parentTask = state.tasks[currentTaskId];
+      if (parentTask) {
+        parentTask.sub_tasks = parentTask.sub_tasks.filter(id => id !== subId);
+      }
+      
+      const deleteRecursive = (id) => {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(sid => deleteRecursive(sid));
+        delete state.tasks[id];
+        delete state.keyValues[id];
+        delete state.logs[id];
+      };
+
+      deleteRecursive(subId);
+      saveState();
+      showToast("Objective removed.");
+      render();
+    }
+
+    // Title properties updater
+    function updateTaskTitle(title) {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      state.tasks[currentTaskId].title = trimmed;
+      saveState();
+      render();
+    }
+
+    // Tags modifier
+    function addTag(val) {
+      const raw = val.trim().replace(/,/g, '');
+      if (!raw) return;
+
+      const active = state.tasks[currentTaskId];
+      const tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      if (!tags.includes(raw)) {
+        tags.push(raw);
+        active.tags = tags.join(', ');
+        saveState();
+      }
+      document.getElementById('new-tag').value = '';
+      render();
+    }
+
+    function removeTag(tag) {
+      const active = state.tasks[currentTaskId];
+      let tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags = tags.filter(t => t !== tag);
+      active.tags = tags.join(', ');
+      saveState();
+      render();
+    }
+
+    // Add progress log notes
+    function saveLog() {
+      const input = document.getElementById('log-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      if (!state.logs[currentTaskId]) state.logs[currentTaskId] = [];
+      state.logs[currentTaskId].push({
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        content: val,
+        timestamp: new Date().toLocaleTimeString()
+      });
+
+      input.value = '';
+      saveState();
+      render();
+    }
+
+    // Hard defaults reset
+    function resetDefaults() {
+      localStorage.removeItem('nordic_workspace_db_v2');
+      state = { tasks: {}, keyValues: {}, logs: {} };
+      seedData();
+      selectTask('root');
+      showToast("Workspace default coordinates loaded.");
+    }
+
+    // Toast alert triggers
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2500);
+    }
+
+    // Launch Lifecycle
+    seedData();
+
+    // Check last saved coordinates
+    const cachedId = localStorage.getItem('nordic_workspace_active_id');
+    if (cachedId && state.tasks[cachedId]) {
+      currentTaskId = cachedId;
+    }
+
+    render();
+  </script>
+</body>
+</html>

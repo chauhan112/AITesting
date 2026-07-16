@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTask - Cyberpunk Tech Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #030308;
+      color: #00f3ff;
+      background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 4px, 6px 100%;
+    }
+    .mono {
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .neon-border {
+      border: 1px solid #00f3ff;
+      box-shadow: 0 0 8px rgba(0, 243, 255, 0.3);
+    }
+    .neon-border-pink {
+      border: 1px solid #ff0055;
+      box-shadow: 0 0 8px rgba(255, 0, 85, 0.3);
+    }
+    .neon-text-pink {
+      color: #ff0055;
+      text-shadow: 0 0 5px rgba(255, 0, 85, 0.5);
+    }
+    .neon-text-cyan {
+      color: #00f3ff;
+      text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+    }
+    .tech-panel {
+      background: rgba(10, 10, 20, 0.85);
+      border: 1px solid #1a1a3a;
+      backdrop-filter: blur(10px);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0d0d1a;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #00f3ff;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative pb-20">
+
+  <div class="max-w-4xl mx-auto px-6 sm:px-8 pt-10 sm:pt-14">
+    
+    <!-- Cyberpunk Terminal Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#00f3ff]/30 pb-6 mb-8 gap-4">
+      <div>
+        <h1 onclick="selectTask('root')" class="mono text-4xl font-bold tracking-widest neon-text-cyan cursor-pointer hover:opacity-80 transition-all">//AURATASK_OS</h1>
+        <p class="text-xs uppercase tracking-widest text-[#ff0055] font-semibold mt-1">SYS_STATUS: ONLINE // HIERARCHY_DIR</p>
+      </div>
+
+      <button onclick="selectTask('root')" id="home-btn" class="mono flex items-center gap-1.5 border border-[#ff0055] hover:bg-[#ff0055]/10 py-2 px-4 text-xs font-semibold text-[#ff0055] transition-all">
+        [ RETURN_HOME ]
+      </button>
+    </header>
+
+    <!-- Path Terminal Output (Breadcrumbs) -->
+    <nav id="breadcrumbs" class="mono flex items-center gap-1.5 text-xs text-[#00f3ff]/80 flex-wrap py-2.5 px-4 bg-black/40 border border-[#00f3ff]/20 mb-8">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <!-- Tech Grid Interface -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      
+      <!-- Primary Core Feed (7 columns) -->
+      <main class="md:col-span-7 space-y-8">
+        
+        <!-- Active Command Module -->
+        <section class="tech-panel p-6 space-y-4">
+          <div class="flex justify-between items-start gap-4 flex-wrap sm:flex-nowrap">
+            <div class="flex-1 space-y-2">
+              <span class="mono text-[10px] text-[#ff0055] uppercase tracking-wider block">ID_CONTEXT_LOADED:</span>
+              <input type="text" id="task-title" class="mono w-full bg-transparent text-2xl font-bold tracking-tight text-white border-b border-transparent focus:border-[#00f3ff] focus:outline-none transition-all py-0.5" onchange="updateTaskTitle(this.value)">
+              
+              <!-- Editable Tech Description -->
+              <div id="desc-display-box" class="space-y-1">
+                <p id="desc-text" class="text-sm text-slate-300 leading-relaxed font-light"></p>
+                <button onclick="toggleEditDescription(true)" class="mono text-xs text-[#00f3ff] hover:underline font-semibold mt-1">
+                  [ EDIT_DESC ]
+                </button>
+              </div>
+              
+              <div id="desc-input-box" class="hidden space-y-2">
+                <textarea id="desc-input" class="mono w-full bg-[#050510] border border-[#00f3ff]/40 text-xs p-3 text-slate-200 focus:outline-none focus:border-[#00f3ff] resize-y h-24" placeholder="Input parameters..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="saveDescription()" class="mono text-xs bg-[#00f3ff] text-black px-3.5 py-1.5 font-bold hover:bg-cyan-300 transition-colors">SAVE_CHANGES</button>
+                  <button onclick="toggleEditDescription(false)" class="mono text-xs text-slate-400 hover:text-white px-3.5 py-1.5">CANCEL</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Done status block -->
+            <button onclick="toggleActiveTaskDone()" id="active-done-btn" class="mono flex items-center gap-1.5 border py-2 px-3 hover:bg-white/5 transition-all text-xs font-semibold shrink-0">
+              <span id="active-done-indicator" class="w-2 h-2 rounded-full"></span>
+              <span id="active-done-label">PENDING</span>
+            </button>
+          </div>
+
+          <!-- Technical Tag List -->
+          <div class="pt-3 border-t border-[#00f3ff]/10 flex flex-wrap items-center gap-2 text-[11px]">
+            <span class="mono font-bold text-[#ff0055] uppercase tracking-wide">METRICS_TAGS:</span>
+            <div id="tags-wrapper" class="flex flex-wrap gap-1.5"></div>
+            <input type="text" id="new-tag" placeholder="[+tag]" class="mono bg-transparent border-b border-transparent focus:border-[#00f3ff] focus:outline-none text-[#00f3ff] w-16 text-center text-[10px]" onkeydown="if(event.key==='Enter') addTag(this.value)">
+          </div>
+        </section>
+
+        <!-- Sub-objectives Space -->
+        <section class="space-y-4 pt-6 border-t border-[#00f3ff]/20">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 class="mono text-lg font-bold tracking-wider text-white">// OBJECTIVES_FEED</h3>
+            
+            <!-- Scope Selector (Immediate vs Recursive Descendants) -->
+            <div class="flex border border-[#00f3ff]/30 bg-black rounded overflow-hidden p-0.5">
+              <button onclick="setScope('immediate')" id="scope-immediate" class="mono text-[10px] uppercase tracking-wider px-2.5 py-1 font-bold transition-all">DIRECT</button>
+              <button onclick="setScope('descendants')" id="scope-descendants" class="mono text-[10px] uppercase tracking-wider px-2.5 py-1 font-bold transition-all">FLATTENED</button>
+            </div>
+          </div>
+
+          <!-- Inline creation node -->
+          <div class="relative">
+            <input type="text" id="new-subtask" placeholder="INITIATE_NEW_SUBTASK_NODE..." class="mono w-full bg-[#050510] border border-[#00f3ff]/30 focus:border-[#00f3ff] focus:outline-none p-3.5 pr-12 text-xs text-white" onkeydown="if(event.key==='Enter') addSubtask()">
+            <button onclick="addSubtask()" class="absolute right-3.5 top-3.5 text-[#00f3ff] hover:text-cyan-300">
+              [+]
+            </button>
+          </div>
+
+          <!-- List Search Filter controls -->
+          <div class="tech-panel p-4 space-y-3">
+            <div class="relative">
+              <input type="text" id="objective-search" placeholder="FILTER_DIRECTORY_BY_QUERY..." class="mono w-full bg-[#050510] border border-[#00f3ff]/20 focus:border-[#00f3ff] focus:outline-none p-2 pl-8 text-xs text-[#00f3ff]" oninput="handleSearchChange(this.value)">
+              <span class="absolute left-2.5 top-2.5 text-[#00f3ff]/50">
+                &gt;
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <!-- Filters segment -->
+              <div class="flex gap-1">
+                <button onclick="setStatusFilter('all')" id="status-all" class="mono text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border border-transparent text-[#00f3ff]">ALL</button>
+                <button onclick="setStatusFilter('pending')" id="status-pending" class="mono text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border border-transparent text-[#00f3ff]">ACTIVE</button>
+                <button onclick="setStatusFilter('completed')" id="status-completed" class="mono text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border border-transparent text-[#00f3ff]">COMPLETE</button>
+              </div>
+              <span id="list-count" class="mono text-[10px] text-[#ff0055] font-bold uppercase tracking-wider">0 METRICS</span>
+            </div>
+          </div>
+
+          <!-- Objectives child lists -->
+          <div id="objectives-list" class="space-y-2.5">
+            <!-- Dynamic elements loaded -->
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right side telemetry comments feed (5 columns) -->
+      <aside class="md:col-span-5 tech-panel p-6 space-y-4">
+        <div class="flex justify-between items-center pb-2 border-b border-[#00f3ff]/20">
+          <h3 class="mono text-sm font-bold text-white flex items-center gap-2">
+            TELEMETRY_LOGS
+          </h3>
+          <span id="log-count" class="mono text-[10px] bg-[#ff0055] text-white px-2 py-0.5 font-bold">0</span>
+        </div>
+
+        <div id="logs-timeline" class="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scroll font-mono text-xs">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-[#00f3ff]/20">
+          <textarea id="log-input" class="mono w-full bg-[#050510] border border-[#00f3ff]/30 text-xs p-3 focus:outline-none focus:border-[#00f3ff] resize-none h-16 text-white" placeholder="Input terminal feedback note..."></textarea>
+          <button onclick="saveLog()" class="mono w-full bg-[#00f3ff] text-black text-xs py-2 font-bold hover:bg-cyan-300 transition-all">
+            POST_LOG_ENTRY
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+
+  <div id="toast" class="mono fixed bottom-6 right-6 bg-black border border-[#ff0055] text-[#ff0055] px-4 py-2.5 text-xs rounded opacity-0 transition-opacity duration-300 z-50 pointer-events-none font-bold"></div>
+
+  <footer class="mono fixed bottom-0 left-0 w-full bg-black border-t border-[#00f3ff]/20 py-2.5 px-6 flex justify-between items-center text-[10px] text-slate-500 z-30">
+    <span>SYSTEM: STORAGE_PERSISTENCE_ON</span>
+    <button onclick="resetDefaults()" class="underline text-[#ff0055] hover:opacity-80">SYS_HARD_RESET</button>
+  </footer>
+
+  <script>
+    let state = { tasks: {}, keyValues: {}, logs: {} };
+    let currentTaskId = 'root';
+    let scopeMode = 'descendants';
+    let searchQuery = '';
+    let statusFilter = 'all';
+
+    function saveState() {
+      localStorage.setItem('cyber_workspace_db', JSON.stringify(state));
+    }
+
+    function seedData() {
+      if (localStorage.getItem('cyber_workspace_db')) {
+        state = JSON.parse(localStorage.getItem('cyber_workspace_db'));
+        return;
+      }
+
+      state.tasks['root'] = {
+        id: 'root',
+        title: "Matrix Workspace",
+        description: "Main workspace container mapping system subsystems.",
+        parent_id: null,
+        sub_tasks: ['item-1', 'item-2'],
+        tags: "sys, root"
+      };
+
+      state.tasks['item-1'] = {
+        id: 'item-1',
+        title: "Secure decryption interface",
+        description: "Validate handshake codes across secure neural nodes.",
+        parent_id: 'root',
+        sub_tasks: ['item-1-1'],
+        tags: "sec, protocols"
+      };
+
+      state.tasks['item-2'] = {
+        id: 'item-2',
+        title: "Infiltrate sub-level routing mesh",
+        description: "Inject telemetry packages into local grid circuits.",
+        parent_id: 'root',
+        sub_tasks: [],
+        tags: "net, telemetry"
+      };
+
+      state.tasks['item-1-1'] = {
+        id: 'item-1-1',
+        title: "Re-compile binary assets",
+        description: "Resolve dependencies for core terminal scripts.",
+        parent_id: 'item-1',
+        sub_tasks: [],
+        tags: "compile, optimization"
+      };
+
+      state.keyValues['root'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-1'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-2'] = [{ key: "done", type: "boolean", value: "true" }];
+      state.keyValues['item-1-1'] = [{ key: "done", type: "boolean", value: "false" }];
+
+      state.logs['root'] = [
+        { id: 'l-0', content: "Terminal directory mapped. Core security logic synced.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-1'] = [
+        { id: 'l-1', content: "Binary compiled safely on secondary tech hub.", timestamp: new Date().toLocaleTimeString() }
+      ];
+
+      saveState();
+    }
+
+    function isTaskDone(id) {
+      const kvs = state.keyValues[id] || [];
+      const doneKv = kvs.find(kv => kv.key === 'done');
+      return doneKv ? doneKv.value === 'true' : false;
+    }
+
+    function getDescendantTasks(parentTaskId) {
+      const list = [];
+      function traverse(id) {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(subId => {
+          const subTask = state.tasks[subId];
+          if (subTask) {
+            list.push(subTask);
+            traverse(subId);
+          }
+        });
+      }
+      traverse(parentTaskId);
+      return list;
+    }
+
+    function getRelativePath(id, relativeToId) {
+      const path = [];
+      let temp = state.tasks[id];
+      while (temp && temp.parent_id && temp.id !== relativeToId) {
+        const parent = state.tasks[temp.parent_id];
+        if (parent && parent.id !== relativeToId) {
+          path.unshift(parent.title);
+        }
+        temp = parent;
+      }
+      return path.join(' > ');
+    }
+
+    function selectTask(id) {
+      currentTaskId = id;
+      localStorage.setItem('cyber_workspace_active_id', id);
+      searchQuery = '';
+      statusFilter = 'all';
+      const searchBox = document.getElementById('objective-search');
+      if (searchBox) searchBox.value = '';
+      if (id === 'root') scopeMode = 'descendants';
+      render();
+    }
+
+    function setScope(mode) {
+      scopeMode = mode;
+      render();
+    }
+
+    function setStatusFilter(filter) {
+      statusFilter = filter;
+      render();
+    }
+
+    function handleSearchChange(query) {
+      searchQuery = query;
+      render();
+    }
+
+    async function render() {
+      const activeTask = state.tasks[currentTaskId];
+      if (!activeTask) {
+        currentTaskId = 'root';
+        render();
+        return;
+      }
+
+      const homeBtn = document.getElementById('home-btn');
+      if (currentTaskId === 'root') homeBtn.classList.add('hidden');
+      else homeBtn.classList.remove('hidden');
+
+      document.getElementById('task-title').value = activeTask.title;
+      
+      const textBlock = document.getElementById('desc-text');
+      const textInput = document.getElementById('desc-input');
+      if (activeTask.description) {
+        textBlock.innerText = activeTask.description;
+        textBlock.classList.remove('italic', 'opacity-50');
+      } else {
+        textBlock.innerText = "NO_DESC_ENTERED_IN_DATABASE_NODE";
+        textBlock.classList.add('italic', 'opacity-50');
+      }
+      textInput.value = activeTask.description || '';
+
+      const activeDone = isTaskDone(currentTaskId);
+      const indicator = document.getElementById('active-done-indicator');
+      const label = document.getElementById('active-done-label');
+      const activeDoneBtn = document.getElementById('active-done-btn');
+
+      if (activeDone) {
+        indicator.className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]";
+        label.className = "mono font-bold text-emerald-400";
+        label.innerText = "RESOLVED";
+        activeDoneBtn.className = "mono flex items-center gap-1.5 border border-emerald-500 bg-emerald-950/20 px-3 py-2 text-xs font-semibold shrink-0";
+      } else {
+        indicator.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]";
+        label.className = "mono font-bold text-rose-400 shadow-sm";
+        label.innerText = "ACTIVE_OP";
+        activeDoneBtn.className = "mono flex items-center gap-1.5 border border-rose-500 bg-rose-950/20 px-3 py-2 text-xs font-semibold shrink-0";
+      }
+
+      const breadContainer = document.getElementById('breadcrumbs');
+      breadContainer.innerHTML = '';
+      
+      const path = [];
+      let temp = activeTask;
+      while (temp) {
+        path.unshift(temp);
+        temp = temp.parent_id ? state.tasks[temp.parent_id] : null;
+      }
+
+      path.forEach((pTask, index) => {
+        const isLast = index === path.length - 1;
+        const btn = document.createElement('button');
+        btn.innerText = `[${pTask.title.toUpperCase()}]`;
+        btn.className = isLast 
+          ? "font-bold text-white cursor-default pointer-events-none" 
+          : "hover:text-[#ff0055] transition-all font-semibold text-xs";
+        
+        if (!isLast) {
+          btn.onclick = () => selectTask(pTask.id);
+        }
+        breadContainer.appendChild(btn);
+
+        if (!isLast) {
+          const arrow = document.createElement('span');
+          arrow.innerText = " > ";
+          arrow.className = "text-[#ff0055] px-1";
+          breadContainer.appendChild(arrow);
+        }
+      });
+
+      const tagsWrapper = document.getElementById('tags-wrapper');
+      tagsWrapper.innerHTML = '';
+      const tags = activeTask.tags ? activeTask.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = "bg-slate-900 border border-[#00f3ff]/30 text-xs py-0.5 px-2 flex items-center gap-1";
+        badge.innerHTML = `
+          <span>${t.toUpperCase()}</span>
+          <button onclick="removeTag('${t}')" class="text-rose-500 hover:text-white ml-1">✕</button>
+        `;
+        tagsWrapper.appendChild(badge);
+      });
+
+      document.getElementById('scope-immediate').className = scopeMode === 'immediate'
+        ? "mono text-[9px] uppercase tracking-wider px-3 py-1.5 bg-[#00f3ff] text-black font-bold transition-all"
+        : "mono text-[9px] uppercase tracking-wider px-3 py-1.5 text-slate-500 hover:text-[#00f3ff] font-bold transition-all";
+
+      document.getElementById('scope-descendants').className = scopeMode === 'descendants'
+        ? "mono text-[9px] uppercase tracking-wider px-3 py-1.5 bg-[#00f3ff] text-black font-bold transition-all"
+        : "mono text-[9px] uppercase tracking-wider px-3 py-1.5 text-slate-500 hover:text-[#00f3ff] font-bold transition-all";
+
+      document.querySelectorAll('[id^="status-"]').forEach(btn => {
+        btn.className = "mono text-[9px] uppercase font-bold tracking-wider px-2.5 py-1 text-slate-500 hover:text-[#00f3ff] transition-all";
+      });
+      const activeStatusBtn = document.getElementById(`status-${statusFilter}`);
+      if (activeStatusBtn) {
+        activeStatusBtn.className = "mono text-[9px] uppercase font-bold tracking-wider px-2.5 py-1 bg-slate-950 border border-[#00f3ff] text-[#00f3ff] transition-all";
+      }
+
+      const objectivesContainer = document.getElementById('objectives-list');
+      objectivesContainer.innerHTML = '';
+
+      let sourceList = [];
+      if (scopeMode === 'immediate') {
+        sourceList = activeTask.sub_tasks.map(sid => state.tasks[sid]).filter(Boolean);
+      } else {
+        sourceList = getDescendantTasks(currentTaskId);
+      }
+
+      const filteredTasks = sourceList.filter(task => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = task.title.toLowerCase().includes(query) || 
+                              (task.description || '').toLowerCase().includes(query) ||
+                              (task.tags || '').toLowerCase().includes(query);
+
+        const done = isTaskDone(task.id);
+        let matchesStatus = true;
+        if (statusFilter === 'pending') matchesStatus = !done;
+        else if (statusFilter === 'completed') matchesStatus = done;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('list-count').innerText = `${filteredTasks.length} NODES`;
+
+      if (filteredTasks.length === 0) {
+        objectivesContainer.innerHTML = `
+          <div class="p-8 text-center border border-dashed border-[#00f3ff]/20 bg-slate-950/20">
+            <p class="mono text-xs text-rose-500">SYS: DIRECTORY_QUERY_RETURNED_NULL</p>
+          </div>
+        `;
+      } else {
+        filteredTasks.forEach(task => {
+          const done = isTaskDone(task.id);
+          const localPath = getRelativePath(task.id, currentTaskId);
+
+          const card = document.createElement('div');
+          card.className = "p-4 bg-slate-950 border border-slate-900 hover:border-[#00f3ff] flex justify-between items-center transition-all cursor-pointer group";
+          
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+              selectTask(task.id);
+            }
+          };
+
+          const miniTagMarkup = task.tags 
+            ? task.tags.split(',').map(t => `<span class="border border-[#00f3ff]/30 text-slate-400 px-1.5 py-0.5 text-[9px] font-semibold">${t.trim().toUpperCase()}</span>`).join(' ')
+            : '';
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <button onclick="event.stopPropagation(); toggleTaskDoneState('${task.id}')" class="w-4 h-4 rounded-sm border mt-0.5 transition-colors flex items-center justify-center shrink-0 ${done ? 'bg-[#00f3ff] border-[#00f3ff] text-black' : 'border-[#00f3ff]/30 bg-slate-950'} text-[10px]">
+                ${done ? '✓' : ''}
+              </button>
+              <div class="min-w-0 flex-1">
+                ${(scopeMode === 'descendants' && localPath) ? `<span class="mono text-[9px] uppercase tracking-wider text-[#ff0055]/80 font-semibold block mb-0.5">${localPath.toUpperCase()}</span>` : ''}
+                <span class="mono text-xs block truncate ${done ? 'line-through text-slate-500' : 'text-slate-200'}">${task.title.toUpperCase()}</span>
+                <div class="flex gap-1 mt-1">${miniTagMarkup}</div>
+              </div>
+            </div>
+            <button onclick="deleteSubtask('${task.id}')" class="mono text-xs text-[#ff0055] hover:text-rose-400 p-1 font-semibold">
+              [DEL]
+            </button>
+          `;
+          objectivesContainer.appendChild(card);
+        });
+      }
+
+      const timeline = document.getElementById('logs-timeline');
+      timeline.innerHTML = '';
+      const logs = state.logs[currentTaskId] || [];
+      document.getElementById('log-count').innerText = logs.length;
+
+      if (logs.length === 0) {
+        timeline.innerHTML = `<p class="mono text-[10px] text-stone-500 text-center py-12">SYSTEM_TELEMETRY: EMPTY</p>`;
+      } else {
+        logs.forEach(l => {
+          const logBox = document.createElement('div');
+          logBox.className = "p-3 bg-slate-950/60 border border-slate-900 rounded text-[11px] space-y-1.5";
+          logBox.innerHTML = `
+            <div class="flex justify-between text-[9px] text-slate-500 border-b border-[#00f3ff]/10 pb-1 font-medium">
+              <span>TIMESTAMP</span>
+              <span>${l.timestamp}</span>
+            </div>
+            <p class="text-[#00f3ff] leading-relaxed whitespace-pre-line">${l.content}</p>
+          `;
+          timeline.appendChild(logBox);
+        });
+      }
+    }
+
+    function toggleEditDescription(show) {
+      if (show) {
+        document.getElementById('desc-display-box').classList.add('hidden');
+        document.getElementById('desc-input-box').classList.remove('hidden');
+        document.getElementById('desc-input').focus();
+      } else {
+        document.getElementById('desc-display-box').classList.remove('hidden');
+        document.getElementById('desc-input-box').classList.add('hidden');
+      }
+    }
+
+    function saveDescription() {
+      const textVal = document.getElementById('desc-input').value.trim();
+      state.tasks[currentTaskId].description = textVal;
+      saveState();
+      toggleEditDescription(false);
+      render();
+    }
+
+    function toggleTaskDoneState(id) {
+      if (!state.keyValues[id]) state.keyValues[id] = [];
+      const index = state.keyValues[id].findIndex(kv => kv.key === 'done');
+      if (index > -1) {
+        state.keyValues[id][index].value = state.keyValues[id][index].value === 'true' ? 'false' : 'true';
+      } else {
+        state.keyValues[id].push({ key: 'done', type: 'boolean', value: 'true' });
+      }
+      saveState();
+      render();
+    }
+
+    function toggleActiveTaskDone() {
+      toggleTaskDoneState(currentTaskId);
+    }
+
+    function addSubtask() {
+      const input = document.getElementById('new-subtask');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const id = 'task_' + Math.random().toString(36).substr(2, 9);
+      state.tasks[id] = { id, title, description: "", parent_id: currentTaskId, sub_tasks: [], tags: "" };
+      state.keyValues[id] = [{ key: "done", type: "boolean", value: "false" }];
+      state.tasks[currentTaskId].sub_tasks.push(id);
+
+      input.value = '';
+      saveState();
+      showToast(`NODE_CREATION: SUCCESS`);
+      render();
+    }
+
+    function deleteSubtask(subId) {
+      const parentTask = state.tasks[currentTaskId];
+      if (parentTask) {
+        parentTask.sub_tasks = parentTask.sub_tasks.filter(id => id !== subId);
+      }
+      const deleteRecursive = (id) => {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(sid => deleteRecursive(sid));
+        delete state.tasks[id];
+        delete state.keyValues[id];
+        delete state.logs[id];
+      };
+      deleteRecursive(subId);
+      saveState();
+      showToast("NODE_DELETION: COMPLETED");
+      render();
+    }
+
+    function updateTaskTitle(title) {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      state.tasks[currentTaskId].title = trimmed;
+      saveState();
+      render();
+    }
+
+    function addTag(val) {
+      const raw = val.trim().replace(/,/g, '');
+      if (!raw) return;
+      const active = state.tasks[currentTaskId];
+      const tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      if (!tags.includes(raw)) {
+        tags.push(raw);
+        active.tags = tags.join(', ');
+        saveState();
+      }
+      document.getElementById('new-tag').value = '';
+      render();
+    }
+
+    function removeTag(tag) {
+      const active = state.tasks[currentTaskId];
+      let tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags = tags.filter(t => t !== tag);
+      active.tags = tags.join(', ');
+      saveState();
+      render();
+    }
+
+    function saveLog() {
+      const input = document.getElementById('log-input');
+      const val = input.value.trim();
+      if (!val) return;
+      if (!state.logs[currentTaskId]) state.logs[currentTaskId] = [];
+      state.logs[currentTaskId].push({
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        content: val,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      input.value = '';
+      saveState();
+      render();
+    }
+
+    function resetDefaults() {
+      localStorage.removeItem('cyber_workspace_db');
+      state = { tasks: {}, keyValues: {}, logs: {} };
+      seedData();
+      selectTask('root');
+      showToast("SYSTEM_DEFAULTS_RESTORED");
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2500);
+    }
+
+    seedData();
+    const cachedId = localStorage.getItem('cyber_workspace_active_id');
+    if (cachedId && state.tasks[cachedId]) currentTaskId = cachedId;
+    render();
+  </script>
+</body>
+</html>

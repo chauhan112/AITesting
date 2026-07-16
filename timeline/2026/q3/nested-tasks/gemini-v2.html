@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTask - Nordic Editorial Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #fbf9f6; /* Soft cream paper background */
+      color: #2b2b2a; /* Warm charcoal editorial ink */
+    }
+    .serif-header {
+      font-family: 'Lora', serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative pb-20">
+
+  <!-- Application Layout Wrapper -->
+  <div class="max-w-4xl mx-auto px-6 sm:px-8 pt-10 sm:pt-14">
+    
+    <!-- Top Workspace Masthead -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-200 pb-6 mb-8 gap-4">
+      <div>
+        <h1 onclick="selectTask('root')" class="serif-header text-3xl font-medium tracking-tight text-stone-900 cursor-pointer hover:opacity-85 transition-opacity">AuraTask Workspace</h1>
+        <p class="text-[11px] text-stone-500 uppercase tracking-widest font-medium mt-1">Minimalist Hierarchy Directory</p>
+      </div>
+
+      <!-- Action Utilities -->
+      <div class="flex items-center gap-3">
+        <button onclick="selectTask('root')" id="nav-root-btn" class="flex items-center gap-1.5 border border-stone-300 hover:border-stone-500 py-2 px-4 rounded-md text-xs font-semibold text-stone-700 hover:text-stone-900 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+          Home Directory
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW 1: MASTER HOME DASHBOARD (Only visible at Root) -->
+    <section id="dashboard-view" class="hidden space-y-8">
+      
+      <!-- Dashboard Greeting and Intro -->
+      <div class="space-y-2">
+        <h2 class="serif-header text-xl font-semibold text-stone-800">Your Project Index</h2>
+        <p class="text-sm text-stone-500 max-w-xl">This view flattens your nested structure, letting you search, filter, and track statuses across all levels of your workspace simultaneously.</p>
+      </div>
+
+      <!-- Live Workspace Search and Filtering Panel -->
+      <div class="bg-[#f5f2eb] border border-stone-200/80 p-5 rounded-lg space-y-4">
+        <div class="relative">
+          <input type="text" id="dashboard-search" placeholder="Search tasks by title, tags, or description..." class="w-full bg-white border border-stone-300 focus:border-stone-500 focus:outline-none p-3 pl-10 rounded-md text-xs transition-all text-stone-800" oninput="handleSearchChange(this.value)">
+          <span class="absolute left-3.5 top-3.5 text-stone-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.636Z" />
+            </svg>
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <!-- Status Filters Segment -->
+          <div class="flex border border-stone-300 bg-white rounded-md overflow-hidden p-0.5">
+            <button onclick="setFilter('all')" id="filter-all" class="text-xs px-3.5 py-1.5 rounded font-semibold transition-all">All Tasks</button>
+            <button onclick="setFilter('pending')" id="filter-pending" class="text-xs px-3.5 py-1.5 rounded font-semibold transition-all">Pending Only</button>
+            <button onclick="setFilter('completed')" id="filter-completed" class="text-xs px-3.5 py-1.5 rounded font-semibold transition-all">Completed Only</button>
+          </div>
+
+          <!-- Total Counter -->
+          <span id="directory-count" class="text-[11px] text-stone-500 font-medium uppercase tracking-wider">0 tasks matched</span>
+        </div>
+      </div>
+
+      <!-- Flattened Task List Cards -->
+      <div id="flattened-tasks-container" class="space-y-3">
+        <!-- Generated dynamically -->
+      </div>
+    </section>
+
+
+    <!-- VIEW 2: DETAILED TASK WORKSPACE EXPLORER (Visible for subtasks) -->
+    <section id="explorer-view" class="hidden space-y-8 animate-fadeIn">
+      
+      <!-- Path Explorer Breadcrumbs -->
+      <nav id="breadcrumbs" class="flex items-center gap-1.5 text-xs text-stone-500 flex-wrap py-2 px-3 bg-[#f5f2eb] rounded-md border border-stone-200/50">
+        <!-- Rendered dynamically -->
+      </nav>
+
+      <!-- Workspace layout split -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        
+        <!-- Workspace Left Side (60% width - Focus details and child elements) -->
+        <div class="md:col-span-7 space-y-8">
+          
+          <!-- Task Core details -->
+          <div class="space-y-4">
+            <div class="flex justify-between items-start gap-4">
+              <div class="flex-1 space-y-2">
+                <input type="text" id="task-title" class="serif-header w-full bg-transparent text-3xl font-semibold tracking-tight text-stone-900 border-b border-transparent focus:border-stone-300 focus:outline-none transition-all py-0.5" onchange="updateTaskTitle(this.value)">
+                
+                <!-- Toggle-editable description -->
+                <div id="desc-display-box" class="group relative">
+                  <p id="desc-text" class="text-sm text-stone-600 leading-relaxed"></p>
+                  <button onclick="toggleEditDescription(true)" class="text-xs text-stone-500 hover:text-stone-800 underline decoration-stone-200 font-medium mt-1 inline-flex items-center gap-1">
+                    Edit description
+                  </button>
+                </div>
+                
+                <div id="desc-input-box" class="hidden space-y-2">
+                  <textarea id="desc-input" class="w-full bg-white border border-stone-300 text-xs p-3 rounded-md text-stone-800 focus:outline-none focus:border-stone-600 resize-y h-24" placeholder="Clarify the criteria for this subtask..."></textarea>
+                  <div class="flex gap-2">
+                    <button onclick="saveDescription()" class="text-xs bg-stone-800 text-stone-100 px-3.5 py-1.5 rounded hover:bg-stone-700 transition-colors font-semibold">Save</button>
+                    <button onclick="toggleEditDescription(false)" class="text-xs text-stone-500 hover:text-stone-800 px-3.5 py-1.5 font-medium">Cancel</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Main Checkbox Toggle Done Status for Active Workspace Task -->
+              <button onclick="toggleActiveTaskDone()" id="active-done-btn" class="flex items-center gap-1.5 border border-stone-300 px-3 py-2 rounded-md hover:bg-stone-50 transition-all text-xs font-semibold shrink-0">
+                <span id="active-done-indicator" class="w-2 h-2 rounded-full"></span>
+                <span id="active-done-label">Pending</span>
+              </button>
+            </div>
+
+            <!-- Simple Tag Management strings list -->
+            <div class="pt-3 border-t border-stone-200/80 flex flex-wrap items-center gap-2 text-[11px] text-stone-600">
+              <span class="font-bold opacity-50 uppercase tracking-wide">Tags:</span>
+              <div id="tags-wrapper" class="flex flex-wrap gap-1.5">
+                <!-- Tags generated dynamically -->
+              </div>
+              <input type="text" id="new-tag" placeholder="+ tag" class="bg-transparent border-b border-stone-200/40 hover:border-stone-300 focus:border-stone-600 focus:outline-none px-1 text-stone-700 w-16 text-center text-[10px]" onkeydown="if(event.key==='Enter') addTag(this.value)">
+            </div>
+          </div>
+
+          <!-- Quick child objectives section -->
+          <div class="space-y-4 pt-6 border-t border-stone-200">
+            <h3 class="serif-header font-semibold text-stone-800">Child Tasks</h3>
+
+            <!-- Title-only subtask adder -->
+            <div class="relative">
+              <input type="text" id="new-subtask" placeholder="Add nested subtask..." class="w-full bg-white border border-stone-300 focus:border-stone-600 focus:outline-none p-3 pr-12 rounded-md text-xs transition-all text-stone-800" onkeydown="if(event.key==='Enter') addSubtask()">
+              <button onclick="addSubtask()" class="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-800">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4.5 h-4.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Dynamic child components list -->
+            <div id="subtasks-list" class="space-y-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Panel (40% width - Comments logs timeline block) -->
+        <aside class="md:col-span-5 bg-[#f5f2eb] border border-stone-200 p-6 rounded-lg space-y-4 shadow-sm">
+          <div class="flex justify-between items-center pb-2 border-b border-stone-200/80">
+            <h3 class="serif-header text-sm font-semibold text-stone-800 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-4 h-4 text-stone-500">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+              </svg>
+              Workspace Log
+            </h3>
+            <span id="log-count" class="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded-full font-bold">0</span>
+          </div>
+
+          <!-- Timeline content container -->
+          <div id="logs-timeline" class="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scroll">
+            <!-- Dynamically populated timeline entries -->
+          </div>
+
+          <!-- New log quick entry form -->
+          <div class="space-y-2 pt-2 border-t border-stone-200">
+            <textarea id="log-input" class="w-full bg-white border border-stone-300 text-xs p-3 rounded-md focus:outline-none focus:border-stone-600 resize-none h-16 text-stone-800" placeholder="Add workspace log or progress update..."></textarea>
+            <button onclick="saveLog()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-100 text-xs py-2 rounded-md font-semibold transition-all">
+              Log Progress
+            </button>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Notification Toast alerts -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-stone-900 text-stone-100 px-4 py-2.5 text-xs rounded shadow-lg opacity-0 transition-opacity duration-300 z-50 pointer-events-none font-semibold"></div>
+
+  <!-- Dev options bottom strip -->
+  <footer class="fixed bottom-0 left-0 w-full bg-stone-100 border-t border-stone-200 py-2.5 px-6 flex justify-between items-center text-[10px] text-stone-500">
+    <span>LocalStorage Simulation Active</span>
+    <button onclick="resetDefaults()" class="underline hover:text-stone-800 font-semibold">Hard reset seed workspace defaults</button>
+  </footer>
+
+  <script>
+    // Local database structures state
+    let state = {
+      tasks: {},
+      keyValues: {},
+      logs: {}
+    };
+
+    // Tracking variables
+    let currentTaskId = 'root';
+    let searchQuery = '';
+    let statusFilter = 'all'; // all | pending | completed
+
+    // State Persistence
+    function saveState() {
+      localStorage.setItem('nordic_workspace_db', JSON.stringify(state));
+    }
+
+    // Default Seed Data
+    function seedData() {
+      if (localStorage.getItem('nordic_workspace_db')) {
+        state = JSON.parse(localStorage.getItem('nordic_workspace_db'));
+        return;
+      }
+
+      // Root task
+      state.tasks['root'] = {
+        id: 'root',
+        title: "Work Workspace",
+        description: "Main workspace container mapping hierarchical tasks.",
+        parent_id: null,
+        sub_tasks: ['item-1', 'item-2'],
+        tags: "active, system"
+      };
+
+      // Hierarchy level 1
+      state.tasks['item-1'] = {
+        id: 'item-1',
+        title: "Design System & CSS Typography",
+        description: "Validate readability across serif headers and clean sans-serif bodies.",
+        parent_id: 'root',
+        sub_tasks: ['item-1-1'],
+        tags: "design, typography"
+      };
+
+      state.tasks['item-2'] = {
+        id: 'item-2',
+        title: "Build Directory Database Abstraction",
+        description: "Construct flattening and filtering utilities for easy task querying.",
+        parent_id: 'root',
+        sub_tasks: [],
+        tags: "backend, schema"
+      };
+
+      // Hierarchy level 2
+      state.tasks['item-1-1'] = {
+        id: 'item-1-1',
+        title: "Fine-tune whitespace alignment",
+        description: "Maintain vertical grid metrics inside margins and card components.",
+        parent_id: 'item-1',
+        sub_tasks: [],
+        tags: "design, polish"
+      };
+
+      // KeyValues statuses
+      state.keyValues['root'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-1'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-2'] = [{ key: "done", type: "boolean", value: "true" }];
+      state.keyValues['item-1-1'] = [{ key: "done", type: "boolean", value: "false" }];
+
+      // Initial Log records
+      state.logs['root'] = [
+        { id: 'l-0', content: "Workspace seeded and directory schemas configured.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-1'] = [
+        { id: 'l-1', content: "Selected Lora serif pairing for editorial typography.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-2'] = [
+        { id: 'l-2', content: "Wrote high-performance array filters inside state layer.", timestamp: new Date().toLocaleTimeString() }
+      ];
+
+      saveState();
+    }
+
+    // Helper: Determine if task has "done" set to "true"
+    function isTaskDone(id) {
+      const kvs = state.keyValues[id] || [];
+      const doneKv = kvs.find(kv => kv.key === 'done');
+      return doneKv ? doneKv.value === 'true' : false;
+    }
+
+    // Helper: Build the complete path string context of a task (for directory card locations)
+    function getTaskLocationPath(id) {
+      const path = [];
+      let temp = state.tasks[id];
+      // Travel upwards until we reach the root
+      while (temp && temp.parent_id && temp.parent_id !== 'root') {
+        const parent = state.tasks[temp.parent_id];
+        if (parent) {
+          path.unshift(parent.title);
+        }
+        temp = parent;
+      }
+      return path.length > 0 ? path.join(' → ') : '';
+    }
+
+    // Context switching controller
+    function selectTask(id) {
+      currentTaskId = id;
+      localStorage.setItem('nordic_workspace_active_id', id);
+      
+      // Reset workspace search queries and filters on navigational shift
+      searchQuery = '';
+      statusFilter = 'all';
+      
+      const searchBox = document.getElementById('dashboard-search');
+      if (searchBox) searchBox.value = '';
+
+      render();
+    }
+
+    // Filter controls inside Dashboard
+    function setFilter(filter) {
+      statusFilter = filter;
+      render();
+    }
+
+    function handleSearchChange(query) {
+      searchQuery = query;
+      render();
+    }
+
+    // Application main render loop
+    async function render() {
+      const dashboard = document.getElementById('dashboard-view');
+      const explorer = document.getElementById('explorer-view');
+      const navRootBtn = document.getElementById('nav-root-btn');
+
+      // Hide or show the Home directory shortcut button
+      if (currentTaskId === 'root') {
+        navRootBtn.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        explorer.classList.add('hidden');
+        renderDashboard();
+      } else {
+        navRootBtn.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+        explorer.classList.remove('hidden');
+        renderExplorer();
+      }
+    }
+
+    // View 1: Render flattened Directory Dashboard (Root View)
+    function renderDashboard() {
+      // De-highlight previous filter buttons
+      document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+        btn.className = "text-xs px-3.5 py-1.5 rounded font-semibold text-stone-600 hover:text-stone-900 transition-all";
+      });
+      // Highlight current
+      const activeFilterBtn = document.getElementById(`filter-${statusFilter}`);
+      if (activeFilterBtn) {
+        activeFilterBtn.className = "text-xs px-3.5 py-1.5 rounded bg-stone-800 text-stone-100 shadow-sm font-semibold transition-all";
+      }
+
+      const tasksContainer = document.getElementById('flattened-tasks-container');
+      tasksContainer.innerHTML = '';
+
+      // Flatten state dictionary excluding root workspace node
+      const allTasks = Object.values(state.tasks).filter(t => t.id !== 'root');
+
+      // Filter and Query matches logic
+      const filteredTasks = allTasks.filter(task => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = task.title.toLowerCase().includes(query) || 
+                              (task.description || '').toLowerCase().includes(query) ||
+                              (task.tags || '').toLowerCase().includes(query);
+
+        const done = isTaskDone(task.id);
+        let matchesStatus = true;
+        if (statusFilter === 'pending') matchesStatus = !done;
+        else if (statusFilter === 'completed') matchesStatus = done;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      // Update matched label counter
+      document.getElementById('directory-count').innerText = `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} matched`;
+
+      if (filteredTasks.length === 0) {
+        tasksContainer.innerHTML = `
+          <div class="p-12 text-center border border-dashed border-stone-200 rounded-lg space-y-2">
+            <span class="text-xl">🔍</span>
+            <p class="text-xs text-stone-400">No active tasks match your directory filters. Reset filters or create a subtask.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filteredTasks.forEach(task => {
+        const done = isTaskDone(task.id);
+        const locationPath = getTaskLocationPath(task.id);
+
+        const card = document.createElement('div');
+        card.className = "p-5 bg-white border border-stone-200 hover:border-stone-400 rounded-lg flex justify-between items-start transition-all duration-200 cursor-pointer shadow-sm group";
+        
+        // Block action clicks inside card from trigger select navigation
+        card.onclick = (e) => {
+          if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+            selectTask(task.id);
+          }
+        };
+
+        const tagMarkup = task.tags 
+          ? task.tags.split(',').map(t => `<span class="bg-stone-100 text-stone-600 px-2 py-0.5 rounded text-[10px]">${t.trim()}</span>`).join(' ')
+          : '';
+
+        card.innerHTML = `
+          <div class="flex items-start gap-3.5 flex-1 min-w-0">
+            <!-- Custom interactive toggle checkbox inside list -->
+            <button onclick="event.stopPropagation(); toggleTaskDoneState('${task.id}')" class="w-4.5 h-4.5 rounded border mt-0.5 transition-all flex items-center justify-center shrink-0 ${done ? 'bg-stone-800 border-stone-800 text-stone-100' : 'border-stone-300 hover:border-stone-500 bg-white'} text-[11px]">
+              ${done ? '✓' : ''}
+            </button>
+            <div class="min-w-0 flex-1 space-y-1">
+              ${locationPath ? `<span class="text-[9px] uppercase tracking-wider text-stone-400 font-semibold block">${locationPath}</span>` : ''}
+              <h4 class="serif-header font-semibold text-base tracking-tight text-stone-900 group-hover:text-stone-700 transition-colors ${done ? 'line-through opacity-50' : ''}">${task.title}</h4>
+              <p class="text-xs text-stone-500 leading-relaxed truncate max-w-lg ${done ? 'opacity-40' : ''}">${task.description || 'No descriptive details specified.'}</p>
+              <div class="flex flex-wrap gap-1.5 pt-1.5">
+                ${tagMarkup}
+              </div>
+            </div>
+          </div>
+
+          <!-- Chevron navigation arrow indicators -->
+          <div class="text-stone-300 group-hover:text-stone-800 transition-colors self-center pl-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+          </div>
+        `;
+        tasksContainer.appendChild(card);
+      });
+    }
+
+    // View 2: Render Dynamic Workspace Explorer (Task Details & Children View)
+    function renderExplorer() {
+      const activeTask = state.tasks[currentTaskId];
+
+      // Set titles
+      document.getElementById('task-title').value = activeTask.title;
+
+      // Toggle edit description states
+      const textBlock = document.getElementById('desc-text');
+      const textInput = document.getElementById('desc-input');
+      if (activeTask.description) {
+        textBlock.innerText = activeTask.description;
+        textBlock.classList.remove('italic', 'opacity-50');
+      } else {
+        textBlock.innerText = "No descriptive parameters set for this objective task.";
+        textBlock.classList.add('italic', 'opacity-50');
+      }
+      textInput.value = activeTask.description || '';
+
+      // Active status button elements
+      const done = isTaskDone(currentTaskId);
+      const indicator = document.getElementById('active-done-indicator');
+      const label = document.getElementById('active-done-label');
+      const activeDoneBtn = document.getElementById('active-done-btn');
+
+      if (done) {
+        indicator.className = "w-2 h-2 rounded-full bg-emerald-600";
+        label.className = "font-bold text-emerald-800";
+        label.innerText = "Completed";
+        activeDoneBtn.className = "flex items-center gap-1.5 border border-emerald-200 bg-emerald-50/50 px-3 py-2 rounded-md hover:bg-emerald-50 transition-all text-xs shrink-0";
+      } else {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        label.className = "font-bold text-stone-700";
+        label.innerText = "Pending";
+        activeDoneBtn.className = "flex items-center gap-1.5 border border-stone-300 bg-white px-3 py-2 rounded-md hover:bg-stone-50 transition-all text-xs shrink-0";
+      }
+
+      // Breadcrumbs dynamic explorer generator
+      const breadContainer = document.getElementById('breadcrumbs');
+      breadContainer.innerHTML = '';
+
+      // Calculate path hierarchy
+      const path = [];
+      let temp = activeTask;
+      while (temp) {
+        path.unshift(temp);
+        temp = temp.parent_id ? state.tasks[temp.parent_id] : null;
+      }
+
+      path.forEach((pTask, index) => {
+        const isLast = index === path.length - 1;
+        const btn = document.createElement('button');
+        btn.innerText = pTask.title;
+        btn.className = isLast 
+          ? "font-bold text-stone-900 pointer-events-none cursor-default" 
+          : "hover:text-stone-900 transition-colors underline underline-offset-4 decoration-stone-200 font-medium";
+        
+        if (!isLast) {
+          btn.onclick = () => selectTask(pTask.id);
+        }
+        breadContainer.appendChild(btn);
+
+        if (!isLast) {
+          const chevron = document.createElement('span');
+          chevron.innerText = "→";
+          chevron.className = "text-stone-300 font-semibold px-1";
+          breadContainer.appendChild(chevron);
+        }
+      });
+
+      // Tags render helper
+      const tagsWrapper = document.getElementById('tags-wrapper');
+      tagsWrapper.innerHTML = '';
+      const tags = activeTask.tags ? activeTask.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = "bg-stone-200/80 hover:bg-stone-200 text-stone-700 font-semibold py-0.5 px-2 rounded flex items-center gap-1 transition-colors";
+        badge.innerHTML = `
+          <span>${t}</span>
+          <button onclick="removeTag('${t}')" class="text-stone-400 hover:text-stone-900 ml-1">✕</button>
+        `;
+        tagsWrapper.appendChild(badge);
+      });
+
+      // Child subtasks list renderer
+      const subtasksContainer = document.getElementById('subtasks-list');
+      subtasksContainer.innerHTML = '';
+
+      if (activeTask.sub_tasks.length === 0) {
+        subtasksContainer.innerHTML = `
+          <div class="p-8 text-center border border-dashed border-stone-200 rounded-md bg-stone-50">
+            <span class="text-lg">🌿</span>
+            <p class="text-xs text-stone-400 mt-1">This node is a leaf (no sub-tasks). Type above to define child objectives.</p>
+          </div>
+        `;
+      } else {
+        activeTask.sub_tasks.forEach(subId => {
+          const subTask = state.tasks[subId];
+          if (!subTask) return;
+
+          const subDone = isTaskDone(subId);
+          const div = document.createElement('div');
+          div.className = "bg-white border border-stone-200 hover:border-stone-400 p-4 rounded-md flex justify-between items-center transition-all shadow-sm";
+
+          div.innerHTML = `
+            <div class="flex items-center gap-3 flex-1 min-w-0" onclick="selectTask('${subId}')">
+              <!-- Inline Checkbox status modifier -->
+              <button onclick="event.stopPropagation(); toggleTaskDoneState('${subId}')" class="w-4 h-4 rounded border transition-colors flex items-center justify-center shrink-0 ${subDone ? 'bg-stone-800 border-stone-800 text-stone-100' : 'border-stone-300 hover:border-stone-400 bg-white'} text-[10px]">
+                ${subDone ? '✓' : ''}
+              </button>
+              <span class="text-xs font-semibold block truncate cursor-pointer flex-1 ${subDone ? 'line-through text-stone-400' : 'text-stone-800 hover:text-stone-950 transition-colors'}">${subTask.title}</span>
+            </div>
+            <button onclick="deleteSubtask('${subId}')" class="text-stone-400 hover:text-rose-600 transition-colors p-1.5 text-xs font-semibold">
+              Remove
+            </button>
+          `;
+          subtasksContainer.appendChild(div);
+        });
+      }
+
+      // Sidebar workspace logs render timeline list
+      const timeline = document.getElementById('logs-timeline');
+      timeline.innerHTML = '';
+      const logs = state.logs[currentTaskId] || [];
+      document.getElementById('log-count').innerText = logs.length;
+
+      if (logs.length === 0) {
+        timeline.innerHTML = `<p class="text-[11px] text-stone-400 italic text-center py-12">No progress remarks or comments logged yet.</p>`;
+      } else {
+        logs.forEach(l => {
+          const logBox = document.createElement('div');
+          logBox.className = "p-3 bg-white border border-stone-200/60 rounded-md text-[11px] space-y-1.5 shadow-sm";
+          logBox.innerHTML = `
+            <div class="flex justify-between text-[9px] text-stone-400 border-b border-stone-100 pb-1 font-medium">
+              <span>Timestamp</span>
+              <span>${l.timestamp}</span>
+            </div>
+            <p class="text-stone-700 leading-relaxed whitespace-pre-line">${l.content}</p>
+          `;
+          timeline.appendChild(logBox);
+        });
+      }
+    }
+
+    // Toggle description elements between display and edit mode
+    function toggleEditDescription(show) {
+      if (show) {
+        document.getElementById('desc-display-box').classList.add('hidden');
+        document.getElementById('desc-input-box').classList.remove('hidden');
+        document.getElementById('desc-input').focus();
+      } else {
+        document.getElementById('desc-display-box').classList.remove('hidden');
+        document.getElementById('desc-input-box').classList.add('hidden');
+      }
+    }
+
+    // Save edited task description
+    function saveDescription() {
+      const textVal = document.getElementById('desc-input').value.trim();
+      state.tasks[currentTaskId].description = textVal;
+      saveState();
+      toggleEditDescription(false);
+      render();
+    }
+
+    // Toggle Task completion Done status via key-value
+    function toggleTaskDoneState(id) {
+      if (!state.keyValues[id]) state.keyValues[id] = [];
+      const index = state.keyValues[id].findIndex(kv => kv.key === 'done');
+      if (index > -1) {
+        state.keyValues[id][index].value = state.keyValues[id][index].value === 'true' ? 'false' : 'true';
+      } else {
+        state.keyValues[id].push({ key: 'done', type: 'boolean', value: 'true' });
+      }
+      saveState();
+      render();
+    }
+
+    // Toggle function for the active task detail view
+    function toggleActiveTaskDone() {
+      toggleTaskDoneState(currentTaskId);
+    }
+
+    // Inline title-only child subtask creator action
+    function addSubtask() {
+      const input = document.getElementById('new-subtask');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const id = 'task_' + Math.random().toString(36).substr(2, 9);
+      
+      // Save Task Object matching original specs
+      state.tasks[id] = {
+        id,
+        title,
+        description: "",
+        parent_id: currentTaskId,
+        sub_tasks: [],
+        tags: ""
+      };
+
+      // Set Done State KV to false
+      state.keyValues[id] = [{ key: "done", type: "boolean", value: "false" }];
+
+      // Link referencing parent
+      state.tasks[currentTaskId].sub_tasks.push(id);
+
+      input.value = '';
+      saveState();
+      showToast(`Subtask "${title}" created.`);
+      render();
+    }
+
+    // Delete subtask recursively
+    function deleteSubtask(subId) {
+      state.tasks[currentTaskId].sub_tasks = state.tasks[currentTaskId].sub_tasks.filter(id => id !== subId);
+      
+      const deleteRecursive = (id) => {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(sid => deleteRecursive(sid));
+        delete state.tasks[id];
+        delete state.keyValues[id];
+        delete state.logs[id];
+      };
+
+      deleteRecursive(subId);
+      saveState();
+      showToast("Subtask removed.");
+      render();
+    }
+
+    // Active Task attributes modification
+    function updateTaskTitle(title) {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      state.tasks[currentTaskId].title = trimmed;
+      saveState();
+      render();
+    }
+
+    // Tag list operations
+    function addTag(val) {
+      const raw = val.trim().replace(/,/g, '');
+      if (!raw) return;
+
+      const active = state.tasks[currentTaskId];
+      const tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      if (!tags.includes(raw)) {
+        tags.push(raw);
+        active.tags = tags.join(', ');
+        saveState();
+      }
+      document.getElementById('new-tag').value = '';
+      render();
+    }
+
+    function removeTag(tag) {
+      const active = state.tasks[currentTaskId];
+      let tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags = tags.filter(t => t !== tag);
+      active.tags = tags.join(', ');
+      saveState();
+      render();
+    }
+
+    // Workspace comment logs persistence
+    function saveLog() {
+      const input = document.getElementById('log-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      if (!state.logs[currentTaskId]) state.logs[currentTaskId] = [];
+      state.logs[currentTaskId].push({
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        content: val,
+        timestamp: new Date().toLocaleTimeString()
+      });
+
+      input.value = '';
+      saveState();
+      render();
+    }
+
+    // Hard Database Cleanser
+    function resetDefaults() {
+      localStorage.removeItem('nordic_workspace_db');
+      state = { tasks: {}, keyValues: {}, logs: {} };
+      seedData();
+      selectTask('root');
+      showToast("Workspace database reset.");
+    }
+
+    // Display Alert Toasts
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2500);
+    }
+
+    // Run Initializers
+    seedData();
+
+    // Recover previous active task routing coordinates if applicable
+    const cachedId = localStorage.getItem('nordic_workspace_active_id');
+    if (cachedId && state.tasks[cachedId]) {
+      currentTaskId = cachedId;
+    }
+
+    render();
+  </script>
+</body>
+</html>

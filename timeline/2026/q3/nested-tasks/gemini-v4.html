@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTask - Unified Multi-Theme Workspace</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Premium Google Fonts for Visual Themes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* CSS Custom Variables Engine mapping themes to layout tokens */
+    
+    /* 1. Nordic Light (Warm Editorial) */
+    .theme-nordic {
+      --bg-app: #fbf9f6;
+      --text-primary: #2b2b2a;
+      --text-secondary: #706f68;
+      --card-bg: #ffffff;
+      --card-border: #e7e5e0;
+      --card-border-hover: #1c1917;
+      --sidebar-bg: #f5f2eb;
+      --accent-primary: #1c1917;
+      --accent-primary-hover: #44403c;
+      --accent-text: #ffffff;
+      --badge-bg: #e7e5e0;
+      --badge-text: #44403c;
+      --font-serif: 'Lora', serif;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --rounded: 0.375rem;
+      --border-w: 1px;
+      --glow: none;
+      --scanlines: none;
+    }
+
+    /* 2. Cyberpunk Tech Console (Retro-Futuristic Dark) */
+    .theme-cyberpunk {
+      --bg-app: #030308;
+      --text-primary: #00f3ff;
+      --text-secondary: #00b0ff;
+      --card-bg: rgba(10, 10, 20, 0.85);
+      --card-border: #1a1a3a;
+      --card-border-hover: #00f3ff;
+      --sidebar-bg: rgba(13, 13, 30, 0.9);
+      --accent-primary: #ff0055;
+      --accent-primary-hover: #ff3377;
+      --accent-text: #ffffff;
+      --badge-bg: rgba(255, 0, 85, 0.15);
+      --badge-text: #ff0055;
+      --font-serif: 'Share Tech Mono', monospace;
+      --font-sans: 'Rajdhani', sans-serif;
+      --rounded: 0px;
+      --border-w: 1px;
+      --glow: 0 0 10px rgba(0, 243, 255, 0.25);
+      --scanlines: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+    }
+
+    /* 3. Cozy Botanical Garden (Ghibli Watercolor) */
+    .theme-ghibli {
+      --bg-app: #f4efdf;
+      --text-primary: #3b3a30;
+      --text-secondary: #736f5e;
+      --card-bg: #fdfbf7;
+      --card-border: #e1d8bf;
+      --card-border-hover: #6b8f71;
+      --sidebar-bg: #e9e3cc;
+      --accent-primary: #6b8f71;
+      --accent-primary-hover: #4a6d51;
+      --accent-text: #ffffff;
+      --badge-bg: #e9e3cc;
+      --badge-text: #4a6d51;
+      --font-serif: 'Lora', serif;
+      --font-sans: 'Quicksand', sans-serif;
+      --rounded: 1.25rem;
+      --border-w: 2px;
+      --glow: 0 6px 20px rgba(59, 58, 48, 0.04);
+      --scanlines: none;
+    }
+
+    /* Global Dynamic Class Intermediaries */
+    body {
+      background-color: var(--bg-app);
+      background-image: var(--scanlines);
+      background-size: 100% 4px, 6px 100%;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      transition: background-color 0.3s ease, color 0.3s ease, font-family 0.3s ease;
+    }
+
+    .dyn-serif {
+      font-family: var(--font-serif);
+    }
+
+    .dyn-card {
+      background-color: var(--card-bg);
+      border: var(--border-w) solid var(--card-border);
+      border-radius: var(--rounded);
+      box-shadow: var(--glow);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    .dyn-card:hover {
+      border-color: var(--card-border-hover);
+    }
+
+    .dyn-sidebar {
+      background-color: var(--sidebar-bg);
+      border: var(--border-w) solid var(--card-border);
+      border-radius: var(--rounded);
+      transition: all 0.3s ease;
+    }
+
+    .dyn-btn {
+      background-color: var(--accent-primary);
+      color: var(--accent-text);
+      border-radius: var(--rounded);
+      box-shadow: var(--glow);
+      transition: all 0.2s ease;
+    }
+    .dyn-btn:hover {
+      background-color: var(--accent-primary-hover);
+    }
+
+    .dyn-btn-outline {
+      border: var(--border-w) solid var(--card-border);
+      border-radius: var(--rounded);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .dyn-btn-outline:hover {
+      background-color: var(--sidebar-bg);
+      border-color: var(--card-border-hover);
+    }
+
+    .dyn-input {
+      background-color: var(--card-bg);
+      border: var(--border-w) solid var(--card-border);
+      border-radius: var(--rounded);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .dyn-input:focus {
+      outline: none;
+      border-color: var(--card-border-hover);
+    }
+
+    .dyn-badge {
+      background-color: var(--badge-bg);
+      color: var(--badge-text);
+    }
+
+    .dyn-checkbox {
+      border: var(--border-w) solid var(--card-border);
+      border-radius: var(--rounded);
+      background-color: var(--card-bg);
+      transition: all 0.2s ease;
+    }
+    .dyn-checkbox.checked {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: var(--accent-text);
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: var(--card-border-hover);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="theme-nordic min-h-screen relative pb-20">
+
+  <div class="max-w-4xl mx-auto px-6 sm:px-8 pt-10 sm:pt-14">
+    
+    <!-- Unified Dynamic Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-300 pb-6 mb-8 gap-4" id="app-header">
+      <div class="flex items-center gap-3">
+        <span id="logo-emoji" class="text-3xl">🎯</span>
+        <div>
+          <h1 onclick="selectTask('root')" id="app-title" class="dyn-serif text-3xl font-semibold tracking-tight cursor-pointer hover:opacity-85 transition-opacity">AuraTask</h1>
+          <p id="app-subtitle" class="text-[11px] uppercase tracking-widest font-bold mt-1 text-stone-500">Workspace Management Directory</p>
+        </div>
+      </div>
+
+      <!-- Theme pills switcher -->
+      <div class="flex flex-wrap border border-stone-300 bg-white/20 p-0.5 rounded-lg" id="theme-pill-box">
+        <button onclick="setTheme('nordic')" id="btn-theme-nordic" class="text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all">Nordic Light</button>
+        <button onclick="setTheme('cyberpunk')" id="btn-theme-cyberpunk" class="text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all">Cyberpunk</button>
+        <button onclick="setTheme('ghibli')" id="btn-theme-ghibli" class="text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all">Botanical</button>
+      </div>
+    </header>
+
+    <!-- Path / Location Breadcrumbs Bar (Unified Explorer) -->
+    <nav id="breadcrumbs" class="dyn-sidebar flex items-center gap-1.5 text-xs flex-wrap py-2.5 px-4 mb-8">
+      <!-- Generated dynamically -->
+    </nav>
+
+    <!-- Core Grid Workspace -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left side Active Task Feed focus (7 columns) -->
+      <main class="md:col-span-7 space-y-8">
+        
+        <!-- Active Note Panel -->
+        <section class="dyn-card p-6 space-y-4">
+          <div class="flex justify-between items-start gap-4 flex-wrap sm:flex-nowrap">
+            <div class="flex-1 space-y-2">
+              <span id="station-label" class="dyn-serif text-[10px] uppercase tracking-wider font-bold block opacity-60">Loaded Context Node:</span>
+              <input type="text" id="task-title" class="dyn-serif w-full bg-transparent text-3xl font-semibold tracking-tight border-b-2 border-transparent focus:outline-none transition-all py-0.5" onchange="updateTaskTitle(this.value)">
+              
+              <!-- Toggle Description panel -->
+              <div id="desc-display-box" class="space-y-1">
+                <p id="desc-text" class="text-sm leading-relaxed font-medium"></p>
+                <button onclick="toggleEditDescription(true)" class="text-xs underline font-bold mt-1 opacity-70 hover:opacity-100 transition-opacity">
+                  Edit description details
+                </button>
+              </div>
+              
+              <div id="desc-input-box" class="hidden space-y-2">
+                <textarea id="desc-input" class="dyn-input w-full text-xs p-3 resize-y h-24 font-medium" placeholder="Add some objective notes..."></textarea>
+                <div class="flex gap-2">
+                  <button onclick="saveDescription()" class="text-xs dyn-btn px-3.5 py-1.5 font-bold shadow-sm">Save Note</button>
+                  <button onclick="toggleEditDescription(false)" class="text-xs text-stone-500 hover:text-stone-800 px-3.5 py-1.5">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Done status simple checkbox button -->
+            <button onclick="toggleActiveTaskDone()" id="active-done-btn" class="dyn-btn-outline flex items-center gap-1.5 px-3 py-2 text-xs font-semibold shrink-0">
+              <span id="active-done-indicator" class="w-2 h-2 rounded-full"></span>
+              <span id="active-done-label">Pending</span>
+            </button>
+          </div>
+
+          <!-- Tags manager block -->
+          <div class="pt-3 border-t border-stone-200/50 flex flex-wrap items-center gap-2 text-[11px] opacity-85">
+            <span class="font-bold opacity-60 uppercase tracking-wide">Leaf Tags:</span>
+            <div id="tags-wrapper" class="flex flex-wrap gap-1.5"></div>
+            <input type="text" id="new-tag" placeholder="+ tag" class="bg-transparent border-b border-stone-300 focus:outline-none px-1 w-16 text-center text-[10px]" onkeydown="if(event.key==='Enter') addTag(this.value)">
+          </div>
+        </section>
+
+        <!-- Dynamic Objectives Area -->
+        <section class="space-y-4 pt-6 border-t-2 border-stone-200/30">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 class="dyn-serif font-semibold text-xl" id="objectives-heading">Workspace Objectives</h3>
+            
+            <!-- Scope Selector (Immediate vs Recursive Descendants) -->
+            <div class="flex border border-stone-300 bg-white/45 p-0.5" id="scope-toggle-box">
+              <button onclick="setScope('immediate')" id="scope-immediate" class="text-[10px] uppercase tracking-wider px-3 py-1.5 font-bold transition-all">Direct</button>
+              <button onclick="setScope('descendants')" id="scope-descendants" class="text-[10px] uppercase tracking-wider px-3 py-1.5 font-bold transition-all">All Descendants</button>
+            </div>
+          </div>
+
+          <!-- Inline creation node -->
+          <div class="relative">
+            <input type="text" id="new-subtask" placeholder="Sow new subtask node..." class="dyn-input w-full p-3.5 pr-12 text-xs" onkeydown="if(event.key==='Enter') addSubtask()">
+            <button onclick="addSubtask()" class="absolute right-3.5 top-3.5 opacity-60 hover:opacity-100 transition-opacity font-bold" id="add-btn-icon">
+              ➕
+            </button>
+          </div>
+
+          <!-- Dynamic search/filter controls -->
+          <div class="dyn-card p-4 space-y-3">
+            <div class="relative">
+              <input type="text" id="objective-search" placeholder="Search directory..." class="dyn-input w-full p-2 pl-8 text-xs font-medium" oninput="handleSearchChange(this.value)">
+              <span class="absolute left-2.5 top-2.5 opacity-60" id="search-emoji-icon">
+                🌸
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <!-- Status Filtering Pills -->
+              <div class="flex gap-1" id="status-pill-box">
+                <button onclick="setStatusFilter('all')" id="status-all" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all">ALL</button>
+                <button onclick="setStatusFilter('pending')" id="status-pending" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all">PENDING</button>
+                <button onclick="setStatusFilter('completed')" id="status-completed" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent hover:border-stone-300 transition-all">COMPLETED</button>
+              </div>
+              <span id="list-count" class="text-[10px] font-bold uppercase tracking-wider">0 Leaves</span>
+            </div>
+          </div>
+
+          <!-- Objectives Children list -->
+          <div id="objectives-list" class="space-y-2.5">
+            <!-- Dynamic elements loaded -->
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right Side telemetry comments feed (5 columns) -->
+      <aside class="md:col-span-5 dyn-sidebar p-6 space-y-4 shadow-sm">
+        <div class="flex justify-between items-center pb-2 border-b border-stone-200/50">
+          <h3 class="dyn-serif text-sm font-semibold flex items-center gap-2" id="logs-heading">
+            🪵 Workspace Logs
+          </h3>
+          <span id="log-count" class="text-[10px] bg-white/40 px-2 py-0.5 rounded-full font-bold">0</span>
+        </div>
+
+        <div id="logs-timeline" class="space-y-3 max-h-[340px] overflow-y-auto pr-1 custom-scroll">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-stone-200/50">
+          <textarea id="log-input" class="dyn-input w-full text-xs p-3 resize-none h-16" placeholder="Jot down workspace notes..."></textarea>
+          <button onclick="saveLog()" class="w-full dyn-btn text-xs py-2 font-semibold shadow-sm">
+            Log Progress Note
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 bg-stone-900 text-stone-100 px-4 py-2.5 text-xs rounded shadow-lg opacity-0 transition-opacity duration-300 z-50 pointer-events-none font-bold"></div>
+
+  <footer class="fixed bottom-0 left-0 w-full bg-stone-100 border-t border-stone-200 py-2.5 px-6 flex justify-between items-center text-[10px] text-stone-500 z-30">
+    <span>LocalStorage Directory Active</span>
+    <button onclick="resetDefaults()" class="underline font-bold" id="reset-btn-label">Reset seeds defaults</button>
+  </footer>
+
+  <script>
+    // State storage dictionaries
+    let state = {
+      tasks: {},
+      keyValues: {},
+      logs: {}
+    };
+
+    // State routing metrics
+    let currentTaskId = 'root';
+    let currentTheme = 'nordic';
+    let scopeMode = 'descendants';
+    let searchQuery = '';
+    let statusFilter = 'all';
+
+    // Theme Custom Emojis Maps
+    const themeAssets = {
+      nordic: {
+        logo: "🎯",
+        subtitle: "Minimalist Workspace Directory",
+        station: "Active Context Node:",
+        obj_header: "Workspace Objectives",
+        log_header: "🪵 Workspace Logs",
+        reset_label: "Reset default seeds directory",
+        search_emoji: "🌸",
+        add_icon: "➕"
+      },
+      cyberpunk: {
+        logo: "📟",
+        subtitle: "SYS_STATUS: ONLINE // NEURAL_DIR",
+        station: "ID_CONTEXT_LOADED:",
+        obj_header: "// OBJECTIVES_FEED",
+        log_header: "TELEMETRY_LOGS",
+        reset_label: "SYS_HARD_RESET_SEEDS",
+        search_emoji: ">",
+        add_icon: "[+]"
+      },
+      ghibli: {
+        logo: "🌿",
+        subtitle: "Cozy Watercolor Botanical Meadow",
+        station: "Current Garden Patch:",
+        obj_header: "Meadow Objectives",
+        log_header: "🪵 Meadow Journal Thoughts",
+        reset_label: "Compost Meadow & Replant",
+        search_emoji: "🌸",
+        add_icon: "🌱"
+      }
+    };
+
+    function saveState() {
+      localStorage.setItem('unified_multitheme_workspace_db', JSON.stringify(state));
+    }
+
+    function seedData() {
+      if (localStorage.getItem('unified_multitheme_workspace_db')) {
+        state = JSON.parse(localStorage.getItem('unified_multitheme_workspace_db'));
+        return;
+      }
+
+      // Root task
+      state.tasks['root'] = {
+        id: 'root',
+        title: "Work Workspace",
+        description: "Main workspace container mapping hierarchical tasks.",
+        parent_id: null,
+        sub_tasks: ['item-1', 'item-2'],
+        tags: "active, system"
+      };
+
+      // Hierarchy Level 1
+      state.tasks['item-1'] = {
+        id: 'item-1',
+        title: "Design System & CSS Typography",
+        description: "Validate readability across serif headers and clean sans-serif bodies.",
+        parent_id: 'root',
+        sub_tasks: ['item-1-1'],
+        tags: "design, typography"
+      };
+
+      state.tasks['item-2'] = {
+        id: 'item-2',
+        title: "Build Directory Database Abstraction",
+        description: "Construct flattening and filtering utilities for easy task querying.",
+        parent_id: 'root',
+        sub_tasks: [],
+        tags: "backend, schema"
+      };
+
+      // Hierarchy Level 2
+      state.tasks['item-1-1'] = {
+        id: 'item-1-1',
+        title: "Fine-tune whitespace alignment",
+        description: "Maintain vertical grid metrics inside margins and card components.",
+        parent_id: 'item-1',
+        sub_tasks: [],
+        tags: "design, polish"
+      };
+
+      // KeyValues Statuses
+      state.keyValues['root'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-1'] = [{ key: "done", type: "boolean", value: "false" }];
+      state.keyValues['item-2'] = [{ key: "done", type: "boolean", value: "true" }];
+      state.keyValues['item-1-1'] = [{ key: "done", type: "boolean", value: "false" }];
+
+      // Initial Log records
+      state.logs['root'] = [
+        { id: 'l-0', content: "Workspace seeded and directory schemas configured.", timestamp: new Date().toLocaleTimeString() }
+      ];
+      state.logs['item-1'] = [
+        { id: 'l-1', content: "Visual layout typography pairings verified.", timestamp: new Date().toLocaleTimeString() }
+      ];
+
+      saveState();
+    }
+
+    function isTaskDone(id) {
+      const kvs = state.keyValues[id] || [];
+      const doneKv = kvs.find(kv => kv.key === 'done');
+      return doneKv ? doneKv.value === 'true' : false;
+    }
+
+    function getDescendantTasks(parentTaskId) {
+      const list = [];
+      function traverse(id) {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(subId => {
+          const subTask = state.tasks[subId];
+          if (subTask) {
+            list.push(subTask);
+            traverse(subId);
+          }
+        });
+      }
+      traverse(parentTaskId);
+      return list;
+    }
+
+    function getRelativePath(id, relativeToId) {
+      const path = [];
+      let temp = state.tasks[id];
+      while (temp && temp.parent_id && temp.id !== relativeToId) {
+        const parent = state.tasks[temp.parent_id];
+        if (parent && parent.id !== relativeToId) {
+          path.unshift(parent.title);
+        }
+        temp = parent;
+      }
+      return path.join(' → ');
+    }
+
+    function selectTask(id) {
+      currentTaskId = id;
+      localStorage.setItem('unified_workspace_active_id', id);
+      searchQuery = '';
+      statusFilter = 'all';
+      const searchBox = document.getElementById('objective-search');
+      if (searchBox) searchBox.value = '';
+      if (id === 'root') scopeMode = 'descendants';
+      render();
+    }
+
+    function setScope(mode) {
+      scopeMode = mode;
+      render();
+    }
+
+    function setStatusFilter(filter) {
+      statusFilter = filter;
+      render();
+    }
+
+    function handleSearchChange(query) {
+      searchQuery = query;
+      render();
+    }
+
+    // Dynamic Swapping System
+    function setTheme(theme) {
+      currentTheme = theme;
+      localStorage.setItem('unified_workspace_theme', theme);
+
+      // 1. Swap body class
+      document.body.className = `theme-${theme} min-h-screen relative pb-20`;
+
+      // 2. Highlighting pills button switcher logic
+      document.querySelectorAll('#theme-pill-box button').forEach(btn => {
+        btn.className = "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all text-stone-500 hover:text-stone-800";
+      });
+
+      const activeBtn = document.getElementById(`btn-theme-${theme}`);
+      if (activeBtn) {
+        if (theme === 'cyberpunk') {
+          activeBtn.className = "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all bg-[#ff0055] text-white shadow-sm";
+        } else if (theme === 'ghibli') {
+          activeBtn.className = "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all bg-[#6b8f71] text-white shadow-sm";
+        } else {
+          activeBtn.className = "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md font-bold transition-all bg-stone-800 text-white shadow-sm";
+        }
+      }
+
+      // 3. Swap text strings matching visual maps
+      const assets = themeAssets[theme];
+      document.getElementById('logo-emoji').innerText = assets.logo;
+      document.getElementById('app-subtitle').innerText = assets.subtitle;
+      document.getElementById('station-label').innerText = assets.station;
+      document.getElementById('objectives-heading').innerText = assets.obj_header;
+      document.getElementById('logs-heading').innerText = assets.log_header;
+      document.getElementById('reset-btn-label').innerText = assets.reset_label;
+      document.getElementById('search-emoji-icon').innerText = assets.search_emoji;
+      document.getElementById('add-btn-icon').innerText = assets.add_icon;
+
+      render();
+    }
+
+    // Unified render operation
+    async function render() {
+      const activeTask = state.tasks[currentTaskId];
+      if (!activeTask) {
+        currentTaskId = 'root';
+        render();
+        return;
+      }
+
+      // 1. Hide/show return home button
+      const homeBtn = document.getElementById('home-btn');
+      if (currentTaskId === 'root') homeBtn.classList.add('hidden');
+      else homeBtn.classList.remove('hidden');
+
+      // 2. Load active values
+      document.getElementById('task-title').value = activeTask.title;
+      
+      const textBlock = document.getElementById('desc-text');
+      const textInput = document.getElementById('desc-input');
+      if (activeTask.description) {
+        textBlock.innerText = activeTask.description;
+        textBlock.classList.remove('italic', 'opacity-50');
+      } else {
+        textBlock.innerText = currentTheme === 'cyberpunk' ? "NO_DESC_ENTERED_IN_DATABASE_NODE" : "No descriptive details set for this context objective.";
+        textBlock.classList.add('italic', 'opacity-50');
+      }
+      textInput.value = activeTask.description || '';
+
+      // 3. Status checkbox indicator
+      const activeDone = isTaskDone(currentTaskId);
+      const indicator = document.getElementById('active-done-indicator');
+      const label = document.getElementById('active-done-label');
+      const activeDoneBtn = document.getElementById('active-done-btn');
+
+      if (activeDone) {
+        indicator.className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]";
+        label.className = "font-bold text-emerald-600";
+        label.innerText = currentTheme === 'cyberpunk' ? "RESOLVED" : currentTheme === 'ghibli' ? "Bloomed" : "Completed";
+        activeDoneBtn.className = "dyn-btn-outline flex items-center gap-1.5 px-3 py-2 text-xs font-semibold shrink-0 bg-emerald-500/10 border-emerald-500";
+      } else {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        label.className = "font-bold text-stone-600";
+        label.innerText = currentTheme === 'cyberpunk' ? "ACTIVE_OP" : currentTheme === 'ghibli' ? "Sprouting" : "Pending";
+        activeDoneBtn.className = "dyn-btn-outline flex items-center gap-1.5 px-3 py-2 text-xs font-semibold shrink-0 bg-transparent";
+      }
+
+      // 4. Hierarchical breadcrumbs output
+      const breadContainer = document.getElementById('breadcrumbs');
+      breadContainer.innerHTML = '';
+      
+      const path = [];
+      let temp = activeTask;
+      while (temp) {
+        path.unshift(temp);
+        temp = temp.parent_id ? state.tasks[temp.parent_id] : null;
+      }
+
+      path.forEach((pTask, index) => {
+        const isLast = index === path.length - 1;
+        const btn = document.createElement('button');
+        btn.innerText = currentTheme === 'cyberpunk' ? `[${pTask.title.toUpperCase()}]` : pTask.title;
+        btn.className = isLast 
+          ? "font-bold text-stone-900 pointer-events-none cursor-default" 
+          : "hover:text-stone-900 transition-colors underline underline-offset-4 decoration-stone-200 font-medium text-xs";
+        
+        if (!isLast) {
+          btn.onclick = () => selectTask(pTask.id);
+        }
+        breadContainer.appendChild(btn);
+
+        if (!isLast) {
+          const arrow = document.createElement('span');
+          arrow.innerText = currentTheme === 'cyberpunk' ? " > " : " → ";
+          arrow.className = "font-bold px-1 text-stone-400";
+          breadContainer.appendChild(arrow);
+        }
+      });
+
+      // 5. String tags lists
+      const tagsWrapper = document.getElementById('tags-wrapper');
+      tagsWrapper.innerHTML = '';
+      const tags = activeTask.tags ? activeTask.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags.forEach(t => {
+        const badge = document.createElement('span');
+        badge.className = "dyn-badge text-xs py-0.5 px-2.5 rounded-full flex items-center gap-1 font-semibold";
+        badge.innerHTML = `
+          <span>${currentTheme === 'cyberpunk' ? t.toUpperCase() : t}</span>
+          <button onclick="removeTag('${t}')" class="text-stone-400 hover:text-stone-900 ml-1">✕</button>
+        `;
+        tagsWrapper.appendChild(badge);
+      });
+
+      // 6. Highlight active scope toggle
+      document.getElementById('scope-immediate').className = scopeMode === 'immediate'
+        ? "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md bg-stone-800 text-white font-bold transition-all"
+        : "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md text-stone-500 hover:text-stone-800 font-bold transition-all";
+
+      document.getElementById('scope-descendants').className = scopeMode === 'descendants'
+        ? "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md bg-stone-800 text-white font-bold transition-all"
+        : "text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md text-stone-500 hover:text-stone-800 font-bold transition-all";
+
+      // Apply highlighting for status filter buttons
+      document.querySelectorAll('[id^="status-"]').forEach(btn => {
+        btn.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full border border-transparent text-stone-500 hover:text-stone-800 transition-all";
+      });
+      const activeStatusBtn = document.getElementById(`status-${statusFilter}`);
+      if (activeStatusBtn) {
+        activeStatusBtn.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-white border border-stone-300 text-stone-800 shadow-sm transition-all";
+      }
+
+      // 7. Render Objectives dynamic components list
+      const objectivesContainer = document.getElementById('objectives-list');
+      objectivesContainer.innerHTML = '';
+
+      let sourceList = [];
+      if (scopeMode === 'immediate') {
+        sourceList = activeTask.sub_tasks.map(sid => state.tasks[sid]).filter(Boolean);
+      } else {
+        sourceList = getDescendantTasks(currentTaskId);
+      }
+
+      const filteredTasks = sourceList.filter(task => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = task.title.toLowerCase().includes(query) || 
+                              (task.description || '').toLowerCase().includes(query) ||
+                              (task.tags || '').toLowerCase().includes(query);
+
+        const done = isTaskDone(task.id);
+        let matchesStatus = true;
+        if (statusFilter === 'pending') matchesStatus = !done;
+        else if (statusFilter === 'completed') matchesStatus = done;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('list-count').innerText = `${filteredTasks.length} ${currentTheme === 'cyberpunk' ? 'NODES' : currentTheme === 'ghibli' ? 'LEAVES' : 'TASKS'}`;
+
+      if (filteredTasks.length === 0) {
+        objectivesContainer.innerHTML = `
+          <div class="p-8 text-center border-2 border-dashed border-stone-300/40 bg-white/20 rounded-lg">
+            <p class="text-xs text-stone-400 font-semibold">${currentTheme === 'cyberpunk' ? 'SYS: DIRECTORY_QUERY_RETURNED_NULL' : 'Rainfall cleared the path. No active items matched.'}</p>
+          </div>
+        `;
+      } else {
+        filteredTasks.forEach(task => {
+          const done = isTaskDone(task.id);
+          const localPath = getRelativePath(task.id, currentTaskId);
+
+          const card = document.createElement('div');
+          card.className = "dyn-card p-4 flex justify-between items-center cursor-pointer group";
+          
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+              selectTask(task.id);
+            }
+          };
+
+          const miniTagMarkup = task.tags 
+            ? task.tags.split(',').map(t => `<span class="dyn-badge text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">${currentTheme === 'cyberpunk' ? t.toUpperCase() : t}</span>`).join(' ')
+            : '';
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <button onclick="event.stopPropagation(); toggleTaskDoneState('${task.id}')" class="dyn-checkbox w-4 h-4 mt-0.5 transition-colors flex items-center justify-center shrink-0 ${done ? 'checked' : ''} text-[10px]">
+                ${done ? '✓' : ''}
+              </button>
+              <div class="min-w-0 flex-1">
+                ${(scopeMode === 'descendants' && localPath) ? `<span class="text-[9px] uppercase tracking-wider text-stone-400 font-bold block mb-0.5">${currentTheme === 'cyberpunk' ? localPath.toUpperCase() : localPath}</span>` : ''}
+                <span class="text-xs font-bold block truncate ${done ? 'line-through opacity-50 text-stone-400' : ''}">${currentTheme === 'cyberpunk' ? task.title.toUpperCase() : task.title}</span>
+                <div class="flex gap-1 mt-1">${miniTagMarkup}</div>
+              </div>
+            </div>
+            <button onclick="deleteSubtask('${task.id}')" class="text-stone-400 hover:text-rose-600 transition-colors p-1.5 text-xs font-semibold">
+              ${currentTheme === 'cyberpunk' ? '[DEL]' : currentTheme === 'ghibli' ? 'Prune' : 'Remove'}
+            </button>
+          `;
+          objectivesContainer.appendChild(card);
+        });
+      }
+
+      // 8. Render Comments Timeline list
+      const timeline = document.getElementById('logs-timeline');
+      timeline.innerHTML = '';
+      const logs = state.logs[currentTaskId] || [];
+      document.getElementById('log-count').innerText = logs.length;
+
+      if (logs.length === 0) {
+        timeline.innerHTML = `<p class="text-[11px] text-stone-400 italic text-center py-12">${currentTheme === 'cyberpunk' ? 'SYSTEM_TELEMETRY: EMPTY' : 'No comments logged in this workspace yet.'}</p>`;
+      } else {
+        logs.forEach(l => {
+          const logBox = document.createElement('div');
+          logBox.className = "dyn-card p-3 text-[11px] space-y-1.5 shadow-sm";
+          logBox.innerHTML = `
+            <div class="flex justify-between text-[9px] text-stone-400 border-b border-stone-200/40 pb-1 font-bold">
+              <span>Timestamp</span>
+              <span>${l.timestamp}</span>
+            </div>
+            <p class="leading-relaxed font-semibold whitespace-pre-line">${currentTheme === 'cyberpunk' ? l.content.toUpperCase() : l.content}</p>
+          `;
+          timeline.appendChild(logBox);
+        });
+      }
+    }
+
+    // Toggle description editor displays
+    function toggleEditDescription(show) {
+      if (show) {
+        document.getElementById('desc-display-box').classList.add('hidden');
+        document.getElementById('desc-input-box').classList.remove('hidden');
+        document.getElementById('desc-input').focus();
+      } else {
+        document.getElementById('desc-display-box').classList.remove('hidden');
+        document.getElementById('desc-input-box').classList.add('hidden');
+      }
+    }
+
+    function saveDescription() {
+      const textVal = document.getElementById('desc-input').value.trim();
+      state.tasks[currentTaskId].description = textVal;
+      saveState();
+      toggleEditDescription(false);
+      render();
+    }
+
+    // Done Status triggers
+    function toggleTaskDoneState(id) {
+      if (!state.keyValues[id]) state.keyValues[id] = [];
+      const index = state.keyValues[id].findIndex(kv => kv.key === 'done');
+      if (index > -1) {
+        state.keyValues[id][index].value = state.keyValues[id][index].value === 'true' ? 'false' : 'true';
+      } else {
+        state.keyValues[id].push({ key: 'done', type: 'boolean', value: 'true' });
+      }
+      saveState();
+      render();
+    }
+
+    function toggleActiveTaskDone() {
+      toggleTaskDoneState(currentTaskId);
+    }
+
+    // Quick add title-only child subtask action
+    function addSubtask() {
+      const input = document.getElementById('new-subtask');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const id = 'task_' + Math.random().toString(36).substr(2, 9);
+      state.tasks[id] = { id, title, description: "", parent_id: currentTaskId, sub_tasks: [], tags: "" };
+      state.keyValues[id] = [{ key: "done", type: "boolean", value: "false" }];
+      state.tasks[currentTaskId].sub_tasks.push(id);
+
+      input.value = '';
+      saveState();
+      showToast(currentTheme === 'cyberpunk' ? `NODE_CREATION: SUCCESS` : "Objective added successfully.");
+      render();
+    }
+
+    // Delete subtask recursively
+    function deleteSubtask(subId) {
+      const parentTask = state.tasks[currentTaskId];
+      if (parentTask) {
+        parentTask.sub_tasks = parentTask.sub_tasks.filter(id => id !== subId);
+      }
+      const deleteRecursive = (id) => {
+        const task = state.tasks[id];
+        if (!task) return;
+        task.sub_tasks.forEach(sid => deleteRecursive(sid));
+        delete state.tasks[id];
+        delete state.keyValues[id];
+        delete state.logs[id];
+      };
+      deleteRecursive(subId);
+      saveState();
+      showToast(currentTheme === 'cyberpunk' ? "NODE_DELETION: COMPLETED" : "Objective removed.");
+      render();
+    }
+
+    // Title updater
+    function updateTaskTitle(title) {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      state.tasks[currentTaskId].title = trimmed;
+      saveState();
+      render();
+    }
+
+    // Tag list actions
+    function addTag(val) {
+      const raw = val.trim().replace(/,/g, '');
+      if (!raw) return;
+      const active = state.tasks[currentTaskId];
+      const tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      if (!tags.includes(raw)) {
+        tags.push(raw);
+        active.tags = tags.join(', ');
+        saveState();
+      }
+      document.getElementById('new-tag').value = '';
+      render();
+    }
+
+    function removeTag(tag) {
+      const active = state.tasks[currentTaskId];
+      let tags = active.tags ? active.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      tags = tags.filter(t => t !== tag);
+      active.tags = tags.join(', ');
+      saveState();
+      render();
+    }
+
+    // Add progress log notes
+    function saveLog() {
+      const input = document.getElementById('log-input');
+      const val = input.value.trim();
+      if (!val) return;
+      if (!state.logs[currentTaskId]) state.logs[currentTaskId] = [];
+      state.logs[currentTaskId].push({
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        content: val,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      input.value = '';
+      saveState();
+      render();
+    }
+
+    // Clear and reset state defaults
+    function resetDefaults() {
+      localStorage.removeItem('unified_multitheme_workspace_db');
+      state = { tasks: {}, keyValues: {}, logs: {} };
+      seedData();
+      selectTask('root');
+      showToast(currentTheme === 'cyberpunk' ? "SYSTEM_DEFAULTS_RESTORED" : "Seeds defaults restored.");
+    }
+
+    // Toast alert triggers
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2500);
+    }
+
+    // Startup Lifecycle
+    seedData();
+
+    // Check last cached state params
+    const cachedId = localStorage.getItem('unified_workspace_active_id');
+    if (cachedId && state.tasks[cachedId]) currentTaskId = cachedId;
+
+    const cachedTheme = localStorage.getItem('unified_workspace_theme') || 'nordic';
+    setTheme(cachedTheme);
+  </script>
+</body>
+</html>
