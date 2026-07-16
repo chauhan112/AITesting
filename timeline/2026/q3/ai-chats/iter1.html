@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Chat Client</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar styling for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-zinc-900 text-zinc-100 font-sans h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-72 bg-zinc-950 flex flex-col justify-between border-r border-zinc-800 h-full">
+        <!-- Top part of Sidebar -->
+        <div class="p-4 flex flex-col flex-1 overflow-hidden">
+            <button onclick="createNewChat()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                New Chat
+            </button>
+
+            <!-- Chat History (Last 5) -->
+            <div class="mt-6 flex-1 overflow-y-auto">
+                <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Recent History</h2>
+                <ul id="history-list" class="space-y-1">
+                    <!-- Dynamic chat items will load here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Part of Sidebar (Settings Trigger) -->
+        <div class="p-4 border-t border-zinc-800">
+            <button onclick="openSettings()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Model Settings
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CHAT INTERFACE -->
+    <main class="flex-1 flex flex-col h-full bg-zinc-900">
+        <!-- HEADER -->
+        <header class="h-16 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-900/50 backdrop-blur-md">
+            <div>
+                <h1 id="current-chat-title" class="text-lg font-semibold text-zinc-100">New Chat</h1>
+            </div>
+            <!-- Model Selection Dropdown -->
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-zinc-400">Active Model:</span>
+                <select id="model-dropdown" class="bg-zinc-800 text-sm text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <!-- Populated dynamically via settings -->
+                </select>
+            </div>
+        </header>
+
+        <!-- CHAT BODY (Messages) -->
+        <section id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Messages will be rendered here -->
+            <div class="text-center text-zinc-500 mt-20">
+                <p class="text-lg">Welcome to your Chat Interface</p>
+                <p class="text-sm mt-2">Configure your models in settings to start communicating.</p>
+            </div>
+        </section>
+
+        <!-- INPUT FOOTER -->
+        <footer class="p-4 border-t border-zinc-800 bg-zinc-900">
+            <div class="max-w-4xl mx-auto flex items-center gap-2">
+                <textarea id="message-input" rows="1" placeholder="Type your message..." class="flex-1 bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-32"></textarea>
+                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition duration-200">
+                    <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
+            </div>
+        </footer>
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-lg font-semibold">API & Model Settings</h3>
+                <button onclick="closeSettings()" class="text-zinc-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Scrollable configurations -->
+            <div class="space-y-5 overflow-y-auto max-h-[70vh] pr-1">
+                <!-- OpenAI Compatible Config -->
+                <div>
+                    <h4 class="text-sm font-bold text-blue-400 mb-2">OpenAI-Compatible API</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-zinc-400 mb-1">Base URL</label>
+                            <input type="text" id="openai-url" placeholder="https://api.openai.com/v1" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 mb-1">API Key</label>
+                            <input type="password" id="openai-key" placeholder="sk-..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 mb-1">Available Models (Comma separated)</label>
+                            <input type="text" id="openai-models" placeholder="gpt-4o, gpt-4-turbo" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-zinc-850">
+
+                <!-- Ollama Config -->
+                <div>
+                    <h4 class="text-sm font-bold text-teal-400 mb-2">Ollama (Local)</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-zinc-400 mb-1">Base URL</label>
+                            <input type="text" id="ollama-url" placeholder="http://localhost:11434" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 mb-1">Available Models (Comma separated)</label>
+                            <input type="text" id="ollama-models" placeholder="llama3, mistral, phi3" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="flex justify-end gap-3 border-t border-zinc-800 pt-3">
+                <button onclick="closeSettings()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-lg text-sm transition">Cancel</button>
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">Save Configurations</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP JAVASCRIPT -->
+    <script>
+        // State variables
+        let chats = [];
+        let activeChatId = null;
+        let settings = {
+            openaiUrl: 'https://api.openai.com/v1',
+            openaiKey: '',
+            openaiModels: 'gpt-4o, gpt-3.5-turbo',
+            ollamaUrl: 'http://localhost:11434',
+            ollamaModels: 'llama3, mistral'
+        };
+
+        // DOM elements
+        const historyList = document.getElementById('history-list');
+        const modelDropdown = document.getElementById('model-dropdown');
+        const chatMessages = document.getElementById('chat-messages');
+        const currentChatTitle = document.getElementById('current-chat-title');
+        const messageInput = document.getElementById('message-input');
+        const settingsModal = document.getElementById('settings-modal');
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadChats();
+            populateModelDropdown();
+            renderSidebar();
+
+            if (chats.length === 0) {
+                createNewChat();
+            } else {
+                selectChat(chats[0].id);
+            }
+
+            // Enter key handler for the textarea
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        // Local Storage Utilities
+        function loadSettings() {
+            const saved = localStorage.getItem('chat_app_settings');
+            if (saved) {
+                settings = JSON.parse(saved);
+            }
+        }
+
+        function loadChats() {
+            const saved = localStorage.getItem('chat_app_sessions');
+            if (saved) {
+                chats = JSON.parse(saved);
+            }
+        }
+
+        function saveChatsToStorage() {
+            localStorage.setItem('chat_app_sessions', JSON.stringify(chats));
+        }
+
+        // Dropdown populator
+        function populateModelDropdown() {
+            modelDropdown.innerHTML = '';
+            
+            // Add OpenAI compatible models
+            if (settings.openaiModels) {
+                const openaiList = settings.openaiModels.split(',').map(m => m.trim()).filter(Boolean);
+                openaiList.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = `openai|${model}`;
+                    option.textContent = `${model} (OpenAI-compatible)`;
+                    modelDropdown.appendChild(option);
+                });
+            }
+
+            // Add Ollama models
+            if (settings.ollamaModels) {
+                const ollamaList = settings.ollamaModels.split(',').map(m => m.trim()).filter(Boolean);
+                ollamaList.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = `ollama|${model}`;
+                    option.textContent = `${model} (Ollama)`;
+                    modelDropdown.appendChild(option);
+                });
+            }
+        }
+
+        // Render Sidebar - Displays only the last 5 chats
+        function renderSidebar() {
+            historyList.innerHTML = '';
+            
+            // Slice the last 5 chats
+            const recentChats = chats.slice(0, 5);
+
+            recentChats.forEach(chat => {
+                const isActive = chat.id === activeChatId;
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <button onclick="selectChat('${chat.id}')" class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between group transition ${isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'}">
+                        <span class="truncate pr-2">${chat.title}</span>
+                        <span onclick="deleteChat(event, '${chat.id}')" class="text-zinc-500 hover:text-red-400 hidden group-hover:block transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </span>
+                    </button>
+                `;
+                historyList.appendChild(li);
+            });
+        }
+
+        // Render Messages in the Active Chat
+        function renderMessages() {
+            chatMessages.innerHTML = '';
+            const activeChat = chats.find(c => c.id === activeChatId);
+            if (!activeChat || activeChat.messages.length === 0) {
+                chatMessages.innerHTML = `
+                    <div class="text-center text-zinc-500 mt-20">
+                        <p class="text-lg">This is a new chat session.</p>
+                        <p class="text-sm mt-2">Type your message below to begin.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            activeChat.messages.forEach(msg => {
+                const msgEl = document.createElement('div');
+                msgEl.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const isUser = msg.role === 'user';
+                msgEl.innerHTML = `
+                    <div class="max-w-2xl px-4 py-3 rounded-xl shadow-md text-sm leading-relaxed ${isUser ? 'bg-blue-600 text-white rounded-br-none' : 'bg-zinc-800 text-zinc-200 rounded-bl-none'}">
+                        <div class="font-semibold text-xs mb-1 opacity-75">${isUser ? 'You' : 'AI'}</div>
+                        <div class="whitespace-pre-wrap">${escapeHTML(msg.content)}</div>
+                    </div>
+                `;
+                chatMessages.appendChild(msgEl);
+            });
+
+            // Auto Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Create a new Chat Session
+        function createNewChat() {
+            const newChat = {
+                id: Date.now().toString(),
+                title: 'New Chat',
+                messages: []
+            };
+            
+            // Add to the front of the array
+            chats.unshift(newChat);
+            activeChatId = newChat.id;
+            
+            saveChatsToStorage();
+            renderSidebar();
+            selectChat(newChat.id);
+        }
+
+        // Select and display a chat
+        function selectChat(id) {
+            activeChatId = id;
+            const activeChat = chats.find(c => c.id === activeChatId);
+            if (activeChat) {
+                currentChatTitle.textContent = activeChat.title;
+            }
+            renderSidebar();
+            renderMessages();
+        }
+
+        // Delete a Chat Session
+        function deleteChat(event, id) {
+            event.stopPropagation(); // Stop parent click event
+            chats = chats.filter(c => c.id !== id);
+            saveChatsToStorage();
+            
+            if (activeChatId === id) {
+                if (chats.length > 0) {
+                    activeChatId = chats[0].id;
+                } else {
+                    createNewChat();
+                    return;
+                }
+            }
+            renderSidebar();
+            selectChat(activeChatId);
+        }
+
+        // Send message flow
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            const activeChat = chats.find(c => c.id === activeChatId);
+            if (!activeChat) return;
+
+            // Clear Input Area
+            messageInput.value = '';
+
+            // Update chat title if it's the first message
+            if (activeChat.messages.length === 0) {
+                const words = text.split(' ').slice(0, 5).join(' ');
+                activeChat.title = words.length > 30 ? words.substring(0, 30) + '...' : words;
+            }
+
+            // Append User Message
+            activeChat.messages.push({ role: 'user', content: text });
+            renderMessages();
+
+            // Re-order active chat to the top of list (history update)
+            chats = chats.filter(c => c.id !== activeChatId);
+            chats.unshift(activeChat);
+            saveChatsToStorage();
+            renderSidebar();
+
+            // Add an artificial "Typing..." skeleton message
+            const assistantIndex = activeChat.messages.length;
+            activeChat.messages.push({ role: 'assistant', content: 'Typing...' });
+            renderMessages();
+
+            // Perform API Request
+            try {
+                const modelSelection = modelDropdown.value;
+                if (!modelSelection) {
+                    throw new Error("No model configured or selected.");
+                }
+
+                const [provider, modelName] = modelSelection.split('|');
+                const messagesPayload = activeChat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
+
+                let reply = "";
+
+                if (provider === 'openai') {
+                    reply = await queryOpenAI(modelName, messagesPayload);
+                } else if (provider === 'ollama') {
+                    reply = await queryOllama(modelName, messagesPayload);
+                }
+
+                activeChat.messages[assistantIndex].content = reply;
+            } catch (err) {
+                activeChat.messages[assistantIndex].content = `Error: ${err.message}. Please verify your API URL, key, and network options.`;
+            }
+
+            saveChatsToStorage();
+            renderMessages();
+        }
+
+        // OpenAI Fetch Call
+        async function queryOpenAI(model, messages) {
+            const endpoint = `${settings.openaiUrl.replace(/\/+$/, '')}/chat/completions`;
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (settings.openaiKey) {
+                headers['Authorization'] = `Bearer ${settings.openaiKey}`;
+            }
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error?.message || `Server responded with status ${res.status}`);
+            }
+
+            const data = await res.json();
+            return data.choices[0].message.content;
+        }
+
+        // Ollama Fetch Call
+        async function queryOllama(model, messages) {
+            const endpoint = `${settings.ollamaUrl.replace(/\/+$/, '')}/api/chat`;
+            
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    stream: false
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Server responded with status ${res.status}`);
+            }
+
+            const data = await res.json();
+            return data.message.content;
+        }
+
+        // Settings Dialog Management
+        function openSettings() {
+            document.getElementById('openai-url').value = settings.openaiUrl;
+            document.getElementById('openai-key').value = settings.openaiKey;
+            document.getElementById('openai-models').value = settings.openaiModels;
+            document.getElementById('ollama-url').value = settings.ollamaUrl;
+            document.getElementById('ollama-models').value = settings.ollamaModels;
+
+            settingsModal.classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            settingsModal.classList.add('hidden');
+        }
+
+        function saveSettings() {
+            settings.openaiUrl = document.getElementById('openai-url').value.trim() || 'https://api.openai.com/v1';
+            settings.openaiKey = document.getElementById('openai-key').value.trim();
+            settings.openaiModels = document.getElementById('openai-models').value.trim();
+            settings.ollamaUrl = document.getElementById('ollama-url').value.trim() || 'http://localhost:11434';
+            settings.ollamaModels = document.getElementById('ollama-models').value.trim();
+
+            localStorage.setItem('chat_app_settings', JSON.stringify(settings));
+            populateModelDropdown();
+            closeSettings();
+        }
+
+        // Helper string encoder to avoid HTML injection
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
