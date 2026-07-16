@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Notes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-neutral-50 text-neutral-800 min-h-screen">
+
+    <!-- 1. List View (Main Page) -->
+    <div id="listView">
+        <!-- Top Navigation -->
+        <header class="border-b border-neutral-200 bg-white/85 backdrop-blur sticky top-0 z-10">
+            <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="clearSearch()">
+                    <div class="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">N</div>
+                    <h1 class="text-xl font-bold tracking-tight text-neutral-900">Notes</h1>
+                </div>
+                
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <!-- Search Input -->
+                    <div class="relative flex-1 md:w-80">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search notes or tags..." 
+                            class="w-full pl-10 pr-4 py-2 text-sm bg-neutral-100 focus:bg-white border border-transparent focus:border-neutral-300 rounded-xl outline-none transition duration-150"
+                        />
+                        <svg class="absolute left-3.5 top-2.5 h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+
+                    <!-- Add Note Button -->
+                    <button 
+                        id="openFormBtn"
+                        class="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition whitespace-nowrap"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        New Note
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Notes Container -->
+        <main class="max-w-6xl mx-auto px-4 py-8">
+            <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Notes populated dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- 2. Form View (Simulated Dedicated Writing Page) -->
+    <div id="formView" class="hidden max-w-2xl mx-auto px-4 py-12">
+        <!-- Back Navigation Button -->
+        <button 
+            id="backBtn" 
+            class="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800 transition mb-8 font-medium group"
+        >
+            <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Notes
+        </button>
+
+        <!-- View Title indicator -->
+        <h2 id="formTitle" class="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6">New Note</h2>
+
+        <!-- Note Edit Form -->
+        <form id="noteForm" class="space-y-6">
+            <input type="hidden" id="noteId" />
+            
+            <div>
+                <input 
+                    type="text" 
+                    id="titleInput" 
+                    placeholder="Title" 
+                    required
+                    class="w-full text-3xl font-bold text-neutral-900 border-b border-neutral-100 focus:border-neutral-300 pb-3 outline-none transition"
+                />
+            </div>
+
+            <div>
+                <textarea 
+                    id="contentInput" 
+                    rows="10" 
+                    placeholder="Start writing..." 
+                    required
+                    class="w-full text-base text-neutral-700 outline-none resize-none pb-3 border-b border-neutral-100 focus:border-neutral-300 transition leading-relaxed"
+                ></textarea>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                <div class="flex-1">
+                    <input 
+                        type="text" 
+                        id="tagsInput" 
+                        placeholder="Tags (comma-separated, e.g. life, work)" 
+                        class="w-full text-sm text-neutral-600 bg-neutral-100/60 focus:bg-white border border-transparent focus:border-neutral-300 px-3.5 py-2 rounded-xl outline-none transition"
+                    />
+                </div>
+                <div class="flex space-x-3">
+                    <button 
+                        type="submit" 
+                        class="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium py-2.5 px-6 rounded-xl transition shrink-0"
+                    >
+                        <span id="submitBtnText">Publish Note</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // --- 1. Class Model Definition ---
+        class NoteModel {
+            constructor() {
+                this.storageKey = 'minimal_notes_db_v3';
+                this.notes = JSON.parse(localStorage.getItem(this.storageKey)) || [];
+                
+                if (this.notes.length === 0) {
+                    this.notes = [
+                        {
+                            id: '1',
+                            title: 'Welcome to Minimal Notes',
+                            content: 'This application is built using Tailwind CSS and native ES6 JavaScript classes. You can add, edit, delete, and copy notes with ease.',
+                            tags: ['welcome', 'guide'],
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: '2',
+                            title: 'Navigation Layout',
+                            content: 'The modal layout has been replaced with clean page-state routing. Creating or editing a note transitions you directly to a minimalist writer interface.',
+                            tags: ['navigation', 'updates'],
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    this.save();
+                }
+            }
+
+            save() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.notes));
+            }
+
+            // Create
+            create(title, content, tagsRaw) {
+                const tags = this._parseTags(tagsRaw);
+                const note = {
+                    id: Date.now().toString(),
+                    title,
+                    content,
+                    tags,
+                    createdAt: new Date().toISOString()
+                };
+                this.notes.unshift(note);
+                this.save();
+                return note;
+            }
+
+            // Read
+            read(id) {
+                return this.notes.find(note => note.id === id) || null;
+            }
+
+            // Read All
+            read_all() {
+                return this.notes;
+            }
+
+            // Update
+            update(id, updatedFields) {
+                const index = this.notes.findIndex(note => note.id === id);
+                if (index !== -1) {
+                    if (updatedFields.tags !== undefined) {
+                        updatedFields.tags = this._parseTags(updatedFields.tags);
+                    }
+                    this.notes[index] = { ...this.notes[index], ...updatedFields };
+                    this.save();
+                    return this.notes[index];
+                }
+                return null;
+            }
+
+            // Delete
+            delete(id) {
+                const index = this.notes.findIndex(note => note.id === id);
+                if (index !== -1) {
+                    this.notes.splice(index, 1);
+                    this.save();
+                    return true;
+                }
+                return false;
+            }
+
+            _parseTags(tagsInput) {
+                if (Array.isArray(tagsInput)) return tagsInput;
+                if (!tagsInput) return [];
+                return tagsInput
+                    .split(',')
+                    .map(t => t.trim().toLowerCase())
+                    .filter(t => t.length > 0);
+            }
+        }
+
+        // --- 2. Application UI Controller ---
+        const model = new NoteModel();
+        let editingId = null;
+
+        // Views Cache
+        const listView = document.getElementById('listView');
+        const formView = document.getElementById('formView');
+
+        // Navigation controls
+        const openFormBtn = document.getElementById('openFormBtn');
+        const backBtn = document.getElementById('backBtn');
+        
+        // Form Fields
+        const noteForm = document.getElementById('noteForm');
+        const formTitle = document.getElementById('formTitle');
+        const noteIdInput = document.getElementById('noteId');
+        const titleInput = document.getElementById('titleInput');
+        const contentInput = document.getElementById('contentInput');
+        const tagsInput = document.getElementById('tagsInput');
+        const searchInput = document.getElementById('searchInput');
+        const notesContainer = document.getElementById('notesContainer');
+        const submitBtnText = document.getElementById('submitBtnText');
+
+        // Page State Switcher
+        function navigateTo(viewName) {
+            if (viewName === 'list') {
+                listView.classList.remove('hidden');
+                formView.classList.add('hidden');
+                resetForm();
+                renderNotes(searchInput.value);
+            } else if (viewName === 'form') {
+                listView.classList.add('hidden');
+                formView.classList.remove('hidden');
+                window.scrollTo({ top: 0 });
+            }
+        }
+
+        // Render logic
+        function renderNotes(filterText = '') {
+            const notes = model.read_all();
+            const normalizedFilter = filterText.toLowerCase().trim();
+
+            const filteredNotes = notes.filter(note => {
+                if (!normalizedFilter) return true;
+                const matchesTitle = note.title.toLowerCase().includes(normalizedFilter);
+                const matchesContent = note.content.toLowerCase().includes(normalizedFilter);
+                const matchesTag = note.tags.some(tag => tag.toLowerCase().includes(normalizedFilter));
+                return matchesTitle || matchesContent || matchesTag;
+            });
+
+            notesContainer.innerHTML = '';
+
+            if (filteredNotes.length === 0) {
+                notesContainer.innerHTML = `
+                    <div class="col-span-full py-20 text-center text-neutral-400">
+                        <p class="text-sm font-medium">No notes match your request.</p>
+                        <button onclick="clearSearch()" class="mt-2 text-xs text-neutral-600 underline hover:text-black">Clear search</button>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredNotes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between";
+                
+                const tagsMarkup = note.tags.map(tag => `
+                    <span 
+                        onclick="searchByTag('${tag}'); event.stopPropagation();" 
+                        class="inline-block bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium px-2.5 py-0.5 rounded-md cursor-pointer mr-1 mb-1 transition duration-150"
+                    >
+                        #${escapeHTML(tag)}
+                    </span>
+                `).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <h3 class="font-semibold text-neutral-900 text-base break-words mb-2">${escapeHTML(note.title)}</h3>
+                        <p class="text-sm text-neutral-600 break-words whitespace-pre-wrap leading-relaxed mb-4">${escapeHTML(note.content)}</p>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap mb-4">
+                            ${tagsMarkup}
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-neutral-100 text-xs text-neutral-400">
+                            <span>${new Date(note.createdAt).toLocaleDateString()}</span>
+                            <div class="flex space-x-3">
+                                <button onclick="copyNote('${note.id}', this); event.stopPropagation();" class="text-neutral-500 hover:text-neutral-900 font-medium transition">Copy</button>
+                                <button onclick="editNote('${note.id}'); event.stopPropagation();" class="text-neutral-500 hover:text-neutral-900 font-medium transition">Edit</button>
+                                <button onclick="deleteNote('${note.id}'); event.stopPropagation();" class="text-red-500 hover:text-red-700 font-medium transition">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notesContainer.appendChild(card);
+            });
+        }
+
+        // HTML escaping utility for basic security
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Form reset logic
+        function resetForm() {
+            editingId = null;
+            noteForm.reset();
+            formTitle.textContent = 'New Note';
+            submitBtnText.textContent = 'Publish Note';
+        }
+
+        // --- 3. Interaction Handlers ---
+
+        // Navigate to write page (New Note)
+        openFormBtn.addEventListener('click', () => {
+            editingId = null;
+            navigateTo('form');
+        });
+
+        // Click back button to exit editor
+        backBtn.addEventListener('click', () => navigateTo('list'));
+
+        // Copy Note Content
+        window.copyNote = async function(id, buttonEl) {
+            const note = model.read(id);
+            if (!note) return;
+
+            try {
+                await navigator.clipboard.writeText(note.content);
+                const originalText = buttonEl.textContent;
+                buttonEl.textContent = 'Copied!';
+                buttonEl.classList.add('text-emerald-600');
+                
+                setTimeout(() => {
+                    buttonEl.textContent = originalText;
+                    buttonEl.classList.remove('text-emerald-600');
+                }, 1500);
+            } catch (err) {
+                console.error('Error copying text: ', err);
+            }
+        };
+
+        // Form submission (Add or Save)
+        noteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            const tags = tagsInput.value.trim();
+
+            if (!title || !content) return;
+
+            if (editingId) {
+                model.update(editingId, { title, content, tags });
+            } else {
+                model.create(title, content, tags);
+            }
+
+            navigateTo('list');
+        });
+
+        // Edit Mode Populator
+        window.editNote = function(id) {
+            const note = model.read(id);
+            if (!note) return;
+
+            editingId = id;
+            titleInput.value = note.title;
+            contentInput.value = note.content;
+            tagsInput.value = note.tags.join(', ');
+
+            formTitle.textContent = 'Edit Note';
+            submitBtnText.textContent = 'Save Changes';
+            
+            navigateTo('form');
+        };
+
+        // Delete action
+        window.deleteNote = function(id) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                model.delete(id);
+                if (editingId === id) resetForm();
+                renderNotes(searchInput.value);
+            }
+        };
+
+        // Tag Filter helper
+        window.searchByTag = function(tag) {
+            searchInput.value = tag;
+            renderNotes(tag);
+        };
+
+        window.clearSearch = function() {
+            searchInput.value = '';
+            renderNotes();
+        };
+
+        // Real-time Search input binding
+        searchInput.addEventListener('input', (e) => {
+            renderNotes(e.target.value);
+        });
+
+        // Initial setup
+        renderNotes();
+    </script>
+</body>
+</html>
