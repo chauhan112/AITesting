@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Search Component</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <p class="text-xs text-gray-500 mb-2 font-mono">
+            Resize browser width (below 768px for mobile, above for laptop) to preview.
+        </p>
+
+        <div class="hidden md:flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <!-- Add New Button -->
+            <button class="flex items-center justify-center p-2 bg-green-600 hover:bg-green-700 text-white rounded shadow-sm cursor-pointer transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+            </button>
+
+            <!-- Chips -->
+            <div class="flex flex-wrap gap-1.5 items-center">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    status:active
+                </span>
+            </div>
+
+            <!-- Search Input Wrapper -->
+            <div class="flex-grow flex items-center border border-gray-300 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all bg-white">
+                <input type="text" placeholder="Type filter (e.g. status:active) and hit Enter..." class="flex-grow min-w-0 outline-none text-gray-700 px-3 py-1.5 text-sm bg-transparent">
+            </div>
+
+            <!-- Filter Dropdown & Search Actions -->
+            <div class="flex items-center gap-2">
+                <button class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded shadow-sm font-medium cursor-pointer transition-colors">
+                    Search
+                </button>
+                
+                <select class="border border-gray-300 rounded text-sm p-1.5 text-gray-700 outline-none bg-white cursor-pointer focus:border-blue-500">
+                    <option value="">--filter--</option>
+                </select>
+
+                <button class="text-gray-500 hover:text-gray-700 p-1 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-search-container" class="flex md:hidden flex-col gap-2 p-2 bg-white rounded-lg border border-gray-200 shadow-sm transition-all duration-200">
+            
+            <!-- Mobile Compact Bar (Always Visible) -->
+            <div class="flex items-center gap-2">
+                <div class="flex-grow flex items-center border border-gray-300 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all bg-white">
+                    <input id="mobile-search-input" type="text" placeholder="Tap to search or filter..." class="flex-grow min-w-0 outline-none text-gray-700 px-3 py-2 text-sm bg-transparent">
+                    
+                    <!-- Check/Done Button (Revealed only when expanded to collapse it) -->
+                    <button id="mobile-done-btn" class="hidden p-2 text-green-500 hover:text-green-700 cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Filter Toggle Icon -->
+                <button id="mobile-toggle-btn" class="text-gray-500 hover:text-gray-700 p-1 cursor-pointer">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Expanded Panel (Hidden by default) -->
+            <div id="mobile-expanded-panel" class="hidden flex-col gap-3 pt-2.5 border-t border-gray-100">
+                
+                <!-- Chips Row -->
+                <div class="flex flex-wrap gap-1.5 items-center">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        status:active
+                    </span>
+                </div>
+
+                <!-- Filter Selection Dropdown -->
+                <div>
+                    <select class="w-full border border-gray-300 rounded text-sm p-2 text-gray-700 outline-none bg-white cursor-pointer focus:border-blue-500">
+                        <option value="">--filter--</option>
+                    </select>
+                </div>
+
+                <!-- Bottom Actions -->
+                <div class="flex gap-2">
+                    <!-- Mobile Add New Button -->
+                    <button class="flex items-center justify-center gap-1.5 p-2 bg-green-600 hover:bg-green-700 text-white rounded shadow-sm flex-1 font-medium text-sm cursor-pointer transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add New
+                    </button>
+                    
+                    <!-- Mobile Search Button -->
+                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded shadow-sm font-medium flex-1 cursor-pointer transition-colors">
+                        Search
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileInput = document.getElementById('mobile-search-input');
+            const mobilePanel = document.getElementById('mobile-expanded-panel');
+            const mobileDoneBtn = document.getElementById('mobile-done-btn');
+            const mobileToggleBtn = document.getElementById('mobile-toggle-btn');
+            const mobileContainer = document.getElementById('mobile-search-container');
+
+            function expandMobile() {
+                mobilePanel.classList.remove('hidden');
+                mobilePanel.classList.add('flex');
+                mobileDoneBtn.classList.remove('hidden');
+            }
+
+            function collapseMobile() {
+                mobilePanel.classList.add('hidden');
+                mobilePanel.classList.remove('flex');
+                mobileDoneBtn.classList.add('hidden');
+            }
+
+            // Expand mobile view when input is focused
+            mobileInput.addEventListener('focus', expandMobile);
+
+            // Toggle mobile view when toggle button is clicked
+            mobileToggleBtn.addEventListener('click', () => {
+                if (mobilePanel.classList.contains('hidden')) {
+                    expandMobile();
+                } else {
+                    collapseMobile();
+                }
+            });
+
+            // Collapse mobile view when done button is clicked
+            mobileDoneBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                collapseMobile();
+            });
+
+            // Collapse mobile view when clicking outside the component boundaries
+            document.addEventListener('click', (e) => {
+                if (!mobileContainer.contains(e.target)) {
+                    collapseMobile();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
