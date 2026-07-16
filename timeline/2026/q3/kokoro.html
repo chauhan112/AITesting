@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kokoro TTS Local Tester</title>
+        <!-- Tailwind CSS for clean styling -->
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body
+        class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4"
+    >
+        <div
+            class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-slate-700"
+        >
+            <h1 class="text-2xl font-bold text-center text-teal-400 mb-6">
+                🎙️ Kokoro TTS Tester
+            </h1>
+
+            <div class="space-y-4">
+                <!-- Text Input -->
+                <div>
+                    <label
+                        class="block text-sm font-semibold mb-1 text-slate-300"
+                        >Text to Synthesize</label
+                    >
+                    <textarea
+                        id="textInput"
+                        rows="4"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                    >
+Hello! This is a test of the modular local Text to Speech gateway running on my machine.</textarea
+                    >
+                </div>
+
+                <!-- Parameters Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Language Code -->
+                    <div>
+                        <label
+                            class="block text-sm font-semibold mb-1 text-slate-300"
+                            >Language</label
+                        >
+                        <select
+                            id="langSelect"
+                            onchange="updateDefaultVoice()"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            <option value="a" selected>English (US)</option>
+                            <option value="b">English (UK)</option>
+                            <option value="e">Spanish</option>
+                            <option value="f">French</option>
+                            <option value="h">Hindi</option>
+                            <option value="i">Italian</option>
+                            <option value="k">Korean</option>
+                            <option value="p">Portuguese (BR)</option>
+                            <option value="j">Japanese</option>
+                            <option value="z">Chinese</option>
+                        </select>
+                    </div>
+
+                    <!-- Voice Selection -->
+                    <div>
+                        <label
+                            class="block text-sm font-semibold mb-1 text-slate-300"
+                            >Voice</label
+                        >
+                        <select
+                            id="voiceSelect"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        >
+                            <!-- Filled dynamically by updateDefaultVoice() -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Speed Input -->
+                <div>
+                    <label
+                        class="block text-sm font-semibold mb-1 text-slate-300"
+                        >Speed (0.5 - 2.0)</label
+                    >
+                    <input
+                        type="number"
+                        id="speedInput"
+                        value="1.0"
+                        min="0.5"
+                        max="2.0"
+                        step="0.1"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                </div>
+
+                <!-- Generate Button -->
+                <button
+                    id="submitBtn"
+                    onclick="generateSpeech()"
+                    class="w-full bg-teal-500 hover:bg-teal-600 transition-colors text-slate-950 font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+                >
+                    Generate & Play Audio
+                </button>
+
+                <!-- Loading Spinner & Status -->
+                <div
+                    id="statusArea"
+                    class="hidden text-center text-sm font-semibold animate-pulse text-teal-400"
+                >
+                    Generating audio... Please wait (initial GPU load takes ~2
+                    seconds).
+                </div>
+
+                <!-- Error Display -->
+                <div
+                    id="errorArea"
+                    class="hidden text-center text-sm font-semibold text-red-400 p-2 bg-red-950/40 border border-red-900/60 rounded-lg"
+                ></div>
+
+                <!-- Audio Player Output -->
+                <div
+                    id="playerWrapper"
+                    class="hidden pt-4 border-t border-slate-700 mt-4"
+                >
+                    <p class="text-sm text-slate-400 mb-2">Generated Output:</p>
+                    <audio
+                        id="audioPlayer"
+                        controls
+                        class="w-full focus:outline-none"
+                    ></audio>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Mapping of supported language codes to standard voices
+            const voiceMapping = {
+                a: [
+                    "af_heart",
+                    "af_sarah",
+                    "af_bella",
+                    "am_adam",
+                    "am_michael",
+                ],
+                b: ["bf_emma", "bm_george"],
+                e: ["ef_dora", "em_alex"],
+                f: ["ff_siwis"],
+                h: ["hf_alpha", "hm_omega"],
+                i: ["if_sara", "im_nicola"],
+                k: ["kf_somi"],
+                p: ["pf_dora", "pm_alex"],
+                j: ["jf_alpha", "jm_kumo"],
+                z: ["zf_xiaobei", "zm_yunjian"],
+            };
+            TTS_URL = "/api/tts"
+            function updateDefaultVoice() {
+                const lang = document.getElementById("langSelect").value;
+                const voiceDropdown = document.getElementById("voiceSelect");
+
+                // Clear current options
+                voiceDropdown.innerHTML = "";
+
+                // Add corresponding voices
+                const voices = voiceMapping[lang] || ["af_heart"];
+                voices.forEach((voice) => {
+                    const opt = document.createElement("option");
+                    opt.value = voice;
+                    opt.textContent = voice;
+                    voiceDropdown.appendChild(opt);
+                });
+            }
+
+            async function generateSpeech() {
+                const text = document.getElementById("textInput").value;
+                const lang = document.getElementById("langSelect").value;
+                const voice = document.getElementById("voiceSelect").value;
+                const speed = parseFloat(
+                    document.getElementById("speedInput").value,
+                );
+
+                const submitBtn = document.getElementById("submitBtn");
+                const statusArea = document.getElementById("statusArea");
+                const errorArea = document.getElementById("errorArea");
+                const playerWrapper = document.getElementById("playerWrapper");
+                const audioPlayer = document.getElementById("audioPlayer");
+
+                // Hide previous results
+                errorArea.classList.add("hidden");
+                playerWrapper.classList.add("hidden");
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+                statusArea.classList.remove("hidden");
+
+                try {
+                    const response = await fetch(
+                        TTS_URL,
+                        {
+                            method: "POST",
+                            credentials: 'include',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                text: text,
+                                lang_code: lang,
+                                voice: voice,
+                                speed: speed,
+                            }),
+                        },
+                    );
+
+                    if (!response.ok) {
+                        const errorMsg = await response.text();
+                        throw new Error(
+                            errorMsg ||
+                                `Server responded with status ${response.status}`,
+                        );
+                    }
+
+                    // Convert response stream to blob & load into browser audio player
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+
+                    audioPlayer.src = audioUrl;
+                    playerWrapper.classList.remove("hidden");
+                    audioPlayer.play();
+                } catch (err) {
+                    errorArea.textContent = `Error: ${err.message}`;
+                    errorArea.classList.remove("hidden");
+                } finally {
+                    // Restore button states
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove(
+                        "opacity-50",
+                        "cursor-not-allowed",
+                    );
+                    statusArea.classList.add("hidden");
+                }
+            }
+
+            // Initialize default voice options on initial page load
+            updateDefaultVoice();
+        </script>
+    </body>
+</html>
