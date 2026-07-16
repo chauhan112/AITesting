@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sift Analysis Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 border-b border-slate-200 pb-5">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Sift Analysis Tool</h1>
+            <p class="text-slate-500 mt-2 text-sm">Filter complex datasets sequentially. Each branch filters the previous subset.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: App Interface -->
+            <div class="lg:col-span-2">
+                <div id="app-mount" class="bg-white rounded-xl shadow-sm border border-slate-200"></div>
+            </div>
+
+            <!-- Right Side: Data Preview -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col h-[600px]">
+                    <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center justify-between shrink-0">
+                        <span id="preview-title">Current Dataset</span>
+                        <span id="active-count" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">0 items</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4 shrink-0" id="preview-subtitle">Showing active branch records (Max 10 displayed)</p>
+                    <div class="overflow-y-auto flex-1 border border-slate-100 rounded-lg bg-slate-900 p-4">
+                        <pre id="data-preview" class="text-[11px] text-green-400 font-mono whitespace-pre-wrap leading-relaxed">No data loaded.</pre>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 text-slate-200 rounded-xl p-6 shadow-sm">
+                    <h3 class="font-bold text-white mb-2 text-sm">Valid Faker Queries:</h3>
+                    <ul class="space-y-2 text-xs font-mono text-slate-300">
+                        <li>• <span class="text-yellow-400">{"age": {"$gte": 40}}</span></li>
+                        <li>• <span class="text-yellow-400">{"role": "Developer"}</span></li>
+                        <li>• <span class="text-yellow-400">{"active": true}</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script type="module">
+        import sift from "https://esm.sh/sift@17.1.3";
+        import { faker } from "https://esm.sh/@faker-js/faker@8.4.1";
+
+        // Generate 100 fake items
+        const ROLES = ["Developer", "Designer", "Product Manager", "QA Engineer", "Data Scientist", "DevOps"];
+        const fakeDataList = Array.from({ length: 100 }).map(() => ({
+            id: faker.string.uuid().split('-')[0],
+            name: faker.person.fullName(),
+            age: faker.number.int({ min: 18, max: 65 }),
+            role: faker.helpers.arrayElement(ROLES),
+            city: faker.location.city(),
+            active: faker.datatype.boolean()
+        }));
+
+        // String Truncator for Breadcrumbs
+        function truncateQueryString(str, maxLength = 25) {
+            const cleaned = str.replace(/\s+/g, '');
+            if (cleaned.length <= maxLength) return cleaned;
+            return cleaned.substring(0, maxLength) + "...";
+        }
+
+        // --- Core Controllers ---
+        class UICallbackCtrl {
+            constructor() {
+                this.ops_map = {};
+                this.data = null;
+            }
+            add_ops(key, ops) {
+                this.ops_map[key] = ops;
+            }
+            async on_ops(op_name) {
+                let ops = this.ops_map[op_name];
+                if (ops) {
+                    await ops.run(this.data);
+                } else {
+                    console.log(op_name + " not found");
+                }
+            }
+        }
+
+        // --- UI Components ---
+        class TextInputComponent {
+            constructor(placeholder = "") {
+                this.input = document.createElement("input");
+                this.input.type = "text";
+                this.input.placeholder = placeholder;
+                this.input.className = "border border-slate-300 rounded-lg px-4 py-2 w-full text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm";
+            }
+            get_comp() { return this.input; }
+            set(val) { this.input.value = val; }
+            get() { return this.input.value; }
+        }
+
+        class BreadcrumbComponent {
+            constructor(onNavigate) {
+                this.onNavigate = onNavigate;
+                this.container = document.createElement("div");
+                this.container.className = "flex items-center space-x-1.5 text-sm text-slate-500 overflow-x-auto py-3 bg-slate-100/60 px-4 rounded-xl border border-slate-200 mb-6 whitespace-nowrap";
+            }
+            get_comp() { return this.container; }
+            set_vals(steps) {
+                this.container.innerHTML = "";
+                steps.forEach((step, idx) => {
+                    const btn = document.createElement("button");
+                    const isLast = idx === steps.length - 1;
+                    btn.className = `hover:text-indigo-600 transition duration-150 py-1 text-xs font-semibold ${
+                        isLast ? 'text-indigo-600' : 'text-slate-500'
+                    }`;
+                    btn.textContent = `${step.label} (${step.vals.length})`;
+                    btn.onclick = () => this.onNavigate(idx);
+                    this.container.appendChild(btn);
+
+                    if (idx < steps.length - 1) {
+                        const sep = document.createElement("span");
+                        sep.className = "text-slate-400 font-bold px-1 select-none text-[10px]";
+                        sep.textContent = ">";
+                        this.container.appendChild(sep);
+                    }
+                });
+            }
+        }
+
+        // --- Main Page Logic ---
+        class Page extends UICallbackCtrl {
+            constructor() {
+                super();
+                this.history = []; // [{label, vals}]
+                this.matchedData = [];
+                this.unmatchedData = [];
+                this.isPreviewingQuery = false;
+
+                this.domElement = document.createElement("div");
+                this.domElement.className = "p-6 sm:p-8 space-y-6";
+
+                this.build_ui();
+                this.register_operations();
+            }
+
+            set_data(data, sourceLabel = "Source") {
+                this.history = [{ label: sourceLabel, vals: data }];
+                this.breadcrumbComp.set_vals(this.history);
+                this.clear_split();
+                this.update_preview();
+            }
+
+            get_comp() {
+                return this.domElement;
+            }
+
+            build_ui() {
+                this.breadcrumbComp = new BreadcrumbComponent((idx) => {
+                    this.data = idx;
+                    this.on_ops("navigate_breadcrumb");
+                });
+                this.domElement.appendChild(this.breadcrumbComp.get_comp());
+
+                const queryWrapper = document.createElement("div");
+                queryWrapper.className = "space-y-3 bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100";
+                
+                const queryTitle = document.createElement("label");
+                queryTitle.className = "block text-sm font-bold text-slate-800";
+                queryTitle.textContent = "Sift Syntax Filter";
+                queryWrapper.appendChild(queryTitle);
+
+                this.queryInput = new TextInputComponent('{"role": "Developer"}');
+                queryWrapper.appendChild(this.queryInput.get_comp());
+
+                const applyBtn = document.createElement("button");
+                applyBtn.className = "px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition shadow-sm";
+                applyBtn.textContent = "Search / Split Dataset";
+                applyBtn.onclick = () => this.on_ops("apply_sift");
+                queryWrapper.appendChild(applyBtn);
+
+                this.domElement.appendChild(queryWrapper);
+
+                const splitGrid = document.createElement("div");
+                splitGrid.className = "grid grid-cols-1 md:grid-cols-2 gap-4 mt-4";
+
+                this.matchedBtn = document.createElement("button");
+                this.matchedBtn.className = "p-5 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition";
+                this.matchedBtn.onclick = () => this.on_ops("select_matched");
+
+                this.unmatchedBtn = document.createElement("button");
+                this.unmatchedBtn.className = "p-5 border border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-xl text-left transition";
+                this.unmatchedBtn.onclick = () => this.on_ops("select_unmatched");
+
+                splitGrid.appendChild(this.matchedBtn);
+                splitGrid.appendChild(this.unmatchedBtn);
+                this.domElement.appendChild(splitGrid);
+                
+                this.clear_split(); // Initialize default text
+            }
+
+            register_operations() {
+                // RUN SIFT QUERY
+                this.add_ops("apply_sift", {
+                    run: async () => {
+                        // ALWAYS filter starting from the LAST node in the breadcrumb history
+                        const currentActiveDataset = this.history[this.history.length - 1].vals;
+                        
+                        try {
+                            const query = JSON.parse(this.queryInput.get());
+                            const test = sift(query);
+                            
+                            this.matchedData = currentActiveDataset.filter(test);
+                            this.unmatchedData = currentActiveDataset.filter(item => !test(item));
+                            
+                            this.render_split_ui();
+                            this.isPreviewingQuery = true;
+                            this.update_preview();
+                        } catch (e) {
+                            alert("Invalid JSON Query: " + e.message);
+                        }
+                    }
+                });
+
+                // BRANCH INTO MATCHED
+                this.add_ops("select_matched", {
+                    run: async () => {
+                        if (!this.isPreviewingQuery || this.matchedData.length === 0) return;
+                        
+                        const labelString = `Matched: ${truncateQueryString(this.queryInput.get())}`;
+                        this.history.push({ label: labelString, vals: this.matchedData });
+                        
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+
+                // BRANCH INTO UNMATCHED
+                this.add_ops("select_unmatched", {
+                    run: async () => {
+                        if (!this.isPreviewingQuery || this.unmatchedData.length === 0) return;
+                        
+                        const labelString = `Unmatched: ${truncateQueryString(this.queryInput.get())}`;
+                        this.history.push({ label: labelString, vals: this.unmatchedData });
+                        
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+
+                // BREADCRUMB NAVIGATION (ROLLBACK)
+                this.add_ops("navigate_breadcrumb", {
+                    run: async (idx) => {
+                        // Truncate history array back to the clicked index
+                        this.history = this.history.slice(0, idx + 1);
+                        
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+            }
+
+            render_split_ui() {
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-bold text-emerald-800 text-xs tracking-wider uppercase">Branch Matched ➔</span>
+                    <span class="text-sm text-emerald-600 mt-1 font-semibold">${this.matchedData.length} records fit query</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-bold text-rose-800 text-xs tracking-wider uppercase">Branch Unmatched ➔</span>
+                    <span class="text-sm text-rose-600 mt-1 font-semibold">${this.unmatchedData.length} records bypassed</span>
+                `;
+            }
+
+            clear_split() {
+                this.matchedData = [];
+                this.unmatchedData = [];
+                this.isPreviewingQuery = false;
+                
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-xs tracking-wide uppercase">Matched Branch</span>
+                    <span class="text-xs text-slate-400 mt-1">Pending query execution</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-xs tracking-wide uppercase">Unmatched Branch</span>
+                    <span class="text-xs text-slate-400 mt-1">Pending query execution</span>
+                `;
+            }
+
+            update_preview() {
+                const activeCountLabel = document.getElementById("active-count");
+                const previewTitle = document.getElementById("preview-title");
+                const previewSubtitle = document.getElementById("preview-subtitle");
+                const previewElement = document.getElementById("data-preview");
+
+                let previewData = [];
+
+                if (this.isPreviewingQuery) {
+                    previewTitle.textContent = "Previewing Target (Matched)";
+                    previewSubtitle.textContent = "Showing output of query before branching";
+                    previewData = this.matchedData;
+                    activeCountLabel.className = "text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold";
+                } else {
+                    previewTitle.textContent = "Current Dataset Snapshot";
+                    previewSubtitle.textContent = "Showing committed records for this breadcrumb";
+                    previewData = this.history[this.history.length - 1]?.vals || [];
+                    activeCountLabel.className = "text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold";
+                }
+
+                // Strictly truncate display list to prevent DOM lag
+                const displayedItems = previewData.slice(0, 10);
+                let text = JSON.stringify(displayedItems, null, 2);
+                
+                if (previewData.length > 10) {
+                    text += `\n\n... and ${previewData.length - 10} more items hidden.`;
+                }
+
+                activeCountLabel.textContent = `${previewData.length} total items`;
+                previewElement.textContent = text;
+            }
+        }
+
+        // Bootstrapping the app
+        document.addEventListener("DOMContentLoaded", () => {
+            const mount = document.getElementById("app-mount");
+            const page = new Page();
+            mount.appendChild(page.get_comp());
+            
+            // Push faker data to the system root
+            page.set_data(fakeDataList, "Faker Data Source");
+        });
+    </script>
+</body>
+</html>

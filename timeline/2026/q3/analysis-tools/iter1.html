@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sift Analysis Tool</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Sift Analysis Tool</h1>
+            <p class="text-slate-500 mt-2 text-sm">Interactive dataset partitioner using MongoDB-like query syntax.</p>
+        </header>
+
+        <!-- Main Layout Split: App Controls on Left, Live Data Preview on Right -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Side: Interactive Page Area (Columns 1 & 2) -->
+            <div class="lg:col-span-2">
+                <div id="app-mount" class="bg-white rounded-xl shadow-sm border border-slate-200"></div>
+            </div>
+
+            <!-- Right Side: Live Reference Data Preview (Column 3) -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center justify-between">
+                        <span>Active Dataset</span>
+                        <span id="active-count" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">0 items</span>
+                    </h2>
+                    <div class="overflow-y-auto max-h-[500px] border border-slate-100 rounded-lg bg-slate-50 p-3">
+                        <pre id="data-preview" class="text-xs text-slate-700 font-mono whitespace-pre-wrap leading-relaxed">No data loaded.</pre>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 text-slate-200 rounded-xl p-6 shadow-sm">
+                    <h3 class="font-bold text-white mb-2 text-sm">Query Syntax Guide:</h3>
+                    <p class="text-xs text-slate-400 mb-4">You can target fields like <code class="text-indigo-300 font-mono">role</code>, <code class="text-indigo-300 font-mono">age</code>, <code class="text-indigo-300 font-mono">active</code>, or <code class="text-indigo-300 font-mono">city</code>.</p>
+                    <ul class="space-y-2 text-xs font-mono text-slate-300">
+                        <li>• <span class="text-yellow-400">{"age": {"$gte": 30}}</span></li>
+                        <li>• <span class="text-yellow-400">{"role": "Developer"}</span></li>
+                        <li>• <span class="text-yellow-400">{"active": true}</span></li>
+                        <li>• <span class="text-yellow-400">{"city": {"$in": ["Berlin", "Bochum"]}}</span></li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script type="module">
+        // Import sift directly via esm.sh CDN
+        import sift from "https://esm.sh/sift@17.1.3";
+
+        // --- Core Framework Interfaces & Implementations ---
+
+        class InMemoryCache {
+            constructor() {
+                this.storage = new Map();
+            }
+            async set_cache(label, vals) {
+                this.storage.set(label, JSON.parse(JSON.stringify(vals)));
+            }
+            async get_cache_list() {
+                return Array.from(this.storage.entries()).map(([label, vals]) => ({ label, vals }));
+            }
+        }
+
+        class LocalStorageCache {
+            constructor(prefix = "analysis_cache_") {
+                this.prefix = prefix;
+            }
+            async set_cache(label, vals) {
+                localStorage.setItem(this.prefix + label, JSON.stringify(vals));
+            }
+            async get_cache_list() {
+                const list = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(this.prefix)) {
+                        const label = key.replace(this.prefix, "");
+                        try {
+                            const vals = JSON.parse(localStorage.getItem(key) || "[]");
+                            list.push({ label, vals });
+                        } catch (e) {
+                            console.error("Failed to parse cache item", key, e);
+                        }
+                    }
+                }
+                return list;
+            }
+        }
+
+        class UICallbackCtrl {
+            constructor() {
+                this.ops_map = {};
+                this.console_it = true;
+                this.data = null;
+                this.undoer = [];
+            }
+
+            add_ops(key, ops) {
+                this.ops_map[key] = ops;
+            }
+
+            async on_ops(op_name) {
+                await this.undo();
+                let ops = this.ops_map[op_name];
+                if (ops) {
+                    await ops.run(this.data);
+                } else {
+                    if (this.console_it) console.log(op_name + " not found");
+                }
+            }
+
+            async undo() {
+                for (let undo of this.undoer) {
+                    await undo.run();
+                }
+                this.undoer = [];
+            }
+
+            add_undo(undo) {
+                this.undoer.push(undo);
+            }
+        }
+
+        // --- Leaf UI Components ---
+
+        class TextInputComponent {
+            constructor(placeholder = "") {
+                this.input = document.createElement("input");
+                this.input.type = "text";
+                this.input.placeholder = placeholder;
+                this.input.className = "border border-slate-300 rounded-lg px-4 py-2.5 w-full text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm";
+            }
+            get_comp() { return this.input; }
+            set(val) { this.input.value = val; }
+            get() { return this.input.value; }
+        }
+
+        class BreadcrumbComponent {
+            constructor(onNavigate) {
+                this.onNavigate = onNavigate;
+                this.container = document.createElement("div");
+                this.container.className = "flex items-center space-x-2 text-sm text-slate-500 overflow-x-auto py-2 bg-slate-50 px-4 rounded-lg border border-slate-100";
+            }
+
+            get_comp() { return this.container; }
+
+            set_vals(steps) {
+                this.container.innerHTML = "";
+                steps.forEach((step, idx) => {
+                    const btn = document.createElement("button");
+                    const isLast = idx === steps.length - 1;
+                    btn.className = `hover:text-indigo-600 transition duration-150 py-1 font-semibold text-xs uppercase tracking-wider ${
+                        isLast ? 'text-indigo-600' : 'text-slate-400'
+                    }`;
+                    btn.textContent = `${step.label} (${step.vals.length})`;
+                    btn.onclick = () => this.onNavigate(idx);
+                    this.container.appendChild(btn);
+
+                    if (idx < steps.length - 1) {
+                        const sep = document.createElement("span");
+                        sep.innerHTML = `
+                            <svg class="h-4 w-4 text-slate-300" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        `;
+                        this.container.appendChild(sep);
+                    }
+                });
+            }
+        }
+
+        class GenericContainer {
+            constructor(className = "") {
+                this.element = document.createElement("div");
+                this.element.className = className;
+            }
+            get_comp() { return this.element; }
+            display(comp) {
+                this.element.innerHTML = "";
+                if (comp) {
+                    this.element.appendChild(comp.get_comp());
+                }
+            }
+        }
+
+        // --- Core Page Component & Coordinator ---
+
+        class Page extends UICallbackCtrl {
+            constructor() {
+                super();
+                this.cacheModel = new InMemoryCache();
+                this.history = [];
+                this.matchedData = [];
+                this.unmatchedData = [];
+
+                this.domElement = document.createElement("div");
+                this.domElement.className = "p-6 sm:p-8 space-y-6";
+
+                this.build_ui();
+                this.register_operations();
+            }
+
+            set_cache_model(model) {
+                this.cacheModel = model;
+                this.on_ops("refresh_cache_list");
+            }
+
+            set_data(data) {
+                this.history = [{ label: "Source", vals: data }];
+                this.breadcrumbComp.set_vals(this.history);
+                this.clear_split();
+                this.update_preview();
+            }
+
+            get_comp() {
+                return this.domElement;
+            }
+
+            build_ui() {
+                // 1. Breadcrumb Component container
+                this.breadcrumbComp = new BreadcrumbComponent((idx) => {
+                    this.data = idx;
+                    this.on_ops("navigate_breadcrumb");
+                });
+                this.domElement.appendChild(this.breadcrumbComp.get_comp());
+
+                // 2. Query Configuration Field
+                const queryWrapper = document.createElement("div");
+                queryWrapper.className = "space-y-3 bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100";
+                
+                const queryTitle = document.createElement("label");
+                queryTitle.className = "block text-sm font-bold text-slate-800";
+                queryTitle.textContent = "Sift Query Syntax";
+                queryWrapper.appendChild(queryTitle);
+
+                this.queryInput = new TextInputComponent('{"role": "Developer"}');
+                queryWrapper.appendChild(this.queryInput.get_comp());
+
+                const applyBtn = document.createElement("button");
+                applyBtn.className = "w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow transition-colors duration-150";
+                applyBtn.textContent = "Test Split";
+                applyBtn.onclick = () => this.on_ops("apply_sift");
+                queryWrapper.appendChild(applyBtn);
+
+                this.domElement.appendChild(queryWrapper);
+
+                // 3. Branches / Paths Action Cards
+                const splitTitle = document.createElement("h3");
+                splitTitle.className = "text-sm font-bold text-slate-500 uppercase tracking-wide mb-2";
+                splitTitle.textContent = "Sift Results: Choose a branch path to step in";
+                this.domElement.appendChild(splitTitle);
+
+                const splitGrid = document.createElement("div");
+                splitGrid.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+                this.matchedBtn = document.createElement("button");
+                this.matchedBtn.className = "p-5 border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 rounded-xl text-left transition duration-150 flex flex-col group relative";
+                this.matchedBtn.onclick = () => this.on_ops("select_matched");
+
+                this.unmatchedBtn = document.createElement("button");
+                this.unmatchedBtn.className = "p-5 border border-rose-200 bg-rose-50/50 hover:bg-rose-50 rounded-xl text-left transition duration-150 flex flex-col group relative";
+                this.unmatchedBtn.onclick = () => this.on_ops("select_unmatched");
+
+                splitGrid.appendChild(this.matchedBtn);
+                splitGrid.appendChild(this.unmatchedBtn);
+                this.domElement.appendChild(splitGrid);
+
+                // 4. Session Manager
+                const cacheWrapper = document.createElement("div");
+                cacheWrapper.className = "pt-6 border-t border-slate-200 space-y-4";
+
+                const cacheHeading = document.createElement("h3");
+                cacheHeading.className = "text-md font-bold text-slate-800";
+                cacheHeading.textContent = "Saved Datasets";
+                cacheWrapper.appendChild(cacheHeading);
+
+                const cacheActionRow = document.createElement("div");
+                cacheActionRow.className = "flex gap-2";
+
+                this.cacheNameInput = new TextInputComponent("Active dataset label...");
+                cacheActionRow.appendChild(this.cacheNameInput.get_comp());
+
+                const saveBtn = document.createElement("button");
+                saveBtn.className = "px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg shadow whitespace-nowrap transition-colors duration-150";
+                saveBtn.textContent = "Save Dataset";
+                saveBtn.onclick = () => this.on_ops("save_to_cache");
+                cacheActionRow.appendChild(saveBtn);
+
+                cacheWrapper.appendChild(cacheActionRow);
+
+                this.cacheListContainer = new GenericContainer("grid grid-cols-1 md:grid-cols-2 gap-3 mt-2");
+                cacheWrapper.appendChild(this.cacheListContainer.get_comp());
+
+                this.domElement.appendChild(cacheWrapper);
+            }
+
+            register_operations() {
+                // Apply MongoDB query filtering via sift
+                this.add_ops("apply_sift", {
+                    run: async () => {
+                        const activeSnapshot = this.history[this.history.length - 1]?.vals || [];
+                        try {
+                            const query = JSON.parse(this.queryInput.get());
+                            const test = sift(query);
+                            this.matchedData = activeSnapshot.filter(test);
+                            this.unmatchedData = activeSnapshot.filter(item => !test(item));
+                            this.render_split_ui();
+
+                            // Undo registry pattern resets preview splits
+                            this.add_undo({
+                                run: async () => this.clear_split()
+                            });
+                        } catch (e) {
+                            alert("Sift error: " + e.message);
+                        }
+                    }
+                });
+
+                // Choose matching records branch
+                this.add_ops("select_matched", {
+                    run: async () => {
+                        if (this.matchedData.length === 0) return;
+                        this.history.push({ label: `Matched: ${this.queryInput.get()}`, vals: this.matchedData });
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+
+                // Choose unmatched records branch
+                this.add_ops("select_unmatched", {
+                    run: async () => {
+                        if (this.unmatchedData.length === 0) return;
+                        this.history.push({ label: `Unmatched: ${this.queryInput.get()}`, vals: this.unmatchedData });
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+
+                // Step backward in time via breadcrumb index
+                this.add_ops("navigate_breadcrumb", {
+                    run: async (idx) => {
+                        this.history = this.history.slice(0, idx + 1);
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.update_preview();
+                    }
+                });
+
+                // Cache active dataset status inside ICacheModel
+                this.add_ops("save_to_cache", {
+                    run: async () => {
+                        const name = this.cacheNameInput.get().trim();
+                        const currentData = this.history[this.history.length - 1]?.vals || [];
+                        if (!name) return alert("Please supply a valid name.");
+                        await this.cacheModel.set_cache(name, currentData);
+                        this.cacheNameInput.set("");
+                        await this.on_ops("refresh_cache_list");
+                    }
+                });
+
+                // Redraw saved library options
+                this.add_ops("refresh_cache_list", {
+                    run: async () => {
+                        const list = await this.cacheModel.get_cache_list();
+                        const wrapper = document.createElement("div");
+                        wrapper.className = "contents";
+
+                        if (list.length === 0) {
+                            wrapper.innerHTML = `<span class="col-span-full text-xs text-slate-400 italic">No saved datasets yet.</span>`;
+                        } else {
+                            list.forEach(item => {
+                                const card = document.createElement("div");
+                                card.className = "flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200/60 rounded-xl text-sm";
+                                
+                                const desc = document.createElement("span");
+                                desc.className = "text-slate-700 font-medium";
+                                desc.textContent = `${item.label} (${item.vals.length} items)`;
+                                card.appendChild(desc);
+
+                                const actionBtn = document.createElement("button");
+                                actionBtn.className = "px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 shadow-sm rounded-md transition";
+                                actionBtn.textContent = "Start Session";
+                                actionBtn.onclick = () => {
+                                    this.set_data(item.vals);
+                                };
+                                card.appendChild(actionBtn);
+                                wrapper.appendChild(card);
+                            });
+                        }
+
+                        this.cacheListContainer.display({
+                            get_comp: () => wrapper
+                        });
+                    }
+                });
+            }
+
+            render_split_ui() {
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-bold text-emerald-800 text-sm tracking-wide">MATCHED PATH</span>
+                    <span class="text-xs text-emerald-600 mt-1">${this.matchedData.length} records fit target</span>
+                    <span class="absolute bottom-4 right-4 text-emerald-400 group-hover:translate-x-1 transition duration-150 text-lg">➔</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-bold text-rose-800 text-sm tracking-wide">UNMATCHED PATH</span>
+                    <span class="text-xs text-rose-600 mt-1">${this.unmatchedData.length} records bypassed</span>
+                    <span class="absolute bottom-4 right-4 text-rose-400 group-hover:translate-x-1 transition duration-150 text-lg">➔</span>
+                `;
+            }
+
+            clear_split() {
+                this.matchedData = [];
+                this.unmatchedData = [];
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-sm">Matched Results</span>
+                    <span class="text-xs text-slate-300 mt-1">Pending query execution</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-sm">Unmatched Results</span>
+                    <span class="text-xs text-slate-300 mt-1">Pending query execution</span>
+                `;
+            }
+
+            update_preview() {
+                const currentData = this.history[this.history.length - 1]?.vals || [];
+                const counter = document.getElementById("active-count");
+                const preview = document.getElementById("data-preview");
+                
+                counter.textContent = `${currentData.length} items`;
+                preview.textContent = JSON.stringify(currentData, null, 2);
+            }
+        }
+
+        // --- Demo Data & Orchestrated Bootstrap ---
+
+        const mockUsers = [
+            { id: 1, name: "Alice Jenkins", age: 24, role: "Developer", city: "Berlin", active: true },
+            { id: 2, name: "Bob Smith", age: 31, role: "Designer", city: "Bochum", active: false },
+            { id: 3, name: "Charlie Roy", age: 45, role: "Developer", city: "Munich", active: true },
+            { id: 4, name: "Diana Prince", age: 29, role: "Product Manager", city: "Berlin", active: true },
+            { id: 5, name: "Evan Carter", age: 36, role: "Developer", city: "Hamburg", active: false },
+            { id: 6, name: "Fiona Gallagher", age: 22, role: "Designer", city: "Bochum", active: true }
+        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const mount = document.getElementById("app-mount");
+            const page = new Page();
+            
+            // Wire Local Storage as the active Cache mechanism
+            page.set_cache_model(new LocalStorageCache());
+            
+            // Mount Component tree to window context
+            mount.appendChild(page.get_comp());
+
+            // Load original Dataset
+            page.set_data(mockUsers);
+        });
+    </script>
+</body>
+</html>

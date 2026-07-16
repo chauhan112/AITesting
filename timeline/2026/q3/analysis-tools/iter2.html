@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sift Analysis Tool</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 border-b border-slate-200 pb-5">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Sift Analysis Tool</h1>
+            <p class="text-slate-500 mt-2 text-sm">Filter complex datasets using MongoDB-style query syntax and explore matching/unmatching paths recursively.</p>
+        </header>
+
+        <!-- Main Layout Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Side: Interactive Page Area (Columns 1 & 2) -->
+            <div class="lg:col-span-2">
+                <div id="app-mount" class="bg-white rounded-xl shadow-sm border border-slate-200"></div>
+            </div>
+
+            <!-- Right Side: Live Reference Data Preview (Column 3) -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center justify-between">
+                        <span id="preview-title">Current Dataset</span>
+                        <span id="active-count" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">0 items</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4" id="preview-subtitle">Showing active branch records (Max 10 displayed)</p>
+                    <div class="overflow-y-auto max-h-[500px] border border-slate-100 rounded-lg bg-slate-900 p-4">
+                        <pre id="data-preview" class="text-xs text-green-400 font-mono whitespace-pre-wrap leading-relaxed">No data loaded.</pre>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 text-slate-200 rounded-xl p-6 shadow-sm">
+                    <h3 class="font-bold text-white mb-2 text-sm">Query Syntax Guide:</h3>
+                    <p class="text-xs text-slate-400 mb-4">Target object properties inside your active dataset:</p>
+                    <ul class="space-y-2 text-xs font-mono text-slate-300">
+                        <li>• <span class="text-yellow-400">{"age": {"$gte": 30}}</span></li>
+                        <li>• <span class="text-yellow-400">{"role": "Developer"}</span></li>
+                        <li>• <span class="text-yellow-400">{"active": true}</span></li>
+                        <li>• <span class="text-yellow-400">{"city": {"$in": ["Berlin", "Munich"]}}</span></li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script type="module">
+        import sift from "https://esm.sh/sift@17.1.3";
+
+        // Helper to cleanly truncate stringified query objects
+        function truncateQueryString(str, maxLength = 22) {
+            // Strip external spacing
+            const cleaned = str.replace(/\s+/g, '');
+            if (cleaned.length <= maxLength) return cleaned;
+            return cleaned.substring(0, maxLength) + "...";
+        }
+
+        // --- Core Framework Implementations ---
+
+        class InMemoryCache {
+            constructor() {
+                this.storage = new Map();
+            }
+            async set_cache(label, vals) {
+                this.storage.set(label, JSON.parse(JSON.stringify(vals)));
+            }
+            async get_cache_list() {
+                return Array.from(this.storage.entries()).map(([label, vals]) => ({ label, vals }));
+            }
+        }
+
+        class LocalStorageCache {
+            constructor(prefix = "analysis_cache_") {
+                this.prefix = prefix;
+            }
+            async set_cache(label, vals) {
+                localStorage.setItem(this.prefix + label, JSON.stringify(vals));
+            }
+            async get_cache_list() {
+                const list = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(this.prefix)) {
+                        const label = key.replace(this.prefix, "");
+                        try {
+                            const vals = JSON.parse(localStorage.getItem(key) || "[]");
+                            list.push({ label, vals });
+                        } catch (e) {
+                            console.error("Failed to parse cache item", key, e);
+                        }
+                    }
+                }
+                return list;
+            }
+        }
+
+        class UICallbackCtrl {
+            constructor() {
+                this.ops_map = {};
+                this.console_it = true;
+                this.data = null;
+                this.undoer = [];
+            }
+
+            add_ops(key, ops) {
+                this.ops_map[key] = ops;
+            }
+
+            async on_ops(op_name) {
+                await this.undo();
+                let ops = this.ops_map[op_name];
+                if (ops) {
+                    await ops.run(this.data);
+                } else {
+                    if (this.console_it) console.log(op_name + " not found");
+                }
+            }
+
+            async undo() {
+                for (let undo of this.undoer) {
+                    await undo.run();
+                }
+                this.undoer = [];
+            }
+
+            add_undo(undo) {
+                this.undoer.push(undo);
+            }
+        }
+
+        // --- Leaf UI Components ---
+
+        class TextInputComponent {
+            constructor(placeholder = "") {
+                this.input = document.createElement("input");
+                this.input.type = "text";
+                this.input.placeholder = placeholder;
+                this.input.className = "border border-slate-300 rounded-lg px-4 py-2.5 w-full text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm";
+            }
+            get_comp() { return this.input; }
+            set(val) { this.input.value = val; }
+            get() { return this.input.value; }
+        }
+
+        class BreadcrumbComponent {
+            constructor(onNavigate) {
+                this.onNavigate = onNavigate;
+                this.container = document.createElement("div");
+                this.container.className = "flex items-center space-x-2 text-sm text-slate-500 overflow-x-auto py-3 bg-slate-100/60 px-4 rounded-xl border border-slate-200/50 mb-6";
+            }
+
+            get_comp() { return this.container; }
+
+            set_vals(steps) {
+                this.container.innerHTML = "";
+                steps.forEach((step, idx) => {
+                    const btn = document.createElement("button");
+                    const isLast = idx === steps.length - 1;
+                    btn.className = `hover:text-indigo-600 transition duration-150 py-1 font-semibold text-xs tracking-wide ${
+                        isLast ? 'text-indigo-600 font-bold' : 'text-slate-500'
+                    }`;
+                    btn.textContent = `${step.label} (${step.vals.length})`;
+                    btn.onclick = () => this.onNavigate(idx);
+                    this.container.appendChild(btn);
+
+                    if (idx < steps.length - 1) {
+                        const sep = document.createElement("span");
+                        sep.className = "text-slate-400 font-semibold px-1 select-none text-xs";
+                        sep.textContent = ">";
+                        this.container.appendChild(sep);
+                    }
+                });
+            }
+        }
+
+        class GenericContainer {
+            constructor(className = "") {
+                this.element = document.createElement("div");
+                this.element.className = className;
+            }
+            get_comp() { return this.element; }
+            display(comp) {
+                this.element.innerHTML = "";
+                if (comp) {
+                    this.element.appendChild(comp.get_comp());
+                }
+            }
+        }
+
+        // --- Core Page Component & Coordinator ---
+
+        class Page extends UICallbackCtrl {
+            constructor() {
+                super();
+                this.cacheModel = new InMemoryCache();
+                this.history = [];
+                this.matchedData = [];
+                this.unmatchedData = [];
+                this.isPreviewingQuery = false;
+
+                this.domElement = document.createElement("div");
+                this.domElement.className = "p-6 sm:p-8 space-y-6";
+
+                this.build_ui();
+                this.register_operations();
+            }
+
+            set_cache_model(model) {
+                this.cacheModel = model;
+                this.on_ops("refresh_cache_list");
+            }
+
+            set_data(data, sourceLabel = "Source") {
+                this.history = [{ label: sourceLabel, vals: data }];
+                this.breadcrumbComp.set_vals(this.history);
+                this.clear_split();
+                this.isPreviewingQuery = false;
+                this.update_preview();
+            }
+
+            get_comp() {
+                return this.domElement;
+            }
+
+            build_ui() {
+                // 1. Breadcrumbs
+                this.breadcrumbComp = new BreadcrumbComponent((idx) => {
+                    this.data = idx;
+                    this.on_ops("navigate_breadcrumb");
+                });
+                this.domElement.appendChild(this.breadcrumbComp.get_comp());
+
+                // 2. Sift Query Wrapper
+                const queryWrapper = document.createElement("div");
+                queryWrapper.className = "space-y-3 bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100 shadow-inner";
+                
+                const queryTitle = document.createElement("label");
+                queryTitle.className = "block text-sm font-bold text-slate-800";
+                queryTitle.textContent = "Sift Query Filter";
+                queryWrapper.appendChild(queryTitle);
+
+                this.queryInput = new TextInputComponent('{"role": "Developer"}');
+                queryWrapper.appendChild(this.queryInput.get_comp());
+
+                const applyBtn = document.createElement("button");
+                applyBtn.className = "w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow transition duration-150";
+                applyBtn.textContent = "Apply Sift";
+                applyBtn.onclick = () => this.on_ops("apply_sift");
+                queryWrapper.appendChild(applyBtn);
+
+                this.domElement.appendChild(queryWrapper);
+
+                // 3. Matched/Unmatched Branch Cards
+                const splitTitle = document.createElement("h3");
+                splitTitle.className = "text-xs font-bold text-slate-400 uppercase tracking-widest pt-2";
+                splitTitle.textContent = "Branching Options";
+                this.domElement.appendChild(splitTitle);
+
+                const splitGrid = document.createElement("div");
+                splitGrid.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+                this.matchedBtn = document.createElement("button");
+                this.matchedBtn.className = "p-5 border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 rounded-xl text-left transition duration-150 flex flex-col group relative";
+                this.matchedBtn.onclick = () => this.on_ops("select_matched");
+
+                this.unmatchedBtn = document.createElement("button");
+                this.unmatchedBtn.className = "p-5 border border-rose-200 bg-rose-50/50 hover:bg-rose-50 rounded-xl text-left transition duration-150 flex flex-col group relative";
+                this.unmatchedBtn.onclick = () => this.on_ops("select_unmatched");
+
+                splitGrid.appendChild(this.matchedBtn);
+                splitGrid.appendChild(this.unmatchedBtn);
+                this.domElement.appendChild(splitGrid);
+
+                // 4. Cache Library / Sessions Manager
+                const cacheWrapper = document.createElement("div");
+                cacheWrapper.className = "pt-6 border-t border-slate-200 space-y-4";
+
+                const cacheHeading = document.createElement("h3");
+                cacheHeading.className = "text-sm font-bold text-slate-800 uppercase tracking-wider";
+                cacheHeading.textContent = "Local Session Library";
+                cacheWrapper.appendChild(cacheHeading);
+
+                const cacheActionRow = document.createElement("div");
+                cacheActionRow.className = "flex gap-2";
+
+                this.cacheNameInput = new TextInputComponent("Active dataset label...");
+                cacheActionRow.appendChild(this.cacheNameInput.get_comp());
+
+                const saveBtn = document.createElement("button");
+                saveBtn.className = "px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg shadow whitespace-nowrap transition duration-150";
+                saveBtn.textContent = "Save Dataset";
+                saveBtn.onclick = () => this.on_ops("save_to_cache");
+                cacheActionRow.appendChild(saveBtn);
+
+                cacheWrapper.appendChild(cacheActionRow);
+
+                this.cacheListContainer = new GenericContainer("grid grid-cols-1 md:grid-cols-2 gap-3 mt-2");
+                cacheWrapper.appendChild(this.cacheListContainer.get_comp());
+
+                this.domElement.appendChild(cacheWrapper);
+            }
+
+            register_operations() {
+                // RUN FILTER SIFT
+                this.add_ops("apply_sift", {
+                    run: async () => {
+                        const activeSnapshot = this.history[this.history.length - 1]?.vals || [];
+                        try {
+                            const queryStr = this.queryInput.get();
+                            const query = JSON.parse(queryStr);
+                            const test = sift(query);
+                            this.matchedData = activeSnapshot.filter(test);
+                            this.unmatchedData = activeSnapshot.filter(item => !test(item));
+                            this.render_split_ui();
+
+                            // Flag that we are previewing the matching subset
+                            this.isPreviewingQuery = true;
+                            this.update_preview();
+
+                            // Reverting search query selection
+                            this.add_undo({
+                                run: async () => {
+                                    this.clear_split();
+                                    this.isPreviewingQuery = false;
+                                    this.update_preview();
+                                }
+                            });
+                        } catch (e) {
+                            alert("Sift parsing error: " + e.message);
+                        }
+                    }
+                });
+
+                // SELECT MATCHED BRANCH
+                this.add_ops("select_matched", {
+                    run: async () => {
+                        if (this.matchedData.length === 0) return;
+                        const labelString = `Matched: ${truncateQueryString(this.queryInput.get())}`;
+                        this.history.push({ label: labelString, vals: this.matchedData });
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.isPreviewingQuery = false;
+                        this.update_preview();
+                    }
+                });
+
+                // SELECT UNMATCHED BRANCH
+                this.add_ops("select_unmatched", {
+                    run: async () => {
+                        if (this.unmatchedData.length === 0) return;
+                        const labelString = `Unmatched: ${truncateQueryString(this.queryInput.get())}`;
+                        this.history.push({ label: labelString, vals: this.unmatchedData });
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.isPreviewingQuery = false;
+                        this.update_preview();
+                    }
+                });
+
+                // BREADCRUMB REVERSION
+                this.add_ops("navigate_breadcrumb", {
+                    run: async (idx) => {
+                        this.history = this.history.slice(0, idx + 1);
+                        this.breadcrumbComp.set_vals(this.history);
+                        this.clear_split();
+                        this.isPreviewingQuery = false;
+                        this.update_preview();
+                    }
+                });
+
+                // CACHE SAVING
+                this.add_ops("save_to_cache", {
+                    run: async () => {
+                        const name = this.cacheNameInput.get().trim();
+                        const currentData = this.history[this.history.length - 1]?.vals || [];
+                        if (!name) return alert("Please supply a valid name.");
+                        await this.cacheModel.set_cache(name, currentData);
+                        this.cacheNameInput.set("");
+                        await this.on_ops("refresh_cache_list");
+                    }
+                });
+
+                // CACHE UI REDRAW
+                this.add_ops("refresh_cache_list", {
+                    run: async () => {
+                        const list = await this.cacheModel.get_cache_list();
+                        const wrapper = document.createElement("div");
+                        wrapper.className = "contents";
+
+                        if (list.length === 0) {
+                            wrapper.innerHTML = `<span class="col-span-full text-xs text-slate-400 italic">No saved library sessions.</span>`;
+                        } else {
+                            list.forEach(item => {
+                                const card = document.createElement("div");
+                                card.className = "flex justify-between items-center p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs";
+                                
+                                const desc = document.createElement("span");
+                                desc.className = "text-slate-700 font-bold";
+                                desc.textContent = `${item.label} (${item.vals.length} items)`;
+                                card.appendChild(desc);
+
+                                const actionBtn = document.createElement("button");
+                                actionBtn.className = "px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 shadow-xs rounded-md transition";
+                                actionBtn.textContent = "Load";
+                                actionBtn.onclick = () => {
+                                    this.set_data(item.vals, item.label);
+                                };
+                                card.appendChild(actionBtn);
+                                wrapper.appendChild(card);
+                            });
+                        }
+
+                        this.cacheListContainer.display({
+                            get_comp: () => wrapper
+                        });
+                    }
+                });
+            }
+
+            render_split_ui() {
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-bold text-emerald-800 text-xs tracking-wider uppercase">Branch Matched ➔</span>
+                    <span class="text-sm text-emerald-600 mt-1 font-semibold">${this.matchedData.length} records fit query</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-bold text-rose-800 text-xs tracking-wider uppercase">Branch Unmatched ➔</span>
+                    <span class="text-sm text-rose-600 mt-1 font-semibold">${this.unmatchedData.length} records bypassed</span>
+                `;
+            }
+
+            clear_split() {
+                this.matchedData = [];
+                this.unmatchedData = [];
+                this.matchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-xs tracking-wide uppercase">Matched Branch</span>
+                    <span class="text-xs text-slate-300 mt-1">Pending query split</span>
+                `;
+                this.unmatchedBtn.innerHTML = `
+                    <span class="block font-semibold text-slate-400 text-xs tracking-wide uppercase">Unmatched Branch</span>
+                    <span class="text-xs text-slate-300 mt-1">Pending query split</span>
+                `;
+            }
+
+            update_preview() {
+                const activeCountLabel = document.getElementById("active-count");
+                const previewTitle = document.getElementById("preview-title");
+                const previewSubtitle = document.getElementById("preview-subtitle");
+                const previewElement = document.getElementById("data-preview");
+
+                let previewData = [];
+
+                if (this.isPreviewingQuery) {
+                    previewTitle.textContent = "Query Matches Preview";
+                    previewSubtitle.textContent = "Displaying search outputs immediately (Max 10 displayed)";
+                    previewData = this.matchedData;
+                    activeCountLabel.className = "text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold animate-pulse";
+                } else {
+                    previewTitle.textContent = "Current Dataset";
+                    previewSubtitle.textContent = "Showing committed branch records (Max 10 displayed)";
+                    previewData = this.history[this.history.length - 1]?.vals || [];
+                    activeCountLabel.className = "text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold";
+                }
+
+                // Truncate list preview to maximum 10 elements
+                const displayedItems = previewData.slice(0, 10);
+                let text = JSON.stringify(displayedItems, null, 2);
+                
+                if (previewData.length > 10) {
+                    text += `\n\n... and ${previewData.length - 10} more items hidden.`;
+                }
+
+                activeCountLabel.textContent = `${previewData.length} items`;
+                previewElement.textContent = text;
+            }
+        }
+
+        // --- Demo Mock Dataset ---
+
+        const mockUsers = [
+            { id: 1, name: "Alice Jenkins", age: 24, role: "Developer", city: "Berlin", active: true },
+            { id: 2, name: "Bob Smith", age: 31, role: "Designer", city: "Bochum", active: false },
+            { id: 3, name: "Charlie Roy", age: 45, role: "Developer", city: "Munich", active: true },
+            { id: 4, name: "Diana Prince", age: 29, role: "Product Manager", city: "Berlin", active: true },
+            { id: 5, name: "Evan Carter", age: 36, role: "Developer", city: "Hamburg", active: false },
+            { id: 6, name: "Fiona Gallagher", age: 22, role: "Designer", city: "Bochum", active: true },
+            { id: 7, name: "George Bailey", age: 50, role: "QA Engineer", city: "London", active: true },
+            { id: 8, name: "Hannah Abbott", age: 19, role: "Intern", city: "Munich", active: true },
+            { id: 9, name: "Ian Malcolm", age: 41, role: "Consultant", city: "Austin", active: false },
+            { id: 10, name: "Julia Roberts", age: 35, role: "Recruiter", city: "Berlin", active: true },
+            { id: 11, name: "Kevin Hart", age: 42, role: "Developer", city: "Chicago", active: true },
+            { id: 12, name: "Luna Lovegood", age: 27, role: "Researcher", city: "Bochum", active: true }
+        ];
+
+        // --- Application Bootstrap ---
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const mount = document.getElementById("app-mount");
+            const page = new Page();
+            
+            // Set up LocalStorage caching
+            page.set_cache_model(new LocalStorageCache());
+            
+            mount.appendChild(page.get_comp());
+
+            // Initialize app data state
+            page.set_data(mockUsers);
+        });
+    </script>
+</body>
+</html>
