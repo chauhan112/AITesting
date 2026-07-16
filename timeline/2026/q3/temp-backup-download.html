@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup Downloader Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white shadow-lg rounded-2xl p-6 max-w-md w-full border border-slate-100">
+    <h2 class="text-2xl font-bold text-slate-800 mb-1">Backup Downloader</h2>
+    <p class="text-sm text-slate-500 mb-6">Retrieve the latest generated zip archive from the server.</p>
+
+    <!-- Configuration Section -->
+    <div class="space-y-4 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Settings</h3>
+      
+      <div>
+        <label for="serverUrl" class="block text-xs font-medium text-slate-600 mb-1">Server API URL</label>
+        <input 
+          type="text" 
+          id="serverUrl" 
+          placeholder="http://localhost:5000/download" 
+          class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      <div>
+        <label for="apiKey" class="block text-xs font-medium text-slate-600 mb-1">API Key (DOWNLOAD-API-KEY)</label>
+        <input 
+          type="password" 
+          id="apiKey" 
+          placeholder="Enter your auth key" 
+          class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      <button 
+        id="saveBtn" 
+        class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium py-2 px-4 rounded-lg transition-colors"
+      >
+        Save Settings
+      </button>
+    </div>
+
+    <!-- Download Trigger Section -->
+    <div class="text-center">
+      <button 
+        id="downloadBtn" 
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center space-x-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
+        <span>Download Backup</span>
+      </button>
+
+      <!-- Status Messages -->
+      <div id="statusText" class="mt-4 text-sm font-medium text-slate-500 hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const apiKeyInput = document.getElementById('apiKey');
+    const serverUrlInput = document.getElementById('serverUrl');
+    const saveBtn = document.getElementById('saveBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusText = document.getElementById('statusText');
+
+    // Load initial values from localStorage on page load
+    const storedApiKey = localStorage.getItem('DOWNLOAD-API-KEY') || '';
+    const storedServerUrl = localStorage.getItem('DOWNLOAD-SERVER-URL') || 'http://localhost:5000/download';
+
+    apiKeyInput.value = storedApiKey;
+    serverUrlInput.value = storedServerUrl;
+
+    // Save configurations to localStorage
+    saveBtn.addEventListener('click', () => {
+      const apiKeyVal = apiKeyInput.value.trim();
+      const serverUrlVal = serverUrlInput.value.trim();
+
+      localStorage.setItem('DOWNLOAD-API-KEY', apiKeyVal);
+      localStorage.setItem('DOWNLOAD-SERVER-URL', serverUrlVal);
+
+      showStatus('Settings successfully saved to localStorage!', 'text-emerald-600');
+    });
+
+    // Handle File Download
+    downloadBtn.addEventListener('click', async () => {
+      const apiKey = localStorage.getItem('DOWNLOAD-API-KEY');
+      const serverUrl = localStorage.getItem('DOWNLOAD-SERVER-URL') || 'http://localhost:5000/download';
+
+      if (!apiKey) {
+        showStatus('Error: API Key is missing. Please save it in settings first.', 'text-rose-600');
+        return;
+      }
+
+      showStatus('Requesting file...', 'text-indigo-600 animate-pulse');
+      downloadBtn.disabled = true;
+
+      try {
+        const response = await fetch(serverUrl, {
+          method: 'GET',
+          headers: {
+            'X-Auth-Token': apiKey
+          }
+        });
+
+        if (response.status === 200) {
+          // Convert response stream to a browser Blob
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const contentDisposition = response.headers.get('Content-Disposition');
+          let filename = 'archive.zip';
+          if (contentDisposition) {
+            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            const matches = filenameRegex.exec(contentDisposition);
+            if (matches != null && matches[1]) { 
+              filename = matches[1].replace(/['"]/g, '');
+            }
+          }
+
+          // Trigger file download programmatically
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          
+          // Cleanup
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(downloadUrl);
+
+          showStatus('File downloaded successfully!', 'text-emerald-600');
+        } else if (response.status === 401) {
+          showStatus('Download failed: 401 Unauthorized. Verify your API Key.', 'text-rose-600');
+        } else if (response.status === 404) {
+          showStatus('Download failed: 404 Not Found. The server has not generated the zip yet.', 'text-rose-600');
+        } else {
+          showStatus(`Download failed. Status: ${response.status}`, 'text-rose-600');
+        }
+      } catch (error) {
+        console.error(error);
+        showStatus('Connection error. Is the Flask server running and CORS enabled?', 'text-rose-600');
+      } finally {
+        downloadBtn.disabled = false;
+      }
+    });
+
+    // Helper to display clean state messages
+    function showStatus(message, textClass) {
+      statusText.textContent = message;
+      statusText.className = `mt-4 text-sm font-medium ${textClass}`;
+    }
+  </script>
+</body>
+</html>
