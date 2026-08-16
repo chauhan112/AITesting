@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#090b10]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Forge — Coding Agent</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: "#090b10",
+            panel: "#0f1219",
+            panel2: "#141821",
+            line: "#242936",
+            muted: "#8b93a7",
+            accent: "#7c5cff",
+            accent2: "#22c55e"
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+            mono: ["JetBrains Mono", "SFMono-Regular", "Consolas", "monospace"]
+          },
+          boxShadow: {
+            glow: "0 0 40px rgba(124, 92, 255, .18)"
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #303646 transparent;
+    }
+
+    *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: #303646;
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 50% -20%, rgba(124, 92, 255, .12), transparent 36rem),
+        #090b10;
+    }
+
+    .noise {
+      background-image:
+        linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .fade-in {
+      animation: fadeIn .2s ease-out;
+    }
+
+    .slide-up {
+      animation: slideUp .25s ease-out;
+    }
+
+    .pulse-dot {
+      animation: pulseDot 1.5s infinite;
+    }
+
+    .typing::after {
+      content: "▋";
+      color: #7c5cff;
+      animation: blink .8s steps(2, start) infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(.8); opacity: .4; }
+      50% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+
+<body class="h-full overflow-hidden text-slate-200 antialiased">
+  <div class="noise flex h-full min-h-0">
+
+    <!-- Mobile overlay -->
+    <button
+      id="mobileOverlay"
+      class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden"
+      aria-label="Close sidebar"
+    ></button>
+
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="fixed inset-y-0 left-0 z-40 flex w-[290px] -translate-x-full flex-col border-r border-line bg-panel/95 backdrop-blur-xl transition-transform duration-200 lg:static lg:translate-x-0"
+    >
+      <div class="flex h-16 shrink-0 items-center gap-3 border-b border-line px-4">
+        <div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-indigo-400 shadow-glow">
+          <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+            <path d="M8 9 4 12l4 3M16 9l4 3-4 3M14 5l-4 14"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="font-semibold tracking-tight text-white">Forge</h1>
+            <span class="rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-300">
+              Agent
+            </span>
+          </div>
+          <p class="text-xs text-muted">Autonomous workspace</p>
+        </div>
+
+        <button
+          id="closeSidebar"
+          class="ml-auto rounded-lg p-2 text-muted hover:bg-white/5 hover:text-white lg:hidden"
+          aria-label="Close sidebar"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-3">
+        <button
+          data-open-new-task
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:bg-violet-500"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          New task
+          <span class="ml-auto rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">⌘ N</span>
+        </button>
+
+        <div class="relative mt-3">
+          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="runSearch"
+            type="search"
+            placeholder="Search runs..."
+            class="w-full rounded-xl border border-line bg-canvas/70 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-600 focus:border-accent/60 focus:ring-2 focus:ring-accent/10"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between px-4 pb-2 pt-1">
+        <p class="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">Recent runs</p>
+        <button id="refreshRuns" class="rounded-md p-1.5 text-muted hover:bg-white/5 hover:text-white" title="Refresh runs">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66L20 8M20 4v4h-4"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav id="runList" class="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-4"></nav>
+
+      <div class="border-t border-line p-3">
+        <div class="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[.03]">
+          <div class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40"></span>
+              <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+            </span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-medium text-slate-300">Agent service</p>
+            <p class="text-[11px] text-muted">Connected</p>
+          </div>
+          <span class="ml-auto font-mono text-[10px] text-muted">v1.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <main class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center gap-3 border-b border-line bg-canvas/65 px-4 backdrop-blur-xl sm:px-5">
+        <button
+          id="openSidebar"
+          class="rounded-lg p-2 text-muted hover:bg-white/5 hover:text-white lg:hidden"
+          aria-label="Open sidebar"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="min-w-0">
+          <div class="flex min-w-0 items-center gap-2">
+            <h2 id="runTitle" class="truncate text-sm font-semibold text-white sm:text-base"></h2>
+            <span id="runStatus"></span>
+          </div>
+          <div id="runMeta" class="mt-0.5 flex items-center gap-2 overflow-hidden text-[11px] text-muted"></div>
+        </div>
+
+        <div class="ml-auto flex items-center gap-1.5">
+          <button
+            id="cancelRun"
+            class="hidden items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-xs font-medium text-slate-300 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300"
+          >
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+              <rect x="6" y="6" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            <span class="hidden sm:inline">Stop</span>
+          </button>
+
+          <button
+            id="deleteRun"
+            class="rounded-lg border border-line bg-panel p-2 text-muted hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300"
+            title="Delete run"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h16M9 7V4h6v3M6.5 7l.8 13h9.4l.8-13M10 11v5M14 11v5"
+                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <button
+            id="moreButton"
+            class="rounded-lg border border-line bg-panel p-2 text-muted hover:bg-white/5 hover:text-white"
+            title="More actions"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="flex min-h-0 flex-1">
+        <section class="flex min-w-0 flex-1 flex-col">
+          <div class="flex h-11 shrink-0 items-end gap-5 border-b border-line px-4 sm:px-6">
+            <button data-tab="activity" class="tab-button h-full border-b-2 px-1 text-xs font-medium">
+              Activity
+            </button>
+            <button data-tab="files" class="tab-button h-full border-b-2 px-1 text-xs font-medium">
+              Files
+              <span id="fileCount" class="ml-1 rounded-full bg-white/5 px-1.5 py-0.5 text-[10px] text-muted">0</span>
+            </button>
+          </div>
+
+          <div id="activityTab" class="min-h-0 flex-1 overflow-y-auto">
+            <div id="activityFeed" class="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6"></div>
+          </div>
+
+          <div id="filesTab" class="hidden min-h-0 flex-1 overflow-y-auto">
+            <div class="mx-auto max-w-5xl px-4 py-5 sm:px-6">
+              <div class="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Workspace files</h3>
+                  <p class="mt-1 text-xs text-muted">Files generated or modified by this run.</p>
+                </div>
+                <button
+                  id="downloadFiles"
+                  class="rounded-lg border border-line bg-panel px-3 py-2 text-xs text-slate-300 hover:bg-white/5 hover:text-white"
+                >
+                  Download all
+                </button>
+              </div>
+
+              <div id="fileGrid" class="overflow-hidden rounded-xl border border-line bg-panel"></div>
+            </div>
+          </div>
+
+          <!-- Follow-up composer -->
+          <div class="shrink-0 border-t border-line bg-canvas/80 p-3 backdrop-blur-xl sm:px-5">
+            <form id="followupForm" class="mx-auto flex max-w-4xl items-end gap-2 rounded-xl border border-line bg-panel p-2 focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+              <textarea
+                id="followupInput"
+                rows="1"
+                placeholder="Ask the agent to make a change..."
+                class="max-h-36 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-5 outline-none placeholder:text-slate-600"
+              ></textarea>
+              <button
+                type="submit"
+                class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Send follow-up"
+              >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <path d="m5 12 14-7-4 14-3.5-5.5L5 12Z"
+                        stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </form>
+            <p class="mx-auto mt-1.5 max-w-4xl px-1 text-[10px] text-muted">
+              Enter to send · Shift + Enter for a new line
+            </p>
+          </div>
+        </section>
+
+        <!-- Right details rail -->
+        <aside class="hidden w-[300px] shrink-0 border-l border-line bg-panel/40 xl:flex xl:flex-col">
+          <div class="border-b border-line p-4">
+            <p class="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">Run overview</p>
+          </div>
+
+          <div class="space-y-6 overflow-y-auto p-4">
+            <section>
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="text-xs font-semibold text-slate-300">Progress</h3>
+                <span id="progressLabel" class="font-mono text-[10px] text-muted">100%</span>
+              </div>
+              <div class="h-1.5 overflow-hidden rounded-full bg-white/5">
+                <div id="progressBar" class="h-full rounded-full bg-gradient-to-r from-accent to-indigo-400 transition-all duration-500"></div>
+              </div>
+              <p id="progressText" class="mt-2 text-[11px] text-muted"></p>
+            </section>
+
+            <section>
+              <h3 class="mb-3 text-xs font-semibold text-slate-300">Details</h3>
+              <dl id="detailList" class="space-y-3 text-xs"></dl>
+            </section>
+
+            <section>
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="text-xs font-semibold text-slate-300">Changed files</h3>
+                <span id="railFileCount" class="text-[10px] text-muted"></span>
+              </div>
+              <div id="railFiles" class="space-y-1"></div>
+            </section>
+
+            <section>
+              <h3 class="mb-3 text-xs font-semibold text-slate-300">Usage</h3>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="rounded-lg border border-line bg-canvas/50 p-3">
+                  <p class="text-[10px] text-muted">Tokens</p>
+                  <p id="tokenUsage" class="mt-1 font-mono text-xs text-slate-300"></p>
+                </div>
+                <div class="rounded-lg border border-line bg-canvas/50 p-3">
+                  <p class="text-[10px] text-muted">Duration</p>
+                  <p id="durationUsage" class="mt-1 font-mono text-xs text-slate-300"></p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- New task modal -->
+  <div id="newTaskModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div class="slide-up w-full max-w-2xl overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/50">
+      <div class="flex items-center justify-between border-b border-line px-5 py-4">
+        <div>
+          <h2 class="font-semibold text-white">Start a new task</h2>
+          <p class="mt-0.5 text-xs text-muted">Describe what you want the coding agent to build or change.</p>
+        </div>
+        <button data-close-modal class="rounded-lg p-2 text-muted hover:bg-white/5 hover:text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <form id="newTaskForm" class="p-5">
+        <label for="taskInput" class="mb-2 block text-xs font-medium text-slate-300">Task</label>
+        <textarea
+          id="taskInput"
+          rows="7"
+          required
+          placeholder="Example: Build a responsive analytics dashboard with authentication, charts, and a dark theme..."
+          class="w-full resize-none rounded-xl border border-line bg-canvas p-4 text-sm leading-6 outline-none placeholder:text-slate-600 focus:border-accent/60 focus:ring-2 focus:ring-accent/10"
+        ></textarea>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="workspaceInput" class="mb-2 block text-xs font-medium text-slate-300">Workspace</label>
+            <input
+              id="workspaceInput"
+              type="text"
+              placeholder="my-project"
+              class="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm outline-none placeholder:text-slate-600 focus:border-accent/60"
+            />
+          </div>
+
+          <div>
+            <label for="modelInput" class="mb-2 block text-xs font-medium text-slate-300">Model</label>
+            <select
+              id="modelInput"
+              class="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm outline-none focus:border-accent/60"
+            >
+              <option value="">Default model</option>
+              <option value="claude-sonnet">Claude Sonnet</option>
+              <option value="gpt-coding">GPT Coding</option>
+              <option value="local-agent">Local Agent</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            data-close-modal
+            class="rounded-xl border border-line px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-violet-500"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="m5 12 14-7-4 14-3.5-5.5L5 12Z"
+                    stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Start agent
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- File preview modal -->
+  <div id="fileModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6">
+    <div class="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-line bg-[#0b0e14] shadow-2xl">
+      <div class="flex h-13 shrink-0 items-center gap-3 border-b border-line px-4 py-3">
+        <div class="grid h-8 w-8 place-items-center rounded-lg bg-accent/10 text-violet-300">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path d="M7 3h7l5 5v13H7V3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p id="fileModalName" class="truncate font-mono text-xs text-slate-200"></p>
+          <p id="fileModalMeta" class="text-[10px] text-muted"></p>
+        </div>
+        <button id="copyFile" class="ml-auto rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:bg-white/5 hover:text-white">
+          Copy
+        </button>
+        <button data-close-file class="rounded-lg p-2 text-muted hover:bg-white/5 hover:text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <pre class="min-h-0 flex-1 overflow-auto p-5 text-[12px] leading-6 text-slate-300"><code id="fileModalCode"></code></pre>
+    </div>
+  </div>
+
+  <!-- Confirmation modal -->
+  <div id="confirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div class="slide-up w-full max-w-sm rounded-2xl border border-line bg-panel p-5 shadow-2xl">
+      <div class="grid h-10 w-10 place-items-center rounded-xl bg-red-500/10 text-red-400">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+          <path d="M12 8v5M12 17h.01M10.3 4.7 3.8 16A2 2 0 0 0 5.5 19h13a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"
+                stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3 id="confirmTitle" class="mt-4 font-semibold text-white">Delete run?</h3>
+      <p id="confirmMessage" class="mt-2 text-sm leading-5 text-muted"></p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="confirmCancel" class="rounded-lg border border-line px-3 py-2 text-sm text-slate-300 hover:bg-white/5">
+          Cancel
+        </button>
+        <button id="confirmAccept" class="rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-400">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toastContainer" class="pointer-events-none fixed bottom-4 right-4 z-[70] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"></div>
+
+  <script>
+    /*
+     * Set to false when connecting to your backend.
+     * The API adapter below uses the endpoints supplied in the prompt.
+     */
+    const DEMO_MODE = true;
+
+    const API = {
+      async post(path, body = {}) {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || `Request failed: ${response.status}`);
+        }
+
+        return response.json();
+      },
+
+      createRun(payload) {
+        return this.post("/api/agent/runs/create", payload);
+      },
+
+      readRun(run) {
+        return this.post("/api/agent/runs/read", { run });
+      },
+
+      readAllRuns(options = {}) {
+        return this.post("/api/agent/runs/read_all", options);
+      },
+
+      pollRun(run, since) {
+        return this.post("/api/agent/runs/poll", {
+          run,
+          ...(since ? { since } : {})
+        });
+      },
+
+      cancelRun(run) {
+        return this.post("/api/agent/runs/cancel", { run });
+      },
+
+      deleteRun(run) {
+        return this.post("/api/agent/runs/delete", { run });
+      },
+
+      readFiles(runId) {
+        return this.post(`/api/agent/runs/${runId}/files/read_all`, {});
+      },
+
+      readFile(runId, path) {
+        return this.post(`/api/agent/runs/${runId}/files/read`, { path });
+      },
+
+      streamRun(runId, onMessage, onError) {
+        const stream = new EventSource(`/api/agent/runs/stream/${encodeURIComponent(runId)}`);
+
+        stream.onmessage = event => {
+          try {
+            onMessage(JSON.parse(event.data));
+          } catch {
+            onMessage(event.data);
+          }
+        };
+
+        stream.onerror = error => {
+          onError?.(error);
+        };
+
+        return stream;
+      }
+    };
+
+    const demoFiles = [
+      {
+        path: "src/components/Dashboard.tsx",
+        status: "modified",
+        additions: 84,
+        deletions: 12,
+        language: "tsx",
+        content: `import { useMemo } from "react";
+import { MetricCard } from "./MetricCard";
+import { ActivityChart } from "./ActivityChart";
+
+export function Dashboard({ metrics, activity }) {
+  const totalRevenue = useMemo(
+    () => metrics.reduce((total, item) => total + item.revenue, 0),
+    [metrics]
+  );
+
+  return (
+    <main className="min-h-screen bg-slate-950 p-6 text-white">
+      <header className="mb-8">
+        <p className="text-sm text-violet-400">Workspace overview</p>
+        <h1 className="mt-1 text-3xl font-semibold">Analytics Dashboard</h1>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(metric => (
+          <MetricCard key={metric.id} {...metric} />
+        ))}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <ActivityChart data={activity} />
+      </section>
+    </main>
+  );
+}`
+      },
+      {
+        path: "src/components/MetricCard.tsx",
+        status: "created",
+        additions: 46,
+        deletions: 0,
+        language: "tsx",
+        content: `type MetricCardProps = {
+  label: string;
+  value: string;
+  change: number;
+  icon: React.ReactNode;
+};
+
+export function MetricCard({
+  label,
+  value,
+  change,
+  icon
+}: MetricCardProps) {
+  const positive = change >= 0;
+
+  return (
+    <article className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-slate-400">{label}</span>
+        <span className="text-violet-400">{icon}</span>
+      </div>
+
+      <p className="mt-4 text-2xl font-semibold">{value}</p>
+
+      <p className={positive ? "mt-2 text-emerald-400" : "mt-2 text-red-400"}>
+        {positive ? "+" : ""}{change}% from last month
+      </p>
+    </article>
+  );
+}`
+      },
+      {
+        path: "src/components/ActivityChart.tsx",
+        status: "created",
+        additions: 68,
+        deletions: 0,
+        language: "tsx",
+        content: `import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
+
+export function ActivityChart({ data }) {
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="activity" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#ffffff10" vertical={false} />
+          <XAxis dataKey="date" stroke="#64748b" />
+          <YAxis stroke="#64748b" />
+          <Tooltip />
+          <Area
+            dataKey="value"
+            stroke="#8b5cf6"
+            fill="url(#activity)"
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}`
+      },
+      {
+        path: "src/data/dashboard.ts",
+        status: "created",
+        additions: 39,
+        deletions: 0,
+        language: "typescript",
+        content: `export const metrics = [
+  { id: "revenue", label: "Revenue", value: "$48,295", change: 12.5 },
+  { id: "users", label: "Active users", value: "12,849", change: 8.2 },
+  { id: "conversion", label: "Conversion", value: "4.28%", change: 2.1 },
+  { id: "orders", label: "Orders", value: "3,284", change: -1.4 }
+];
+
+export const activity = [
+  { date: "Mon", value: 2400 },
+  { date: "Tue", value: 3100 },
+  { date: "Wed", value: 2800 },
+  { date: "Thu", value: 4200 },
+  { date: "Fri", value: 3900 },
+  { date: "Sat", value: 5100 },
+  { date: "Sun", value: 4800 }
+];`
+      },
+      {
+        path: "package.json",
+        status: "modified",
+        additions: 2,
+        deletions: 1,
+        language: "json",
+        content: `{
+  "name": "analytics-dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "recharts": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  }
+}`
+      }
+    ];
+
+    let runs = [
+      {
+        id: "run_8fa231",
+        title: "Build analytics dashboard",
+        task: "Create a responsive analytics dashboard with metric cards, an activity chart, and dark mode styling.",
+        workspace: "analytics-app",
+        model: "Claude Sonnet",
+        status: "completed",
+        createdAt: new Date(Date.now() - 1000 * 60 * 18),
+        duration: "3m 42s",
+        tokens: "24.8k",
+        progress: 100,
+        files: structuredClone(demoFiles),
+        events: [
+          {
+            type: "user",
+            content: "Create a responsive analytics dashboard with metric cards, an activity chart, and dark mode styling.",
+            time: "10:32 AM"
+          },
+          {
+            type: "agent",
+            content: "I’ll inspect the project structure first, then build reusable dashboard components and verify the production build.",
+            time: "10:32 AM"
+          },
+          {
+            type: "tool",
+            tool: "list_files",
+            label: "Explored workspace",
+            detail: "Found React + Vite project with Tailwind CSS",
+            status: "success",
+            time: "10:33 AM"
+          },
+          {
+            type: "code",
+            label: "Implemented dashboard components",
+            detail: "Created metric cards, activity chart, responsive grid, and dashboard data.",
+            files: ["src/components/Dashboard.tsx", "src/components/MetricCard.tsx", "src/components/ActivityChart.tsx"],
+            time: "10:34 AM"
+          },
+          {
+            type: "tool",
+            tool: "terminal",
+            label: "Ran production build",
+            detail: "$ npm run build\n✓ 1842 modules transformed\n✓ built in 2.14s",
+            status: "success",
+            time: "10:35 AM"
+          },
+          {
+            type: "agent",
+            content: "The analytics dashboard is complete. I added responsive metric cards, a Recharts activity graph, typed sample data, and updated the project dependencies. The production build passes successfully.",
+            time: "10:36 AM"
+          }
+        ]
+      },
+      {
+        id: "run_b39c14",
+        title: "Fix authentication redirect",
+        task: "Fix the redirect loop occurring after OAuth login.",
+        workspace: "customer-portal",
+        model: "GPT Coding",
+        status: "running",
+        createdAt: new Date(Date.now() - 1000 * 60 * 4),
+        duration: "1m 18s",
+        tokens: "8.4k",
+        progress: 64,
+        files: [
+          {
+            path: "src/auth/callback.ts",
+            status: "modified",
+            additions: 18,
+            deletions: 9,
+            language: "typescript",
+            content: `export async function handleCallback(request: Request) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+
+  if (!code) {
+    return Response.redirect("/login?error=missing_code");
+  }
+
+  const session = await exchangeOAuthCode(code);
+
+  if (!session) {
+    return Response.redirect("/login?error=invalid_session");
+  }
+
+  return Response.redirect("/dashboard");
+}`
+          }
+        ],
+        events: [
+          {
+            type: "user",
+            content: "Fix the redirect loop occurring after OAuth login.",
+            time: "10:46 AM"
+          },
+          {
+            type: "agent",
+            content: "I’ll trace the callback flow and inspect the authentication middleware for conflicting redirect conditions.",
+            time: "10:46 AM"
+          },
+          {
+            type: "tool",
+            tool: "search",
+            label: "Searched authentication flow",
+            detail: "Found callback handling in src/auth/callback.ts and middleware.ts",
+            status: "success",
+            time: "10:47 AM"
+          },
+          {
+            type: "tool",
+            tool: "terminal",
+            label: "Running authentication tests",
+            detail: "$ npm test -- auth\n⠋ callback redirect tests",
+            status: "running",
+            time: "10:48 AM"
+          }
+        ]
+      },
+      {
+        id: "run_c284ad",
+        title: "Add CSV export",
+        task: "Add CSV export to the customer records table.",
+        workspace: "admin-console",
+        model: "Claude Sonnet",
+        status: "failed",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
+        duration: "2m 06s",
+        tokens: "11.2k",
+        progress: 72,
+        files: [],
+        events: [
+          {
+            type: "user",
+            content: "Add CSV export to the customer records table.",
+            time: "7:31 AM"
+          },
+          {
+            type: "agent",
+            content: "I’ll add an export utility and expose it through the customer table toolbar.",
+            time: "7:31 AM"
+          },
+          {
+            type: "tool",
+            tool: "terminal",
+            label: "Test suite failed",
+            detail: "Error: Cannot resolve module '@/lib/permissions'",
+            status: "error",
+            time: "7:33 AM"
+          },
+          {
+            type: "error",
+            content: "The task stopped because the workspace has a missing permissions module required by the customer table.",
+            time: "7:33 AM"
+          }
+        ]
+      },
+      {
+        id: "run_872dab",
+        title: "Refactor billing API",
+        task: "Refactor the billing endpoints into service and repository layers.",
+        workspace: "billing-service",
+        model: "GPT Coding",
+        status: "completed",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26),
+        duration: "5m 19s",
+        tokens: "31.7k",
+        progress: 100,
+        files: demoFiles.slice(0, 3),
+        events: [
+          {
+            type: "user",
+            content: "Refactor the billing endpoints into service and repository layers.",
+            time: "Yesterday"
+          },
+          {
+            type: "agent",
+            content: "Refactor complete. Controllers now delegate business logic to the billing service, with database access isolated in repositories. All tests pass.",
+            time: "Yesterday"
+          }
+        ]
+      }
+    ];
+
+    const state = {
+      selectedRunId: runs[0].id,
+      activeTab: "activity",
+      activeStream: null,
+      pendingConfirmation: null,
+      previewFile: null
+    };
+
+    const elements = {
+      sidebar: document.querySelector("#sidebar"),
+      mobileOverlay: document.querySelector("#mobileOverlay"),
+      runList: document.querySelector("#runList"),
+      runSearch: document.querySelector("#runSearch"),
+      runTitle: document.querySelector("#runTitle"),
+      runStatus: document.querySelector("#runStatus"),
+      runMeta: document.querySelector("#runMeta"),
+      activityFeed: document.querySelector("#activityFeed"),
+      activityTab: document.querySelector("#activityTab"),
+      filesTab: document.querySelector("#filesTab"),
+      fileGrid: document.querySelector("#fileGrid"),
+      fileCount: document.querySelector("#fileCount"),
+      railFileCount: document.querySelector("#railFileCount"),
+      railFiles: document.querySelector("#railFiles"),
+      progressLabel: document.querySelector("#progressLabel"),
+      progressBar: document.querySelector("#progressBar"),
+      progressText: document.querySelector("#progressText"),
+      detailList: document.querySelector("#detailList"),
+      tokenUsage: document.querySelector("#tokenUsage"),
+      durationUsage: document.querySelector("#durationUsage"),
+      cancelRun: document.querySelector("#cancelRun"),
+      newTaskModal: document.querySelector("#newTaskModal"),
+      fileModal: document.querySelector("#fileModal"),
+      confirmModal: document.querySelector("#confirmModal"),
+      confirmTitle: document.querySelector("#confirmTitle"),
+      confirmMessage: document.querySelector("#confirmMessage"),
+      toastContainer: document.querySelector("#toastContainer")
+    };
+
+    function selectedRun() {
+      return runs.find(run => run.id === state.selectedRunId) || runs[0];
+    }
+
+    function escapeHTML(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatRelativeDate(date) {
+      const difference = Date.now() - new Date(date).getTime();
+      const minutes = Math.floor(difference / 60000);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (minutes < 1) return "now";
+      if (minutes < 60) return `${minutes}m`;
+      if (hours < 24) return `${hours}h`;
+      return `${days}d`;
+    }
+
+    function statusBadge(status) {
+      const classes = {
+        running: "border-blue-400/20 bg-blue-400/10 text-blue-300",
+        completed: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+        failed: "border-red-400/20 bg-red-400/10 text-red-300",
+        cancelled: "border-amber-400/20 bg-amber-400/10 text-amber-300",
+        queued: "border-slate-400/20 bg-slate-400/10 text-slate-300"
+      };
+
+      const dots = {
+        running: "bg-blue-400 pulse-dot",
+        completed: "bg-emerald-400",
+        failed: "bg-red-400",
+        cancelled: "bg-amber-400",
+        queued: "bg-slate-400 pulse-dot"
+      };
+
+      return `
+        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium capitalize ${classes[status] || classes.queued}">
+          <span class="h-1.5 w-1.5 rounded-full ${dots[status] || dots.queued}"></span>
+          ${escapeHTML(status)}
+        </span>
+      `;
+    }
+
+    function runStatusDot(status) {
+      const colors = {
+        running: "bg-blue-400",
+        completed: "bg-emerald-400",
+        failed: "bg-red-400",
+        cancelled: "bg-amber-400",
+        queued: "bg-slate-500"
+      };
+
+      return colors[status] || colors.queued;
+    }
+
+    function renderRunList() {
+      const search = elements.runSearch.value.trim().toLowerCase();
+
+      const filtered = runs.filter(run =>
+        [run.title, run.task, run.workspace, run.status]
+          .join(" ")
+          .toLowerCase()
+          .includes(search)
+      );
+
+      if (!filtered.length) {
+        elements.runList.innerHTML = `
+          <div class="px-4 py-10 text-center">
+            <p class="text-sm text-slate-400">No runs found</p>
+            <p class="mt-1 text-xs text-muted">Try another search.</p>
+          </div>
+        `;
+        return;
+      }
+
+      elements.runList.innerHTML = filtered.map(run => {
+        const active = run.id === state.selectedRunId;
+
+        return `
+          <button
+            data-run-id="${escapeHTML(run.id)}"
+            class="group w-full rounded-xl border px-3 py-3 text-left transition ${
+              active
+                ? "border-accent/30 bg-accent/10"
+                : "border-transparent hover:border-line hover:bg-white/[.025]"
+            }"
+          >
+            <div class="flex items-start gap-2.5">
+              <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full ${runStatusDot(run.status)} ${run.status === "running" ? "pulse-dot" : ""}"></span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-medium ${active ? "text-white" : "text-slate-300"}">
+                  ${escapeHTML(run.title)}
+                </p>
+                <p class="mt-1 truncate text-[11px] text-muted">${escapeHTML(run.workspace)}</p>
+              </div>
+              <span class="shrink-0 text-[10px] text-muted">${formatRelativeDate(run.createdAt)}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      elements.runList.querySelectorAll("[data-run-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectRun(button.dataset.runId);
+          closeSidebar();
+        });
+      });
+    }
+
+    function eventIcon(type, status) {
+      if (type === "user") {
+        return `
+          <div class="grid h-8 w-8 place-items-center rounded-lg bg-slate-700 text-xs font-semibold text-white">Y</div>
+        `;
+      }
+
+      if (type === "error" || status === "error") {
+        return `
+          <div class="grid h-8 w-8 place-items-center rounded-lg bg-red-500/10 text-red-400">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="M12 8v5M12 17h.01M10.3 4.7 3.8 16A2 2 0 0 0 5.5 19h13a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        `;
+      }
+
+      if (type === "tool" || type === "code") {
+        return `
+          <div class="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/10 text-blue-400">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"
+                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="grid h-8 w-8 place-items-center rounded-lg bg-accent/10 text-violet-300">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path d="M8 9 4 12l4 3M16 9l4 3-4 3M14 5l-4 14"
+                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderEvent(event, index, total, run) {
+      const connector = index < total - 1
+        ? `<div class="absolute left-[15px] top-10 h-[calc(100%+4px)] w-px bg-line"></div>`
+        : "";
+
+      if (event.type === "user" || event.type === "agent" || event.type === "error") {
+        return `
+          <article class="relative flex gap-3 fade-in">
+            ${connector}
+            <div class="relative z-10 shrink-0">${eventIcon(event.type, event.status)}</div>
+            <div class="min-w-0 flex-1 pt-0.5">
+              <div class="flex items-center gap-2">
+                <p class="text-xs font-semibold ${event.type === "error" ? "text-red-300" : "text-slate-300"}">
+                  ${event.type === "user" ? "You" : event.type === "error" ? "Agent stopped" : "Forge"}
+                </p>
+                <span class="text-[10px] text-muted">${escapeHTML(event.time || "")}</span>
+              </div>
+              <div class="mt-2 rounded-xl border ${
+                event.type === "error"
+                  ? "border-red-500/20 bg-red-500/[.06]"
+                  : event.type === "user"
+                    ? "border-line bg-panel2"
+                    : "border-line bg-panel/60"
+              } p-4 text-sm leading-6 text-slate-300">
+                ${escapeHTML(event.content).replaceAll("\n", "<br>")}
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      const isTerminal = event.tool === "terminal";
+      const isRunning = event.status === "running";
+
+      return `
+        <article class="relative flex gap-3 fade-in">
+          ${connector}
+          <div class="relative z-10 shrink-0">${eventIcon(event.type, event.status)}</div>
+          <div class="min-w-0 flex-1 pt-0.5">
+            <div class="flex items-center gap-2">
+              <p class="text-xs font-semibold text-slate-300">${escapeHTML(event.label)}</p>
+              ${isRunning ? `
+                <span class="flex items-center gap-1 text-[10px] text-blue-300">
+                  <span class="h-1.5 w-1.5 rounded-full bg-blue-400 pulse-dot"></span>
+                  Running
+                </span>
+              ` : ""}
+              <span class="ml-auto text-[10px] text-muted">${escapeHTML(event.time || "")}</span>
+            </div>
+
+            <div class="mt-2 overflow-hidden rounded-xl border border-line ${isTerminal ? "bg-[#080a0f]" : "bg-panel/50"}">
+              ${
+                isTerminal
+                  ? `
+                    <div class="flex items-center gap-1.5 border-b border-line px-3 py-2">
+                      <span class="h-2 w-2 rounded-full bg-red-400/70"></span>
+                      <span class="h-2 w-2 rounded-full bg-amber-400/70"></span>
+                      <span class="h-2 w-2 rounded-full bg-emerald-400/70"></span>
+                      <span class="ml-2 font-mono text-[9px] text-muted">terminal</span>
+                    </div>
+                    <pre class="overflow-x-auto p-3 font-mono text-[11px] leading-5 text-slate-400 ${isRunning ? "typing" : ""}">${escapeHTML(event.detail)}</pre>
+                  `
+                  : `
+                    <div class="p-3 text-xs leading-5 text-muted">${escapeHTML(event.detail)}</div>
+                  `
+              }
+
+              ${
+                event.files?.length
+                  ? `
+                    <div class="border-t border-line px-3 py-2">
+                      ${event.files.map(path => `
+                        <button data-file-path="${escapeHTML(path)}" class="mr-2 inline-flex items-center gap-1 font-mono text-[10px] text-violet-300 hover:text-violet-200">
+                          <span>+</span>${escapeHTML(path)}
+                        </button>
+                      `).join("")}
+                    </div>
+                  `
+                  : ""
+              }
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderActivity(run) {
+      if (!run.events?.length) {
+        elements.activityFeed.innerHTML = `
+          <div class="grid min-h-[360px] place-items-center text-center">
+            <div>
+              <div class="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-white/5 text-muted">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 6h16M4 12h12M4 18h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <p class="mt-3 text-sm text-slate-400">Waiting for activity</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      elements.activityFeed.innerHTML = run.events
+        .map((event, index) => renderEvent(event, index, run.events.length, run))
+        .join("");
+
+      elements.activityFeed.querySelectorAll("[data-file-path]").forEach(button => {
+        button.addEventListener("click", () => openFile(button.dataset.filePath));
+      });
+
+      if (run.status === "running") {
+        requestAnimationFrame(() => {
+          elements.activityTab.scrollTop = elements.activityTab.scrollHeight;
+        });
+      }
+    }
+
+    function fileStatusStyle(status) {
+      if (status === "created") return "bg-emerald-500/10 text-emerald-400";
+      if (status === "deleted") return "bg-red-500/10 text-red-400";
+      return "bg-amber-500/10 text-amber-400";
+    }
+
+    function fileStatusLetter(status) {
+      return status === "created" ? "A" : status === "deleted" ? "D" : "M";
+    }
+
+    function renderFiles(run) {
+      const files = run.files || [];
+
+      elements.fileCount.textContent = files.length;
+      elements.railFileCount.textContent = `${files.length} files`;
+
+      if (!files.length) {
+        elements.fileGrid.innerHTML = `
+          <div class="px-6 py-16 text-center">
+            <p class="text-sm text-slate-400">No changed files</p>
+            <p class="mt-1 text-xs text-muted">Files will appear here as the agent works.</p>
+          </div>
+        `;
+
+        elements.railFiles.innerHTML = `
+          <p class="text-[11px] text-muted">No file changes yet.</p>
+        `;
+        return;
+      }
+
+      elements.fileGrid.innerHTML = files.map(file => `
+        <button
+          data-file-path="${escapeHTML(file.path)}"
+          class="flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left last:border-b-0 hover:bg-white/[.025]"
+        >
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md font-mono text-[10px] font-semibold ${fileStatusStyle(file.status)}">
+            ${fileStatusLetter(file.status)}
+          </span>
+          <span class="min-w-0 flex-1 truncate font-mono text-xs text-slate-300">${escapeHTML(file.path)}</span>
+          <span class="hidden text-[10px] text-muted sm:inline">${escapeHTML(file.language || "")}</span>
+          <span class="font-mono text-[10px] text-emerald-400">+${file.additions || 0}</span>
+          <span class="font-mono text-[10px] text-red-400">-${file.deletions || 0}</span>
+          <svg class="h-4 w-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none">
+            <path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      `).join("");
+
+      elements.railFiles.innerHTML = files.slice(0, 7).map(file => `
+        <button
+          data-file-path="${escapeHTML(file.path)}"
+          class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-white/[.035]"
+        >
+          <span class="font-mono text-[10px] ${file.status === "created" ? "text-emerald-400" : "text-amber-400"}">
+            ${fileStatusLetter(file.status)}
+          </span>
+          <span class="min-w-0 flex-1 truncate font-mono text-[10px] text-muted">${escapeHTML(file.path)}</span>
+        </button>
+      `).join("");
+
+      document.querySelectorAll("[data-file-path]").forEach(button => {
+        button.addEventListener("click", () => openFile(button.dataset.filePath));
+      });
+    }
+
+    function renderDetails(run) {
+      elements.progressLabel.textContent = `${run.progress || 0}%`;
+      elements.progressBar.style.width = `${run.progress || 0}%`;
+
+      const progressText = {
+        running: "Agent is actively working",
+        completed: "Task completed successfully",
+        failed: "Run stopped with an error",
+        cancelled: "Run was cancelled",
+        queued: "Waiting for an available agent"
+      };
+
+      elements.progressText.textContent = progressText[run.status] || "";
+      elements.tokenUsage.textContent = run.tokens || "—";
+      elements.durationUsage.textContent = run.duration || "—";
+
+      elements.detailList.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">Run ID</dt>
+          <dd class="max-w-[160px] truncate font-mono text-[10px] text-slate-400">${escapeHTML(run.id)}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">Workspace</dt>
+          <dd class="max-w-[160px] truncate text-right text-slate-300">${escapeHTML(run.workspace || "Default")}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">Model</dt>
+          <dd class="max-w-[160px] truncate text-right text-slate-300">${escapeHTML(run.model || "Default")}</dd>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <dt class="text-muted">Created</dt>
+          <dd class="text-right text-slate-300">${new Date(run.createdAt).toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          })}</dd>
+        </div>
+      `;
+    }
+
+    function renderSelectedRun() {
+      const run = selectedRun();
+
+      if (!run) return;
+
+      elements.runTitle.textContent = run.title;
+      elements.runStatus.innerHTML = statusBadge(run.status);
+      elements.runMeta.innerHTML = `
+        <span class="truncate">${escapeHTML(run.workspace || "Default workspace")}</span>
+        <span>·</span>
+        <span class="truncate">${escapeHTML(run.model || "Default model")}</span>
+        <span>·</span>
+        <span>${formatRelativeDate(run.createdAt)} ago</span>
+      `;
+
+      elements.cancelRun.classList.toggle("hidden", !["running", "queued"].includes(run.status));
+      elements.cancelRun.classList.toggle("flex", ["running", "queued"].includes(run.status));
+
+      renderActivity(run);
+      renderFiles(run);
+      renderDetails(run);
+      renderTabs();
+    }
+
+    function renderTabs() {
+      document.querySelectorAll(".tab-button").forEach(button => {
+        const active = button.dataset.tab === state.activeTab;
+        button.className = `tab-button h-full border-b-2 px-1 text-xs font-medium ${
+          active
+            ? "border-accent text-violet-300"
+            : "border-transparent text-muted hover:text-slate-300"
+        }`;
+      });
+
+      elements.activityTab.classList.toggle("hidden", state.activeTab !== "activity");
+      elements.filesTab.classList.toggle("hidden", state.activeTab !== "files");
+    }
+
+    function selectRun(runId) {
+      state.selectedRunId = runId;
+      renderRunList();
+      renderSelectedRun();
+
+      if (!DEMO_MODE) connectToRunStream(runId);
+    }
+
+    function openSidebar() {
+      elements.sidebar.classList.remove("-translate-x-full");
+      elements.mobileOverlay.classList.remove("hidden");
+    }
+
+    function closeSidebar() {
+      elements.sidebar.classList.add("-translate-x-full");
+      elements.mobileOverlay.classList.add("hidden");
+    }
+
+    function openNewTask() {
+      elements.newTaskModal.classList.remove("hidden");
+      elements.newTaskModal.classList.add("flex");
+      setTimeout(() => document.querySelector("#taskInput").focus(), 50);
+    }
+
+    function closeNewTask() {
+      elements.newTaskModal.classList.add("hidden");
+      elements.newTaskModal.classList.remove("flex");
+    }
+
+    async function openFile(path) {
+      const run = selectedRun();
+      let file = run.files?.find(item => item.path === path);
+
+      try {
+        if (!DEMO_MODE && (!file || file.content == null)) {
+          const response = await API.readFile(run.id, path);
+          file = {
+            path,
+            language: response.language || "",
+            content: response.content ?? response.data ?? response.file ?? ""
+          };
+        }
+
+        if (!file) throw new Error("File not found");
+
+        state.previewFile = file;
+        document.querySelector("#fileModalName").textContent = file.path;
+        document.querySelector("#fileModalMeta").textContent =
+          `${file.language || "plaintext"} · ${String(file.content || "").split("\n").length} lines`;
+        document.querySelector("#fileModalCode").textContent = file.content || "No preview available.";
+
+        elements.fileModal.classList.remove("hidden");
+        elements.fileModal.classList.add("flex");
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    function closeFile() {
+      elements.fileModal.classList.add("hidden");
+      elements.fileModal.classList.remove("flex");
+      state.previewFile = null;
+    }
+
+    function showToast(message, type = "success") {
+      const toast = document.createElement("div");
+      const isError = type === "error";
+
+      toast.className = `
+        pointer-events-auto slide-up flex items-center gap-3 rounded-xl border p-3 shadow-xl
+        ${isError
+          ? "border-red-500/20 bg-red-950/95 text-red-200"
+          : "border-line bg-panel/95 text-slate-200"}
+      `;
+
+      toast.innerHTML = `
+        <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
+          isError ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"
+        }">
+          ${isError ? "!" : "✓"}
+        </span>
+        <p class="min-w-0 flex-1 text-xs">${escapeHTML(message)}</p>
+      `;
+
+      elements.toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(5px)";
+        toast.style.transition = "all .2s";
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    function askConfirmation({ title, message, acceptLabel = "Delete", onAccept }) {
+      elements.confirmTitle.textContent = title;
+      elements.confirmMessage.textContent = message;
+      document.querySelector("#confirmAccept").textContent = acceptLabel;
+      state.pendingConfirmation = onAccept;
+      elements.confirmModal.classList.remove("hidden");
+      elements.confirmModal.classList.add("flex");
+    }
+
+    function closeConfirmation() {
+      elements.confirmModal.classList.add("hidden");
+      elements.confirmModal.classList.remove("flex");
+      state.pendingConfirmation = null;
+    }
+
+    function titleFromTask(task) {
+      const cleaned = task
+        .replace(/\s+/g, " ")
+        .replace(/^(please|can you|could you|i want you to)\s+/i, "")
+        .trim();
+
+      return cleaned.length > 42 ? `${cleaned.slice(0, 42)}…` : cleaned;
+    }
+
+    async function createRun(event) {
+      event.preventDefault();
+
+      const taskInput = document.querySelector("#taskInput");
+      const workspaceInput = document.querySelector("#workspaceInput");
+      const modelInput = document.querySelector("#modelInput");
+      const task = taskInput.value.trim();
+
+      if (!task) return;
+
+      const submitButton = event.currentTarget.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      submitButton.textContent = "Starting...";
+
+      try {
+        let created;
+
+        if (DEMO_MODE) {
+          await new Promise(resolve => setTimeout(resolve, 550));
+
+          created = {
+            id: `run_${Math.random().toString(16).slice(2, 8)}`,
+            title: titleFromTask(task),
+            task,
+            workspace: workspaceInput.value.trim() || "default-workspace",
+            model: modelInput.options[modelInput.selectedIndex].text || "Default model",
+            status: "running",
+            createdAt: new Date(),
+            duration: "0m 02s",
+            tokens: "542",
+            progress: 8,
+            files: [],
+            events: [
+              {
+                type: "user",
+                content: task,
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              },
+              {
+                type: "agent",
+                content: "I’m initializing the workspace and reviewing the task requirements.",
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              }
+            ]
+          };
+        } else {
+          const response = await API.createRun({
+            task,
+            ...(workspaceInput.value.trim() ? { workspace_name: workspaceInput.value.trim() } : {}),
+            ...(modelInput.value ? { model: modelInput.value } : {})
+          });
+
+          created = normalizeRun(response.run || response);
+        }
+
+        runs.unshift(created);
+        state.selectedRunId = created.id;
+        state.activeTab = "activity";
+
+        taskInput.value = "";
+        workspaceInput.value = "";
+        modelInput.value = "";
+
+        closeNewTask();
+        renderRunList();
+        renderSelectedRun();
+        showToast("Agent run started");
+
+        if (DEMO_MODE) simulateRun(created.id);
+        else connectToRunStream(created.id);
+      } catch (error) {
+        showToast(error.message || "Could not create run", "error");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = `
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path d="m5 12 14-7-4 14-3.5-5.5L5 12Z"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Start agent
+        `;
+      }
+    }
+
+    async function cancelSelectedRun() {
+      const run = selectedRun();
+      if (!run || !["running", "queued"].includes(run.status)) return;
+
+      try {
+        if (!DEMO_MODE) await API.cancelRun(run.id);
+
+        run.status = "cancelled";
+        run.events.push({
+          type: "error",
+          content: "The run was cancelled by the user.",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        });
+
+        renderRunList();
+        renderSelectedRun();
+        showToast("Run cancelled");
+      } catch (error) {
+        showToast(error.message || "Could not cancel run", "error");
+      }
+    }
+
+    async function deleteSelectedRun() {
+      const run= selectedRun();
+
+      if (!run) return;
+
+      askConfirmation({
+        title: "Delete run?",
+        message: `Permanently delete “${run.title}”? This action cannot be undone.`,
+        acceptLabel: "Delete",
+        onAccept: async () => {
+          try {
+            if (!DEMO_MODE) {
+              await API.deleteRun(run.id);
+            }
+
+            if (state.activeStream) {
+              state.activeStream.close();
+              state.activeStream = null;
+            }
+
+            runs = runs.filter(item => item.id !== run.id);
+            state.selectedRunId = runs[0]?.id || null;
+
+            closeConfirmation();
+            renderRunList();
+
+            if (runs.length) {
+              renderSelectedRun();
+            } else {
+              renderEmptyState();
+            }
+
+            showToast("Run deleted");
+          } catch (error) {
+            closeConfirmation();
+            showToast(error.message || "Could not delete run", "error");
+          }
+        }
+      });
+    }
+
+    function renderEmptyState() {
+      elements.runTitle.textContent = "No run selected";
+      elements.runStatus.innerHTML = "";
+      elements.runMeta.innerHTML = "";
+      elements.cancelRun.classList.add("hidden");
+      elements.cancelRun.classList.remove("flex");
+
+      elements.activityFeed.innerHTML = `
+        <div class="grid min-h-[480px] place-items-center px-5 text-center">
+          <div class="max-w-sm">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-line bg-panel text-violet-300 shadow-glow">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none">
+                <path d="M8 9 4 12l4 3M16 9l4 3-4 3M14 5l-4 14"
+                      stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 font-semibold text-white">Start your first agent run</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">
+              Give the agent a coding task and follow its progress in real time.
+            </p>
+            <button
+              data-empty-new-task
+              class="mt-5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              Create a task
+            </button>
+          </div>
+        </div>
+      `;
+
+      elements.fileGrid.innerHTML = "";
+      elements.fileCount.textContent = "0";
+      elements.railFileCount.textContent = "0 files";
+      elements.railFiles.innerHTML = "";
+      elements.progressLabel.textContent = "0%";
+      elements.progressBar.style.width = "0%";
+      elements.progressText.textContent = "No active run";
+      elements.detailList.innerHTML = "";
+      elements.tokenUsage.textContent = "—";
+      elements.durationUsage.textContent = "—";
+
+      document.querySelector("[data-empty-new-task]")
+        ?.addEventListener("click", openNewTask);
+    }
+
+    async function sendFollowup(event) {
+      event.preventDefault();
+
+      const input = document.querySelector("#followupInput");
+      const task = input.value.trim();
+      const currentRun = selectedRun();
+
+      if (!task || !currentRun) return;
+
+      const submitButton = event.currentTarget.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+
+      try {
+        if (DEMO_MODE) {
+          currentRun.events.push({
+            type: "user",
+            content: task,
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          currentRun.events.push({
+            type: "agent",
+            content: "I’ll apply that change and verify the result.",
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          currentRun.status = "running";
+          currentRun.progress = 20;
+          currentRun.duration = "0m 05s";
+          input.value = "";
+          resizeTextarea(input);
+
+          state.activeTab = "activity";
+          renderRunList();
+          renderSelectedRun();
+          simulateFollowup(currentRun.id, task);
+        } else {
+          /*
+           * The supplied API has no conversation/follow-up endpoint.
+           * A follow-up is therefore created as a new run in the same workspace.
+           */
+          const response = await API.createRun({
+            task,
+            ...(currentRun.workspace
+              ? { workspace_name: currentRun.workspace }
+              : {}),
+            ...(currentRun.model && currentRun.model !== "Default model"
+              ? { model: currentRun.model }
+              : {})
+          });
+
+          const created = normalizeRun(response.run || response);
+          runs.unshift(created);
+          state.selectedRunId = created.id;
+          input.value = "";
+          resizeTextarea(input);
+
+          renderRunList();
+          renderSelectedRun();
+          connectToRunStream(created.id);
+        }
+
+        showToast("Change request sent");
+      } catch (error) {
+        showToast(error.message || "Could not send request", "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    function simulateFollowup(runId, request) {
+      const steps = [
+        {
+          delay: 900,
+          progress: 42,
+          event: {
+            type: "tool",
+            tool: "search",
+            label: "Located relevant implementation",
+            detail: `Reviewed the files related to: ${request}`,
+            status: "success"
+          }
+        },
+        {
+          delay: 1900,
+          progress: 76,
+          event: {
+            type: "code",
+            label: "Applied requested changes",
+            detail: "Updated the implementation while preserving the existing component structure.",
+            files: ["src/components/Dashboard.tsx"],
+            status: "success"
+          }
+        },
+        {
+          delay: 3000,
+          progress: 92,
+          event: {
+            type: "tool",
+            tool: "terminal",
+            label: "Validating changes",
+            detail: "$ npm run build\n✓ type check passed\n✓ production build completed",
+            status: "success"
+          }
+        },
+        {
+          delay: 4000,
+          progress: 100,
+          complete: true,
+          event: {
+            type: "agent",
+            content: "The requested change has been implemented and the production build passes successfully."
+          }
+        }
+      ];
+
+      steps.forEach(step => {
+        setTimeout(() => {
+          const run = runs.find(item => item.id === runId);
+          if (!run || run.status !== "running") return;
+
+          run.progress = step.progress;
+          run.duration = secondsToDuration(
+            Math.max(5, Math.round((Date.now() - new Date(run.createdAt)) / 1000))
+          );
+
+          run.events.push({
+            ...step.event,
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          if (step.complete) {
+            run.status = "completed";
+            run.tokens = incrementTokenUsage(run.tokens, 4700);
+          }
+
+          if (state.selectedRunId === runId) {
+            renderSelectedRun();
+          }
+
+          renderRunList();
+        }, step.delay);
+      });
+    }
+
+    function simulateRun(runId) {
+      const steps = [
+        {
+          delay: 1000,
+          progress: 22,
+          tokenCount: "2.1k",
+          event: {
+            type: "tool",
+            tool: "list_files",
+            label: "Explored workspace",
+            detail: "Identified the application structure, components, and project configuration.",
+            status: "success"
+          }
+        },
+        {
+          delay: 2300,
+          progress: 46,
+          tokenCount: "5.8k",
+          event: {
+            type: "agent",
+            content: "I’ve reviewed the existing architecture. I’ll now implement the requested functionality using reusable components."
+          }
+        },
+        {
+          delay: 3700,
+          progress: 70,
+          tokenCount: "10.2k",
+          addFiles: true,
+          event: {
+            type: "code",
+            label: "Implemented core functionality",
+            detail: "Created the primary components, supporting data, and responsive styles.",
+            files: [
+              "src/components/Dashboard.tsx",
+              "src/components/MetricCard.tsx"
+            ],
+            status: "success"
+          }
+        },
+        {
+          delay: 5100,
+          progress: 89,
+          tokenCount: "14.7k",
+          event: {
+            type: "tool",
+            tool: "terminal",
+            label: "Ran production build",
+            detail: "$ npm run build\n✓ 1842 modules transformed\n✓ built in 2.14s",
+            status: "success"
+          }
+        },
+        {
+          delay: 6500,
+          progress: 100,
+          tokenCount: "16.4k",
+          complete: true,
+          event: {
+            type: "agent",
+            content: "The task is complete. I implemented the requested interface, added responsive behavior, and verified that the production build succeeds."
+          }
+        }
+      ];
+
+      steps.forEach(step => {
+        setTimeout(() => {
+          const run = runs.find(item => item.id === runId);
+
+          if (!run || run.status !== "running") return;
+
+          run.progress = step.progress;
+          run.tokens = step.tokenCount;
+          run.duration = secondsToDuration(
+            Math.max(1, Math.round((Date.now() - new Date(run.createdAt)) / 1000))
+          );
+
+          if (step.addFiles && !run.files.length) {
+            run.files = structuredClone(demoFiles);
+          }
+
+          run.events.push({
+            ...step.event,
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          if (step.complete) {
+            run.status = "completed";
+          }
+
+          renderRunList();
+
+          if (state.selectedRunId === runId) {
+            renderSelectedRun();
+          }
+        }, step.delay);
+      });
+    }
+
+    function secondsToDuration(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remaining = seconds % 60;
+      return `${minutes}m ${String(remaining).padStart(2, "0")}s`;
+    }
+
+    function incrementTokenUsage(current, amount) {
+      const normalized = String(current || "0")
+        .toLowerCase()
+        .replaceAll(",", "")
+        .trim();
+
+      let value = parseFloat(normalized) || 0;
+
+      if (normalized.endsWith("k")) {
+        value *= 1000;
+      }
+
+      value += amount;
+
+      return value >= 1000
+        ? `${(value / 1000).toFixed(1)}k`
+        : String(Math.round(value));
+    }
+
+    function normalizeRun(raw = {}) {
+      const id =
+        raw.id ||
+        raw.run_id ||
+        raw.run ||
+        `run_${Math.random().toString(16).slice(2, 8)}`;
+
+      const task = raw.task || raw.prompt || raw.description || "Untitled task";
+
+      return {
+        id: String(id),
+        title: raw.title || titleFromTask(task),
+        task,
+        workspace:
+          raw.workspace_name ||
+          raw.workspace?.name ||
+          raw.workspace ||
+          "default-workspace",
+        model:
+          raw.model?.name ||
+          raw.model_name ||
+          raw.model ||
+          "Default model",
+        status: normalizeStatus(raw.status || raw.state || "queued"),
+        createdAt: new Date(
+          raw.created_at ||
+          raw.createdAt ||
+          raw.date_created ||
+          Date.now()
+        ),
+        duration:
+          raw.duration ||
+          raw.elapsed ||
+          (raw.duration_seconds != null
+            ? secondsToDuration(raw.duration_seconds)
+            : "—"),
+        tokens:
+          raw.tokens ||
+          raw.token_usage ||
+          raw.usage?.total_tokens ||
+          "—",
+        progress:
+          Number(
+            raw.progress ??
+            raw.percent ??
+            progressFromStatus(raw.status || raw.state)
+          ) || 0,
+        files: normalizeFiles(
+          raw.files ||
+          raw.changed_files ||
+          raw.output_files ||
+          []
+        ),
+        events: normalizeEvents(
+          raw.events ||
+          raw.activity ||
+          raw.messages ||
+          raw.logs ||
+          []
+        )
+      };
+    }
+
+    function normalizeStatus(status) {
+      const value = String(status || "").toLowerCase();
+
+      if (["done", "success", "succeeded", "complete"].includes(value)) {
+        return "completed";
+      }
+
+      if (["error", "errored"].includes(value)) {
+        return "failed";
+      }
+
+      if (["canceled", "stopped"].includes(value)) {
+        return "cancelled";
+      }
+
+      if (["pending", "waiting"].includes(value)) {
+        return "queued";
+      }
+
+      return value || "queued";
+    }
+
+    function progressFromStatus(status) {
+      const normalized = normalizeStatus(status);
+
+      if (normalized === "completed") return 100;
+      if (normalized === "running") return 35;
+      if (normalized === "failed") return 75;
+      if (normalized === "cancelled") return 0;
+      return 5;
+    }
+
+    function normalizeFiles(value) {
+      const source = Array.isArray(value)
+        ? value
+        : value?.items || value?.files || value?.data || [];
+
+      return source.map(file => {
+        if (typeof file === "string") {
+          return {
+            path: file,
+            status: "modified",
+            additions: 0,
+            deletions: 0,
+            language: languageFromPath(file),
+            content: ""
+          };
+        }
+
+        const path = file.path || file.name || file.file || "untitled";
+
+        return {
+          path,
+          status: file.status || file.change || "modified",
+          additions: Number(file.additions || 0),
+          deletions: Number(file.deletions || 0),
+          language: file.language || languageFromPath(path),
+          content: file.content ?? file.data ?? ""
+        };
+      });
+    }
+
+    function normalizeEvents(value) {
+      const source = Array.isArray(value)
+        ? value
+        : value?.items || value?.events || value?.data || [];
+
+      return source.map(event => {
+        if (typeof event === "string") {
+          return {
+            type: "agent",
+            content: event,
+            time: ""
+          };
+        }
+
+        return {
+          type:
+            event.type ||
+            event.role ||
+            (event.tool ? "tool" : "agent"),
+          content:
+            event.content ||
+            event.message ||
+            event.text ||
+            "",
+          tool: event.tool || event.tool_name,
+          label:
+            event.label ||
+            event.title ||
+            event.tool_name ||
+            event.tool ||
+            "Agent activity",
+          detail:
+            event.detail ||
+            event.output ||
+            event.result ||
+            event.content ||
+            "",
+          status: normalizeEventStatus(event.status),
+          files: event.files || event.paths || [],
+          time:
+            event.time ||
+            (event.created_at
+              ? new Date(event.created_at).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                })
+              : "")
+        };
+      });
+    }
+
+    function normalizeEventStatus(status) {
+      const value = String(status || "").toLowerCase();
+
+      if (["completed", "complete", "succeeded"].includes(value)) {
+        return "success";
+      }
+
+      if (["failed", "failure"].includes(value)) {
+        return "error";
+      }
+
+      return value;
+    }
+
+    function languageFromPath(path) {
+      const extension = String(path).split(".").pop()?.toLowerCase();
+
+      const languages = {
+        js: "javascript",
+        jsx: "jsx",
+        ts: "typescript",
+        tsx: "tsx",
+        html: "html",
+        css: "css",
+        json: "json",
+        py: "python",
+        go: "go",
+        rs: "rust",
+        md: "markdown",
+        yml: "yaml",
+        yaml: "yaml",
+        sh: "shell",
+        sql: "sql"
+      };
+
+      return languages[extension] || extension || "plaintext";
+    }
+
+    async function loadRuns() {
+      if (DEMO_MODE) {
+        renderRunList();
+        renderSelectedRun();
+        showToast("Runs refreshed");
+        return;
+      }
+
+      const refreshButton = document.querySelector("#refreshRuns");
+      refreshButton.classList.add("animate-spin");
+
+      try {
+        const response = await API.readAllRuns({
+          sort: { created_at: "desc" },
+          page: 1,
+          page_size: 50
+        });
+
+        const source =
+          response.items ||
+          response.runs ||
+          response.results ||
+          response.data ||
+          response;
+
+        runs = Array.isArray(source)
+          ? source.map(normalizeRun)
+          : [];
+
+        if (
+          !state.selectedRunId ||
+          !runs.some(run => run.id === state.selectedRunId)
+        ) {
+          state.selectedRunId = runs[0]?.id || null;
+        }
+
+        renderRunList();
+
+        if (runs.length) {
+          renderSelectedRun();
+        } else {
+          renderEmptyState();
+        }
+
+        showToast("Runs refreshed");
+      } catch (error) {
+        showToast(error.message || "Could not load runs", "error");
+      } finally {
+        refreshButton.classList.remove("animate-spin");
+      }
+    }
+
+    function connectToRunStream(runId) {
+      if (DEMO_MODE || !runId) return;
+
+      if (state.activeStream) {
+        state.activeStream.close();
+      }
+
+      state.activeStream = API.streamRun(
+        runId,
+        payload => applyStreamPayload(runId, payload),
+        () => {
+          state.activeStream?.close();
+          state.activeStream = null;
+          pollUntilFinished(runId);
+        }
+      );
+    }
+
+    function applyStreamPayload(runId, payload) {
+      const run = runs.find(item => item.id === runId);
+      if (!run) return;
+
+      if (typeof payload === "string") {
+        run.events.push({
+          type: "agent",
+          content: payload,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          })
+        });
+      } else {
+        const data = payload.data || payload;
+
+        if (data.run && typeof data.run === "object") {
+          mergeRun(run, normalizeRun(data.run));
+        } else if (
+          data.type === "run.updated" ||
+          data.type === "status"
+        ) {
+          if (data.status) run.status = normalizeStatus(data.status);
+          if (data.progress != null) run.progress = Number(data.progress);
+          if (data.duration) run.duration = data.duration;
+          if (data.tokens) run.tokens = data.tokens;
+        } else if (
+          data.type === "file" ||
+          data.type === "file.updated"
+        ) {
+          upsertFile(run, data.file || data);
+        } else {
+          const normalized = normalizeEvents([data])[0];
+
+          if (normalized) {
+            run.events.push(normalized);
+          }
+
+          if (data.status) run.status = normalizeStatus(data.status);
+          if (data.progress != null) run.progress = Number(data.progress);
+        }
+      }
+
+      renderRunList();
+
+      if (state.selectedRunId === runId) {
+        renderSelectedRun();
+      }
+
+      if (["completed", "failed", "cancelled"].includes(run.status)) {
+        state.activeStream?.close();
+        state.activeStream = null;
+        refreshRunFiles(runId);
+      }
+    }
+
+    function mergeRun(target, source) {
+      Object.assign(target, {
+        ...source,
+        events: source.events.length ? source.events : target.events,
+        files: source.files.length ? source.files : target.files
+      });
+    }
+
+    function upsertFile(run, rawFile) {
+      const file = normalizeFiles([rawFile])[0];
+      if (!file) return;
+
+      const existing = run.files.find(item => item.path === file.path);
+
+      if (existing) {
+        Object.assign(existing, file);
+      } else {
+        run.files.push(file);
+      }
+    }
+
+    async function refreshRunFiles(runId) {
+      if (DEMO_MODE) return;
+
+      try {
+        const response = await API.readFiles(runId);
+        const run = runs.find(item => item.id === runId);
+
+        if (!run) return;
+
+        run.files = normalizeFiles(
+          response.files ||
+          response.items ||
+          response.data ||
+          response
+        );
+
+        if (state.selectedRunId === runId) {
+          renderFiles(run);
+        }
+      } catch (error) {
+        console.warn("Unable to load run files:", error);
+      }
+    }
+
+    async function pollUntilFinished(runId) {
+      if (DEMO_MODE) return;
+
+      let since;
+
+      const poll = async () => {
+        const run = runs.find(item => item.id === runId);
+
+        if (
+          !run ||
+          ["completed", "failed", "cancelled"].includes(run.status)
+        ) {
+          return;
+        }
+
+        try {
+          const response = await API.pollRun(runId, since);
+          const data = response.data || response;
+
+          since =
+            data.since ||
+            data.cursor ||
+            data.next_cursor ||
+            since;
+
+          if (data.run) {
+            mergeRun(run, normalizeRun(data.run));
+          }
+
+          const events = normalizeEvents(
+            data.events ||
+            data.items ||
+            []
+          );
+
+          if (events.length) {
+            run.events.push(...events);
+          }
+
+          if (data.status) run.status = normalizeStatus(data.status);
+          if (data.progress != null) run.progress = Number(data.progress);
+
+          renderRunList();
+
+          if (state.selectedRunId === runId) {
+            renderSelectedRun();
+          }
+
+          if (
+            !["completed", "failed", "cancelled"].includes(run.status)
+          ) {
+            setTimeout(poll, 2000);
+          } else {
+            refreshRunFiles(runId);
+          }
+        } catch (error) {
+          console.warn("Polling failed:", error);
+          setTimeout(poll, 3500);
+        }
+      };
+
+      poll();
+    }
+
+    function resizeTextarea(textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
+    }
+
+    function downloadAllFiles() {
+      const run = selectedRun();
+      const files = run?.files || [];
+
+      if (!files.length) {
+        showToast("There are no files to download", "error");
+        return;
+      }
+
+      /*
+       * A dependency-free browser bundle. Each file is separated by a clear
+       * heading. Replace this with ZIP generation if you later add JSZip.
+       */
+      const contents = files.map(file => {
+        return [
+          "=".repeat(76),
+          `FILE: ${file.path}`,
+          "=".repeat(76),
+          file.content || ""
+        ].join("\n");
+      }).join("\n\n");
+
+      const blob = new Blob([contents], {
+        type: "text/plain;charset=utf-8"
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${run.workspace || "workspace"}-${run.id}-files.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+      showToast("File bundle downloaded");
+    }
+
+    // Navigation and modals
+    document.querySelector("#openSidebar")
+      .addEventListener("click", openSidebar);
+
+    document.querySelector("#closeSidebar")
+      .addEventListener("click", closeSidebar);
+
+    elements.mobileOverlay
+      .addEventListener("click", closeSidebar);
+
+    document.querySelectorAll("[data-open-new-task]")
+      .forEach(button => button.addEventListener("click", openNewTask));
+
+    document.querySelectorAll("[data-close-modal]")
+      .forEach(button => button.addEventListener("click", closeNewTask));
+
+    document.querySelectorAll("[data-close-file]")
+      .forEach(button => button.addEventListener("click", closeFile));
+
+    elements.newTaskModal.addEventListener("click", event => {
+      if (event.target === elements.newTaskModal) closeNewTask();
+    });
+
+    elements.fileModal.addEventListener("click", event => {
+      if (event.target === elements.fileModal) closeFile();
+    });
+
+    elements.confirmModal.addEventListener("click", event => {
+      if (event.target === elements.confirmModal) closeConfirmation();
+    });
+
+    // Main controls
+    elements.runSearch.addEventListener("input", renderRunList);
+
+    document.querySelector("#refreshRuns")
+      .addEventListener("click", loadRuns);
+
+    document.querySelector("#newTaskForm")
+      .addEventListener("submit", createRun);
+
+    document.querySelector("#followupForm")
+      .addEventListener("submit", sendFollowup);
+
+    elements.cancelRun
+      .addEventListener("click", cancelSelectedRun);
+
+    document.querySelector("#deleteRun")
+      .addEventListener("click", deleteSelectedRun);
+
+    document.querySelector("#moreButton")
+      .addEventListener("click", () => {
+        const run = selectedRun();
+
+        if (run?.id) {
+          navigator.clipboard
+            ?.writeText(run.id)
+            .then(() => showToast("Run ID copied"))
+            .catch(() => showToast(`Run ID: ${run.id}`));
+        }
+      });
+
+    document.querySelector("#downloadFiles")
+      .addEventListener("click", downloadAllFiles);
+
+    document.querySelectorAll(".tab-button").forEach(button => {
+      button.addEventListener("click", () => {
+        state.activeTab = button.dataset.tab;
+        renderTabs();
+      });
+    });
+
+    // Confirmation
+    document.querySelector("#confirmCancel")
+      .addEventListener("click", closeConfirmation);
+
+    document.querySelector("#confirmAccept")
+      .addEventListener("click", async () => {
+        const action = state.pendingConfirmation;
+
+        if (action) {
+          await action();
+        }
+      });
+
+    // File copy
+    document.querySelector("#copyFile")
+      .addEventListener("click", async () => {
+        if (!state.previewFile) return;
+
+        try {
+          await navigator.clipboard.writeText(
+            state.previewFile.content || ""
+          );
+          showToast("File copied to clipboard");
+        } catch {
+          showToast("Could not copy file", "error");
+        }
+      });
+
+    // Auto-growing follow-up input
+    const followupInput = document.querySelector("#followupInput");
+
+    followupInput.addEventListener("input", () => {
+      resizeTextarea(followupInput);
+    });
+
+    followupInput.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        document.querySelector("#followupForm").requestSubmit();
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", event => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "n"
+      ) {
+        event.preventDefault();
+        openNewTask();
+      }
+
+      if (event.key === "Escape") {
+        closeNewTask();
+        closeFile();
+        closeConfirmation();
+        closeSidebar();
+      }
+    });
+
+    // Initial render
+    renderRunList();
+
+    if (runs.length) {
+      renderSelectedRun();
+    } else {
+      renderEmptyState();
+    }
+
+    /*
+     * Keep the seeded running run feeling alive in demo mode.
+     * Newly created runs are simulated by createRun().
+     */
+    if (DEMO_MODE) {
+      const seededRunningRun = runs.find(run => run.status === "running");
+
+      if (seededRunningRun) {
+        setTimeout(() => {
+          const run = runs.find(item => item.id === seededRunningRun.id);
+
+          if (!run || run.status !== "running") return;
+
+          run.progress = 78;
+          run.duration = "1m 34s";
+          run.tokens = "10.6k";
+          run.events.push({
+            type: "code",
+            label: "Fixed callback redirect condition",
+            detail: "Updated authentication callback handling to avoid redirecting authenticated users back into the OAuth flow.",
+            files: ["src/auth/callback.ts"],
+            status: "success",
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          renderRunList();
+
+          if (state.selectedRunId === run.id) {
+            renderSelectedRun();
+          }
+        }, 2500);
+
+        setTimeout(() => {
+          const run = runs.find(item => item.id === seededRunningRun.id);
+
+          if (!run || run.status !== "running") return;
+
+          run.progress = 100;
+          run.status = "completed";
+          run.duration = "2m 03s";
+          run.tokens = "13.1k";
+          run.events.push({
+            type: "agent",
+            content: "The authentication redirect loop is fixed. Callback routing now checks the established session before applying login redirects, and the authentication tests pass.",
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
+
+          renderRunList();
+
+          if (state.selectedRunId === run.id) {
+            renderSelectedRun();
+          }
+        }, 6500);
+      }
+    } else {
+      loadRuns();
+    }
+  </script>
+</body>
+</html>

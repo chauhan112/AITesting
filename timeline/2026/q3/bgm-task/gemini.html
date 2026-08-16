@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARMER BGM-Termintool (Interactive Mockup)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        barmer: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#00965e', // BARMER Primary Green
+                            600: '#007f4e',
+                            700: '#04643f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header & Role Selector -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Brand Logo Mockup -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-barmer-500 text-white font-extrabold px-3 py-1.5 rounded-md text-sm tracking-wider">
+                        BARMER
+                    </div>
+                    <span class="text-gray-400">|</span>
+                    <span class="font-semibold text-gray-700 tracking-tight text-sm">BGM-Termintool</span>
+                </div>
+
+                <!-- Simulation Info Toast -->
+                <div id="sim-toast" class="hidden md:flex items-center space-x-2 text-xs bg-yellow-50 text-yellow-800 px-3 py-1.5 rounded-full border border-yellow-200">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                    </span>
+                    <span><strong>Simulation Active:</strong> Persistent LocalStorage Enabled</span>
+                </div>
+
+                <!-- Role Selector Dropdown -->
+                <div class="flex items-center space-x-2">
+                    <label for="role-select" class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Role View:</label>
+                    <select id="role-select" onchange="switchRole(this.value)" class="bg-gray-100 text-gray-800 text-sm rounded-lg border-gray-300 focus:ring-barmer-500 focus:border-barmer-500 p-2 font-medium">
+                        <option value="employee">Employee / Participant (End User)</option>
+                        <option value="bfg">BARMER Admin / BFG Consultant</option>
+                        <option value="contact">Company Contact Person</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Role Banners (Instructional Context) -->
+        <div id="role-banner-employee" class="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="ml-3 text-sm text-emerald-800">
+                    <span class="font-semibold">Employee Perspective:</span> Browse active BGM offerings. Switch tabs below to explore external corporate schedules or BARMER internal health schemes.
+                </div>
+            </div>
+        </div>
+
+        <div id="role-banner-bfg" class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg hidden">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="ml-3 text-sm text-blue-800">
+                    <span class="font-semibold">Consultant Perspective (BFG/Admin):</span> Manage enterprise clients, construct overarching campaigns, create bookable time slots, and view waitlists.
+                </div>
+            </div>
+        </div>
+
+        <div id="role-banner-contact" class="mb-6 bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg hidden">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="ml-3 text-sm text-purple-800">
+                    <span class="font-semibold">Company Representative Perspective:</span> Block/unblock allocated slots for your company, manual register participants, and inspect real-time exports (GDPR security restrictions active).
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Container -->
+        <div id="notification-bar" class="hidden mb-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex justify-between items-center animate-pulse">
+            <span id="notification-text" class="text-sm font-medium"></span>
+            <button onclick="dismissNotification()" class="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wider">Dismiss</button>
+        </div>
+
+
+        <!-- SCREEN 1: EMPLOYEE INTERFACE -->
+        <section id="screen-employee" class="space-y-6">
+            <!-- Filter & Selection Panel -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 tracking-tight">Active BGM Offerings & Bookings</h2>
+                    <p class="text-sm text-gray-500 mt-1">Book individual appointment slots or join waiting lists for fully booked events.</p>
+                </div>
+                <!-- Segregation Switcher -->
+                <div class="inline-flex rounded-lg p-1 bg-gray-100 self-start md:self-auto">
+                    <button id="scope-btn-external" onclick="setEmployeeScope(false)" class="px-4 py-2 text-xs font-bold uppercase rounded-md bg-white shadow-sm text-gray-800">
+                        External Corporate BGM
+                    </button>
+                    <button id="scope-btn-internal" onclick="setEmployeeScope(true)" class="px-4 py-2 text-xs font-bold uppercase rounded-md text-gray-600 hover:text-gray-800">
+                        BARMER Internal BGM
+                    </button>
+                </div>
+            </div>
+
+            <!-- List of Available Time Slots -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="employee-slots-grid">
+                <!-- Dynamic injected cards go here -->
+            </div>
+        </section>
+
+
+        <!-- SCREEN 2: ADMIN & BFG CONSULTANT INTERFACE -->
+        <section id="screen-bfg" class="space-y-8 hidden">
+            <!-- Top Controls -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Manage Companies Card -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900">1. Manage Enterprise Clients</h3>
+                    <form onsubmit="handleCreateCompany(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase">Company Name</label>
+                            <input type="text" id="comp-name" required placeholder="e.g. Acme Corp" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500 focus:border-barmer-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase">Regional BFG Unit</label>
+                            <select id="comp-unit" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500 focus:border-barmer-500">
+                                <option value="Unit West Region">Unit West Region</option>
+                                <option value="Unit East Region">Unit East Region</option>
+                                <option value="Unit North Region">Unit North Region</option>
+                                <option value="Unit South Region">Unit South Region</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-barmer-500 text-white font-bold text-sm py-2 rounded-md hover:bg-barmer-600 transition">
+                            Add New Company
+                        </button>
+                    </form>
+                    <div class="border-t border-gray-100 pt-3">
+                        <span class="text-xs font-semibold text-gray-400 block mb-2">Registered Companies:</span>
+                        <div id="bfg-companies-list" class="space-y-1 max-h-36 overflow-y-auto text-sm">
+                            <!-- Dynamic companies list -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Event Campaign Card -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 col-span-1 lg:col-span-2">
+                    <h3 class="text-lg font-bold text-gray-900">2. Configure Measure Group & Campaign</h3>
+                    <form onsubmit="handleCreateAppointment(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase">Scope Selection</label>
+                                <select id="evt-internal" onchange="toggleFormCompanyField()" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                                    <option value="false">External (Corporate Event)</option>
+                                    <option value="true">Internal (BARMER Staff Only)</option>
+                                </select>
+                            </div>
+                            <div id="evt-company-wrapper">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase">Corporate Client</label>
+                                <select id="evt-company" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase">Measure Category</label>
+                                <select id="evt-category" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                                    <option value="Bewegung">Ernährung & Vitalität</option>
+                                    <option value="Stressmanagement">Stressmanagement & Entlastung</option>
+                                    <option value="Bewegung">Ergonomie & Bewegung</option>
+                                    <option value="Suchtprävention">Suchtprävention</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 flex flex-col justify-between">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase">Campaign Title</label>
+                                <input type="text" id="evt-title" required placeholder="e.g. Ergonomics Assessment" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase">Description Details</label>
+                                <textarea id="evt-desc" rows="2" placeholder="e.g. Specialized workspace checkups." class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-barmer-500 text-white font-bold text-sm py-2 rounded-md hover:bg-barmer-600 transition">
+                                Provision Campaign
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Provisioning / Slot Matrix -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">3. Active Schedules & Time Slots Management</h3>
+                        <p class="text-xs text-gray-500 mt-1">Generate or inspect operational timeslots. You can assign room bookings, capacity limits, and deadlines.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6" id="bfg-active-campaigns">
+                    <!-- Dynamic populated list of campaigns and their associated slots -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SCREEN 3: COMPANY CONTACT INTERFACE -->
+        <section id="screen-contact" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="space-y-1">
+                    <h2 class="text-xl font-bold text-gray-900">Assigned Enterprise Panel</h2>
+                    <p class="text-sm text-gray-500">Review allocated slots, manually populate records, or toggle provisional reservation locks.</p>
+                </div>
+                <!-- Select representing company -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-semibold text-gray-500">Active Company context:</label>
+                    <select id="contact-company-select" onchange="renderContactPanel()" class="bg-gray-100 text-gray-800 text-sm rounded-lg border-gray-300 p-2 font-medium">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Slot Management -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 lg:col-span-2">
+                    <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">Allocated Time Slots</h3>
+                    <div class="space-y-4" id="contact-slots-list">
+                        <!-- Dynamic list -->
+                    </div>
+                </div>
+
+                <!-- Export & Participant Lists -->
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">Inspections & Exports</h3>
+                    
+                    <div class="p-3 bg-yellow-50 text-yellow-800 text-xs rounded border border-yellow-100 space-y-1">
+                        <strong class="block">GDPR Safeguard Active:</strong>
+                        <span>Individual demographic files require a data basis of at least 5 registered participants to run analytical reports.</span>
+                    </div>
+
+                    <div class="space-y-3 mt-4">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Select Target Slot</label>
+                        <select id="export-slot-select" onchange="renderExportPreview()" class="w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div id="export-preview-area" class="space-y-3">
+                        <!-- Dynamic listing or aggregate warnings -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
+            <div>
+                © BARMER. All rights simulated. Demonstration Environment Version 1.0.
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:underline">Legal Notice</a>
+                <a href="#" class="hover:underline">Privacy Policy</a>
+                <a href="#" class="hover:underline">Requirements Spec compliant</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: BOOKING POPUP -->
+    <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-barmer-500 text-white">
+                <div>
+                    <h3 class="text-lg font-bold" id="modal-title">Complete Your Booking</h3>
+                    <p class="text-xs text-emerald-100 mt-0.5" id="modal-subtitle">Configure notification settings</p>
+                </div>
+                <button onclick="closeBookingModal()" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <form id="booking-form" onsubmit="handleExecuteBooking(event)" class="p-6 space-y-4">
+                <input type="hidden" id="modal-slot-id">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">First Name</label>
+                        <input type="text" id="book-firstname" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Last Name</label>
+                        <input type="text" id="book-lastname" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Email Address</label>
+                    <input type="email" id="book-email" required placeholder="e.g. name@domain.com" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    <p class="text-[10px] text-gray-400 mt-1" id="email-hint">For internal events, a valid BARMER address is required.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Phone (Optional)</label>
+                    <input type="tel" id="book-phone" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                </div>
+
+                <!-- Internal BGM Specific Field -->
+                <div id="modal-internal-field" class="hidden p-3 bg-barmer-50 border border-barmer-100 rounded-md">
+                    <label class="block text-xs font-bold text-barmer-700 uppercase tracking-tight">Personnel Code (ID)</label>
+                    <input type="text" id="book-personnel" placeholder="e.g. PERS-98442" class="mt-1 block w-full rounded-md border-gray-300 bg-white p-2 text-sm border focus:ring-barmer-500">
+                    <p class="text-[10px] text-barmer-600 mt-1">Needed for corporate aggregate metrics analysis.</p>
+                </div>
+
+                <!-- Communication Consents -->
+                <div class="space-y-2 border-t border-gray-100 pt-3">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Opt-In Reminders</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="consent-email" class="h-4 w-4 text-barmer-500 rounded focus:ring-barmer-500">
+                        <label for="consent-email" class="text-xs text-gray-600">I consent to receiving system email reminders.</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="consent-sms" class="h-4 w-4 text-barmer-500 rounded focus:ring-barmer-500">
+                        <label for="consent-sms" class="text-xs text-gray-600">I consent to receiving SMS schedule alerts.</label>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeBookingModal()" class="w-1/2 border border-gray-300 py-2 rounded-md text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="booking-submit-btn" class="w-1/2 bg-barmer-500 text-white py-2 rounded-md text-sm font-semibold hover:bg-barmer-600 transition">
+                        Book Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL 2: ADD TIME SLOT -->
+    <div id="slot-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in">
+            <div class="p-6 border-b border-gray-100 bg-gray-900 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold">Generate New Booking Slot</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Assign times and room details</p>
+                </div>
+                <button onclick="closeSlotModal()" class="text-gray-400 hover:text-white">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <form id="slot-form" onsubmit="handleCreateSlot(event)" class="p-6 space-y-4">
+                <input type="hidden" id="slot-campaign-id">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Start Date & Time</label>
+                        <input type="datetime-local" id="slot-start" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">End Date & Time</label>
+                        <input type="datetime-local" id="slot-end" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Max Participants</label>
+                        <input type="number" id="slot-capacity" min="1" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Reg. Deadline</label>
+                        <input type="datetime-local" id="slot-deadline" required class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Room Name</label>
+                        <input type="text" id="slot-room" placeholder="e.g. Room 204" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Location Info</label>
+                        <input type="text" id="slot-loc" placeholder="e.g. Main Building" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase">Private Access Code (Optional)</label>
+                    <input type="password" id="slot-pw" placeholder="Pin code (unsecured mockup)" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm border focus:ring-barmer-500">
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeSlotModal()" class="w-1/2 border border-gray-300 py-2 rounded-md text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 bg-gray-900 text-white py-2 rounded-md text-sm font-semibold hover:bg-gray-800 transition">
+                        Create Slot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- CORE MOCKUP CONTROLLER (JAVASCRIPT) -->
+    <script>
+        // Seed Database Schema into LocalStorage
+        function initSeedData() {
+            if (!localStorage.getItem('bgm_seeded')) {
+                const defaultCompanies = [
+                    { id: 1, name: 'Siemens AG', bfg_unit_id: 'Unit West Region' },
+                    { id: 2, name: 'BMW Group', bfg_unit_id: 'Unit South Region' }
+                ];
+                
+                const defaultCampaigns = [
+                    { id: 1, title: 'Physiotherapy & Ergonomics Check', description: 'Personalized ergonomics checks conducted directly on-site at your desk.', is_internal: false, company_id: 1, measure_group: 'Bewegung' },
+                    { id: 2, title: 'Cardiovascular Analysis', description: 'Screenings focusing on heart health, pulse profiles, and circulation advice.', is_internal: false, company_id: 2, measure_group: 'Stressmanagement' },
+                    { id: 3, title: 'Health Day: Mindful Working', description: 'Internal BARMER health workshop focused on stress relief & workload strategy.', is_internal: true, company_id: null, measure_group: 'Stressmanagement' }
+                ];
+
+                const defaultSlots = [
+                    { 
+                        id: 101, 
+                        campaign_id: 1, 
+                        start_time: '2026-10-15T09:00', 
+                        end_time: '2026-10-15T10:00', 
+                        max_participants: 2, 
+                        deadline: '2026-10-14T23:00', 
+                        room: 'Meeting Room Berlin', 
+                        location_detail: 'Building A, Floor 2', 
+                        is_blocked: false, 
+                        password_protection: '',
+                        registrations: [
+                            { firstName: 'Johanna', lastName: 'Schmidt', email: 'johanna@siemens.com', phone: '0152943849', personnel: null, optInEmail: true, optInSms: false }
+                        ],
+                        waitlist: []
+                    },
+                    { 
+                        id: 102, 
+                        campaign_id: 1, 
+                        start_time: '2026-10-15T10:15', 
+                        end_time: '2026-10-15T11:15', 
+                        max_participants: 1, 
+                        deadline: '2026-10-14T23:00', 
+                        room: 'Meeting Room Berlin', 
+                        location_detail: 'Building A, Floor 2', 
+                        is_blocked: false, 
+                        password_protection: '',
+                        registrations: [
+                            { firstName: 'Michael', lastName: 'Weber', email: 'michael@siemens.com', phone: '', personnel: null, optInEmail: true, optInSms: false }
+                        ],
+                        waitlist: [
+                            { firstName: 'Leon', lastName: 'Becker', email: 'leon@siemens.com', phone: '0172348549', personnel: null, optInEmail: true, optInSms: true }
+                        ]
+                    },
+                    { 
+                        id: 103, 
+                        campaign_id: 3, 
+                        start_time: '2026-11-20T14:00', 
+                        end_time: '2026-11-20T15:30', 
+                        max_participants: 5, 
+                        deadline: '2026-11-19T23:00', 
+                        room: 'Training Room 3', 
+                        location_detail: 'Wuppertal HQ, Building C', 
+                        is_blocked: false, 
+                        password_protection: '',
+                        registrations: [
+                            { firstName: 'Monika', lastName: 'Adler', email: 'monika.adler@barmer.de', phone: '', personnel: 'BARMER-1123', optInEmail: true, optInSms: false },
+                            { firstName: 'Stefan', lastName: 'Maier', email: 'stefan.maier@barmer.de', phone: '', personnel: 'BARMER-4432', optInEmail: true, optInSms: false }
+                        ],
+                        waitlist: []
+                    }
+                ];
+
+                localStorage.setItem('bgm_companies', JSON.stringify(defaultCompanies));
+                localStorage.setItem('bgm_campaigns', JSON.stringify(defaultCampaigns));
+                localStorage.setItem('bgm_slots', JSON.stringify(defaultSlots));
+                localStorage.setItem('bgm_seeded', 'true');
+            }
+        }
+
+        // Getters and Setters for mock database
+        function getCompanies() { return JSON.parse(localStorage.getItem('bgm_companies') || '[]'); }
+        function saveCompanies(data) { localStorage.setItem('bgm_companies', JSON.stringify(data)); }
+        function getCampaigns() { return JSON.parse(localStorage.getItem('bgm_campaigns') || '[]'); }
+        function saveCampaigns(data) { localStorage.setItem('bgm_campaigns', JSON.stringify(data)); }
+        function getSlots() { return JSON.parse(localStorage.getItem('bgm_slots') || '[]'); }
+        function saveSlots(data) { localStorage.setItem('bgm_slots', JSON.stringify(data)); }
+
+        // Application State
+        let currentRole = 'employee';
+        let currentScopeInternal = false; // False = External corporate context, True = Internal BARMER staff context
+
+        // Initialize App
+        window.addEventListener('load', () => {
+            initSeedData();
+            switchRole('employee');
+        });
+
+        // Role Switch Controller
+        function switchRole(role) {
+            currentRole = role;
+            
+            // Toggle visibility of layout segments
+            document.getElementById('screen-employee').classList.add('hidden');
+            document.getElementById('screen-bfg').classList.add('hidden');
+            document.getElementById('screen-contact').classList.add('hidden');
+
+            document.getElementById('role-banner-employee').classList.add('hidden');
+            document.getElementById('role-banner-bfg').classList.add('hidden');
+            document.getElementById('role-banner-contact').classList.add('hidden');
+
+            if (role === 'employee') {
+                document.getElementById('screen-employee').classList.remove('hidden');
+                document.getElementById('role-banner-employee').classList.remove('hidden');
+                renderEmployeeSlots();
+            } else if (role === 'bfg') {
+                document.getElementById('screen-bfg').classList.remove('hidden');
+                document.getElementById('role-banner-bfg').classList.remove('hidden');
+                populateBfgInterface();
+            } else if (role === 'contact') {
+                document.getElementById('screen-contact').classList.remove('hidden');
+                document.getElementById('role-banner-contact').classList.remove('hidden');
+                populateContactInterface();
+            }
+        }
+
+        // Notification system
+        function showNotification(text) {
+            const bar = document.getElementById('notification-bar');
+            const target = document.getElementById('notification-text');
+            target.textContent = text;
+            bar.classList.remove('hidden');
+        }
+        function dismissNotification() {
+            document.getElementById('notification-bar').classList.add('hidden');
+        }
+
+        // ==========================================
+        // PERSPECTIVE: EMPLOYEE / BOOKING CONTROLLER
+        // ==========================================
+        function setEmployeeScope(isInternal) {
+            currentScopeInternal = isInternal;
+            const extBtn = document.getElementById('scope-btn-external');
+            const intBtn = document.getElementById('scope-btn-internal');
+            
+            if (isInternal) {
+                intBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+                intBtn.classList.remove('text-gray-600');
+                extBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+                extBtn.classList.add('text-gray-600');
+            } else {
+                extBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+                extBtn.classList.remove('text-gray-600');
+                intBtn.classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+                intBtn.classList.add('text-gray-600');
+            }
+            renderEmployeeSlots();
+        }
+
+        function renderEmployeeSlots() {
+            const container = document.getElementById('employee-slots-grid');
+            container.innerHTML = '';
+            
+            const campaigns = getCampaigns().filter(c => c.is_internal === currentScopeInternal);
+            const slots = getSlots();
+            const companies = getCompanies();
+
+            let displayedCount = 0;
+
+            campaigns.forEach(campaign => {
+                const campaignSlots = slots.filter(s => s.campaign_id === campaign.id);
+                const companyObj = campaign.company_id ? companies.find(c => c.id == campaign.company_id) : null;
+
+                campaignSlots.forEach(slot => {
+                    displayedCount++;
+                    const activeRegs = slot.registrations.length;
+                    const maxCap = slot.max_participants;
+                    const isFullyBooked = activeRegs >= maxCap;
+
+                    // HTML build for individual bookable slot cards
+                    const card = document.createElement('div');
+                    card.className = `bg-white rounded-xl shadow-sm border p-6 flex flex-col justify-between transition-all duration-200 ${slot.is_blocked ? 'opacity-50 border-gray-200' : 'hover:shadow-md border-gray-200'}`;
+                    
+                    const formattedDate = new Date(slot.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' });
+                    const formattedStart = new Date(slot.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                    const formattedEnd = new Date(slot.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+                    let badgeHTML = '';
+                    if (slot.is_blocked) {
+                        badgeHTML = `<span class="bg-gray-100 text-gray-800 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Provisional Lock</span>`;
+                    } else if (isFullyBooked) {
+                        badgeHTML = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Waitlist Only</span>`;
+                    } else {
+                        badgeHTML = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Slots Available</span>`;
+                    }
+
+                    const subInfo = currentScopeInternal ? "Internal Corporate BGM" : (companyObj ? companyObj.name : "External Target");
+
+                    card.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div class="text-xs font-bold text-gray-400 uppercase tracking-tight">${subInfo}</div>
+                                ${badgeHTML}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 leading-tight text-base mb-1">${campaign.title}</h4>
+                                <p class="text-xs text-gray-500 line-clamp-2">${campaign.description}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg text-xs space-y-1.5 border border-gray-100">
+                                <div class="flex items-center text-gray-700">
+                                    <svg class="h-4.5 w-4.5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    <strong>${formattedDate}, ${formattedStart} - ${formattedEnd}</strong>
+                                </div>
+                                <div class="flex items-center text-gray-600">
+                                    <svg class="h-4.5 w-4.5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                    <span>${slot.room || 'N/A'} (${slot.location_detail || 'No location detail'})</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-xs pt-1">
+                                <span class="text-gray-500 font-medium">Booked Status:</span>
+                                <span class="font-semibold text-gray-900">${activeRegs} / ${maxCap} <span class="text-gray-400">(${slot.waitlist.length} on Waitlist)</span></span>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-3 border-t border-gray-100 flex gap-2">
+                            ${
+                                slot.is_blocked 
+                                ? `<button disabled class="w-full bg-gray-200 text-gray-400 text-xs font-bold py-2 rounded-lg cursor-not-allowed">Currently Locked</button>`
+                                : isFullyBooked
+                                    ? `<button onclick="openBookingModal(${slot.id}, true)" class="w-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 rounded-lg transition">Request Waitlist Placement</button>`
+                                    : `<button onclick="openBookingModal(${slot.id}, false)" class="w-full bg-barmer-500 hover:bg-barmer-600 text-white text-xs font-bold py-2 rounded-lg transition">Reserve Active Seat</button>`
+                            }
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+
+            if (displayedCount === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-gray-400 space-y-2">
+                        <svg class="h-12 w-12 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <p class="font-semibold text-gray-500">No scheduled sessions in this category.</p>
+                        <p class="text-xs">Switch to Admin view to provision timeslots.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Booking Popup Modals
+        function openBookingModal(slotId, isWaitlist) {
+            const slots = getSlots();
+            const slot = slots.find(s => s.id === slotId);
+            const campaigns = getCampaigns();
+            const campaign = campaigns.find(c => c.id === slot.campaign_id);
+
+            document.getElementById('modal-slot-id').value = slotId;
+            document.getElementById('booking-modal').classList.remove('hidden');
+
+            const submitBtn = document.getElementById('booking-submit-btn');
+
+            if (isWaitlist) {
+                document.getElementById('modal-title').textContent = "Join Waitlist";
+                document.getElementById('modal-subtitle').textContent = "Auto-promotes when active seats are cancelled";
+                submitBtn.textContent = "Confirm Waitlist Entry";
+                submitBtn.className = "w-1/2 bg-amber-500 text-white py-2 rounded-md text-sm font-semibold hover:bg-amber-600 transition";
+            } else {
+                document.getElementById('modal-title').textContent = "Complete Booking Registration";
+                document.getElementById('modal-subtitle').textContent = "Configure notification preferences";
+                submitBtn.textContent = "Confirm Session Booking";
+                submitBtn.className = "w-1/2 bg-barmer-500 text-white py-2 rounded-md text-sm font-semibold hover:bg-barmer-600 transition";
+            }
+
+            // Clean previous forms
+            document.getElementById('book-firstname').value = '';
+            document.getElementById('book-lastname').value = '';
+            document.getElementById('book-email').value = '';
+            document.getElementById('book-phone').value = '';
+            document.getElementById('book-personnel').value = '';
+            document.getElementById('consent-email').checked = false;
+            document.getElementById('consent-sms').checked = false;
+
+            // Render internal-only requirements
+            const internalField = document.getElementById('modal-internal-field');
+            const emailHint = document.getElementById('email-hint');
+            if (campaign.is_internal) {
+                internalField.classList.remove('hidden');
+                document.getElementById('book-personnel').required = true;
+                emailHint.textContent = "Employee Validation Required: input internal BARMER address.";
+            } else {
+                internalField.classList.add('hidden');
+                document.getElementById('book-personnel').required = false;
+                emailHint.textContent = "Corporate email matching your company domains.";
+            }
+        }
+
+        function closeBookingModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+        }
+
+        function handleExecuteBooking(event) {
+            event.preventDefault();
+            const slotId = parseInt(document.getElementById('modal-slot-id').value);
+            const firstName = document.getElementById('book-firstname').value;
+            const lastName = document.getElementById('book-lastname').value;
+            const email = document.getElementById('book-email').value;
+            const phone = document.getElementById('book-phone').value;
+            const personnel = document.getElementById('book-personnel').value;
+            const optInEmail = document.getElementById('consent-email').checked;
+            const optInSms = document.getElementById('consent-sms').checked;
+
+            const slots = getSlots();
+            const slotIndex = slots.findIndex(s => s.id === slotId);
+            if (slotIndex === -1) return;
+
+            const campaign = getCampaigns().find(c => c.id === slots[slotIndex].campaign_id);
+
+            // Mock Validation: Strict internal separation requirement
+            if (campaign.is_internal) {
+                if (!email.toLowerCase().endsWith('barmer.de')) {
+                    alert("ValidationError: Internal BARMER BGM offerings require registering with your valid employee email address (@barmer.de).");
+                    return;
+                }
+                if (!personnel.trim()) {
+                    alert("ValidationError: Internal BARMER reporting structures require entering a personnel number.");
+                    return;
+                }
+            }
+
+            const applicant = { firstName, lastName, email, phone, personnel, optInEmail, optInSms };
+
+            const isFullyBooked = slots[slotIndex].registrations.length >= slots[slotIndex].max_participants;
+
+            if (isFullyBooked) {
+                // Add to waitlist tracking
+                slots[slotIndex].waitlist.push(applicant);
+                showNotification(`Added ${firstName} ${lastName} to waitlist successfully.`);
+            } else {
+                // Check if already registered
+                const exists = slots[slotIndex].registrations.some(r => r.email.toLowerCase() === email.toLowerCase());
+                if (exists) {
+                    alert("VerificationError: You have already reserved a seat on this timeslot with this email.");
+                    return;
+                }
+                slots[slotIndex].registrations.push(applicant);
+                showNotification(`Reservation Successful! Active seat confirmed for ${firstName} ${lastName}.`);
+            }
+
+            saveSlots(slots);
+            closeBookingModal();
+            renderEmployeeSlots();
+        }
+
+
+        // ==========================================
+        // PERSPECTIVE: ADMIN & BFG CONSULTANT PANEL
+        // ==========================================
+        function populateBfgInterface() {
+            // Render Companies dropdown and List
+            const companies = getCompanies();
+            const compList = document.getElementById('bfg-companies-list');
+            compList.innerHTML = '';
+            
+            const selectTarget = document.getElementById('evt-company');
+            selectTarget.innerHTML = '';
+
+            companies.forEach(c => {
+                // Append row item
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100";
+                row.innerHTML = `<span class="font-medium text-gray-700">${c.name}</span> <span class="text-[10px] text-gray-400 bg-white border px-1.5 py-0.5 rounded">${c.bfg_unit_id}</span>`;
+                compList.appendChild(row);
+
+                // Populate campaign dropdown selection options
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                selectTarget.appendChild(opt);
+            });
+
+            toggleFormCompanyField();
+            renderBfgCampaigns();
+        }
+
+        function toggleFormCompanyField() {
+            const isInternal = document.getElementById('evt-internal').value === 'true';
+            const wrapper = document.getElementById('evt-company-wrapper');
+            if (isInternal) {
+                wrapper.classList.add('hidden');
+            } else {
+                wrapper.classList.remove('hidden');
+            }
+        }
+
+        function handleCreateCompany(event) {
+            event.preventDefault();
+            const name = document.getElementById('comp-name').value;
+            const unit = document.getElementById('comp-unit').value;
+
+            const companies = getCompanies();
+            const nextId = companies.length > 0 ? Math.max(...companies.map(c => c.id)) + 1 : 1;
+
+            companies.push({ id: nextId, name, bfg_unit_id: unit });
+            saveCompanies(companies);
+
+            document.getElementById('comp-name').value = '';
+            showNotification(`Client: ${name} registered successfully within ${unit}.`);
+            populateBfgInterface();
+        }
+
+        function handleCreateAppointment(event) {
+            event.preventDefault();
+            const isInternal = document.getElementById('evt-internal').value === 'true';
+            const companyId = isInternal ? null : parseInt(document.getElementById('evt-company').value);
+            const title = document.getElementById('evt-title').value;
+            const desc = document.getElementById('evt-desc').value;
+            const category = document.getElementById('evt-category').value;
+
+            const campaigns = getCampaigns();
+            const nextId = campaigns.length > 0 ? Math.max(...campaigns.map(c => c.id)) + 1 : 1;
+
+            campaigns.push({
+                id: nextId,
+                title,
+                description: desc,
+                is_internal: isInternal,
+                company_id: companyId,
+                measure_group: category
+            });
+
+            saveCampaigns(campaigns);
+
+            document.getElementById('evt-title').value = '';
+            document.getElementById('evt-desc').value = '';
+            showNotification(`Campaign: "${title}" created.`);
+            renderBfgCampaigns();
+        }
+
+        function renderBfgCampaigns() {
+            const container = document.getElementById('bfg-active-campaigns');
+            container.innerHTML = '';
+
+            const campaigns = getCampaigns();
+            const slots = getSlots();
+            const companies = getCompanies();
+
+            campaigns.forEach(campaign => {
+                const cmpSlots = slots.filter(s => s.campaign_id === campaign.id);
+                const scopeText = campaign.is_internal ? "Internal Offer" : `Company Target: ${companies.find(c => c.id == campaign.company_id)?.name || 'Unknown'}`;
+
+                const campaignBox = document.createElement('div');
+                campaignBox.className = "border border-gray-200 rounded-xl p-6 space-y-4 bg-gray-50/50";
+
+                let slotsHTML = '';
+                if (cmpSlots.length === 0) {
+                    slotsHTML = `<p class="text-xs text-gray-400 italic">No time blocks registered yet.</p>`;
+                } else {
+                    slotsHTML = `
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-xs text-left text-gray-700 bg-white rounded-lg border">
+                                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-bold">
+                                    <tr>
+                                        <th class="px-4 py-3">Scheduled Time</th>
+                                        <th class="px-4 py-3">Room Booking</th>
+                                        <th class="px-4 py-3">Max Cap.</th>
+                                        <th class="px-4 py-3">Booked status</th>
+                                        <th class="px-4 py-3">Waitlist</th>
+                                        <th class="px-4 py-3">Provisional Lock</th>
+                                        <th class="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    ${cmpSlots.map(s => {
+                                        const dt = new Date(s.start_time).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+                                        return `
+                                            <tr>
+                                                <td class="px-4 py-3 font-semibold">${dt}</td>
+                                                <td class="px-4 py-3">${s.room || 'N/A'}</td>
+                                                <td class="px-4 py-3 font-medium">${s.max_participants}</td>
+                                                <td class="px-4 py-3 font-bold text-emerald-600">${s.registrations.length}</td>
+                                                <td class="px-4 py-3 font-bold text-amber-500">${s.waitlist.length}</td>
+                                                <td class="px-4 py-3">${s.is_blocked ? '🔒 Locked' : '🟢 Open'}</td>
+                                                <td class="px-4 py-3 text-right">
+                                                    <button onclick="deleteTimeSlot(${s.id})" class="text-red-500 hover:text-red-700 font-bold">Delete</button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                campaignBox.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-200 text-gray-800 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">${campaign.measure_group}</span>
+                                <span class="text-xs text-gray-500 font-semibold">${scopeText}</span>
+                            </div>
+                            <h4 class="text-base font-bold text-gray-900 mt-1">${campaign.title}</h4>
+                            <p class="text-xs text-gray-500">${campaign.description}</p>
+                        </div>
+                        <button onclick="openSlotModal(${campaign.id})" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold px-3 py-2 rounded-lg transition shrink-0">
+                            + Generate Time Block
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Operational Slots:</span>
+                        ${slotsHTML}
+                    </div>
+                `;
+                container.appendChild(campaignBox);
+            });
+        }
+
+        // Generate Booking Slot Modals
+        function openSlotModal(campaignId) {
+            document.getElementById('slot-campaign-id').value = campaignId;
+            document.getElementById('slot-modal').classList.remove('hidden');
+
+            // Default dates
+            document.getElementById('slot-start').value = '2026-10-15T09:00';
+            document.getElementById('slot-end').value = '2026-10-15T10:00';
+            document.getElementById('slot-capacity').value = '10';
+            document.getElementById('slot-deadline').value = '2026-10-14T23:00';
+            document.getElementById('slot-room').value = 'Room Alpha';
+            document.getElementById('slot-loc').value = 'Headquarters';
+            document.getElementById('slot-pw').value = '';
+        }
+
+        function closeSlotModal() {
+            document.getElementById('slot-modal').classList.add('hidden');
+        }
+
+        function handleCreateSlot(event) {
+            event.preventDefault();
+            const campaignId = parseInt(document.getElementById('slot-campaign-id').value);
+            const start_time = document.getElementById('slot-start').value;
+            const end_time = document.getElementById('slot-end').value;
+            const max_participants = parseInt(document.getElementById('slot-capacity').value);
+            const deadline = document.getElementById('slot-deadline').value;
+            const room = document.getElementById('slot-room').value;
+            const location_detail = document.getElementById('slot-loc').value;
+            const password_protection = document.getElementById('slot-pw').value;
+
+            const slots = getSlots();
+            const nextId = slots.length > 0 ? Math.max(...slots.map(s => s.id)) + 1 : 101;
+
+            slots.push({
+                id: nextId,
+                campaign_id: campaignId,
+                start_time,
+                end_time,
+                max_participants,
+                deadline,
+                room,
+                location_detail,
+                is_blocked: false,
+                password_protection,
+                registrations: [],
+                waitlist: []
+            });
+
+            saveSlots(slots);
+            closeSlotModal();
+            renderBfgCampaigns();
+            showNotification("Scheduled timeslot successfully provisioned.");
+        }
+
+        function deleteTimeSlot(slotId) {
+            if (confirm("Confirm delete timeslot? This wipes out active registrations and waitlists.")) {
+                let slots = getSlots();
+                slots = slots.filter(s => s.id !== slotId);
+                saveSlots(slots);
+                renderBfgCampaigns();
+                showNotification("Timeslot purged.");
+            }
+        }
+
+
+        // ==========================================
+        // PERSPECTIVE: COMPANY CONTACT PERSON PANEL
+        // ==========================================
+        function populateContactInterface() {
+            const companies = getCompanies();
+            const select = document.getElementById('contact-company-select');
+            select.innerHTML = '';
+
+            companies.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                select.appendChild(opt);
+            });
+
+            renderContactPanel();
+        }
+
+        function renderContactPanel() {
+            const companyId = parseInt(document.getElementById('contact-company-select').value);
+            if (!companyId) return;
+
+            const campaigns = getCampaigns().filter(c => c.company_id === companyId);
+            const slots = getSlots();
+
+            const slotsListContainer = document.getElementById('contact-slots-list');
+            slotsListContainer.innerHTML = '';
+
+            const exportSelector = document.getElementById('export-slot-select');
+            exportSelector.innerHTML = '<option value="">-- Choose Target Session --</option>';
+
+            let allocatedCount = 0;
+
+            campaigns.forEach(campaign => {
+                const cmpSlots = slots.filter(s => s.campaign_id === campaign.id);
+
+                cmpSlots.forEach(slot => {
+                    allocatedCount++;
+                    
+                    // Add as option for export checks
+                    const opt = document.createElement('option');
+                    opt.value = slot.id;
+                    const dateDesc = new Date(slot.start_time).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+                    opt.textContent = `${campaign.title} (${dateDesc})`;
+                    exportSelector.appendChild(opt);
+
+                    // Build management row element
+                    const div = document.createElement('div');
+                    div.className = "flex flex-col sm:flex-row justify-between sm:items-center p-4 border border-gray-200 bg-gray-50/50 rounded-lg gap-4";
+                    
+                    const fDate = new Date(slot.start_time).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+
+                    div.innerHTML = `
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-gray-900 text-sm leading-tight">${campaign.title}</h4>
+                            <p class="text-xs text-gray-500">${fDate} | ${slot.room || 'N/A'}</p>
+                            <div class="text-[10px] text-gray-400 font-semibold uppercase">
+                                Registered: <span class="text-emerald-600 font-bold">${slot.registrations.length}</span> / ${slot.max_participants} 
+                                (Waitlist queue size: <span class="text-amber-500 font-bold">${slot.waitlist.length}</span>)
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <button onclick="toggleSlotLock(${slot.id})" class="px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-xs font-semibold hover:bg-gray-50 transition">
+                                ${slot.is_blocked ? '🔓 Unlock Booking' : '🔒 Provision Block'}
+                            </button>
+                            <button onclick="triggerManualBookingPrompt(${slot.id})" class="px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-semibold hover:bg-gray-800 transition">
+                                + Force Booking
+                            </button>
+                        </div>
+                    `;
+                    slotsListContainer.appendChild(div);
+                });
+            });
+
+            if (allocatedCount === 0) {
+                slotsListContainer.innerHTML = `
+                    <div class="py-12 text-center text-gray-400 text-sm">
+                        No operational slots assigned. Transition allocations inside BFG View.
+                    </div>
+                `;
+            }
+
+            renderExportPreview();
+        }
+
+        function toggleSlotLock(slotId) {
+            const slots = getSlots();
+            const slotIndex = slots.findIndex(s => s.id === slotId);
+            if (slotIndex !== -1) {
+                slots[slotIndex].is_blocked = !slots[slotIndex].is_blocked;
+                saveSlots(slots);
+                renderContactPanel();
+                showNotification(slots[slotIndex].is_blocked ? "Provisional booking lock engaged." : "Booking lock dissolved.");
+            }
+        }
+
+        function triggerManualBookingPrompt(slotId) {
+            openBookingModal(slotId, false);
+        }
+
+        function renderExportPreview() {
+            const slotId = parseInt(document.getElementById('export-slot-select').value);
+            const previewArea = document.getElementById('export-preview-area');
+            previewArea.innerHTML = '';
+
+            if (!slotId) {
+                previewArea.innerHTML = `<p class="text-xs text-gray-400 italic">Select an allocated slot from the dropdown above to inspect.</p>`;
+                return;
+            }
+
+            const slots = getSlots();
+            const slot = slots.find(s => s.id === slotId);
+            if (!slot) return;
+
+            const totalActive = slot.registrations.length;
+
+            // GDPR Compliance Rule checks (At least 5 records to view export reports)
+            if (totalActive < 5) {
+                previewArea.innerHTML = `
+                    <div class="p-3 bg-red-50 text-red-800 border border-red-100 rounded text-xs space-y-2 mt-4">
+                        <strong>Privacy Guard Triggered:</strong>
+                        <p>Under GDPR guidelines, detailed participant lists require a baseline pool of 5 individuals per characteristic/session to avoid identity exposure.</p>
+                        <p class="font-semibold text-[10px]">Registered Users: ${totalActive} / 5 needed</p>
+                    </div>
+                    <button disabled class="w-full bg-gray-100 text-gray-400 text-xs font-bold py-2 rounded-lg cursor-not-allowed uppercase mt-2">Export Blocked</button>
+                `;
+            } else {
+                // Renders Preview & Mock PDF download
+                const listItems = slot.registrations.map(r => `
+                    <li class="flex justify-between py-1 text-xs border-b last:border-0">
+                        <span class="font-medium text-gray-800">${r.firstName} ${r.lastName}</span>
+                        <span class="text-gray-400 text-[10px]">${r.email}</span>
+                    </li>
+                `).join('');
+
+                previewArea.innerHTML = `
+                    <div class="mt-4 space-y-3">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-tight block">Participants List:</span>
+                        <ul class="border rounded-lg bg-gray-50/50 p-3 max-h-48 overflow-y-auto">
+                            ${listItems}
+                        </ul>
+                        <button onclick="triggerMockExport(${slot.id})" class="w-full bg-barmer-500 hover:bg-barmer-600 text-white text-xs font-bold py-2 rounded-lg transition uppercase">
+                            Export Participant file (.XLSX)
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function triggerMockExport(slotId) {
+            alert("Success: Exporting raw demographic files to Microsoft Excel format...");
+        }
+
+        // Auto Waitlist Promotion Controller Logic (FIFO Execution)
+        // Note: For demonstration purposes, we expose a quick cancellation engine below.
+        function cancelReservation(slotId, userEmail) {
+            let slots = getSlots();
+            const slotIndex = slots.findIndex(s => s.id === slotId);
+            if (slotIndex === -1) return;
+
+            let slot = slots[slotIndex];
+            const regIndex = slot.registrations.findIndex(r => r.email.toLowerCase() === userEmail.toLowerCase());
+            
+            if (regIndex !== -1) {
+                slot.registrations.splice(regIndex, 1);
+                
+                // FIFO Promotion Checklist
+                if (slot.waitlist.length > 0) {
+                    // Pull top of queue (FIFO)
+                    const promotedUser = slot.waitlist.shift();
+                    slot.registrations.push(promotedUser);
+                    showNotification(`Auto-Promotion: ${promotedUser.firstName} ${promotedUser.lastName} advanced from the waitlist into the confirmed session!`);
+                } else {
+                    showNotification("Active booking canceled. Remaining allocation opened.");
+                }
+
+                saveSlots(slots);
+                
+                // Rerender active screen views
+                if (currentRole === 'employee') renderEmployeeSlots();
+                if (currentRole === 'contact') renderContactPanel();
+                if (currentRole === 'bfg') renderBfgCampaigns();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* CSS Variables for Dynamic Dynamic Themes */
+        :root {
+            /* Default: Obsidian Dark */
+            --bg-main: #09090b;
+            --bg-sidebar: #121215;
+            --bg-card: #18181b;
+            --border-color: #27272a;
+            --bg-hover: #27272a;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #16a34a;
+            --accent-hover: #15803d;
+            --accent-text: #ffffff;
+            --input-bg: #09090b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .theme-bg-sidebar { background-color: var(--bg-sidebar); }
+        .theme-bg-card { background-color: var(--bg-card); }
+        .theme-bg-main { background-color: var(--bg-main); }
+        .theme-border { border-color: var(--border-color); }
+        .theme-text-main { color: var(--text-main); }
+        .theme-text-muted { color: var(--text-muted); }
+        
+        .theme-accent-bg { background-color: var(--accent); color: var(--accent-text); }
+        .theme-accent-bg:hover { background-color: var(--accent-hover); }
+        .theme-accent-text { color: var(--accent); }
+        
+        .theme-hover:hover { background-color: var(--bg-hover); }
+        .theme-input { background-color: var(--input-bg); color: var(--text-main); border-color: var(--border-color); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex font-sans overflow-hidden antialiased">
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="mobile-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-72 theme-bg-sidebar border-r theme-border flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
+        <!-- Logo & New Chat -->
+        <div class="p-4 border-b theme-border space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5 font-bold text-lg">
+                    <div class="w-8 h-8 rounded-lg theme-accent-bg flex items-center justify-center">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <span>NeuralChat</span>
+                </div>
+                <button onclick="toggleMobileSidebar()" class="md:hidden theme-text-muted hover:theme-text-main p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <button onclick="startNewChat()" class="w-full flex items-center justify-center gap-2 theme-accent-bg font-medium py-2.5 px-4 rounded-xl transition duration-200 shadow-md">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>New Conversation</span>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="px-3 py-3 border-b theme-border space-y-1">
+            <button id="nav-home" onclick="switchView('home')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium theme-hover transition">
+                <i class="fa-solid fa-message w-5 theme-accent-text"></i>
+                <span>Home Chat</span>
+            </button>
+            <button id="nav-conversations" onclick="switchView('conversations')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium theme-text-muted theme-hover transition">
+                <i class="fa-solid fa-magnifying-glass w-5 text-blue-500"></i>
+                <span>Search & History</span>
+            </button>
+            <button id="nav-settings" onclick="switchView('settings')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium theme-text-muted theme-hover transition">
+                <i class="fa-solid fa-sliders w-5 text-purple-500"></i>
+                <span>Models & Settings</span>
+            </button>
+        </div>
+
+        <!-- Recent Chats Header -->
+        <div class="px-4 pt-4 pb-2 flex items-center justify-between text-xs font-semibold theme-text-muted uppercase tracking-wider">
+            <span>Recent Chats</span>
+        </div>
+
+        <!-- Recent Chats List -->
+        <div id="recent-chats-list" class="flex-1 overflow-y-auto px-2 space-y-1">
+            <!-- Dynamic items rendered here -->
+        </div>
+
+        <!-- Footer Profile/Status -->
+        <div class="p-3 border-t theme-border text-xs theme-text-muted flex items-center justify-between">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full theme-accent-bg animate-pulse"></span>
+                Storage: Local
+            </span>
+            <span id="storage-usage-counter">0 KB</span>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col h-full theme-bg-main relative min-w-0 overflow-hidden">
+        <!-- Mobile Header Bar -->
+        <div class="md:hidden flex items-center justify-between p-3 border-b theme-border theme-bg-sidebar">
+            <button onclick="toggleMobileSidebar()" class="theme-text-main p-2">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <span class="font-semibold text-sm">NeuralChat</span>
+            <button onclick="startNewChat()" class="theme-accent-text p-2">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+        </div>
+
+        <!-- VIEW 1: HOME / CHAT VIEW -->
+        <div id="view-home" class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Chat Header -->
+            <div class="p-4 border-b theme-border theme-bg-sidebar flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <h2 id="current-chat-title" class="text-base font-semibold truncate">New Conversation</h2>
+                </div>
+                
+                <!-- Model Selector Dropdown -->
+                <div class="flex items-center gap-2">
+                    <label class="text-xs theme-text-muted hidden sm:inline">Active Model:</label>
+                    <select id="active-model-select" class="theme-input text-xs rounded-lg px-3 py-1.5 focus:outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="messages-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-4xl w-full mx-auto">
+                <!-- Dynamic messages injected here -->
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="p-4 border-t theme-border theme-bg-sidebar">
+                <div class="max-w-4xl mx-auto relative">
+                    <form id="chat-form" onsubmit="handleSendMessage(event)" class="relative flex items-end theme-bg-card rounded-2xl border theme-border transition">
+                        <textarea id="chat-input" rows="1" placeholder="Ask anything... (Shift+Enter for new line)"
+                            class="w-full bg-transparent px-4 py-3 text-sm theme-text-main placeholder:theme-text-muted focus:outline-none resize-none max-h-40"
+                            onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); handleSendMessage(event); }"></textarea>
+                        <div class="p-2 flex items-center gap-2">
+                            <button type="submit" id="send-btn" class="p-2.5 rounded-xl theme-accent-bg transition">
+                                <i class="fa-solid fa-arrow-up text-sm"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="text-[11px] theme-text-muted text-center mt-2">
+                        Responses are generated & stored locally in your browser.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: SEARCH / CONVERSATIONS VIEW -->
+        <div id="view-conversations" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 max-w-5xl mx-auto w-full">
+            <div class="mb-6 space-y-1">
+                <h1 class="text-2xl font-bold">Search Conversations</h1>
+                <p class="text-sm theme-text-muted">Search through titles, messages, and model responses across all chats.</p>
+            </div>
+
+            <div class="relative mb-6">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted"></i>
+                <input type="text" id="search-input" oninput="renderSearchResults()" placeholder="Search in titles, prompts, models, or thinking history..." 
+                    class="w-full theme-input border rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none">
+            </div>
+
+            <div id="search-results" class="flex-1 overflow-y-auto space-y-4 pr-2">
+                <!-- Search results injected here -->
+            </div>
+        </div>
+
+        <!-- VIEW 3: SETTINGS / MODEL & THEME MANAGEMENT VIEW -->
+        <div id="view-settings" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 max-w-4xl mx-auto w-full space-y-8 overflow-y-auto">
+            
+            <!-- SECTION 1: THEME SELECTION -->
+            <div class="space-y-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Appearance & Theme</h1>
+                    <p class="text-sm theme-text-muted">Choose your preferred UI theme (2 Dark and 2 Light options available).</p>
+                </div>
+
+                <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Dynamic Theme Cards Rendered Here -->
+                </div>
+            </div>
+
+            <hr class="border-t theme-border">
+
+            <!-- SECTION 2: MODEL CONFIGURATION -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold">Model Configuration</h2>
+                        <p class="text-sm theme-text-muted">Manage local models (Ollama, LMStudio) or Cloud API models.</p>
+                    </div>
+                    <button onclick="openAddModelModal()" class="theme-accent-bg text-sm font-medium px-4 py-2 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Model</span>
+                    </button>
+                </div>
+
+                <!-- Models List -->
+                <div id="models-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Models dynamically rendered here -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ADD/EDIT MODEL MODAL -->
+    <div id="model-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="theme-bg-card border theme-border rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="modal-title" class="text-lg font-bold">Add AI Model</h3>
+                <button onclick="closeModelModal()" class="theme-text-muted hover:theme-text-main">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="model-form" onsubmit="saveModel(event)" class="space-y-4">
+                <input type="hidden" id="model-id">
+                <div>
+                    <label class="block text-xs font-semibold theme-text-muted mb-1">Display Name</label>
+                    <input type="text" id="model-name" required placeholder="e.g. Llama 3 8B Local" 
+                        class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold theme-text-muted mb-1">Model Identifier ID</label>
+                    <input type="text" id="model-id-input" required placeholder="e.g. llama3:latest or gpt-4o" 
+                        class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold theme-text-muted mb-1">Type</label>
+                        <select id="model-type" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            <option value="local">Local</option>
+                            <option value="cloud">Cloud</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold theme-text-muted mb-1">Provider</label>
+                        <input type="text" id="model-provider" required placeholder="e.g. Ollama, OpenAI" 
+                            class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold theme-text-muted mb-1">API Endpoint URL</label>
+                    <input type="url" id="model-url" placeholder="http://localhost:11434/api/generate" 
+                        class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold theme-text-muted mb-1">API Key (Optional)</label>
+                    <input type="password" id="model-api-key" placeholder="sk-..." 
+                        class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModelModal()" class="px-4 py-2 rounded-lg border theme-border hover:theme-hover text-sm font-medium">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg theme-accent-bg text-sm font-medium">Save Model</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // AVAILABLE THEMES DEFINITION (2 Dark, 2 Light)
+        const THEMES = {
+            'dark-obsidian': {
+                id: 'dark-obsidian',
+                name: 'Obsidian Noir',
+                category: 'Dark',
+                colors: {
+                    bgMain: '#09090b',
+                    bgSidebar: '#121215',
+                    bgCard: '#18181b',
+                    border: '#27272a',
+                    bgHover: '#27272a',
+                    textMain: '#f4f4f5',
+                    textMuted: '#a1a1aa',
+                    accent: '#16a34a',
+                    accentHover: '#15803d',
+                    inputBg: '#09090b',
+                    swatch: ['#09090b', '#18181b', '#16a34a']
+                }
+            },
+            'dark-midnight': {
+                id: 'dark-midnight',
+                name: 'Midnight Cobalt',
+                category: 'Dark',
+                colors: {
+                    bgMain: '#0b0f19',
+                    bgSidebar: '#0f172a',
+                    bgCard: '#1e293b',
+                    border: '#334155',
+                    bgHover: '#334155',
+                    textMain: '#f8fafc',
+                    textMuted: '#94a3b8',
+                    accent: '#2563eb',
+                    accentHover: '#1d4ed8',
+                    inputBg: '#0b0f19',
+                    swatch: ['#0b0f19', '#1e293b', '#2563eb']
+                }
+            },
+            'light-snow': {
+                id: 'light-snow',
+                name: 'Snow Minimal',
+                category: 'Light',
+                colors: {
+                    bgMain: '#ffffff',
+                    bgSidebar: '#f8fafc',
+                    bgCard: '#f1f5f9',
+                    border: '#e2e8f0',
+                    bgHover: '#e2e8f0',
+                    textMain: '#0f172a',
+                    textMuted: '#64748b',
+                    accent: '#2563eb',
+                    accentHover: '#1d4ed8',
+                    inputBg: '#ffffff',
+                    swatch: ['#ffffff', '#f1f5f9', '#2563eb']
+                }
+            },
+            'light-sand': {
+                id: 'light-sand',
+                name: 'Warm Sand',
+                category: 'Light',
+                colors: {
+                    bgMain: '#fcfbf9',
+                    bgSidebar: '#f5f2eb',
+                    bgCard: '#eeeae1',
+                    border: '#e2ddd5',
+                    bgHover: '#e2ddd5',
+                    textMain: '#1c1917',
+                    textMuted: '#78716c',
+                    accent: '#d97706',
+                    accentHover: '#b45309',
+                    inputBg: '#fcfbf9',
+                    swatch: ['#fcfbf9', '#eeeae1', '#d97706']
+                }
+            }
+        };
+
+        // Default Seed Models
+        const DEFAULT_MODELS = [
+            {
+                id: 'm-1',
+                name: 'Llama 3.2 (Local)',
+                model_id: 'llama3.2:latest',
+                type: 'local',
+                provider: 'Ollama',
+                url: 'http://localhost:11434/api/chat',
+                api_key: ''
+            },
+            {
+                id: 'm-2',
+                name: 'Claude 3.5 Sonnet',
+                model_id: 'claude-3-5-sonnet',
+                type: 'cloud',
+                provider: 'Anthropic',
+                url: 'https://api.anthropic.com/v1/messages',
+                api_key: ''
+            }
+        ];
+
+        // State
+        let models = [];
+        let conversations = [];
+        let activeConvId = null;
+        let activeView = 'home';
+        let currentThemeId = 'dark-obsidian';
+
+        // Init App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStorage();
+            if (models.length === 0) {
+                models = DEFAULT_MODELS;
+                saveModels();
+            }
+            applyTheme(currentThemeId);
+            renderAll();
+        });
+
+        // LocalStorage Sync
+        function loadStorage() {
+            models = JSON.parse(localStorage.getItem('ai_app_models') || '[]');
+            conversations = JSON.parse(localStorage.getItem('ai_app_conversations') || '[]');
+            currentThemeId = localStorage.getItem('ai_app_theme') || 'dark-obsidian';
+            updateStorageUsageCounter();
+        }
+
+        function saveModels() {
+            localStorage.setItem('ai_app_models', JSON.stringify(models));
+            updateStorageUsageCounter();
+        }
+
+        function saveConversations() {
+            localStorage.setItem('ai_app_conversations', JSON.stringify(conversations));
+            updateStorageUsageCounter();
+        }
+
+        function updateStorageUsageCounter() {
+            const bytes = new Blob([JSON.stringify(localStorage)]).size;
+            document.getElementById('storage-usage-counter').innerText = `${(bytes / 1024).toFixed(1)} KB`;
+        }
+
+        // THEME CONTROLLER
+        function applyTheme(themeId) {
+            const t = THEMES[themeId] || THEMES['dark-obsidian'];
+            currentThemeId = themeId;
+            localStorage.setItem('ai_app_theme', themeId);
+            
+            const root = document.documentElement;
+            root.style.setProperty('--bg-main', t.colors.bgMain);
+            root.style.setProperty('--bg-sidebar', t.colors.bgSidebar);
+            root.style.setProperty('--bg-card', t.colors.bgCard);
+            root.style.setProperty('--border-color', t.colors.border);
+            root.style.setProperty('--bg-hover', t.colors.bgHover);
+            root.style.setProperty('--text-main', t.colors.textMain);
+            root.style.setProperty('--text-muted', t.colors.textMuted);
+            root.style.setProperty('--accent', t.colors.accent);
+            root.style.setProperty('--accent-hover', t.colors.accentHover);
+            root.style.setProperty('--input-bg', t.colors.inputBg);
+
+            if (activeView === 'settings') {
+                renderThemeGrid();
+            }
+        }
+
+        // NAVIGATION & UI
+        function switchView(viewName) {
+            activeView = viewName;
+            
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-conversations').classList.add('hidden');
+            document.getElementById('view-settings').classList.add('hidden');
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // Reset nav tab styles
+            ['home', 'conversations', 'settings'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    btn.classList.add('theme-bg-card', 'theme-text-main');
+                    btn.classList.remove('theme-text-muted');
+                } else {
+                    btn.classList.remove('theme-bg-card', 'theme-text-main');
+                    btn.classList.add('theme-text-muted');
+                }
+            });
+
+            if (viewName === 'conversations') renderSearchResults();
+            if (viewName === 'settings') {
+                renderThemeGrid();
+                renderModelsList();
+            }
+            
+            // Close mobile drawer if open
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('mobile-overlay').classList.add('hidden');
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // RENDER FUNCTIONS
+        function renderAll() {
+            renderModelSelect();
+            renderRecentChats();
+            renderMessages();
+        }
+
+        function renderRecentChats() {
+            const container = document.getElementById('recent-chats-list');
+            container.innerHTML = '';
+
+            if (conversations.length === 0) {
+                container.innerHTML = `<div class="p-3 text-xs theme-text-muted text-center">No saved chats</div>`;
+                return;
+            }
+
+            const sorted = [...conversations].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            sorted.forEach(conv => {
+                const isActive = conv.id === activeConvId;
+                const div = document.createElement('div');
+                div.className = `group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition ${
+                    isActive ? 'theme-bg-card font-medium theme-text-main' : 'theme-text-muted theme-hover hover:theme-text-main'
+                }`;
+                div.onclick = () => selectConversation(conv.id);
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 truncate pr-2">
+                        <i class="fa-regular fa-message theme-text-muted"></i>
+                        <span class="truncate">${escapeHtml(conv.title)}</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteConversation('${conv.id}')" 
+                        class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderModelSelect() {
+            const select = document.getElementById('active-model-select');
+            select.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.name} (${m.type})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderThemeGrid() {
+            const container = document.getElementById('theme-grid');
+            container.innerHTML = '';
+
+            Object.values(THEMES).forEach(t => {
+                const isSelected = t.id === currentThemeId;
+                const card = document.createElement('div');
+                card.className = `border rounded-2xl p-4 cursor-pointer transition theme-bg-card flex flex-col justify-between ${
+                    isSelected ? 'ring-2 ring-emerald-500 theme-border' : 'theme-border hover:opacity-90'
+                }`;
+                card.onclick = () => applyTheme(t.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid ${t.category === 'Dark' ? 'fa-moon text-indigo-400' : 'fa-sun text-amber-500'} text-xs"></i>
+                            <span class="font-bold text-sm">${t.name}</span>
+                        </div>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded border theme-border theme-text-muted">${t.category}</span>
+                    </div>
+                    
+                    <!-- Swatch Preview -->
+                    <div class="h-10 rounded-lg p-1.5 flex items-center justify-between border" style="background-color: ${t.colors.bgMain}; border-color: ${t.colors.border}">
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-4 h-4 rounded-full border" style="background-color: ${t.colors.bgSidebar}; border-color: ${t.colors.border}"></div>
+                            <div class="w-4 h-4 rounded-full border" style="background-color: ${t.colors.bgCard}; border-color: ${t.colors.border}"></div>
+                        </div>
+                        <div class="w-4 h-4 rounded-full" style="background-color: ${t.colors.accent}"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-3 text-xs">
+                        <span class="theme-text-muted">${isSelected ? 'Active Theme' : 'Click to apply'}</span>
+                        ${isSelected ? '<i class="fa-solid fa-circle-check theme-accent-text text-sm"></i>' : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messages-container');
+            const titleElem = document.getElementById('current-chat-title');
+            container.innerHTML = '';
+
+            const currentConv = conversations.find(c => c.id === activeConvId);
+
+            if (!currentConv) {
+                titleElem.innerText = "New Conversation";
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center p-8 theme-text-muted space-y-3 my-auto">
+                        <div class="w-12 h-12 rounded-2xl theme-bg-card border theme-border flex items-center justify-center theme-accent-text text-xl">
+                            <i class="fa-solid fa-sparkles"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold theme-text-main">Start a new AI session</h3>
+                        <p class="text-xs max-w-sm">Type a prompt below to begin chatting. Responses, reasoning, and models will be tracked in real-time.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            titleElem.innerText = currentConv.title;
+
+            currentConv.msgs.forEach(msg => {
+                if (msg.userPrompt) {
+                    container.appendChild(createMessageBubble('user', msg.userPrompt));
+                }
+                container.appendChild(createAssistantMessageBubble(msg));
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function createMessageBubble(role, content) {
+            const div = document.createElement('div');
+            div.className = "flex justify-end";
+            div.innerHTML = `
+                <div class="max-w-[80%] theme-accent-bg px-4 py-3 rounded-2xl rounded-tr-sm text-sm shadow-sm">
+                    ${escapeHtml(content)}
+                </div>
+            `;
+            return div;
+        }
+
+        function createAssistantMessageBubble(msg) {
+            const div = document.createElement('div');
+            div.className = "flex gap-3 text-sm";
+
+            const thinkingBox = msg.thinking ? `
+                <details class="mb-3 theme-bg-card border theme-border rounded-xl text-xs overflow-hidden group">
+                    <summary class="cursor-pointer px-3 py-2 theme-text-muted hover:theme-text-main flex items-center gap-2 select-none font-mono text-[11px]">
+                        <i class="fa-solid fa-brain theme-accent-text transition-transform group-open:rotate-12"></i>
+                        <span>Thought Process</span>
+                        <i class="fa-solid fa-chevron-down ml-auto text-[10px] transition-transform group-open:rotate-180"></i>
+                    </summary>
+                    <div class="px-3 pb-3 pt-1 theme-text-muted font-mono text-[11px] whitespace-pre-wrap border-t theme-border opacity-90">
+                        ${escapeHtml(msg.thinking)}
+                    </div>
+                </details>
+            ` : '';
+
+            const modelBadge = msg.model ? `
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] theme-bg-card border theme-border theme-text-muted mb-2 font-mono">
+                    <i class="fa-solid ${msg.model.type === 'local' ? 'fa-laptop' : 'fa-cloud'} text-[9px] theme-accent-text"></i>
+                    ${escapeHtml(msg.model.name)}
+                </span>
+            ` : '';
+
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-lg border theme-border theme-accent-text theme-bg-card flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                    <i class="fa-solid fa-robot text-xs"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    ${modelBadge}
+                    ${thinkingBox}
+                    <div class="theme-text-main leading-relaxed whitespace-pre-wrap theme-bg-card border theme-border p-4 rounded-2xl rounded-tl-sm shadow-sm">
+                        ${escapeHtml(msg.response)}
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        // ACTION HANDLERS
+        function startNewChat() {
+            activeConvId = null;
+            switchView('home');
+            renderRecentChats();
+            renderMessages();
+        }
+
+        function selectConversation(id) {
+            activeConvId = id;
+            switchView('home');
+            renderRecentChats();
+            renderMessages();
+        }
+
+        function deleteConversation(id) {
+            conversations = conversations.filter(c => c.id !== id);
+            if (activeConvId === id) activeConvId = null;
+            saveConversations();
+            renderRecentChats();
+            renderMessages();
+        }
+
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            input.style.height = 'auto';
+
+            const selectedModelId = document.getElementById('active-model-select').value;
+            const currentModel = models.find(m => m.id === selectedModelId) || models[0];
+
+            let conv = conversations.find(c => c.id === activeConvId);
+            if (!conv) {
+                conv = {
+                    id: 'conv-' + Date.now(),
+                    title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    msgs: []
+                };
+                conversations.unshift(conv);
+                activeConvId = conv.id;
+            }
+
+            const newMessage = {
+                id: 'msg-' + Date.now(),
+                userPrompt: text,
+                thinking: `Analyzing prompt: "${text}"\nTarget Model: ${currentModel.name} (${currentModel.provider})\nGenerating response...`,
+                response: `[Simulated Output from ${currentModel.name}]\n\nHello! You asked: "${text}".\n\nThis is a mock response demonstrating dynamic UI theme rendering, model configuration, and search functionality. API Key set: ${currentModel.api_key ? 'Yes' : 'None'}.`,
+                model: {
+                    name: currentModel.name,
+                    model_id: currentModel.model_id,
+                    type: currentModel.type,
+                    provider: currentModel.provider
+                }
+            };
+
+            conv.msgs.push(newMessage);
+            conv.updatedAt = Date.now();
+
+            saveConversations();
+            renderRecentChats();
+            renderMessages();
+        }
+
+        // SEARCH FUNCTIONALITY (VIEW 2)
+        function renderSearchResults() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const container = document.getElementById('search-results');
+            container.innerHTML = '';
+
+            let results = conversations;
+
+            if (query) {
+                results = conversations.filter(c => {
+                    const matchTitle = c.title.toLowerCase().includes(query);
+                    const matchMsgs = c.msgs.some(m => 
+                        (m.userPrompt && m.userPrompt.toLowerCase().includes(query)) ||
+                        (m.response && m.response.toLowerCase().includes(query)) ||
+                        (m.thinking && m.thinking.toLowerCase().includes(query))
+                    );
+                    return matchTitle || matchMsgs;
+                });
+            }
+
+            if (results.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 theme-text-muted text-sm">No matching conversations found.</div>`;
+                return;
+            }
+
+            results.forEach(c => {
+                const card = document.createElement('div');
+                card.className = "theme-bg-card border theme-border p-4 rounded-xl theme-hover transition cursor-pointer space-y-2";
+                card.onclick = () => selectConversation(c.id);
+
+                const msgCount = c.msgs.length;
+                const lastUpdated = new Date(c.updatedAt).toLocaleDateString();
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-semibold text-base">${escapeHtml(c.title)}</h3>
+                        <span class="text-xs theme-text-muted">${lastUpdated}</span>
+                    </div>
+                    <p class="text-xs theme-text-muted line-clamp-2">
+                        ${c.msgs.length > 0 ? escapeHtml(c.msgs[c.msgs.length - 1].response) : 'Empty conversation'}
+                    </p>
+                    <div class="flex items-center gap-3 text-[11px] theme-text-muted pt-1">
+                        <span><i class="fa-solid fa-message mr-1"></i>${msgCount} messages</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // MODEL MANAGEMENT (VIEW 3)
+        function renderModelsList() {
+            const container = document.getElementById('models-list');
+            container.innerHTML = '';
+
+            models.forEach(m => {
+                const card = document.createElement('div');
+                card.className = "theme-bg-card border theme-border p-4 rounded-2xl flex flex-col justify-between space-y-3";
+
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold">${escapeHtml(m.name)}</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border ${
+                                m.type === 'local' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                            }">
+                                ${m.type}
+                            </span>
+                        </div>
+                        <p class="text-xs font-mono theme-text-muted">${escapeHtml(m.model_id)}</p>
+                    </div>
+
+                    <div class="text-xs theme-text-muted space-y-1 theme-bg-main p-2.5 rounded-lg border theme-border font-mono text-[11px]">
+                        <div><strong>Provider:</strong> ${escapeHtml(m.provider)}</div>
+                        <div class="truncate"><strong>URL:</strong> ${escapeHtml(m.url || 'N/A')}</div>
+                        <div><strong>API Key:</strong> ${m.api_key ? '••••••••' : 'Not set'}</div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t theme-border">
+                        <button onclick="editModel('${m.id}')" class="px-3 py-1.5 rounded-lg border theme-border theme-hover text-xs font-medium">
+                            Edit
+                        </button>
+                        <button onclick="deleteModel('${m.id}')" class="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs text-red-500 border border-red-500/30">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openAddModelModal() {
+            document.getElementById('modal-title').innerText = "Add AI Model";
+            document.getElementById('model-form').reset();
+            document.getElementById('model-id').value = '';
+            document.getElementById('model-modal').classList.remove('hidden');
+        }
+
+        function closeModelModal() {
+            document.getElementById('model-modal').classList.add('hidden');
+        }
+
+        function editModel(id) {
+            const m = models.find(item => item.id === id);
+            if (!m) return;
+
+            document.getElementById('modal-title').innerText = "Edit AI Model";
+            document.getElementById('model-id').value = m.id;
+            document.getElementById('model-name').value = m.name;
+            document.getElementById('model-id-input').value = m.model_id;
+            document.getElementById('model-type').value = m.type;
+            document.getElementById('model-provider').value = m.provider;
+            document.getElementById('model-url').value = m.url || '';
+            document.getElementById('model-api-key').value = m.api_key || '';
+
+            document.getElementById('model-modal').classList.remove('hidden');
+        }
+
+        function saveModel(e) {
+            e.preventDefault();
+            const id = document.getElementById('model-id').value;
+            const name = document.getElementById('model-name').value;
+            const model_id = document.getElementById('model-id-input').value;
+            const type = document.getElementById('model-type').value;
+            const provider = document.getElementById('model-provider').value;
+            const url = document.getElementById('model-url').value;
+            const api_key = document.getElementById('model-api-key').value;
+
+            if (id) {
+                const idx = models.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    models[idx] = { id, name, model_id, type, provider, url, api_key };
+                }
+            } else {
+                models.push({
+                    id: 'm-' + Date.now(),
+                    name, model_id, type, provider, url, api_key
+                });
+            }
+
+            saveModels();
+            renderModelSelect();
+            renderModelsList();
+            closeModelModal();
+        }
+
+        function deleteModel(id) {
+            if (models.length <= 1) {
+                alert("You must keep at least one model configured.");
+                return;
+            }
+            models = models.filter(m => m.id !== id);
+            saveModels();
+            renderModelSelect();
+            renderModelsList();
+        }
+
+        // UTILS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark-github" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Coding Agent Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            theme: {
+              base: 'var(--bg-base)',
+              card: 'var(--bg-card)',
+              hover: 'var(--bg-hover)',
+              border: 'var(--border-color)',
+              text: 'var(--text-main)',
+              muted: 'var(--text-muted)',
+              accent: 'var(--accent-color)'
+            }
+          },
+          fontFamily: { mono: ['JetBrains Mono', 'Fira Code', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 4-Theme Dynamic Color Palette Definitions */
+    :root[data-theme="dark-github"] {
+      --bg-base: #0d1117;
+      --bg-card: #161b22;
+      --bg-hover: #21262d;
+      --border-color: #30363d;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-color: #6366f1;
+    }
+    :root[data-theme="dark-midnight"] {
+      --bg-base: #070913;
+      --bg-card: #0e1222;
+      --bg-hover: #171d36;
+      --border-color: #272f4f;
+      --text-main: #e2e8f0;
+      --text-muted: #798bb4;
+      --accent-color: #a855f7;
+    }
+    :root[data-theme="light-clean"] {
+      --bg-base: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-color: #4f46e5;
+    }
+    :root[data-theme="light-nord"] {
+      --bg-base: #eceff4;
+      --bg-card: #e5e9f0;
+      --bg-hover: #d8dee9;
+      --border-color: #cbd5e1;
+      --text-main: #2e3440;
+      --text-muted: #4c566a;
+      --accent-color: #0284c7;
+    }
+
+    .flash-highlight { animation: pulse-anim 1.5s ease-out; }
+    @keyframes pulse-anim {
+      0% { background-color: rgba(99, 102, 241, 0.4); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body class="bg-theme-base text-theme-text flex h-screen overflow-hidden text-xs select-none transition-colors duration-300">
+
+  <!-- ================= 1. SLIM GLOBAL ICON SIDEBAR ================= -->
+  <nav class="w-14 bg-theme-card border-r border-theme-border flex flex-col items-center py-3.5 justify-between flex-shrink-0 z-20">
+    <div class="flex flex-col items-center gap-4">
+      <div class="p-2 rounded-xl bg-theme-accent/20 text-theme-accent">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      
+      <div class="space-y-2 pt-2">
+        <button onclick="showAppView('dashboard')" title="Tasks Dashboard" class="nav-btn p-2.5 rounded-xl hover:bg-theme-hover text-theme-muted hover:text-theme-text transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        </button>
+        <button onclick="showAppView('agent-studio')" title="Active Agent Studio" class="nav-btn p-2.5 rounded-xl bg-theme-hover text-theme-accent transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </button>
+        <button onclick="showToast('Auto-verifier passed (Cyclomatic Score: 2.1)')" title="Auto-Verifier & Static Tests" class="nav-btn p-2.5 rounded-xl hover:bg-theme-hover text-theme-muted hover:text-theme-text transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </button>
+        <button onclick="showToast('Running deployment steps in container...')" title="Deployments" class="nav-btn p-2.5 rounded-xl hover:bg-theme-hover text-theme-muted hover:text-theme-text transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Theme Picker Dropdown in Bottom Sidebar -->
+    <div class="relative group">
+      <button title="Switch Theme (4 Options)" class="p-2 rounded-xl bg-theme-hover text-theme-text hover:ring-2 ring-theme-accent transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4 4.5 4.5 0 019-2.544V18a3 3 0 01-3 3zm0 0a3 3 0 003-3v-4.544M17 17l-5-5m0 0l-5 5m5-5v12"/></svg>
+      </button>
+      <div class="absolute left-14 bottom-0 bg-theme-card border border-theme-border rounded-xl shadow-2xl p-2 w-44 space-y-1 hidden group-hover:block z-50">
+        <div class="text-[10px] uppercase font-bold text-theme-muted px-2 py-1">Select Theme</div>
+        <button onclick="setTheme('dark-github')" class="w-full text-left px-2 py-1 rounded hover:bg-theme-hover text-xs flex items-center justify-between">Dark GitHub <span class="w-2 h-2 rounded-full bg-[#161b22] border"></span></button>
+        <button onclick="setTheme('dark-midnight')" class="w-full text-left px-2 py-1 rounded hover:bg-theme-hover text-xs flex items-center justify-between">Dark Midnight <span class="w-2 h-2 rounded-full bg-[#0e1222] border"></span></button>
+        <button onclick="setTheme('light-clean')" class="w-full text-left px-2 py-1 rounded hover:bg-theme-hover text-xs flex items-center justify-between">Light Clean <span class="w-2 h-2 rounded-full bg-white border"></span></button>
+        <button onclick="setTheme('light-nord')" class="w-full text-left px-2 py-1 rounded hover:bg-theme-hover text-xs flex items-center justify-between">Light Nord <span class="w-2 h-2 rounded-full bg-[#eceff4] border"></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= 2. VIEW: TASK DASHBOARD (HOME) ================= -->
+  <div id="view-dashboard" class="hidden flex-1 flex-col overflow-y-auto p-8 space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">Tasks & Agent Workspaces</h1>
+        <p class="text-theme-muted">Manage active workspaces, template forks, and running agents.</p>
+      </div>
+      <button onclick="showAppView('agent-studio')" class="px-4 py-2 rounded-lg bg-theme-accent text-white font-semibold flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        New Agent Task
+      </button>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative max-w-md">
+      <input type="text" oninput="filterDashboardTasks(this.value)" placeholder="Search tasks, tags, or workspaces... (⌘K)" class="w-full bg-theme-card border border-theme-border rounded-xl px-4 py-2.5 text-xs text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent">
+    </div>
+
+    <!-- Task Cards Grid -->
+    <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div onclick="showAppView('agent-studio')" class="p-4 rounded-xl bg-theme-card border border-theme-border hover:border-theme-accent cursor-pointer space-y-3 transition-all">
+        <div class="flex justify-between items-center font-mono">
+          <span class="text-theme-accent font-bold">TASK-104</span>
+          <span class="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px]">Active</span>
+        </div>
+        <h3 class="font-bold text-sm">Add Refresh Token Rotation in jwt.ts</h3>
+        <p class="text-theme-muted text-xs">Prevent replay attacks and invalidate token families on reuse.</p>
+        <div class="text-[10px] font-mono text-theme-muted flex justify-between pt-2 border-t border-theme-border">
+          <span>api-gateway / main</span>
+          <span>142k / 200k tokens</span>
+        </div>
+      </div>
+
+      <div onclick="showAppView('agent-studio')" class="p-4 rounded-xl bg-theme-card border border-theme-border hover:border-theme-accent cursor-pointer space-y-3 transition-all">
+        <div class="flex justify-between items-center font-mono">
+          <span class="text-theme-accent font-bold">TASK-102 (Fork)</span>
+          <span class="text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full text-[10px]">Forked</span>
+        </div>
+        <h3 class="font-bold text-sm">Benchmark Redis vs Postgres Cache</h3>
+        <p class="text-theme-muted text-xs">Forked session to evaluate sub-millisecond query latency.</p>
+        <div class="text-[10px] font-mono text-theme-muted flex justify-between pt-2 border-t border-theme-border">
+          <span>db-bench / fork-1</span>
+          <span>48k / 200k tokens</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 3. VIEW: AGENT STUDIO & WORKSPACE ================= -->
+  <div id="view-agent-studio" class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT CONTEXT & TIMELINE PANEL -->
+    <aside class="w-80 bg-theme-card border-r border-theme-border flex flex-col flex-shrink-0">
+      
+      <!-- Workspace Header -->
+      <div class="p-3.5 border-b border-theme-border space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-theme-muted font-mono">Workspace</span>
+          <span class="text-[10px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">Mounted Sandbox</span>
+        </div>
+        <div class="font-bold text-sm truncate">TASK-104: Refresh Token Rotation</div>
+      </div>
+
+      <!-- Context Window & Compress Context -->
+      <div class="p-3.5 border-b border-theme-border bg-theme-base/40 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-theme-muted flex items-center gap-1 font-medium">Context Window</span>
+          <span class="font-mono text-[11px]" id="ctx-label">142,800 / 200,000 (71%)</span>
+        </div>
+        <div class="w-full bg-theme-hover h-1.5 rounded-full overflow-hidden">
+          <div id="ctx-bar" class="bg-theme-accent h-full rounded-full transition-all duration-700" style="width: 71%"></div>
+        </div>
+        <div class="flex justify-between items-center pt-1">
+          <span class="text-[10px] text-theme-muted">Prunes tool stdout</span>
+          <button onclick="compressContext()" class="px-2 py-1 rounded bg-theme-hover hover:bg-theme-border text-theme-accent font-semibold transition-colors">Compress Context</button>
+        </div>
+      </div>
+
+      <!-- Checkpoints / Conversation Step List -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-1.5">
+        <div class="text-[10px] uppercase font-bold text-theme-muted px-1 mb-2">Conversation Steps</div>
+        <div onclick="jumpToMessage('msg-1')" class="group p-2 rounded-lg bg-theme-hover/60 hover:bg-theme-hover cursor-pointer flex items-center justify-between">
+          <div class="flex items-center gap-2 truncate">
+            <span class="font-mono font-bold text-theme-accent">1</span>
+            <span class="truncate">Inspect JWT secrets</span>
+          </div>
+          <button onclick="forkTask(event, 'Step 1')" title="Fork from here" class="opacity-0 group-hover:opacity-100 text-theme-muted hover:text-theme-accent">⌥ Fork</button>
+        </div>
+        <div onclick="jumpToMessage('msg-2')" class="group p-2 rounded-lg bg-theme-hover/60 hover:bg-theme-hover cursor-pointer flex items-center justify-between">
+          <div class="flex items-center gap-2 truncate">
+            <span class="font-mono font-bold text-theme-accent">2</span>
+            <span class="truncate">Read redis session keys</span>
+          </div>
+          <button onclick="forkTask(event, 'Step 2')" title="Fork from here" class="opacity-0 group-hover:opacity-100 text-theme-muted hover:text-theme-accent">⌥ Fork</button>
+        </div>
+        <div onclick="jumpToMessage('msg-3')" class="group p-2 rounded-lg bg-theme-accent/15 border border-theme-accent/30 cursor-pointer flex items-center justify-between">
+          <div class="flex items-center gap-2 truncate">
+            <span class="font-mono font-bold text-theme-accent">3</span>
+            <span class="truncate font-semibold text-theme-accent">Enforce token rotation</span>
+          </div>
+          <button onclick="forkTask(event, 'Step 3')" title="Fork from here" class="opacity-0 group-hover:opacity-100 text-theme-muted hover:text-theme-accent">⌥ Fork</button>
+        </div>
+      </div>
+
+      <!-- Touched Files Quick Jump -->
+      <div class="p-3 border-t border-theme-border space-y-1">
+        <div class="text-[10px] uppercase font-bold text-theme-muted mb-1">Touched Files</div>
+        <button onclick="openFileDrawer('src/auth/jwt.ts')" class="w-full text-left font-mono text-theme-accent hover:underline flex items-center gap-1.5 truncate">
+          <span>TS</span> src/auth/jwt.ts
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT STREAM -->
+    <main class="flex-1 flex flex-col bg-theme-base overflow-hidden relative">
+      <!-- Top Subheader -->
+      <header class="h-11 border-b border-theme-border px-4 flex items-center justify-between bg-theme-card">
+        <div class="flex items-center gap-3">
+          <span class="font-semibold text-theme-accent">Agent Studio</span>
+          <span class="text-theme-muted font-mono">claude-3-7-sonnet</span>
+        </div>
+
+        <!-- Generation Speed Controller -->
+        <div class="flex items-center gap-2">
+          <label class="text-[11px] text-theme-muted font-mono">Speed:</label>
+          <select onchange="showToast('Generation speed: ' + this.value)" class="bg-theme-base border border-theme-border rounded px-2 py-0.5 text-xs text-theme-accent focus:outline-none">
+            <option value="Instant (0ms)">Instant</option>
+            <option value="Normal (30ms)" selected>Normal</option>
+            <option value="Slow (60ms)">Slow</option>
+            <option value="Debug Step">Debug</option>
+          </select>
+          <button onclick="forkTask(event, 'Workspace')" class="px-2.5 py-1 rounded bg-theme-hover hover:bg-theme-border text-theme-text font-semibold border border-theme-border">Fork Task</button>
+        </div>
+      </header>
+
+      <!-- Message History Container -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl w-full mx-auto font-sans">
+        
+        <!-- Turn 1 -->
+        <div id="msg-1" class="space-y-1">
+          <div class="text-theme-muted font-mono text-[11px]">USER &bull; 10:40 AM</div>
+          <div class="p-3.5 rounded-xl bg-theme-card border border-theme-border">
+            Please audit <code class="text-theme-accent font-mono cursor-pointer hover:underline" onclick="openFileDrawer('src/auth/jwt.ts')">src/auth/jwt.ts</code> and enforce token rotation so refresh tokens cannot be reused.
+          </div>
+        </div>
+
+        <!-- Turn 2: Tool Call & Reasoning -->
+        <div id="msg-2" class="space-y-3">
+          <div class="text-theme-muted font-mono text-[11px]">AGENT &bull; 10:41 AM</div>
+          
+          <!-- Collapsible Reasoning Block -->
+          <div class="border border-theme-accent/30 rounded-xl overflow-hidden bg-theme-card">
+            <button onclick="toggleBox('reasoning-box')" class="w-full px-3.5 py-2 bg-theme-accent/10 flex items-center justify-between text-left">
+              <span class="font-semibold text-theme-accent flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Reasoning Trace (3.2s &bull; 1,120 tokens)
+              </span>
+              <span class="text-theme-muted font-mono text-[11px]">Expand ▼</span>
+            </button>
+            <div id="reasoning-box" class="p-3 bg-theme-base/60 text-theme-muted text-xs leading-relaxed space-y-1.5 border-t border-theme-border font-sans">
+              <p>1. Analyzed token verification flow in <code class="text-theme-accent font-mono">verifyRefreshToken</code>.</p>
+              <p>2. Detected that previous session tokens are not purged from Redis when refreshed, leaving a window for token theft replay.</p>
+              <p>3. Plan: Introduce family generational tokens and invalidate all keys if a revoked token is supplied.</p>
+            </div>
+          </div>
+
+          <!-- Tool Call Block -->
+          <div class="border border-theme-border rounded-xl overflow-hidden bg-theme-card font-mono">
+            <div class="p-2.5 bg-theme-hover flex justify-between items-center">
+              <span class="text-amber-500 font-bold">tool_call: read_file ("src/auth/jwt.ts")</span>
+              <span class="text-emerald-500 text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded">200 OK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Turn 3: Git Diff -->
+        <div id="msg-3" class="space-y-3">
+          <p class="text-theme-text text-sm">I have updated the token verification handler with automatic family invalidation:</p>
+          
+          <!-- Clean Git Diff Viewer Component -->
+          <div class="border border-theme-border rounded-xl overflow-hidden bg-theme-card font-mono text-xs shadow-lg">
+            <div class="px-4 py-2 bg-theme-hover border-b border-theme-border flex items-center justify-between">
+              <button onclick="openFileDrawer('src/auth/jwt.ts')" class="text-theme-accent hover:underline font-bold">src/auth/jwt.ts</button>
+              <div class="space-x-1">
+                <span class="text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">+8</span>
+                <span class="text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">-2</span>
+              </div>
+            </div>
+            <div class="p-0 bg-theme-base/90 divide-y divide-theme-border/40">
+              <div class="px-4 py-1 text-theme-muted">@@ -24,5 +24,11 @@ export async function verifyRefreshToken(token: string) {</div>
+              <div class="px-4 py-1 bg-rose-950/20 text-rose-400 border-l-2 border-rose-500">- const stored = await redis.get(`refresh:${payload.sub}`);</div>
+              <div class="px-4 py-1 bg-rose-950/20 text-rose-400 border-l-2 border-rose-500">- return stored === token;</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ const userKey = `refresh:${payload.sub}`;</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ const storedToken = await redis.get(userKey);</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ if (!storedToken || storedToken !== token) {</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ await redis.del(userKey); // Revoke token family</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ throw new UnauthorizedError("Reused refresh token detected");</div>
+              <div class="px-4 py-1 bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500">+ }</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Chat Bar -->
+      <div class="p-4 border-t border-theme-border bg-theme-card">
+        <div class="max-w-4xl mx-auto flex gap-2">
+          <input type="text" placeholder="Type prompt to continue agent task..." class="flex-1 bg-theme-base border border-theme-border rounded-xl px-4 py-2.5 text-xs text-theme-text placeholder-theme-muted focus:outline-none focus:border-theme-accent">
+          <button class="bg-theme-accent text-white px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-opacity">Send</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= 4. SLIDE-OVER CODE DRAWER ("JUMP TO FILE") ================= -->
+  <div id="file-drawer" class="fixed inset-y-0 right-0 w-[45%] bg-theme-card border-l border-theme-border shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex flex-col font-mono">
+    <div class="p-3.5 border-b border-theme-border flex items-center justify-between bg-theme-hover">
+      <span id="drawer-filename" class="font-bold text-theme-accent">src/auth/jwt.ts</span>
+      <button onclick="closeFileDrawer()" class="text-theme-muted hover:text-theme-text font-bold">✕</button>
+    </div>
+    <div class="flex-1 p-4 overflow-y-auto text-xs bg-theme-base text-theme-text space-y-1">
+      <pre><code>import jwt from 'jsonwebtoken';
+import { redis } from '../lib/redis';
+import { UnauthorizedError } from '../errors';
+
+export async function verifyRefreshToken(token: string) {
+  const payload = jwt.verify(token, process.env.REFRESH_SECRET!) as { sub: string };
+  const userKey = `refresh:${payload.sub}`;
+  const storedToken = await redis.get(userKey);
+
+  if (!storedToken || storedToken !== token) {
+    await redis.del(userKey);
+    throw new UnauthorizedError("Reused refresh token detected");
+  }
+
+  return payload;
+}</code></pre>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-theme-accent text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2">
+    <span id="toast-msg">Action completed</span>
+  </div>
+
+  <!-- ================= LOGIC & THEME CONTROLLER ================= -->
+  <script>
+    // Theme Switcher (4 Themes)
+    function setTheme(themeName) {
+      document.documentElement.setAttribute('data-theme', themeName);
+      if (themeName.startsWith('dark')) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      showToast('Switched theme to: ' + themeName);
+    }
+
+    // View Switching
+    function showAppView(viewId) {
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-agent-studio').classList.add('hidden');
+
+      if (viewId === 'dashboard') {
+        document.getElementById('view-dashboard').classList.remove('hidden');
+      } else {
+        document.getElementById('view-agent-studio').classList.remove('hidden');
+      }
+    }
+
+    // Compress Context
+    function compressContext() {
+      document.getElementById('ctx-bar').style.width = '26%';
+      document.getElementById('ctx-label').innerText = '52,000 / 200,000 (26%)';
+      showToast('Context compressed! Saved 90.8k tokens.');
+    }
+
+    // Jump to message
+    function jumpToMessage(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('flash-highlight');
+        setTimeout(() => el.classList.remove('flash-highlight'), 1500);
+      }
+    }
+
+    // Fork Task
+    function forkTask(e, label) {
+      e.stopPropagation();
+      showToast('Forked new task from: ' + label);
+    }
+
+    // File Drawer
+    function openFileDrawer(filename) {
+      document.getElementById('drawer-filename').innerText = filename;
+      document.getElementById('file-drawer').classList.remove('translate-x-full');
+    }
+    function closeFileDrawer() {
+      document.getElementById('file-drawer').classList.add('translate-x-full');
+    }
+
+    // Toggle Collapsible
+    function toggleBox(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

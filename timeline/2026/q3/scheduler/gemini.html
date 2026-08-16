@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimeCraft Scheduler</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts for Themes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Theme CSS Variables */
+    .theme-ghibli {
+      --bg-app: #F7F4EE;
+      --bg-sidebar: #3D6A58;
+      --text-sidebar: #F0F7F4;
+      --sidebar-hover: #2F5344;
+      --sidebar-active: #28473A;
+      --bg-card: #FFFFFF;
+      --text-main: #2C3E35;
+      --text-muted: #6B8075;
+      --border-color: #E2DAD0;
+      --primary: #3D6A58;
+      --primary-hover: #2F5344;
+      --accent: #D97736;
+      --badge-pending-bg: #FEF3C7;
+      --badge-pending-text: #92400E;
+      --badge-done-bg: #D1FAE5;
+      --badge-done-text: #065F46;
+      --badge-skipped-bg: #FEE2E2;
+      --badge-skipped-text: #991B1B;
+      --font-family: 'Quicksand', sans-serif;
+      --radius: 1rem;
+    }
+
+    .theme-minimalist {
+      --bg-app: #F8FAFC;
+      --bg-sidebar: #0F172A;
+      --text-sidebar: #F8FAFC;
+      --sidebar-hover: #1E293B;
+      --sidebar-active: #334155;
+      --bg-card: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --primary: #0F172A;
+      --primary-hover: #1E293B;
+      --accent: #2563EB;
+      --badge-pending-bg: #F1F5F9;
+      --badge-pending-text: #334155;
+      --badge-done-bg: #DCFCE7;
+      --badge-done-text: #166534;
+      --badge-skipped-bg: #FFE4E6;
+      --badge-skipped-text: #9F1239;
+      --font-family: 'Inter', sans-serif;
+      --radius: 0.375rem;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .custom-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+    }
+
+    .custom-btn-primary {
+      background-color: var(--primary);
+      color: #ffffff;
+      border-radius: var(--radius);
+      transition: background-color 0.2s;
+    }
+
+    .custom-btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .sidebar-bg {
+      background-color: var(--bg-sidebar);
+      color: var(--text-sidebar);
+    }
+  </style>
+</head>
+<body class="h-full theme-ghibli">
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-30 w-64 sidebar-bg flex flex-col justify-between transition-transform duration-300 -translate-x-full md:translate-x-0 shadow-lg">
+      <div>
+        <!-- App Title / Logo -->
+        <div class="p-5 flex items-center justify-between border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <i data-lucide="clock" class="w-7 h-7 text-amber-400"></i>
+            <span class="font-bold text-xl tracking-wide">TimeCraft</span>
+          </div>
+          <button onclick="toggleSidebar()" class="md:hidden text-white hover:text-gray-300">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="p-4 space-y-2">
+          <button id="navToday" onclick="switchView('today')" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition font-medium hover:bg-white/10">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+            Today's Tasks
+          </button>
+
+          <button id="navCreate" onclick="switchView('create')" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition font-medium hover:bg-white/10">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            Schedule Generator
+          </button>
+        </nav>
+      </div>
+
+      <!-- Theme Switcher Footer -->
+      <div class="p-4 border-t border-white/10">
+        <label class="block text-xs uppercase tracking-wider text-white/70 mb-2 font-semibold">
+          Select Theme
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="setTheme('ghibli')" id="themeBtnGhibli" class="flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded border border-white/20 transition">
+            <i data-lucide="trees" class="w-4 h-4"></i> Ghibli
+          </button>
+          <button onclick="setTheme('minimalist')" id="themeBtnMinimalist" class="flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded border border-white/20 transition">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i> Minimal
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      
+      <!-- Top Mobile Navbar Header -->
+      <header class="md:hidden flex items-center justify-between p-4 custom-card border-b rounded-none">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleSidebar()" class="p-2 rounded-md hover:bg-gray-100">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <h1 class="font-bold text-lg">TimeCraft</h1>
+        </div>
+      </header>
+
+      <!-- Main Container -->
+      <main class="p-4 md:p-8 max-w-5xl w-full mx-auto">
+
+        <!-- Notification Toast Container -->
+        <div id="toast" class="hidden mb-6 p-4 rounded-lg flex items-center justify-between border shadow-sm transition">
+          <div class="flex items-center gap-3">
+            <i id="toastIcon" class="w-5 h-5"></i>
+            <span id="toastMsg" class="text-sm font-medium"></span>
+          </div>
+          <button onclick="dismissToast()" class="text-xs opacity-70 hover:opacity-100 font-bold ml-4">Dismiss</button>
+        </div>
+
+        <!-- VIEW 1: TODAY'S TASKS -->
+        <section id="viewToday" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl md:text-3xl font-bold">Today's Tasks</h1>
+              <p id="todayDateStr" class="text-sm opacity-70 mt-1"></p>
+            </div>
+            <button onclick="switchView('create')" class="custom-btn-primary px-4 py-2 flex items-center gap-2 text-sm font-semibold shadow">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Schedule
+            </button>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="custom-card p-4 flex items-center gap-4">
+              <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <i data-lucide="list-todo" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Total Slots</p>
+                <p id="statTotal" class="text-xl font-bold">0</p>
+              </div>
+            </div>
+            <div class="custom-card p-4 flex items-center gap-4">
+              <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Completed</p>
+                <p id="statDone" class="text-xl font-bold">0</p>
+              </div>
+            </div>
+            <div class="custom-card p-4 flex items-center gap-4">
+              <div class="p-3 rounded-full bg-amber-100 text-amber-600">
+                <i data-lucide="clock-3" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Pending</p>
+                <p id="statPending" class="text-xl font-bold">0</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule Table Card -->
+          <div class="custom-card overflow-hidden shadow-sm">
+            <div class="p-4 border-b flex justify-between items-center bg-black/5">
+              <h2 class="font-bold flex items-center gap-2">
+                <i data-lucide="table" class="w-4 h-4"></i> Schedule Overview
+              </h2>
+              <span class="text-xs opacity-60">Click a row to edit task details</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="text-xs font-semibold uppercase tracking-wider border-b opacity-60">
+                    <th class="p-4">Planned</th>
+                    <th class="p-4">Actual Time</th>
+                    <th class="p-4">Task Title</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="todayTasksTableBody" class="divide-y divide-gray-100 text-sm">
+                  <!-- Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- VIEW 2: SCHEDULE GENERATOR -->
+        <section id="viewCreate" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl md:text-3xl font-bold">Schedule Generator</h1>
+              <p class="text-sm opacity-70 mt-1">Generate time slots, assign tasks, and save to backend.</p>
+            </div>
+          </div>
+
+          <!-- Form Input Card -->
+          <div class="custom-card p-5 md:p-6 shadow-sm space-y-4">
+            <h2 class="font-bold text-lg border-b pb-2 flex items-center gap-2">
+              <i data-lucide="sliders" class="w-5 h-5"></i> Time & Slot Parameters
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase opacity-70 mb-1">Target Date</label>
+                <input type="date" id="inputDate" class="w-full p-2.5 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase opacity-70 mb-1">Start Time</label>
+                <input type="time" id="inputStartTime" value="08:00" class="w-full p-2.5 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase opacity-70 mb-1">End Time</label>
+                <input type="time" id="inputEndTime" value="10:00" class="w-full p-2.5 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase opacity-70 mb-1">Slot Duration (mins)</label>
+                <input type="number" id="inputDuration" value="20" min="5" step="5" class="w-full p-2.5 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button onclick="generateSlots()" class="custom-btn-primary px-5 py-2.5 font-semibold text-sm flex items-center gap-2 shadow">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Generate Time Slots
+              </button>
+            </div>
+          </div>
+
+          <!-- Generated Slots Section -->
+          <div id="generatedSlotsContainer" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="font-bold text-lg flex items-center gap-2">
+                <i data-lucide="list-checks" class="w-5 h-5"></i> Fill Tasks into Generated Slots
+              </h2>
+              <span id="slotCountBadge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-200">0 Slots</span>
+            </div>
+
+            <div class="custom-card overflow-hidden shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="text-xs font-semibold uppercase tracking-wider border-b opacity-60">
+                      <th class="p-4 w-40">Time Range</th>
+                      <th class="p-4">Task Title</th>
+                      <th class="p-4 w-44">Status</th>
+                      <th class="p-4 text-right w-24">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="generatedSlotsTableBody" class="divide-y divide-gray-100 text-sm">
+                    <!-- Slots will render here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+              <button id="btnUpdateSchedule" onclick="handleSaveSchedule(true)" class="hidden px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm flex items-center gap-2 shadow">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Update Existing Schedule
+              </button>
+              <button id="btnSaveSchedule" onclick="handleSaveSchedule(false)" class="custom-btn-primary px-6 py-2.5 font-semibold text-sm flex items-center gap-2 shadow">
+                <i data-lucide="save" class="w-4 h-4"></i> Save Schedule (POST)
+              </button>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- VIEW 3: TASK DETAILS / EXTRA PARAMS PAGE -->
+        <section id="viewTaskDetail" class="hidden space-y-6">
+          <!-- Back button header -->
+          <div class="flex items-center justify-between">
+            <button onclick="goBackFromDetail()" class="flex items-center gap-2 text-sm font-semibold opacity-70 hover:opacity-100 transition">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Schedule
+            </button>
+            <span id="detailDayBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-black/10"></span>
+          </div>
+
+          <!-- Card Form -->
+          <div class="custom-card p-6 md:p-8 shadow-sm space-y-6">
+            <div class="flex items-center justify-between border-b pb-4">
+              <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i data-lucide="file-edit" class="w-6 h-6"></i> Edit Task Parameters
+              </h1>
+              <span id="detailStatusBadge"></span>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Task Title & Status -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold uppercase opacity-70 mb-1">Task Title</label>
+                  <input type="text" id="detailTitle" class="w-full p-2.5 border rounded-lg bg-transparent text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="What are you working on?" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase opacity-70 mb-1">Status</label>
+                  <select id="detailStatus" class="w-full p-2.5 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="pending">Pending</option>
+                    <option value="done">Done</option>
+                    <option value="skipped">Skipped</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Time Parameters Grid -->
+              <div class="p-4 rounded-lg bg-black/5 border space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-2">
+                  <i data-lucide="clock" class="w-4 h-4"></i> Time Schedules
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold opacity-70 mb-1">Planned Start</label>
+                    <input type="time" id="detailPlannedStart" class="w-full p-2 border rounded bg-white/50 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold opacity-70 mb-1">Planned End</label>
+                    <input type="time" id="detailPlannedEnd" class="w-full p-2 border rounded bg-white/50 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold opacity-70 mb-1">Actual Start</label>
+                    <input type="time" id="detailStart" class="w-full p-2 border rounded bg-white/50 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold opacity-70 mb-1">Actual End</label>
+                    <input type="time" id="detailEnd" class="w-full p-2 border rounded bg-white/50 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Extra Comment / Notes -->
+              <div>
+                <label class="block text-xs font-bold uppercase opacity-70 mb-1">Comment & Notes</label>
+                <textarea id="detailComment" rows="4" class="w-full p-3 border rounded-lg bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Add extra parameters, notes, URLs, or reflection on this slot..."></textarea>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex justify-end gap-3 pt-4 border-t">
+              <button onclick="goBackFromDetail()" class="px-4 py-2 border rounded-lg text-sm font-semibold hover:bg-black/5 transition">
+                Cancel
+              </button>
+              <button onclick="saveTaskDetails()" class="custom-btn-primary px-6 py-2.5 text-sm font-semibold shadow flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i> Save Task Details
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       REST API SIMULATOR (using LocalStorage as persistence DB)
+       ========================================================================== */
+    const API = {
+      // GET /api/schedules?day=YYYY-MM-DD
+      async getSchedule(day) {
+        await new Promise(r => setTimeout(r, 100)); // simulate latency
+        const db = JSON.parse(localStorage.getItem('schedules_db') || '{}');
+        return db[day] || null;
+      },
+
+      // POST /api/schedules
+      async createSchedule(day, tasks) {
+        await new Promise(r => setTimeout(r, 150));
+        const db = JSON.parse(localStorage.getItem('schedules_db') || '{}');
+
+        if (db[day]) {
+          const error = new Error(`Schedule for date "${day}" already exists! Please update instead.`);
+          error.status = 409;
+          throw error;
+        }
+
+        db[day] = { day, tasks };
+        localStorage.setItem('schedules_db', JSON.stringify(db));
+        return { success: true, data: db[day] };
+      },
+
+      // PUT /api/schedules/:day
+      async updateSchedule(day, tasks) {
+        await new Promise(r => setTimeout(r, 150));
+        const db = JSON.parse(localStorage.getItem('schedules_db') || '{}');
+
+        if (!db[day]) {
+          const error = new Error(`No existing schedule found for date "${day}" to update.`);
+          error.status = 404;
+          throw error;
+        }
+
+        db[day] = { day, tasks };
+        localStorage.setItem('schedules_db', JSON.stringify(db));
+        return { success: true, data: db[day] };
+      }
+    };
+
+    /* ==========================================================================
+       APPLICATION STATE
+       ========================================================================== */
+    let state = {
+      currentView: 'today',
+      currentTheme: 'ghibli',
+      generatedTasks: [], // Currently generated slot objects
+      todaySchedule: null,
+      
+      // Active detail editing context
+      activeDetailContext: {
+        sourceView: 'today', // 'today' or 'create'
+        day: '',
+        taskIndex: null
+      }
+    };
+
+    /* ==========================================================================
+       INITIALIZATION
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      const todayFormatted = getTodayDateStr();
+      document.getElementById('inputDate').value = todayFormatted;
+      document.getElementById('todayDateStr').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      seedDemoDataIfEmpty(todayFormatted);
+
+      setTheme('ghibli');
+      switchView('today');
+    });
+
+    function getTodayDateStr() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function seedDemoDataIfEmpty(todayStr) {
+      const db = JSON.parse(localStorage.getItem('schedules_db') || '{}');
+      if (Object.keys(db).length === 0) {
+        db[todayStr] = {
+          day: todayStr,
+          tasks: [
+            { planned_start: '08:00', planned_end: '08:20', start: '08:00', end: '08:20', title: 'Morning Standup & Coffee', status: 'done', comment: 'Discussed sprint blockers.' },
+            { planned_start: '08:20', planned_end: '08:40', start: '08:22', end: '08:45', title: 'Review Pull Requests', status: 'done', comment: 'Approved PR #104.' },
+            { planned_start: '08:40', planned_end: '09:00', start: '08:40', end: '09:00', title: 'Sprint Planning Prep', status: 'pending', comment: 'Need to update user stories.' },
+            { planned_start: '09:00', planned_end: '09:20', start: '09:00', end: '09:20', title: 'Team Sync Meeting', status: 'skipped', comment: 'Cancelled by organizer.' }
+          ]
+        };
+        localStorage.setItem('schedules_db', JSON.stringify(db));
+      }
+    }
+
+    /* ==========================================================================
+       NAVIGATION & THEMES
+       ========================================================================== */
+    function switchView(viewName) {
+      state.currentView = viewName;
+
+      const viewToday = document.getElementById('viewToday');
+      const viewCreate = document.getElementById('viewCreate');
+      const viewTaskDetail = document.getElementById('viewTaskDetail');
+      
+      const navToday = document.getElementById('navToday');
+      const navCreate = document.getElementById('navCreate');
+
+      viewToday.classList.add('hidden');
+      viewCreate.classList.add('hidden');
+      viewTaskDetail.classList.add('hidden');
+      navToday.classList.remove('bg-white/20');
+      navCreate.classList.remove('bg-white/20');
+
+      if (viewName === 'today') {
+        viewToday.classList.remove('hidden');
+        navToday.classList.add('bg-white/20');
+        loadTodaySchedule();
+      } else if (viewName === 'create') {
+        viewCreate.classList.remove('hidden');
+        navCreate.classList.add('bg-white/20');
+      } else if (viewName === 'task-detail') {
+        viewTaskDetail.classList.remove('hidden');
+      }
+
+      // Close mobile drawer if open
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.add('hidden');
+
+      lucide.createIcons();
+    }
+
+    function setTheme(theme) {
+      state.currentTheme = theme;
+      document.body.className = `h-full theme-${theme}`;
+
+      const btnGhibli = document.getElementById('themeBtnGhibli');
+      const btnMinimalist = document.getElementById('themeBtnMinimalist');
+
+      if (theme === 'ghibli') {
+        btnGhibli.className = "flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded bg-white/30 text-white border border-white/40 shadow-sm";
+        btnMinimalist.className = "flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded border border-white/20 text-white/70 hover:text-white";
+      } else {
+        btnMinimalist.className = "flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded bg-white/30 text-white border border-white/40 shadow-sm";
+        btnGhibli.className = "flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded border border-white/20 text-white/70 hover:text-white";
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    /* ==========================================================================
+       VIEW 1: TODAY'S TASKS LOGIC
+       ========================================================================== */
+    async function loadTodaySchedule() {
+      const todayStr = getTodayDateStr();
+      const schedule = await API.getSchedule(todayStr);
+      state.todaySchedule = schedule;
+
+      const tbody = document.getElementById('todayTasksTableBody');
+      tbody.innerHTML = '';
+
+      if (!schedule || !schedule.tasks || schedule.tasks.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-8 text-center text-gray-500">
+              <i data-lucide="calendar-x2" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+              <p class="font-medium">No schedule created for today (${todayStr}) yet.</p>
+              <button onclick="switchView('create')" class="mt-3 text-xs font-semibold text-emerald-600 underline hover:opacity-80">
+                Click here to generate a schedule
+              </button>
+            </td>
+          </tr>
+        `;
+        updateStats(0, 0, 0);
+        lucide.createIcons();
+        return;
+      }
+
+      let doneCount = 0;
+      let pendingCount = 0;
+
+      schedule.tasks.forEach((task, index) => {
+        if (task.status === 'done') doneCount++;
+        if (task.status === 'pending') pendingCount++;
+
+        const pStart = task.planned_start || task.start || '--:--';
+        const pEnd = task.planned_end || task.end || '--:--';
+        const aStart = task.start || '--:--';
+        const aEnd = task.end || '--:--';
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-black/5 transition cursor-pointer group";
+        tr.onclick = (e) => {
+          // Avoid triggering row click if user changed dropdown directly
+          if (e.target.tagName !== 'SELECT') {
+            openTaskDetail('today', todayStr, index);
+          }
+        };
+
+        tr.innerHTML = `
+          <td class="p-4 font-semibold opacity-80 text-xs">${pStart} - ${pEnd}</td>
+          <td class="p-4 text-xs font-medium opacity-70">${aStart} - ${aEnd}</td>
+          <td class="p-4 font-medium">
+            <div class="flex items-center justify-between">
+              <span>${escapeHtml(task.title || 'Untitled Task')}</span>
+              ${task.comment ? '<i data-lucide="message-square" class="w-3.5 h-3.5 opacity-40"></i>' : ''}
+            </div>
+          </td>
+          <td class="p-4">${getStatusBadge(task.status)}</td>
+          <td class="p-4 text-right">
+            <div class="flex items-center justify-end gap-2">
+              <select onchange="updateTaskStatusToday(${index}, this.value)" class="p-1.5 text-xs font-medium border rounded bg-transparent focus:outline-none cursor-pointer">
+                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                <option value="skipped" ${task.status === 'skipped' ? 'selected' : ''}>Skipped</option>
+              </select>
+              <button class="p-1 rounded opacity-60 group-hover:opacity-100 hover:bg-black/10">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateStats(schedule.tasks.length, doneCount, pendingCount);
+      lucide.createIcons();
+    }
+
+    async function updateTaskStatusToday(taskIndex, newStatus) {
+      if (!state.todaySchedule) return;
+      
+      const todayStr = getTodayDateStr();
+      state.todaySchedule.tasks[taskIndex].status = newStatus;
+
+      try {
+        await API.updateSchedule(todayStr, state.todaySchedule.tasks);
+        showToast("Task status updated!", "success");
+        loadTodaySchedule();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function updateStats(total, done, pending) {
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statDone').textContent = done;
+      document.getElementById('statPending').textContent = pending;
+    }
+
+    /* ==========================================================================
+       VIEW 2: GENERATOR LOGIC
+       ========================================================================== */
+    function generateSlots() {
+      const startTimeVal = document.getElementById('inputStartTime').value;
+      const endTimeVal = document.getElementById('inputEndTime').value;
+      const durationVal = parseInt(document.getElementById('inputDuration').value, 10);
+
+      if (!startTimeVal || !endTimeVal || !durationVal || durationVal <= 0) {
+        showToast("Please provide valid Start Time, End Time, and Duration.", "error");
+        return;
+      }
+
+      const startMins = timeToMinutes(startTimeVal);
+      const endMins = timeToMinutes(endTimeVal);
+
+      if (startMins >= endMins) {
+        showToast("Start time must be before End time.", "error");
+        return;
+      }
+
+      const slots = [];
+      let current = startMins;
+
+      while (current + durationVal <= endMins) {
+        const slotStart = minutesToTime(current);
+        const slotEnd = minutesToTime(current + durationVal);
+        
+        slots.push({
+          planned_start: slotStart,
+          planned_end: slotEnd,
+          start: slotStart,
+          end: slotEnd,
+          title: '',
+          status: 'pending',
+          comment: ''
+        });
+
+        current += durationVal;
+      }
+
+      state.generatedTasks = slots;
+      renderGeneratedSlots();
+      showToast(`Generated ${slots.length} time slots!`, "info");
+    }
+
+    function renderGeneratedSlots() {
+      const container = document.getElementById('generatedSlotsContainer');
+      const tbody = document.getElementById('generatedSlotsTableBody');
+      const badge = document.getElementById('slotCountBadge');
+
+      tbody.innerHTML = '';
+      badge.textContent = `${state.generatedTasks.length} Slots`;
+
+      if (state.generatedTasks.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('btnUpdateSchedule').classList.add('hidden');
+
+      state.generatedTasks.forEach((task, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-black/5";
+        tr.innerHTML = `
+          <td class="p-4 font-semibold text-xs opacity-80">${task.planned_start} - ${task.planned_end}</td>
+          <td class="p-4">
+            <input type="text" value="${escapeHtml(task.title)}" placeholder="Enter task title..." 
+                   oninput="updateTaskTitle(${idx}, this.value)"
+                   class="w-full p-2 border rounded text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </td>
+          <td class="p-4">
+            <select onchange="updateTaskStatus(${idx}, this.value)" class="w-full p-2 border rounded text-xs bg-transparent focus:outline-none">
+              <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+              <option value="skipped" ${task.status === 'skipped' ? 'selected' : ''}>Skipped</option>
+            </select>
+          </td>
+          <td class="p-4 text-right">
+            <button onclick="openTaskDetail('create', '', ${idx})" class="p-2 rounded hover:bg-black/10 text-xs font-semibold flex items-center gap-1 ml-auto">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      container.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function updateTaskTitle(index, title) {
+      state.generatedTasks[index].title = title;
+    }
+
+    function updateTaskStatus(index, status) {
+      state.generatedTasks[index].status = status;
+    }
+
+    async function handleSaveSchedule(isUpdate = false) {
+      const targetDate = document.getElementById('inputDate').value;
+
+      if (!targetDate) {
+        showToast("Please select a date for the schedule.", "error");
+        return;
+      }
+
+      if (state.generatedTasks.length === 0) {
+        showToast("No slots generated to save.", "error");
+        return;
+      }
+
+      try {
+        if (isUpdate) {
+          await API.updateSchedule(targetDate, state.generatedTasks);
+          showToast(`Schedule for ${targetDate} updated successfully!`, "success");
+        } else {
+          await API.createSchedule(targetDate, state.generatedTasks);
+          showToast(`Schedule for ${targetDate} created successfully!`, "success");
+        }
+
+        document.getElementById('btnUpdateSchedule').classList.add('hidden');
+        setTimeout(() => switchView('today'), 800);
+
+      } catch (error) {
+        showToast(error.message, "error");
+        if (error.status === 409) {
+          document.getElementById('btnUpdateSchedule').classList.remove('hidden');
+        }
+      }
+    }
+
+
+    /* ==========================================================================
+       VIEW 3: TASK DETAILS (EXTRA PARAMETERS) LOGIC
+       ========================================================================== */
+    function openTaskDetail(sourceView, day, taskIndex) {
+      state.activeDetailContext = { sourceView, day, taskIndex };
+
+      let task;
+      if (sourceView === 'today') {
+        task = state.todaySchedule.tasks[taskIndex];
+      } else {
+        task = state.generatedTasks[taskIndex];
+      }
+
+      // Populate Detail Form
+      document.getElementById('detailDayBadge').textContent = day || document.getElementById('inputDate').value || 'New Schedule';
+      document.getElementById('detailTitle').value = task.title || '';
+      document.getElementById('detailStatus').value = task.status || 'pending';
+      document.getElementById('detailPlannedStart').value = task.planned_start || task.start || '08:00';
+      document.getElementById('detailPlannedEnd').value = task.planned_end || task.end || '08:20';
+      document.getElementById('detailStart').value = task.start || task.planned_start || '08:00';
+      document.getElementById('detailEnd').value = task.end || task.planned_end || '08:20';
+      document.getElementById('detailComment').value = task.comment || '';
+      
+      document.getElementById('detailStatusBadge').innerHTML = getStatusBadge(task.status || 'pending');
+
+      switchView('task-detail');
+    }
+
+    async function saveTaskDetails() {
+      const ctx = state.activeDetailContext;
+      
+      const updatedTask = {
+        title: document.getElementById('detailTitle').value,
+        status: document.getElementById('detailStatus').value,
+        planned_start: document.getElementById('detailPlannedStart').value,
+        planned_end: document.getElementById('detailPlannedEnd').value,
+        start: document.getElementById('detailStart').value,
+        end: document.getElementById('detailEnd').value,
+        comment: document.getElementById('detailComment').value
+      };
+
+      if (ctx.sourceView === 'today') {
+        state.todaySchedule.tasks[ctx.taskIndex] = updatedTask;
+        try {
+          await API.updateSchedule(ctx.day, state.todaySchedule.tasks);
+          showToast("Task parameters saved successfully!", "success");
+          switchView('today');
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      } else {
+        // Source is Generator array
+        state.generatedTasks[ctx.taskIndex] = updatedTask;
+        showToast("Task slot parameters updated!", "info");
+        switchView('create');
+        renderGeneratedSlots();
+      }
+    }
+
+    function goBackFromDetail() {
+      switchView(state.activeDetailContext.sourceView);
+    }
+
+
+    /* ==========================================================================
+       UTILITY HELPERS
+       ========================================================================== */
+    function timeToMinutes(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minutesToTime(mins) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'done':
+          return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style="background-color: var(--badge-done-bg); color: var(--badge-done-text);"><i data-lucide="check" class="w-3 h-3"></i> Done</span>`;
+        case 'skipped':
+          return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style="background-color: var(--badge-skipped-bg); color: var(--badge-skipped-text);"><i data-lucide="x" class="w-3 h-3"></i> Skipped</span>`;
+        default:
+          return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style="background-color: var(--badge-pending-bg); color: var(--badge-pending-text);"><i data-lucide="clock" class="w-3 h-3"></i> Pending</span>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const msg = document.getElementById('toastMsg');
+
+      toast.className = "mb-6 p-4 rounded-lg flex items-center justify-between border shadow-sm transition";
+
+      if (type === 'error') {
+        toast.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+        icon.setAttribute('data-lucide', 'alert-triangle');
+      } else if (type === 'success') {
+        toast.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+        icon.setAttribute('data-lucide', 'check-circle-2');
+      } else {
+        toast.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+        icon.setAttribute('data-lucide', 'info');
+      }
+
+      msg.textContent = message;
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function dismissToast() {
+      document.getElementById('toast').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

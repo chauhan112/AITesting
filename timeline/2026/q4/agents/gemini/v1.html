@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coding Agent Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden font-sans">
+
+  <!-- SIDEBAR: Runs History -->
+  <aside class="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col h-full shrink-0">
+    <!-- Header -->
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bot" class="w-6 h-6 text-indigo-400"></i>
+        <h1 class="font-bold text-lg text-slate-100">Agent Runs</h1>
+      </div>
+      <button id="btn-new-run" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition">
+        <i data-lucide="plus" class="w-4 h-4"></i> New Run
+      </button>
+    </div>
+
+    <!-- Search / Actions -->
+    <div class="p-3 border-b border-slate-800 flex gap-2">
+      <input id="search-runs" type="text" placeholder="Search runs..." 
+        class="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-md px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+      <button id="btn-refresh-runs" class="p-1.5 border border-slate-800 text-slate-400 hover:text-slate-100 rounded-md bg-slate-950">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Runs List -->
+    <div id="runs-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+      <div class="text-center text-xs text-slate-500 py-8">Loading runs...</div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950">
+
+    <!-- TOPBAR: Run Details & Actions -->
+    <header class="h-14 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/30">
+      <div class="flex items-center gap-3 overflow-hidden">
+        <span id="current-run-id" class="text-xs font-mono px-2 py-1 bg-slate-800 text-slate-300 rounded">No Run Selected</span>
+        <span id="current-run-status" class="hidden text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">--</span>
+      </div>
+      
+      <div id="run-actions" class="hidden flex items-center gap-2">
+        <button id="btn-cancel-run" class="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-md text-xs font-medium transition">
+          <i data-lucide="square" class="w-3.5 h-3.5"></i> Cancel
+        </button>
+        <button id="btn-delete-run" class="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-md text-xs font-medium transition">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY (Split: Stream Console & File Explorer) -->
+    <div id="active-workspace" class="flex-1 flex overflow-hidden">
+      
+      <!-- LOGS / SSE STREAM CONSOLE -->
+      <div class="flex-1 flex flex-col border-r border-slate-800 h-full">
+        <div class="px-4 py-2 border-b border-slate-800 bg-slate-900/20 flex items-center justify-between text-xs text-slate-400 font-mono">
+          <span class="flex items-center gap-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> Console Output (SSE Stream)
+          </span>
+          <button id="btn-clear-console" class="text-slate-500 hover:text-slate-300">Clear</button>
+        </div>
+        <div id="console-logs" class="flex-1 overflow-y-auto p-4 font-mono text-xs text-slate-300 space-y-1 bg-slate-950/80">
+          <div class="text-slate-600 italic">Select or create a run to start streaming outputs...</div>
+        </div>
+      </div>
+
+      <!-- WORKSPACE FILES SIDE PANEL -->
+      <div class="w-80 flex flex-col h-full bg-slate-900/10">
+        <div class="px-4 py-2 border-b border-slate-800 bg-slate-900/20 flex items-center justify-between text-xs text-slate-400 font-mono">
+          <span class="flex items-center gap-2">
+            <i data-lucide="folder-tree" class="w-4 h-4 text-indigo-400"></i> Workspace Files
+          </span>
+          <button id="btn-refresh-files" class="text-slate-500 hover:text-slate-300">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="files-tree" class="flex-1 overflow-y-auto p-3 text-xs text-slate-400 space-y-1">
+          <div class="text-slate-600 italic">No run active.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM TASK CREATION BAR -->
+    <div class="p-4 border-t border-slate-800 bg-slate-900/40">
+      <form id="form-create-run" class="flex flex-col gap-3 max-w-5xl mx-auto">
+        <div class="flex gap-3">
+          <input type="text" id="input-workspace" placeholder="Workspace Name (optional)" 
+            class="w-1/3 bg-slate-900 border border-slate-800 text-xs text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex gap-2">
+          <textarea id="input-task" rows="2" placeholder="Describe what you want the agent to code or do..." 
+            class="flex-1 bg-slate-900 border border-slate-800 text-xs text-slate-200 rounded-lg p-3 focus:outline-none focus:border-indigo-500 resize-none" required></textarea>
+          <button type="submit" class="px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition shrink-0">
+            <i data-lucide="play" class="w-4 h-4 fill-current"></i> Run Agent
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- FILE VIEWER MODAL -->
+  <div id="modal-file-viewer" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <span id="modal-file-path" class="text-xs font-mono text-indigo-400">file.js</span>
+        <button id="btn-close-modal" class="text-slate-400 hover:text-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <pre id="modal-file-content" class="flex-1 p-4 overflow-auto font-mono text-xs text-slate-300 bg-slate-950/50"></pre>
+    </div>
+  </div>
+
+  <!-- JS APPLICATION LOGIC -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // App State
+    let activeRunId = null;
+    let eventSource = null;
+
+    // DOM Elements
+    const runsListEl = document.getElementById('runs-list');
+    const consoleLogsEl = document.getElementById('console-logs');
+    const filesTreeEl = document.getElementById('files-tree');
+    const currentRunIdEl = document.getElementById('current-run-id');
+    const currentRunStatusEl = document.getElementById('current-run-status');
+    const runActionsEl = document.getElementById('run-actions');
+    const formCreateRun = document.getElementById('form-create-run');
+
+    // API Helpers
+    async function apiRequest(endpoint, body = {}) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        console.error(`API Error (${endpoint}):`, err);
+        return null;
+      }
+    }
+
+    // 1. Fetch & Render Runs List
+    async function loadRuns() {
+      const search = document.getElementById('search-runs').value;
+      const data = await apiRequest('/api/agent/runs/read_all', { search: search || undefined });
+      
+      runsListEl.innerHTML = '';
+      const runs = Array.isArray(data) ? data : (data?.runs || []);
+
+      if (runs.length === 0) {
+        runsListEl.innerHTML = `<div class="text-center text-xs text-slate-500 py-8">No runs found.</div>`;
+        return;
+      }
+
+      runs.forEach(run => {
+        const id = run.id || run.run || run;
+        const task = run.task || 'No task description';
+        const status = run.status || 'unknown';
+
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-2.5 rounded-lg border transition text-xs flex flex-col gap-1 ${
+          activeRunId === id 
+            ? 'bg-slate-800/80 border-indigo-500/50 text-slate-100' 
+            : 'border-transparent hover:bg-slate-900/60 text-slate-400 hover:text-slate-200'
+        }`;
+        
+        btn.onclick = () => selectRun(id);
+        btn.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-[10px] text-slate-500 truncate max-w-[120px]">${id}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded ${getStatusBadgeClass(status)}">${status}</span>
+          </div>
+          <p class="truncate font-medium text-slate-300 text-xs">${task}</p>
+        `;
+        runsListEl.appendChild(btn);
+      });
+    }
+
+    // Status Badge Helper
+    function getStatusBadgeClass(status) {
+      switch (status?.toLowerCase()) {
+        case 'running': return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+        case 'completed': return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        case 'failed': case 'cancelled': return 'bg-red-500/10 text-red-400 border border-red-500/20';
+        default: return 'bg-slate-800 text-slate-400';
+      }
+    }
+
+    // 2. Select Run
+    async function selectRun(runId) {
+      activeRunId = runId;
+      currentRunIdEl.textContent = `Run: ${runId}`;
+      runActionsEl.classList.remove('hidden');
+
+      // Fetch specific run status details
+      const runDetails = await apiRequest('/api/agent/runs/read', { run: runId });
+      if (runDetails) {
+        const status = runDetails.status || 'running';
+        currentRunStatusEl.textContent = status;
+        currentRunStatusEl.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${getStatusBadgeClass(status)}`;
+        currentRunStatusEl.classList.remove('hidden');
+      }
+
+      // Re-render sidebar active highlight
+      loadRuns();
+
+      // Clear Console & Start SSE Stream
+      consoleLogsEl.innerHTML = '';
+      connectSSEStream(runId);
+
+      // Load Workspace Files
+      loadFiles(runId);
+    }
+
+    // 3. SSE Stream Connection
+    function connectSSEStream(runId) {
+      if (eventSource) eventSource.close();
+
+      eventSource = new EventSource(`/api/agent/runs/stream/${runId}`);
+
+      eventSource.onopen = () => {
+        appendLog(`[System] Connected to SSE stream for run ${runId}`, 'text-slate-500');
+      };
+
+      eventSource.onmessage = (event) => {
+        appendLog(event.data);
+      };
+
+      eventSource.onerror = (err) => {
+        appendLog(`[System] Stream disconnected or ended.`, 'text-slate-500');
+        eventSource.close();
+      };
+    }
+
+    function appendLog(message, colorClass = 'text-slate-300') {
+      const line = document.createElement('div');
+      line.className = `font-mono text-xs py-0.5 leading-relaxed whitespace-pre-wrap ${colorClass}`;
+      line.textContent = message;
+      consoleLogsEl.appendChild(line);
+      consoleLogsEl.scrollTop = consoleLogsEl.scrollHeight;
+    }
+
+    // 4. Load & Render Files
+    async function loadFiles(runId) {
+      filesTreeEl.innerHTML = '<div class="text-slate-500 italic">Fetching workspace files...</div>';
+      const data = await apiRequest(`/api/agent/runs/${runId}/files/read_all`, {});
+
+      filesTreeEl.innerHTML = '';
+      const files = data?.files || data || [];
+
+      if (!Array.isArray(files) || files.length === 0) {
+        filesTreeEl.innerHTML = '<div class="text-slate-600 italic">No files generated yet.</div>';
+        return;
+      }
+
+      files.forEach(filePath => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center gap-2 p-1.5 hover:bg-slate-800/60 rounded cursor-pointer text-slate-300 transition';
+        item.innerHTML = `
+          <i data-lucide="file-code" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span class="truncate">${filePath}</span>
+        `;
+        item.onclick = () => openFileModal(runId, filePath);
+        filesTreeEl.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    // 5. Read File Content (Modal)
+    async function openFileModal(runId, path) {
+      const modal = document.getElementById('modal-file-viewer');
+      const modalPath = document.getElementById('modal-file-path');
+      const modalContent = document.getElementById('modal-file-content');
+
+      modalPath.textContent = path;
+      modalContent.textContent = 'Loading file content...';
+      modal.classList.remove('hidden');
+
+      const res = await apiRequest(`/api/agent/runs/${runId}/files/read`, { path });
+      modalContent.textContent = res?.content || res?.data || (typeof res === 'string' ? res : JSON.stringify(res, null, 2));
+    }
+
+    // 6. Form Submit: Create Run
+    formCreateRun.onsubmit = async (e) => {
+      e.preventDefault();
+      const task = document.getElementById('input-task').value.trim();
+      const workspaceName = document.getElementById('input-workspace').value.trim();
+
+      if (!task) return;
+
+      const payload = {
+        task,
+        ...(workspaceName && { workspace_name: workspaceName })
+      };
+
+      const res = await apiRequest('/api/agent/runs/create', payload);
+      document.getElementById('input-task').value = '';
+
+      if (res && (res.run_id || res.id || res.run)) {
+        const newRunId = res.run_id || res.id || res.run;
+        await loadRuns();
+        selectRun(newRunId);
+      } else {
+        alert('Run created, refreshing list...');
+        loadRuns();
+      }
+    };
+
+    // Actions
+    document.getElementById('btn-cancel-run').onclick = async () => {
+      if (!activeRunId) return;
+      if (confirm(`Cancel run ${activeRunId}?`)) {
+        await apiRequest('/api/agent/runs/cancel', { run: activeRunId });
+        selectRun(activeRunId);
+      }
+    };
+
+    document.getElementById('btn-delete-run').onclick = async () => {
+      if (!activeRunId) return;
+      if (confirm(`Delete run ${activeRunId}?`)) {
+        await apiRequest('/api/agent/runs/delete', { run: activeRunId });
+        activeRunId = null;
+        currentRunIdEl.textContent = 'No Run Selected';
+        currentRunStatusEl.classList.add('hidden');
+        runActionsEl.classList.add('hidden');
+        consoleLogsEl.innerHTML = '';
+        filesTreeEl.innerHTML = '';
+        loadRuns();
+      }
+    };
+
+    document.getElementById('btn-new-run').onclick = () => {
+      document.getElementById('input-task').focus();
+    };
+
+    document.getElementById('btn-refresh-runs').onclick = loadRuns;
+    document.getElementById('btn-refresh-files').onclick = () => activeRunId && loadFiles(activeRunId);
+    document.getElementById('btn-clear-console').onclick = () => consoleLogsEl.innerHTML = '';
+    document.getElementById('btn-close-modal').onclick = () => document.getElementById('modal-file-viewer').classList.add('hidden');
+
+    // Initial Load
+    loadRuns();
+  </script>
+</body>
+</html>

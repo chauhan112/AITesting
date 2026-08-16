@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lumen">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Document Capture — Scan</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.7/dist/index.global.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDF1F4; --panel:#FFFFFF; --stage:#DDE4EA; --ink:#101C24; --muted:#5C6B76;
+    --line:#C9D3DB; --accent:#1B4DFF; --accent-ink:#FFFFFF; --ok:#00845C; --warn:#B4531A;
+    --shadow:0 1px 0 rgba(16,28,36,.06), 0 12px 30px -18px rgba(16,28,36,.45);
+    --radius:14px;
+  }
+  html[data-theme="vellum"]{
+    --bg:#F7F5F0; --panel:#FFFDF8; --stage:#EAE5DA; --ink:#1A2320; --muted:#6B6A5E;
+    --line:#D8D2C4; --accent:#1F4D3D; --accent-ink:#FFFDF8; --ok:#1F4D3D; --warn:#9A5B22;
+    --shadow:0 1px 0 rgba(26,35,32,.05), 0 14px 34px -22px rgba(26,35,32,.5);
+    --radius:4px;
+  }
+  html[data-theme="graphite"]{
+    --bg:#13161B; --panel:#1B1F26; --stage:#0D1014; --ink:#EDEFF2; --muted:#95A0AC;
+    --line:#2B323C; --accent:#FFB020; --accent-ink:#171307; --ok:#3ECF8E; --warn:#FF7A59;
+    --shadow:0 1px 0 rgba(255,255,255,.04), 0 18px 40px -24px #000;
+    --radius:14px;
+  }
+  html[data-theme="nocturne"]{
+    --bg:#0B0F2B; --panel:#141A3F; --stage:#080B21; --ink:#E9EAFF; --muted:#9095CC;
+    --line:#262F63; --accent:#7C5CFF; --accent-ink:#0B0F2B; --ok:#3BE0C8; --warn:#FF6FA5;
+    --shadow:0 1px 0 rgba(255,255,255,.05), 0 20px 50px -26px #000;
+    --radius:20px;
+  }
+  body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;}
+  .display{font-family:'Archivo',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .btn{border-radius:calc(var(--radius) - 6px);transition:transform .12s ease, background .15s ease, border-color .15s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.07);}
+  .btn-ghost{border:1px solid var(--line);color:var(--ink);background:transparent;}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  #stage{background:
+     linear-gradient(var(--line) 1px, transparent 1px) 0 0/28px 28px,
+     linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/28px 28px,
+     var(--stage);
+  }
+  html[data-theme="nocturne"] #stage,html[data-theme="graphite"] #stage{background-blend-mode:soft-light,soft-light,normal;}
+  .sweep{position:absolute;left:0;right:0;height:34%;pointer-events:none;opacity:0;
+    background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 35%,transparent),transparent);}
+  .sweep.run{animation:sweep 1.1s cubic-bezier(.4,0,.2,1) 2;opacity:1;}
+  @keyframes sweep{from{transform:translateY(-40%)}to{transform:translateY(300%)}}
+  .rail::-webkit-scrollbar{height:8px}
+  .rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+  .swatch{width:26px;height:26px;border-radius:99px;border:1px solid var(--line);}
+  .fadein{animation:fade .35s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="max-w-[1240px] mx-auto px-5 pt-7 pb-5 flex flex-wrap items-end gap-6 justify-between">
+  <div>
+    <p class="eyebrow">Document Capture · Workspace</p>
+    <h1 class="display text-[34px] leading-none font-bold tracking-[-.01em] mt-2">Scan Document</h1>
+    <p class="text-sm mt-2 max-w-[48ch]" style="color:var(--muted)">Drag corners onto the page, warp perspective, send to repository. Camera or file — both end up in the same place.</p>
+  </div>
+  <div class="panel px-3 py-2 flex items-center gap-2" role="group" aria-label="Choose theme">
+    <span class="eyebrow mr-1">Theme</span>
+    <button class="swatch btn" data-set-theme="lumen" style="background:#EDF1F4" title="Lumen (light)" aria-label="Lumen"></button>
+    <button class="swatch btn" data-set-theme="vellum" style="background:#F7F5F0" title="Vellum (light)" aria-label="Vellum"></button>
+    <button class="swatch btn" data-set-theme="graphite" style="background:#13161B" title="Graphite (dark)" aria-label="Graphite"></button>
+    <button class="swatch btn" data-set-theme="nocturne" style="background:#0B0F2B" title="Nocturne (dark)" aria-label="Nocturne"></button>
+  </div>
+</header>
+
+<main class="max-w-[1240px] mx-auto px-5 pb-16 grid gap-5 lg:grid-cols-[1fr_320px]">
+
+  <!-- STAGE -->
+  <section class="panel overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color:var(--line)">
+      <p class="eyebrow" id="stageLabel">No Document</p>
+      <p class="mono text-[11px]" id="dims" style="color:var(--muted)">0 × 0 px</p>
+    </div>
+
+    <div id="stage" class="relative min-h-[420px] flex items-center justify-center p-6">
+      <!-- empty state -->
+      <div id="empty" class="text-center max-w-[42ch]">
+        <p class="display text-[22px] font-semibold">Load Document</p>
+        <p class="text-sm mt-2" style="color:var(--muted)">Drag image here, choose from folder, or open camera.</p>
+        <div class="flex gap-2 justify-center mt-4">
+          <button id="emptyPick" class="btn btn-primary px-4 py-2 text-sm font-semibold">Choose Image</button>
+          <button id="emptyCam" class="btn btn-ghost px-4 py-2 text-sm font-semibold">Camera</button>
+        </div>
+      </div>
+
+      <!-- editor -->
+      <div id="editor" class="relative hidden">
+        <canvas id="view" class="block max-w-full rounded-[2px]" style="box-shadow:0 10px 30px -18px rgba(0,0,0,.6)"></canvas>
+        <canvas id="overlay" class="absolute inset-0 touch-none cursor-crosshair"></canvas>
+        <div class="sweep" id="sweep"></div>
+      </div>
+
+      <!-- camera -->
+      <div id="camWrap" class="relative hidden text-center">
+        <video id="video" playsinline autoplay muted class="block max-w-full rounded-[2px]" style="max-height:60vh"></video>
+        <div class="mt-3 flex gap-2 justify-center">
+          <button id="shoot" class="btn btn-primary px-5 py-2 text-sm font-semibold">Capture</button>
+          <button id="camStop" class="btn btn-ghost px-4 py-2 text-sm font-semibold">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-t" style="border-color:var(--line)">
+      <button id="btnPick" class="btn btn-ghost px-3 py-2 text-sm font-semibold">Choose Image</button>
+      <button id="btnCam" class="btn btn-ghost px-3 py-2 text-sm font-semibold">Camera</button>
+      <button id="btnFull" class="btn btn-ghost px-3 py-2 text-sm font-semibold">Reset Corners</button>
+      <button id="btnPrevSrc" class="btn btn-ghost px-3 py-2 text-sm font-semibold disabled:opacity-40" disabled>👁 Preview Clean</button>
+      <span class="mono text-[11px] ml-auto" id="cornerRead" style="color:var(--muted)">–</span>
+    </div>
+  </section>
+
+  <!-- WORKBENCH -->
+  <aside class="grid gap-5 content-start">
+    <div class="panel p-4">
+      <p class="eyebrow">Output Settings</p>
+      <label class="block text-sm mt-3 mb-1 font-medium">Width (px)</label>
+      <input id="outW" type="number" min="200" max="4000" value="1240"
+        class="mono w-full px-3 py-2 text-sm bg-transparent border" style="border-color:var(--line);border-radius:calc(var(--radius) - 6px)">
+      <label class="block text-sm mt-3 mb-1 font-medium">Aspect Ratio</label>
+      <select id="ratio" class="w-full px-3 py-2 text-sm bg-transparent border" style="border-color:var(--line);border-radius:calc(var(--radius) - 6px)">
+        <option value="auto">Keep selection ratio</option>
+        <option value="1.4142" selected>DIN A (1 : 1.414)</option>
+        <option value="1.2941">US Letter</option>
+        <option value="1">Square</option>
+      </select>
+      <label class="flex items-center gap-2 mt-3 text-sm cursor-pointer">
+        <input id="gray" type="checkbox" class="accent-[var(--accent)]"> Enhance & Grayscale
+      </label>
+      <button id="btnCrop" class="btn btn-primary w-full mt-4 px-4 py-2.5 text-sm font-semibold disabled:opacity-40" disabled>Warp & Crop</button>
+      <p class="mono text-[11px] mt-2" id="cropInfo" style="color:var(--muted)">Result: –</p>
+    </div>
+
+    <div class="panel p-4">
+      <p class="eyebrow">Result</p>
+      <div id="resWrap" class="relative mt-3 border cursor-pointer group" style="border-color:var(--line);border-radius:calc(var(--radius) - 6px);overflow:hidden;background:var(--stage)">
+        <canvas id="result" class="block w-full"></canvas>
+        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5 pointer-events-none">
+          <span>👁 Click to Preview Clean Image</span>
+        </div>
+      </div>
+      <label class="block text-sm mt-3 mb-1 font-medium">Filename</label>
+      <input id="fname" type="text" value="scan-01"
+        class="w-full px-3 py-2 text-sm bg-transparent border" style="border-color:var(--line);border-radius:calc(var(--radius) - 6px)">
+      <button id="btnSend" class="btn btn-primary w-full mt-3 px-4 py-2.5 text-sm font-semibold disabled:opacity-40" disabled>Send to Repository</button>
+      <p class="mono text-[11px] mt-2" id="sendState" style="color:var(--muted)">Ready.</p>
+    </div>
+  </aside>
+
+  <!-- LIBRARY -->
+  <section class="panel p-4 lg:col-span-2">
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Repository</p>
+        <p class="display text-[20px] font-semibold mt-1">Recently Sent</p>
+      </div>
+      <button id="btnReload" class="btn btn-ghost px-3 py-2 text-sm font-semibold">Refresh</button>
+    </div>
+    <div id="rail" class="rail mt-4 flex gap-3 overflow-x-auto pb-2"></div>
+  </section>
+</main>
+
+<!-- CLEAN PREVIEW LIGHTBOX MODAL -->
+<div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs hidden opacity-0 transition-opacity duration-200">
+  <div class="panel max-w-[92vw] max-h-[92vh] flex flex-col overflow-hidden shadow-2xl w-[900px]">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:var(--line)">
+      <div>
+        <p class="eyebrow" id="prevEyebrow">Document Preview</p>
+        <h3 class="display text-lg font-bold truncate max-w-[360px] sm:max-w-[500px]" id="prevTitle">Scan Preview</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="prevEdit" class="btn btn-primary px-3 py-1.5 text-xs font-semibold hidden flex items-center gap-1">
+          ⚡ Open in Editor
+        </button>
+        <a id="prevDownload" download href="#" class="btn btn-ghost px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download
+        </a>
+        <button id="prevClose" class="btn btn-ghost px-3 py-1.5 text-xs font-semibold">✕ Close</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div class="p-4 flex-1 flex items-center justify-center overflow-auto min-h-[320px] max-h-[72vh]" style="background:var(--stage)">
+      <img id="prevImg" src="" alt="Full Preview" class="max-w-full max-h-[68vh] object-contain rounded-[2px] shadow-xl">
+    </div>
+    <!-- Footer -->
+    <div class="px-5 py-2.5 border-t flex items-center justify-between text-xs" style="border-color:var(--line);color:var(--muted)">
+      <span class="mono" id="prevMeta">0 × 0 px</span>
+      <span class="mono">Press ESC to close</span>
+    </div>
+  </div>
+</div>
+
+<input id="file" type="file" accept="image/*" class="hidden">
+<canvas id="src" class="hidden"></canvas>
+
+<script>
+/* ---------- theme ---------- */
+document.querySelectorAll('[data-set-theme]').forEach(b=>b.onclick=()=>{
+  document.documentElement.dataset.theme=b.dataset.setTheme; drawOverlay();
+});
+
+/* ---------- elements ---------- */
+const $=id=>document.getElementById(id);
+const srcCv=$('src'), view=$('view'), ov=$('overlay'), res=$('result');
+let img=null, corners=null, viewScale=1, drag=-1, hover=-1;
+
+/* ---------- preview modal ---------- */
+const prevModal=$('previewModal'), prevImg=$('prevImg'), prevTitle=$('prevTitle'),
+      prevMeta=$('prevMeta'), prevDownload=$('prevDownload'), prevClose=$('prevClose'),
+      prevEyebrow=$('prevEyebrow'), prevEdit=$('prevEdit');
+let currentPreviewDoc=null;
+
+function openPreview({ url, title, meta, eyebrow, item }) {
+  prevImg.src = url;
+  prevTitle.textContent = title || 'Document Preview';
+  prevMeta.textContent = meta || '';
+  prevEyebrow.textContent = eyebrow || 'Clean Preview';
+  prevDownload.href = url;
+  prevDownload.download = (title || 'document').replace(/\s+/g, '-').toLowerCase() + '.jpg';
+  currentPreviewDoc = item || null;
+
+  if (item) {
+    prevEdit.classList.remove('hidden');
+  } else {
+    prevEdit.classList.add('hidden');
+  }
+
+  prevModal.classList.remove('hidden');
+  requestAnimationFrame(() => prevModal.classList.remove('opacity-0'));
+}
+
+function closePreview() {
+  prevModal.classList.add('opacity-0');
+  setTimeout(() => prevModal.classList.add('hidden'), 200);
+}
+
+prevClose.onclick = closePreview;
+prevModal.onclick = (e) => { if (e.target === prevModal) closePreview(); };
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !prevModal.classList.contains('hidden')) closePreview(); });
+
+prevEdit.onclick = () => {
+  if (currentPreviewDoc) {
+    loadSrc(currentPreviewDoc.thumbUrl, currentPreviewDoc.name.replace(/\.[^.]+$/, ''));
+    closePreview();
+  }
+};
+
+/* Preview triggers */
+$('btnPrevSrc').onclick = () => {
+  if (!img) return;
+  openPreview({
+    url: srcCv.toDataURL('image/jpeg', 0.95),
+    title: $('stageLabel').textContent.split('·')[0].trim() || 'Source Document',
+    meta: `Original Image · ${srcCv.width} × ${srcCv.height} px`,
+    eyebrow: 'Clean Source View'
+  });
+};
+
+$('resWrap').onclick = () => {
+  if (res.width === 0) return;
+  openPreview({
+    url: res.toDataURL('image/jpeg', 0.95),
+    title: ($('fname').value.trim() || 'scan-result') + ' (Cropped)',
+    meta: `Processed Output · ${res.width} × ${res.height} px`,
+    eyebrow: 'Warped Result'
+  });
+};
+
+/* ---------- load image ---------- */
+$('file').onchange=e=>{ const f=e.target.files[0]; if(f) loadFile(f); e.target.value=''; };
+[$('btnPick'),$('emptyPick')].forEach(b=>b.onclick=()=>$('file').click());
+
+function loadFile(file){
+  const fr=new FileReader();
+  fr.onload=()=>loadSrc(fr.result, file.name.replace(/\.[^.]+$/,''));
+  fr.readAsDataURL(file);
+}
+function loadSrc(dataUrl,name){
+  const i=new Image();
+  i.onload=()=>{
+    img=i;
+    const max=1600, s=Math.min(1,max/Math.max(i.width,i.height));
+    srcCv.width=Math.round(i.width*s); srcCv.height=Math.round(i.height*s);
+    srcCv.getContext('2d').drawImage(i,0,0,srcCv.width,srcCv.height);
+    $('empty').classList.add('hidden'); stopCam();
+    $('editor').classList.remove('hidden');
+    $('stageLabel').textContent=(name||'Document')+' · Adjust Corners';
+    $('dims').textContent=`${srcCv.width} × ${srcCv.height} px`;
+    if(name) $('fname').value=name.slice(0,40);
+    fitView(); resetCorners();
+    $('btnCrop').disabled=false;
+    $('btnPrevSrc').disabled=false;
+  };
+  i.src=dataUrl;
+}
+// drag & drop
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault(); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) loadFile(f);});
+
+/* ---------- view fit ---------- */
+function fitView(){
+  const stage=$('stage'), maxW=Math.min(stage.clientWidth-48, 900), maxH=Math.min(window.innerHeight*0.62, 700);
+  viewScale=Math.min(maxW/srcCv.width, maxH/srcCv.height, 1);
+  const w=Math.round(srcCv.width*viewScale), h=Math.round(srcCv.height*viewScale);
+  view.width=w; view.height=h; ov.width=w; ov.height=h;
+  ov.style.width=w+'px'; ov.style.height=h+'px';
+  view.getContext('2d').drawImage(srcCv,0,0,w,h);
+  drawOverlay();
+}
+window.addEventListener('resize',()=>{ if(img){fitView();} });
+
+function resetCorners(){
+  const w=srcCv.width,h=srcCv.height,mx=w*0.08,my=h*0.08;
+  corners=[[mx,my],[w-mx,my],[w-mx,h-my],[mx,h-my]];
+  drawOverlay();
+}
+$('btnFull').onclick=()=>{ if(img) resetCorners(); };
+
+/* ---------- overlay & magnifying glass ---------- */
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+function drawLoupe(c, idx){
+  const [cx, cy] = corners[idx];
+  const tx = cx * viewScale;
+  const ty = cy * viewScale;
+
+  const radius = 56;
+  const zoom = 2.4;
+
+  let lx = tx;
+  let ly = ty - 88;
+  if (ly - radius < 10) ly = ty + 88;
+  if (lx - radius < 10) lx = radius + 10;
+  if (lx + radius > ov.width - 10) lx = ov.width - radius - 10;
+
+  c.save();
+  c.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  c.shadowBlur = 14;
+  c.shadowOffsetY = 5;
+
+  c.beginPath();
+  c.arc(lx, ly, radius + 2, 0, Math.PI * 2);
+  c.fillStyle = css('--panel') || '#ffffff';
+  c.fill();
+  c.shadowColor = 'transparent';
+
+  c.beginPath();
+  c.arc(lx, ly, radius, 0, Math.PI * 2);
+  c.clip();
+
+  const sw = (radius * 2) / (zoom * viewScale);
+  const sh = (radius * 2) / (zoom * viewScale);
+  const sx = cx - sw / 2;
+  const sy = cy - sh / 2;
+
+  c.fillStyle = '#ffffff';
+  c.fillRect(lx - radius, ly - radius, radius * 2, radius * 2);
+  c.drawImage(srcCv, sx, sy, sw, sh, lx - radius, ly - radius, radius * 2, radius * 2);
+
+  const accent = css('--accent');
+  c.strokeStyle = accent;
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.moveTo(lx - 16, ly); c.lineTo(lx + 16, ly);
+  c.moveTo(lx, ly - 16); c.lineTo(lx, ly + 16);
+  c.stroke();
+
+  c.beginPath();
+  c.arc(lx, ly, 3.5, 0, Math.PI * 2);
+  c.fillStyle = accent;
+  c.fill();
+
+  c.restore();
+
+  c.save();
+  c.beginPath();
+  c.arc(lx, ly, radius, 0, Math.PI * 2);
+  c.strokeStyle = accent;
+  c.lineWidth = 3;
+  c.stroke();
+
+  c.beginPath();
+  c.moveTo(lx, ly < ty ? ly + radius : ly - radius);
+  c.lineTo(tx, ty);
+  c.strokeStyle = accent;
+  c.lineWidth = 1.5;
+  c.setLineDash([3, 3]);
+  c.stroke();
+  c.restore();
+}
+
+function drawOverlay(){
+  if(!corners) return;
+  const c=ov.getContext('2d'); c.clearRect(0,0,ov.width,ov.height);
+  const p=corners.map(([x,y])=>[x*viewScale,y*viewScale]);
+  const accent=css('--accent');
+  
+  c.save();
+  c.fillStyle='rgba(0,0,0,.42)'; c.fillRect(0,0,ov.width,ov.height);
+  c.globalCompositeOperation='destination-out';
+  c.beginPath(); c.moveTo(...p[0]); p.slice(1).forEach(q=>c.lineTo(...q)); c.closePath(); c.fill();
+  c.restore();
+
+  c.strokeStyle=accent; c.lineWidth=2;
+  c.beginPath(); c.moveTo(...p[0]); p.slice(1).forEach(q=>c.lineTo(...q)); c.closePath(); c.stroke();
+
+  p.forEach(([x,y])=>{
+    c.strokeStyle=accent; c.lineWidth=1.5;
+    c.beginPath(); c.arc(x,y,11,0,7); c.stroke();
+    c.beginPath(); c.moveTo(x-16,y); c.lineTo(x+16,y); c.moveTo(x,y-16); c.lineTo(x,y+16); c.stroke();
+    c.fillStyle=accent; c.beginPath(); c.arc(x,y,3.5,0,7); c.fill();
+  });
+
+  const activeIdx = drag >= 0 ? drag : hover;
+  if (activeIdx >= 0) {
+    drawLoupe(c, activeIdx);
+  }
+
+  $('cornerRead').textContent=corners.map(([x,y])=>`${Math.round(x)}/${Math.round(y)}`).join('  ·  ');
+}
+
+/* ---------- dragging & hover ---------- */
+function pt(e){const r=ov.getBoundingClientRect();return [(e.clientX-r.left)/viewScale,(e.clientY-r.top)/viewScale];}
+
+ov.addEventListener('pointerdown',e=>{
+  if(!corners) return;
+  const [x,y]=pt(e); let best=-1,bd=1e9;
+  corners.forEach(([cx,cy],i)=>{const d=Math.hypot(cx-x,cy-y); if(d<bd){bd=d;best=i;}});
+  if(bd*viewScale<32){ drag=best; ov.setPointerCapture(e.pointerId); drawOverlay(); }
+});
+
+ov.addEventListener('pointermove',e=>{
+  const [x,y]=pt(e);
+  if(drag>=0){
+    corners[drag]=[Math.max(0,Math.min(srcCv.width,x)),Math.max(0,Math.min(srcCv.height,y))];
+    drawOverlay();
+  } else if(corners){
+    let best=-1,bd=1e9;
+    corners.forEach(([cx,cy],i)=>{const d=Math.hypot(cx-x,cy-y); if(d<bd){bd=d;best=i;}});
+    const nextHover = (bd*viewScale < 32) ? best : -1;
+    if(nextHover !== hover){
+      hover = nextHover;
+      ov.style.cursor = hover >= 0 ? 'pointer' : 'crosshair';
+      drawOverlay();
+    }
+  }
+});
+
+ov.addEventListener('pointerleave', ()=>{
+  if(hover !== -1){ hover = -1; drawOverlay(); }
+});
+
+['pointerup','pointercancel'].forEach(ev=>ov.addEventListener(ev,()=>{drag=-1;drawOverlay();}));
+
+/* ---------- camera ---------- */
+let stream=null;
+[$('btnCam'),$('emptyCam')].forEach(b=>b.onclick=startCam);
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}}});
+    $('video').srcObject=stream;
+    $('empty').classList.add('hidden'); $('editor').classList.add('hidden');
+    $('camWrap').classList.remove('hidden');
+    $('stageLabel').textContent='Camera active';
+  }catch(err){
+    $('stageLabel').textContent='Camera unavailable — choose file';
+    $('empty').classList.remove('hidden');
+  }
+}
+function stopCam(){ if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null;} $('camWrap').classList.add('hidden'); }
+$('camStop').onclick=()=>{ stopCam(); if(!img) $('empty').classList.remove('hidden'); };
+$('shoot').onclick=()=>{
+  const v=$('video'), t=document.createElement('canvas');
+  t.width=v.videoWidth; t.height=v.videoHeight;
+  t.getContext('2d').drawImage(v,0,0);
+  stopCam(); loadSrc(t.toDataURL('image/jpeg',0.92),'camera-'+new Date().toISOString().slice(11,19).replace(/:/g,''));
+};
+
+/* ---------- homography warp ---------- */
+function solve(A,b){
+  const n=b.length;
+  for(let i=0;i<n;i++){
+    let p=i; for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[p][i])) p=r;
+    [A[i],A[p]]=[A[p],A[i]]; [b[i],b[p]]=[b[p],b[i]];
+    for(let r=i+1;r<n;r++){ const f=A[r][i]/A[i][i]; if(!f) continue;
+      for(let c=i;c<n;c++) A[r][c]-=f*A[i][c]; b[r]-=f*b[i]; }
+  }
+  const x=new Array(n).fill(0);
+  for(let i=n-1;i>=0;i--){ let s=b[i]; for(let c=i+1;c<n;c++) s-=A[i][c]*x[c]; x[i]=s/A[i][i]; }
+  return x;
+}
+function homography(dst,src){
+  const A=[],b=[];
+  for(let i=0;i<4;i++){
+    const [u,v]=dst[i],[X,Y]=src[i];
+    A.push([u,v,1,0,0,0,-u*X,-v*X]); b.push(X);
+    A.push([0,0,0,u,v,1,-u*Y,-v*Y]); b.push(Y);
+  }
+  const h=solve(A,b); h.push(1); return h;
+}
+function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+
+$('btnCrop').onclick=()=>{
+  const W=Math.max(200,Math.min(4000,parseInt($('outW').value)||1240));
+  const r=$('ratio').value;
+  let H;
+  if(r==='auto'){
+    const w=(dist(corners[0],corners[1])+dist(corners[3],corners[2]))/2;
+    const h=(dist(corners[0],corners[3])+dist(corners[1],corners[2]))/2;
+    H=Math.round(W*(h/w));
+  } else H=Math.round(W*parseFloat(r));
+
+  const h=homography([[0,0],[W,0],[W,H],[0,H]],corners);
+  const sctx=srcCv.getContext('2d'), sd=sctx.getImageData(0,0,srcCv.width,srcCv.height);
+  const out=new ImageData(W,H), sw=srcCv.width, sh=srcCv.height;
+  const gray=$('gray').checked;
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const d=h[6]*x+h[7]*y+1;
+      const sx=(h[0]*x+h[1]*y+h[2])/d, sy=(h[3]*x+h[4]*y+h[5])/d;
+      const ix=sx|0, iy=sy|0, o=(y*W+x)*4;
+      if(ix<0||iy<0||ix>=sw-1||iy>=sh-1){ out.data[o]=out.data[o+1]=out.data[o+2]=255; out.data[o+3]=255; continue; }
+      const fx=sx-ix, fy=sy-iy;
+      for(let k=0;k<3;k++){
+        const i00=(iy*sw+ix)*4+k, i10=i00+4, i01=i00+sw*4, i11=i01+4;
+        out.data[o+k]=(sd.data[i00]*(1-fx)+sd.data[i10]*fx)*(1-fy)+(sd.data[i01]*(1-fx)+sd.data[i11]*fx)*fy;
+      }
+      out.data[o+3]=255;
+      if(gray){
+        const g=0.299*out.data[o]+0.587*out.data[o+1]+0.114*out.data[o+2];
+        const c=Math.max(0,Math.min(255,(g-128)*1.35+134));
+        out.data[o]=out.data[o+1]=out.data[o+2]=c;
+      }
+    }
+  }
+  res.width=W; res.height=H; res.getContext('2d').putImageData(out,0,0);
+  $('cropInfo').textContent=`Result: ${W} × ${H} px`;
+  $('btnSend').disabled=false;
+  $('sendState').textContent='Ready to send.';
+};
+
+/* ---------- emulated backend ---------- */
+const API='https://api.example.internal/v1';
+const store=[
+  {id:'DOC-2041',name:'office-note.jpg',pages:1,createdAt:'2026-08-05T09:12:00Z',w:1240,h:1754,seed:3},
+  {id:'DOC-2038',name:'meeting-minutes.jpg',pages:2,createdAt:'2026-08-04T15:48:00Z',w:1240,h:1754,seed:7},
+  {id:'DOC-2033',name:'tax-form-1a.jpg',pages:1,createdAt:'2026-08-01T11:03:00Z',w:1240,h:1600,seed:12}
+];
+function placeholder(seed,w,h){
+  const lines=Array.from({length:14},(_,i)=>{
+    const lw=40+((seed*(i+3))%50);
+    return `<rect x="12" y="${26+i*13}" width="${lw}%" height="4" rx="2" fill="#8892a0" opacity=".45"/>`;
+  }).join('');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 226"><rect width="160" height="226" fill="#fbfbf9"/><rect x="12" y="12" width="46%" height="7" rx="2" fill="#2b3440"/>${lines}</svg>`;
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+}
+async function apiList(){
+  await new Promise(r=>setTimeout(r,420));
+  return store.map(d=>({...d, thumbUrl: d.thumbUrl || placeholder(d.seed||5,d.w,d.h)}));
+}
+async function apiUpload(blob,name){
+  await new Promise(r=>setTimeout(r,1500));
+  if(!blob) throw new Error('Empty image');
+  const doc={id:'DOC-'+(2042+store.length),name:name+'.jpg',pages:1,createdAt:new Date().toISOString(),
+    w:res.width,h:res.height,thumbUrl:URL.createObjectURL(blob)};
+  store.unshift(doc); return doc;
+}
+
+$('btnSend').onclick=async()=>{
+  const btn=$('btnSend'); btn.disabled=true;
+  $('sweep').classList.add('run');
+  $('sendState').textContent=`POST ${API}/documents …`;
+  try{
+    const blob=await new Promise(r=>res.toBlob(r,'image/jpeg',0.92));
+    const doc=await apiUpload(blob,$('fname').value.trim()||'document');
+    $('sendState').innerHTML=`<span style="color:var(--ok)">Sent · ${doc.id}</span>`;
+    renderRail(await apiList());
+  }catch(err){
+    $('sendState').innerHTML=`<span style="color:var(--warn)">Upload failed: ${err.message}. Try again.</span>`;
+  }finally{
+    btn.disabled=false; setTimeout(()=>$('sweep').classList.remove('run'),2300);
+  }
+};
+
+/* ---------- library rail ---------- */
+function renderRail(docs){
+  const rail=$('rail');
+  rail.innerHTML = docs.length? '' : `<p class="text-sm" style="color:var(--muted)">Repository is empty. Your first processed scan will appear here.</p>`;
+  docs.forEach(d=>{
+    const el=document.createElement('figure');
+    el.className='fadein shrink-0 w-[152px]';
+    el.innerHTML=`
+      <div class="border overflow-hidden cursor-pointer group relative" style="border-color:var(--line);border-radius:calc(var(--radius) - 6px);background:#fff">
+        <img src="${d.thumbUrl}" alt="${d.name}" class="block w-full h-[196px] object-cover">
+        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1">
+          <span>👁 Preview</span>
+        </div>
+      </div>
+      <figcaption class="mt-2">
+        <p class="text-[13px] font-medium truncate" title="${d.name}">${d.name}</p>
+        <p class="mono text-[11px]" style="color:var(--muted)">${d.id} · ${d.w}×${d.h}</p>
+        <p class="mono text-[11px]" style="color:var(--muted)">${new Date(d.createdAt).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}</p>
+      </figcaption>`;
+    el.querySelector('.group').onclick=()=>openPreview({
+      url: d.thumbUrl,
+      title: d.name,
+      meta: `${d.id} · ${d.w} × ${d.h} px · ${new Date(d.createdAt).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}`,
+      eyebrow: 'Repository Document',
+      item: d
+    });
+    rail.appendChild(el);
+  });
+}
+async function reload(){
+  $('rail').innerHTML=`<p class="mono text-[11px]" style="color:var(--muted)">GET ${API}/documents …</p>`;
+  renderRail(await apiList());
+}
+$('btnReload').onclick=reload;
+reload();
+</script>
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full" data-theme="slate-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Epistemic Knowledge Graph Engine</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Vis Network for Interactive Graph Rendering -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <style>
+    /* CSS Custom Property Theme Definitions */
+    :root[data-theme="slate-dark"] {
+      --bg-main: #0f172a;
+      --bg-header: #020617;
+      --bg-panel: #030712;
+      --bg-card: #0f172a;
+      --bg-input: #020617;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --graph-bg: #0f172a;
+      --graph-font: #ffffff;
+      --graph-edge: #475569;
+    }
+
+    :root[data-theme="cyber-dark"] {
+      --bg-main: #09090b;
+      --bg-header: #000000;
+      --bg-panel: #05050a;
+      --bg-card: #121118;
+      --bg-input: #000000;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --border-color: #3b0764;
+      --graph-bg: #09090b;
+      --graph-font: #f4f4f5;
+      --graph-edge: #7e22ce;
+    }
+
+    :root[data-theme="clean-light"] {
+      --bg-main: #f8fafc;
+      --bg-header: #ffffff;
+      --bg-panel: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-input: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --graph-bg: #f8fafc;
+      --graph-font: #0f172a;
+      --graph-edge: #94a3b8;
+    }
+
+    :root[data-theme="paper-light"] {
+      --bg-main: #fbf9f5;
+      --bg-header: #f3efe6;
+      --bg-panel: #f7f3eb;
+      --bg-card: #ffffff;
+      --bg-input: #ffffff;
+      --text-main: #292524;
+      --text-muted: #78716c;
+      --border-color: #e7e0d3;
+      --graph-bg: #fbf9f5;
+      --graph-font: #292524;
+      --graph-edge: #a8a29e;
+    }
+
+    /* Apply CSS variables */
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .theme-header { background-color: var(--bg-header); border-color: var(--border-color); }
+    .theme-panel { background-color: var(--bg-panel); border-color: var(--border-color); }
+    .theme-card { background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-main); }
+    .theme-input { background-color: var(--bg-input); border-color: var(--border-color); color: var(--text-main); }
+    .theme-text-muted { color: var(--text-muted); }
+    .theme-border { border-color: var(--border-color); }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-panel); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden">
+
+  <!-- TOP NAVBAR -->
+  <header class="theme-header border-b px-4 py-3 flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-indigo-600 rounded-lg text-white">
+        <i class="fa-solid fa-diagram-project text-xl"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight tracking-wide">Epistemic Engine</h1>
+        <p class="text-xs theme-text-muted">Computer-Augmented Reasoning & Pathfinding</p>
+      </div>
+    </div>
+
+    <!-- Workspace & Theme Selectors -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- Theme Switcher Dropdown -->
+      <div class="flex items-center space-x-1">
+        <i class="fa-solid fa-palette text-xs theme-text-muted hidden sm:inline"></i>
+        <select id="theme-select" onchange="switchTheme(this.value)" class="theme-input border text-xs rounded-lg px-2.5 py-1.5 focus:outline-none">
+          <option value="slate-dark">🌑 Slate Dark</option>
+          <option value="cyber-dark">⚡ Cyber Neon (Dark)</option>
+          <option value="clean-light">📄 Clean Slate (Light)</option>
+          <option value="paper-light">📜 Warm Paper (Light)</option>
+        </select>
+      </div>
+
+      <!-- Workspace Selector -->
+      <select id="workspace-select" onchange="switchWorkspace(this.value)" class="theme-input border text-xs rounded-lg px-2.5 py-1.5 focus:outline-none">
+        <!-- Dynamically Populated -->
+      </select>
+
+      <button onclick="openNodeModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-plus"></i>
+        <span class="hidden sm:inline">Add Node</span>
+      </button>
+      <button onclick="openEdgeModal()" class="theme-card hover:opacity-80 border text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-link"></i>
+        <span class="hidden sm:inline">Link</span>
+      </button>
+      <button onclick="triggerAIBridge()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span class="hidden md:inline">AI Bridge</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- LEFT SIDEBAR: Controls & Node List -->
+    <aside class="w-full md:w-80 theme-panel border-r flex flex-col shrink-0 max-h-48 md:max-h-full">
+      <div class="p-3 border-b theme-border flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider theme-text-muted">Graph Primitives</span>
+        <span id="node-count-badge" class="text-xs theme-card border px-2 py-0.5 rounded-full font-mono">0 Nodes</span>
+      </div>
+
+      <!-- Filters -->
+      <div class="p-3 border-b theme-border space-y-2">
+        <input type="text" id="search-input" oninput="renderNodeList()" placeholder="Filter nodes..." class="w-full theme-input border rounded px-2.5 py-1.5 text-xs focus:outline-none">
+      </div>
+
+      <!-- Scrollable Node List -->
+      <div id="node-list" class="flex-1 overflow-y-auto p-2 space-y-1.5">
+        <!-- Node items injected here -->
+      </div>
+
+      <!-- Reset Data Footer -->
+      <div class="p-2 border-t theme-border theme-panel text-center">
+        <button onclick="resetData()" class="text-xs text-rose-500 hover:text-rose-400 transition">
+          <i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo Knowledge Base
+        </button>
+      </div>
+    </aside>
+
+    <!-- CENTER AREA: Visual Graph Canvas -->
+    <main class="flex-1 flex flex-col relative" style="background-color: var(--graph-bg);">
+      <!-- View Controls Header -->
+      <div class="absolute top-3 left-3 z-10 flex space-x-2 theme-panel p-1.5 rounded-lg border theme-border shadow-md">
+        <button id="btn-view-graph" onclick="setViewMode('graph')" class="px-3 py-1 rounded text-xs font-medium bg-indigo-600 text-white">
+          <i class="fa-solid fa-circle-nodes mr-1"></i> Graph Canvas
+        </button>
+      </div>
+
+      <!-- Vis.js Graph Canvas Container -->
+      <div id="graph-container" class="w-full h-full min-h-[350px]"></div>
+
+      <!-- Canvas Overlay Legend -->
+      <div class="absolute bottom-3 left-3 z-10 theme-panel p-2.5 rounded-lg border theme-border text-xs space-y-1 hidden sm:block shadow-md">
+        <div class="font-bold theme-text-muted mb-1">Status Legend</div>
+        <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span><span>Axiomatic / Fact</span></div>
+        <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>Speculative</span></div>
+        <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span>Verified</span></div>
+        <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span><span>Refuted / Broken</span></div>
+      </div>
+    </main>
+
+    <!-- RIGHT INSPECTOR PANEL -->
+    <aside id="inspector-panel" class="w-full md:w-96 theme-panel border-l flex flex-col shrink-0 overflow-y-auto hidden">
+      <div class="p-3 border-b theme-border flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-indigo-500">Node Inspector</span>
+        <button onclick="closeInspector()" class="theme-text-muted hover:text-red-500"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+
+      <div id="inspector-content" class="p-4 space-y-4 flex-1">
+        <!-- Inspector Details dynamically loaded -->
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MODAL: ADD / EDIT NODE -->
+  <div id="node-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="theme-card border rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b theme-border pb-3">
+        <h3 id="node-modal-title" class="font-bold">Add Epistemic Primitive</h3>
+        <button onclick="closeNodeModal()" class="theme-text-muted hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="node-form" onsubmit="saveNode(event)" class="space-y-3">
+        <input type="hidden" id="modal-node-id">
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">Title / Statement</label>
+          <input type="text" id="modal-node-title" required class="w-full theme-input border rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium theme-text-muted mb-1">Primitive Type</label>
+            <select id="modal-node-type" class="w-full theme-input border rounded px-2.5 py-2 text-xs">
+              <option value="AXIOM">Axiom / Fact</option>
+              <option value="HYPOTHESIS" selected>Hypothesis</option>
+              <option value="QUESTION">Question / Gap</option>
+              <option value="EXPERIMENT">Experiment / Test</option>
+              <option value="GOAL">Goal / Theorem</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium theme-text-muted mb-1">Status</label>
+            <select id="modal-node-status" class="w-full theme-input border rounded px-2.5 py-2 text-xs">
+              <option value="SPECULATIVE" selected>Speculative</option>
+              <option value="AXIOMATIC">Axiomatic</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="REFUTED">Refuted</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">Detailed Content / LaTeX / Code</label>
+          <textarea id="modal-node-content" rows="3" class="w-full theme-input border rounded px-3 py-2 text-xs focus:outline-none focus:border-indigo-500" placeholder="Mathematical equation, code, or context..."></textarea>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeNodeModal()" class="px-4 py-2 theme-panel border text-xs rounded-lg hover:opacity-80">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-xs text-white rounded-lg hover:bg-indigo-500 font-semibold">Save Node</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD EDGE -->
+  <div id="edge-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="theme-card border rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b theme-border pb-3">
+        <h3 class="font-bold">Connect Primitives</h3>
+        <button onclick="closeEdgeModal()" class="theme-text-muted hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="edge-form" onsubmit="saveEdge(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">From (Source Node)</label>
+          <select id="edge-source" class="w-full theme-input border rounded px-2.5 py-2 text-xs"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">Relationship (Edge Type)</label>
+          <select id="edge-type" class="w-full theme-input border rounded px-2.5 py-2 text-xs">
+            <option value="IMPLIES">IMPLIES (Deductive)</option>
+            <option value="SUPPORTS">SUPPORTS (Inductive)</option>
+            <option value="REQUIRES">REQUIRES (Dependency)</option>
+            <option value="CONTRADICTS">CONTRADICTS</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">To (Target Node)</label>
+          <select id="edge-target" class="w-full theme-input border rounded px-2.5 py-2 text-xs"></select>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeEdgeModal()" class="px-4 py-2 theme-panel border text-xs rounded-lg hover:opacity-80">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-xs text-white rounded-lg hover:bg-indigo-500 font-semibold">Create Link</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC ENGINE -->
+  <script>
+    const STORAGE_KEY = 'epistemic_app_state_v2';
+
+    // Initial Default Seed Data
+    const defaultData = {
+      activeWorkspaceId: 'ws-1',
+      activeTheme: 'slate-dark',
+      selectedNodeId: null,
+      workspaces: [
+        { id: 'ws-1', title: 'System Debugging & Logic', description: 'Testing trajectory hypotheses' }
+      ],
+      nodes: [
+        { id: 'n-1', workspaceId: 'ws-1', title: 'Database CPU at 100%', type: 'AXIOM', status: 'AXIOMATIC', confidence: 1.0, content: 'Spikes every day at 12:00 PM.' },
+        { id: 'n-2', workspaceId: 'ws-1', title: 'Missing Index on Cron Query', type: 'HYPOTHESIS', status: 'SPECULATIVE', confidence: 0.7, content: 'Unindexed JOIN on users table.' },
+        { id: 'n-3', workspaceId: 'ws-1', title: 'EXPLAIN ANALYZE Run', type: 'EXPERIMENT', status: 'VERIFIED', confidence: 0.95, content: 'EXPLAIN ANALYZE SELECT * FROM users...' },
+        { id: 'n-4', workspaceId: 'ws-1', title: 'Latency under 20ms Goal', type: 'GOAL', status: 'SPECULATIVE', confidence: 0.5, content: 'Optimize query execution time.' }
+      ],
+      edges: [
+        { id: 'e-1', workspaceId: 'ws-1', source: 'n-1', target: 'n-2', type: 'REQUIRES' },
+        { id: 'e-2', workspaceId: 'ws-1', source: 'n-3', target: 'n-2', type: 'SUPPORTS' },
+        { id: 'e-3', workspaceId: 'ws-1', source: 'n-2', target: 'n-4', type: 'IMPLIES' }
+      ],
+      verifications: [
+        { id: 'v-1', nodeId: 'n-3', status: 'PASSED', log: 'Index scan verified. Execution dropped from 1200ms to 4ms.', executedAt: '2026-07-31 14:00' }
+      ]
+    };
+
+    let appState = loadData();
+    let network = null;
+
+    // Initialize Application
+    document.addEventListener('DOMContentLoaded', () => {
+      applyTheme(appState.activeTheme || 'slate-dark');
+      renderWorkspaceSelect();
+      renderNodeList();
+      initGraphView();
+    });
+
+    // Local Storage Helpers
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(defaultData));
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      renderNodeList();
+      updateGraphView();
+      if (appState.selectedNodeId) renderInspector(appState.selectedNodeId);
+    }
+
+    function resetData() {
+      if (confirm('Reset knowledge graph back to default seed state?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        appState = JSON.parse(JSON.stringify(defaultData));
+        applyTheme('slate-dark');
+        saveData();
+        closeInspector();
+      }
+    }
+
+    // Theme Switcher Engine
+    function switchTheme(themeKey) {
+      appState.activeTheme = themeKey;
+      applyTheme(themeKey);
+      saveData();
+    }
+
+    function applyTheme(themeKey) {
+      document.documentElement.setAttribute('data-theme', themeKey);
+      document.getElementById('theme-select').value = themeKey;
+      if (network) updateGraphView(); // Recalculate graph node & font colors
+    }
+
+    // Workspace Handler
+    function renderWorkspaceSelect() {
+      const select = document.getElementById('workspace-select');
+      select.innerHTML = appState.workspaces.map(ws => 
+        `<option value="${ws.id}" ${ws.id === appState.activeWorkspaceId ? 'selected' : ''}>${ws.title}</option>`
+      ).join('');
+    }
+
+    function switchWorkspace(id) {
+      appState.activeWorkspaceId = id;
+      appState.selectedNodeId = null;
+      closeInspector();
+      saveData();
+    }
+
+    // Dynamic Graph Node Color Calculation per Theme
+    function getNodeColor(node) {
+      const isLight = appState.activeTheme.includes('light');
+      
+      if (isLight) {
+        // Light Theme Colors
+        switch (node.status) {
+          case 'AXIOMATIC': return { background: '#dbeafe', border: '#2563eb' };
+          case 'VERIFIED':  return { background: '#d1fae5', border: '#059669' };
+          case 'REFUTED':   return { background: '#ffe4e6', border: '#e11d48' };
+          case 'BROKEN':    return { background: '#fef2f2', border: '#dc2626' };
+          default:          return { background: '#fef3c7', border: '#d97706' }; // SPECULATIVE
+        }
+      } else {
+        // Dark Theme Colors
+        switch (node.status) {
+          case 'AXIOMATIC': return { background: '#1e3a8a', border: '#3b82f6' };
+          case 'VERIFIED':  return { background: '#064e3b', border: '#10b981' };
+          case 'REFUTED':   return { background: '#881337', border: '#f43f5e' };
+          case 'BROKEN':    return { background: '#450a0a', border: '#ef4444' };
+          default:          return { background: '#78350f', border: '#f59e0b' }; // SPECULATIVE
+        }
+      }
+    }
+
+    // Initialize Vis.js Interactive Canvas Graph
+    function initGraphView() {
+      const container = document.getElementById('graph-container');
+      const data = getVisGraphData();
+      
+      const options = {
+        nodes: {
+          shape: 'box',
+          margin: 10,
+          font: { face: 'Inter, sans-serif', size: 13 },
+          borderWidth: 2,
+          shadow: true
+        },
+        edges: {
+          arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+          font: { size: 10, align: 'middle' },
+          smooth: { type: 'cubicBezier' }
+        },
+        physics: { barnesHut: { gravitationalConstant: -3000, springLength: 120 } }
+      };
+
+      network = new vis.Network(container, data, options);
+
+      network.on('click', (params) => {
+        if (params.nodes.length > 0) {
+          selectNode(params.nodes[0]);
+        } else {
+          closeInspector();
+        }
+      });
+    }
+
+    function getVisGraphData() {
+      const activeNodes = appState.nodes.filter(n => n.workspaceId === appState.activeWorkspaceId);
+      const activeEdges = appState.edges.filter(e => e.workspaceId === appState.activeWorkspaceId);
+
+      const isLight = (appState.activeTheme || '').includes('light');
+      const fontColor = isLight ? '#0f172a' : '#ffffff';
+      const edgeColor = isLight ? '#94a3b8' : '#475569';
+
+      const visNodes = activeNodes.map(n => {
+        const colors = getNodeColor(n);
+        return {
+          id: n.id,
+          label: `[${n.type}]\n${n.title}`,
+          color: colors,
+          font: { color: fontColor }
+        };
+      });
+
+      const visEdges = activeEdges.map(e => ({
+        id: e.id,
+        from: e.source,
+        to: e.target,
+        label: e.type,
+        color: { color: edgeColor, highlight: '#6366f1' },
+        font: { color: fontColor }
+      }));
+
+      return { nodes: new vis.DataSet(visNodes), edges: new vis.DataSet(visEdges) };
+    }
+
+    function updateGraphView() {
+      if (network) network.setData(getVisGraphData());
+    }
+
+    // Node List Sidebar Rendering
+    function renderNodeList() {
+      const listEl = document.getElementById('node-list');
+      const search = document.getElementById('search-input').value.toLowerCase();
+      
+      const filtered = appState.nodes.filter(n => 
+        n.workspaceId === appState.activeWorkspaceId &&
+        n.title.toLowerCase().includes(search)
+      );
+
+      document.getElementById('node-count-badge').innerText = `${filtered.length} Nodes`;
+
+      listEl.innerHTML = filtered.map(n => {
+        const isSelected = n.id === appState.selectedNodeId;
+        let statusStyle = 'border-amber-500 text-amber-600 bg-amber-500/10';
+        if (n.status === 'VERIFIED') statusStyle = 'border-emerald-500 text-emerald-600 bg-emerald-500/10';
+        else if (n.status === 'REFUTED' || n.status === 'BROKEN') statusStyle = 'border-rose-500 text-rose-600 bg-rose-500/10';
+
+        return `
+          <div onclick="selectNode('${n.id}')" class="p-2.5 rounded-lg border text-xs cursor-pointer transition ${isSelected ? 'border-indigo-600 bg-indigo-600/15' : 'theme-card hover:opacity-80'}">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold">${n.type}</span>
+              <span class="px-1.5 py-0.5 rounded border text-[10px] uppercase font-semibold ${statusStyle}">${n.status}</span>
+            </div>
+            <div class="font-medium truncate">${n.title}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectNode(id) {
+      appState.selectedNodeId = id;
+      renderNodeList();
+      renderInspector(id);
+      document.getElementById('inspector-panel').classList.remove('hidden');
+    }
+
+    function closeInspector() {
+      appState.selectedNodeId = null;
+      document.getElementById('inspector-panel').classList.add('hidden');
+      renderNodeList();
+    }
+
+    // Render Inspector Panel
+    function renderInspector(id) {
+      const node = appState.nodes.find(n => n.id === id);
+      if (!node) return;
+
+      const container = document.getElementById('inspector-content');
+      const outgoing = appState.edges.filter(e => e.source === id);
+      const verificationRuns = appState.verifications.filter(v => v.nodeId === id);
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-indigo-500 font-bold">${node.type}</span>
+            <span class="px-2 py-0.5 rounded text-xs font-semibold ${node.status === 'VERIFIED' ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500' : node.status === 'REFUTED' || node.status === 'BROKEN' ? 'bg-rose-500/20 text-rose-600 border border-rose-500' : 'bg-amber-500/20 text-amber-600 border border-amber-500'}">${node.status}</span>
+          </div>
+
+          <h2 class="text-base font-bold">${node.title}</h2>
+          <p class="text-xs theme-card p-2.5 rounded border font-mono">${node.content || 'No description provided.'}</p>
+
+          <div class="flex space-x-2 pt-1">
+            <button onclick="openNodeModal('${node.id}')" class="flex-1 theme-card hover:opacity-80 text-xs py-1.5 rounded border"><i class="fa-solid fa-pen mr-1"></i> Edit</button>
+            <button onclick="deleteNode('${node.id}')" class="bg-rose-600/20 text-rose-600 hover:bg-rose-600/30 text-xs px-3 py-1.5 rounded border border-rose-500/30"><i class="fa-solid fa-trash"></i></button>
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- TRUTH MAINTENANCE & EXPERIMENT RUNNER -->
+          <div>
+            <h4 class="text-xs font-bold theme-text-muted uppercase tracking-wider mb-2">Epistemic Verification Engine</h4>
+            <div class="space-y-2">
+              <button onclick="simulateExecution('${node.id}', 'PASSED')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 rounded font-semibold flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-circle-check"></i> <span>Execute Verification (Pass)</span>
+              </button>
+              <button onclick="simulateExecution('${node.id}', 'FAILED')" class="w-full bg-rose-600 hover:bg-rose-500 text-white text-xs py-2 rounded font-semibold flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span>Fail Verification (Trigger Propagation)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Execution History Logs -->
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-semibold theme-text-muted">Run History Logs</span>
+            ${verificationRuns.length === 0 ? '<p class="text-xs theme-text-muted italic">No runs recorded.</p>' : ''}
+            ${verificationRuns.map(r => `
+              <div class="p-2 theme-card border rounded text-xs space-y-1">
+                <div class="flex justify-between items-center text-[10px]">
+                  <span class="${r.status === 'PASSED' ? 'text-emerald-500' : 'text-rose-500'} font-bold">${r.status}</span>
+                  <span class="theme-text-muted">${r.executedAt}</span>
+                </div>
+                <div class="font-mono text-[11px]">${r.log}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- Connections List -->
+          <div>
+            <h4 class="text-xs font-bold theme-text-muted uppercase tracking-wider mb-2">Graph Relationships</h4>
+            <div class="space-y-2 text-xs">
+              <div>
+                <span class="theme-text-muted block mb-1">Outgoing Links (${outgoing.length}):</span>
+                ${outgoing.map(e => {
+                  const target = appState.nodes.find(n => n.id === e.target);
+                  return `<div class="flex items-center justify-between p-1.5 theme-card border rounded mb-1">
+                    <span>--[<b>${e.type}</b>]--> ${target ? target.title : 'Unknown'}</span>
+                    <button onclick="deleteEdge('${e.id}')" class="theme-text-muted hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // SIMULATED VERIFICATION EXECUTION & TRUTH MAINTENANCE SYSTEM
+    function simulateExecution(nodeId, outcome) {
+      const node = appState.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      const runStatus = outcome === 'PASSED' ? 'PASSED' : 'FAILED';
+      const logMessage = outcome === 'PASSED' 
+        ? `Assertion passed. Verified hypothesis logic.` 
+        : `Assertion failed! Contradiction found. Cascading downstream refutations...`;
+
+      appState.verifications.unshift({
+        id: 'v-' + Date.now(),
+        nodeId: nodeId,
+        status: runStatus,
+        log: logMessage,
+        executedAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      });
+
+      node.status = outcome === 'PASSED' ? 'VERIFIED' : 'REFUTED';
+
+      if (outcome === 'FAILED') {
+        propagateStatusChange(nodeId, 'BROKEN');
+      }
+
+      saveData();
+      alert(`Execution finished. Status: ${runStatus}`);
+    }
+
+    function propagateStatusChange(sourceNodeId, newStatus) {
+      const childEdges = appState.edges.filter(e => e.source === sourceNodeId && (e.type === 'IMPLIES' || e.type === 'REQUIRES'));
+      childEdges.forEach(edge => {
+        const childNode = appState.nodes.find(n => n.id === edge.target);
+        if (childNode && childNode.status !== 'REFUTED' && childNode.status !== 'BROKEN') {
+          childNode.status = newStatus;
+          propagateStatusChange(childNode.id, newStatus);
+        }
+      });
+    }
+
+    // AI Bridge Generator (Mock)
+    function triggerAIBridge() {
+      const activeNodes = appState.nodes.filter(n => n.workspaceId === appState.activeWorkspaceId);
+      if (activeNodes.length < 2) {
+        alert("Add at least 2 nodes to generate an AI Bridge Hypothesis.");
+        return;
+      }
+
+      const n1 = activeNodes[0];
+      const n2 = activeNodes[activeNodes.length - 1];
+
+      const bridgeId = 'n-' + Date.now();
+      const newBridgeNode = {
+        id: bridgeId,
+        workspaceId: appState.activeWorkspaceId,
+        title: `AI Bridge: Link between ${n1.title.substring(0,10)}... & ${n2.title.substring(0,10)}...`,
+        type: 'HYPOTHESIS',
+        status: 'SPECULATIVE',
+        confidence: 0.75,
+        content: `Generated by AI: Intermediate conjecture bridging Node [${n1.title}] and Node [${n2.title}].`
+      };
+
+      appState.nodes.push(newBridgeNode);
+      appState.edges.push({ id: 'e-' + Date.now(), workspaceId: appState.activeWorkspaceId, source: n1.id, target: bridgeId, type: 'SUPPORTS' });
+      appState.edges.push({ id: 'e-' + (Date.now()+1), workspaceId: appState.activeWorkspaceId, source: bridgeId, target: n2.id, type: 'IMPLIES' });
+
+      saveData();
+      alert("AI Bridge Node & logical connections created!");
+    }
+
+    // Modal Handlers
+    function openNodeModal(editNodeId = null) {
+      document.getElementById('node-modal').classList.remove('hidden');
+      if (editNodeId) {
+        const node = appState.nodes.find(n => n.id === editNodeId);
+        document.getElementById('node-modal-title').innerText = "Edit Primitive";
+        document.getElementById('modal-node-id').value = node.id;
+        document.getElementById('modal-node-title').value = node.title;
+        document.getElementById('modal-node-type').value = node.type;
+        document.getElementById('modal-node-status').value = node.status;
+        document.getElementById('modal-node-content').value = node.content;
+      } else {
+        document.getElementById('node-modal-title').innerText = "Add Epistemic Primitive";
+        document.getElementById('node-form').reset();
+        document.getElementById('modal-node-id').value = '';
+      }
+    }
+
+    function closeNodeModal() {
+      document.getElementById('node-modal').classList.add('hidden');
+    }
+
+    function saveNode(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-node-id').value;
+      const title = document.getElementById('modal-node-title').value;
+      const type = document.getElementById('modal-node-type').value;
+      const status = document.getElementById('modal-node-status').value;
+      const content = document.getElementById('modal-node-content').value;
+
+      if (id) {
+        const node = appState.nodes.find(n => n.id === id);
+        node.title = title;
+        node.type = type;
+        node.status = status;
+        node.content = content;
+      } else {
+        appState.nodes.push({
+          id: 'n-' + Date.now(),
+          workspaceId: appState.activeWorkspaceId,
+          title, type, status, content,
+          confidence: 0.5
+        });
+      }
+
+      saveData();
+      closeNodeModal();
+    }
+
+    function deleteNode(id) {
+      if (confirm('Delete this node and all associated edges?')) {
+        appState.nodes = appState.nodes.filter(n => n.id !== id);
+        appState.edges = appState.edges.filter(e => e.source !== id && e.target !== id);
+        closeInspector();
+        saveData();
+      }
+    }
+
+    // Edge Modal Handlers
+    function openEdgeModal() {
+      const activeNodes = appState.nodes.filter(n => n.workspaceId === appState.activeWorkspaceId);
+      const sourceSelect = document.getElementById('edge-source');
+      const targetSelect = document.getElementById('edge-target');
+
+      const options = activeNodes.map(n => `<option value="${n.id}">${n.title} [${n.type}]</option>`).join('');
+      sourceSelect.innerHTML = options;
+      targetSelect.innerHTML = options;
+
+      document.getElementById('edge-modal').classList.remove('hidden');
+    }
+
+    function closeEdgeModal() {
+      document.getElementById('edge-modal').classList.add('hidden');
+    }
+
+    function saveEdge(e) {
+      e.preventDefault();
+      const source = document.getElementById('edge-source').value;
+      const target = document.getElementById('edge-target').value;
+      const type = document.getElementById('edge-type').value;
+
+      if (source === target) {
+        alert("Cannot connect a node to itself.");
+        return;
+      }
+
+      appState.edges.push({
+        id: 'e-' + Date.now(),
+        workspaceId: appState.activeWorkspaceId,
+        source, target, type
+      });
+
+      saveData();
+      closeEdgeModal();
+    }
+
+    function deleteEdge(edgeId) {
+      appState.edges = appState.edges.filter(e => e.id !== edgeId);
+      saveData();
+    }
+  </script>
+</body>
+</html>

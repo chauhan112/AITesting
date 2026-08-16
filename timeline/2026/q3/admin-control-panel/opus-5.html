@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keyring — access control plane</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.13"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDF0F7; --ink:#111726; --rule:#C9D0E3;
+    --volt:#4B2BE8; --signal:#E0952B; --permit:#12876A; --deny:#C6413B;
+  }
+  html,body{background:var(--paper);color:var(--ink);}
+  body{font-family:'IBM Plex Sans',system-ui,sans-serif;}
+  .disp{font-family:'Archivo',sans-serif;letter-spacing:-.03em;}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  .grid-paper{
+    background-image:linear-gradient(to right,rgba(17,23,38,.055) 1px,transparent 1px),
+                     linear-gradient(to bottom,rgba(17,23,38,.055) 1px,transparent 1px);
+    background-size:28px 28px;
+  }
+  .card{background:#fff;border:1px solid var(--rule);box-shadow:3px 3px 0 rgba(17,23,38,.07);}
+  .tagchip{transition:transform .12s ease, background .12s ease, color .12s ease;}
+  .tagchip:active{transform:translateY(1px);}
+  .cell-on{background:var(--volt);}
+  :focus-visible{outline:2px solid var(--volt);outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .fade{animation:fade .35s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .scrollx::-webkit-scrollbar{height:8px}
+  .scrollx::-webkit-scrollbar-thumb{background:var(--rule)}
+</style>
+</head>
+<body class="min-h-screen grid-paper">
+
+<div class="flex min-h-screen">
+  <!-- rail -->
+  <aside class="w-16 md:w-60 shrink-0 border-r border-[var(--rule)] bg-white/80 backdrop-blur sticky top-0 h-screen flex flex-col">
+    <div class="px-4 md:px-5 py-5 border-b border-[var(--rule)]">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 bg-[var(--volt)] text-white grid place-items-center disp font-black text-sm">K</div>
+        <div class="hidden md:block">
+          <div class="disp font-black text-lg leading-none">KEYRING</div>
+          <div class="mono text-[10px] text-[var(--ink)]/50 mt-1">access control plane</div>
+        </div>
+      </div>
+    </div>
+    <nav id="nav" class="p-2 md:p-3 flex flex-col gap-1 text-sm"></nav>
+    <div class="mt-auto p-3 hidden md:block">
+      <div class="card p-3">
+        <div class="mono text-[10px] text-[var(--ink)]/50">signed in</div>
+        <div class="text-sm font-semibold truncate">raja.chauhan</div>
+        <div class="mono text-[10px] mt-1"><span class="bg-[var(--ink)] text-white px-1">root</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- main -->
+  <main class="flex-1 min-w-0">
+    <header class="border-b border-[var(--rule)] bg-white/70 backdrop-blur px-5 md:px-8 py-4 flex items-center justify-between gap-4 sticky top-0 z-20">
+      <div>
+        <h1 id="pageTitle" class="disp font-black text-2xl md:text-3xl leading-none">Dashboard</h1>
+        <p id="pageSub" class="mono text-[11px] text-[var(--ink)]/55 mt-1"></p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="dirty" class="hidden mono text-[11px] text-[var(--signal)]">unsaved changes</span>
+        <button id="saveBtn" class="mono text-xs px-3 py-2 bg-[var(--ink)] text-white hover:bg-[var(--volt)]">Save rules</button>
+      </div>
+    </header>
+    <div id="view" class="p-5 md:p-8"></div>
+  </main>
+</div>
+
+<div id="toast" class="fixed bottom-5 right-5 hidden mono text-xs bg-[var(--ink)] text-white px-4 py-3 shadow-lg z-50"></div>
+
+<script>
+/* ---------------- mock data ---------------- */
+const TAGS = [
+  {id:'admin',    label:'admin',    color:'#4B2BE8'},
+  {id:'billing',  label:'billing',  color:'#12876A'},
+  {id:'support',  label:'support',  color:'#E0952B'},
+  {id:'analyst',  label:'analyst',  color:'#7A4BD8'},
+  {id:'partner',  label:'partner',  color:'#C6413B'},
+  {id:'public',   label:'public',   color:'#5A6478'},
+];
+
+const APPS = [
+  {id:'billing-svc', name:'Billing Service', url:'http://localhost:4001', spec:'/openapi.json', status:'up',   version:'2.4.0', hits:[240,310,280,420,510,470,600]},
+  {id:'crm-core',    name:'CRM Core',        url:'http://localhost:4002', spec:'/v3/api-docs', status:'up',   version:'1.9.2', hits:[820,760,900,880,1010,1180,1240]},
+  {id:'docgen',      name:'Doc Generator',   url:'http://localhost:4005', spec:'/openapi.yaml',status:'degraded',version:'0.8.1', hits:[90,140,120,80,160,150,210]},
+  {id:'notify',      name:'Notification Hub',url:'http://localhost:4008', spec:'/openapi.json',status:'down', version:'3.1.0', hits:[400,380,120,0,0,60,180]},
+];
+
+const ENDPOINTS = {
+ 'billing-svc':[
+  {m:'GET',   p:'/invoices',              s:'List invoices',        tags:['admin','billing','analyst']},
+  {m:'POST',  p:'/invoices',              s:'Create invoice',       tags:['billing']},
+  {m:'GET',   p:'/invoices/{id}',         s:'Get invoice',          tags:['admin','billing','support']},
+  {m:'DELETE',p:'/invoices/{id}',         s:'Void invoice',         tags:['admin']},
+  {m:'POST',  p:'/invoices/{id}/refund',  s:'Refund invoice',       tags:[]},
+  {m:'GET',   p:'/plans',                 s:'List plans',           tags:['public','billing','partner']},
+  {m:'PATCH', p:'/subscriptions/{id}',    s:'Change subscription',  tags:['billing','admin']},
+  {m:'GET',   p:'/health',                s:'Liveness probe',       tags:['public']},
+ ],
+ 'crm-core':[
+  {m:'GET',   p:'/contacts',              s:'Search contacts',      tags:['support','analyst','admin']},
+  {m:'POST',  p:'/contacts',              s:'Create contact',       tags:['support']},
+  {m:'PUT',   p:'/contacts/{id}',         s:'Replace contact',      tags:['support','admin']},
+  {m:'DELETE',p:'/contacts/{id}',         s:'Delete contact',       tags:['admin']},
+  {m:'GET',   p:'/deals',                 s:'List deals',           tags:['analyst']},
+  {m:'POST',  p:'/deals/{id}/stage',      s:'Move deal stage',      tags:[]},
+ ],
+ 'docgen':[
+  {m:'POST',  p:'/render',                s:'Render document',      tags:['support','partner']},
+  {m:'GET',   p:'/templates',             s:'List templates',       tags:['support','admin','partner']},
+  {m:'POST',  p:'/templates',             s:'Upload template',      tags:['admin']},
+ ],
+ 'notify':[
+  {m:'POST',  p:'/messages',              s:'Send message',         tags:['admin']},
+  {m:'GET',   p:'/messages/{id}',         s:'Message status',       tags:['support','admin']},
+  {m:'GET',   p:'/channels',              s:'List channels',        tags:['admin','support']},
+  {m:'POST',  p:'/webhooks/test',         s:'Fire test webhook',    tags:[]},
+ ],
+};
+
+const PAGE_HITS = [
+  {app:'CRM Core',        route:'/contacts',        hits:18420, trend:+12},
+  {app:'Billing Service', route:'/invoices',        hits:11209, trend:+4},
+  {app:'CRM Core',        route:'/deals',           hits:7841,  trend:-6},
+  {app:'Billing Service', route:'/plans',           hits:5230,  trend:+22},
+  {app:'Doc Generator',   route:'/render',          hits:2988,  trend:+3},
+  {app:'Notification Hub',route:'/messages',        hits:1204,  trend:-41},
+];
+
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const METHOD={GET:'#12876A',POST:'#4B2BE8',PUT:'#E0952B',PATCH:'#7A4BD8',DELETE:'#C6413B'};
+
+let state={route:'dashboard', app:'billing-svc', q:'', filterTag:'all', dirty:false};
+
+/* ---------------- helpers ---------------- */
+const el=(h)=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstElementChild;};
+const esc=(s)=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.add('hidden'),2200);}
+function tagMeta(id){return TAGS.find(t=>t.id===id)||{label:id,color:'#5A6478'};}
+function methodChip(m){return `<span class="mono text-[10px] font-bold px-1.5 py-0.5 text-white" style="background:${METHOD[m]}">${m}</span>`;}
+function markDirty(){state.dirty=true;document.getElementById('dirty').classList.remove('hidden');}
+
+/* ---------------- nav ---------------- */
+const ROUTES=[
+  {id:'dashboard', label:'Dashboard', sub:'apps, traffic and reachability'},
+  {id:'endpoints', label:'Endpoints', sub:'assign tags to routes — this is the rule set'},
+  {id:'apps',      label:'Registered apps', sub:'connect a service by its OpenAPI document'},
+  {id:'tags',      label:'Tags & users', sub:'tags are the only unit of access'},
+];
+function renderNav(){
+  const n=document.getElementById('nav');
+  n.innerHTML=ROUTES.map(r=>`
+    <button data-r="${r.id}" class="text-left px-2 md:px-3 py-2 mono text-[12px] border-l-2 ${state.route===r.id?'border-[var(--volt)] bg-[var(--volt)]/8 font-bold':'border-transparent hover:bg-black/5'}">
+      <span class="hidden md:inline">${r.label}</span><span class="md:hidden">${r.label[0]}</span>
+    </button>`).join('');
+  n.querySelectorAll('button').forEach(b=>b.onclick=()=>{state.route=b.dataset.r;render();});
+}
+
+/* ---------------- views ---------------- */
+function viewDashboard(){
+  const max=Math.max(...PAGE_HITS.map(p=>p.hits));
+  const totalEp=Object.values(ENDPOINTS).flat().length;
+  const unguarded=Object.values(ENDPOINTS).flat().filter(e=>e.tags.length===0).length;
+  const publicEp=Object.values(ENDPOINTS).flat().filter(e=>e.tags.includes('public')).length;
+
+  return `
+  <div class="fade space-y-8">
+    <!-- signature: reachability bar -->
+    <section class="card p-5 md:p-6">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
+        <div>
+          <div class="mono text-[11px] text-[var(--ink)]/55">coverage of the rule set</div>
+          <h2 class="disp font-black text-3xl md:text-4xl leading-none mt-1">${totalEp - unguarded}<span class="text-[var(--ink)]/30">/${totalEp}</span> endpoints guarded</h2>
+        </div>
+        <div class="mono text-[11px] text-right">
+          <div><span class="inline-block w-3 h-3 align-middle" style="background:var(--volt)"></span> tagged ${totalEp-unguarded}</div>
+          <div><span class="inline-block w-3 h-3 align-middle" style="background:var(--signal)"></span> public ${publicEp}</div>
+          <div><span class="inline-block w-3 h-3 align-middle" style="background:var(--deny)"></span> no tag — nobody can call ${unguarded}</div>
+        </div>
+      </div>
+      <div class="flex h-6 w-full border border-[var(--rule)]">
+        ${Object.values(ENDPOINTS).flat().map(e=>{
+          const c = e.tags.length===0 ? 'var(--deny)' : (e.tags.includes('public') ? 'var(--signal)' : 'var(--volt)');
+          return `<div class="flex-1 border-r border-white/40" style="background:${c}" title="${e.m} ${e.p}"></div>`;
+        }).join('')}
+      </div>
+      <p class="mono text-[11px] text-[var(--ink)]/55 mt-3">Every stripe is one endpoint across all four services, in registration order.</p>
+    </section>
+
+    <!-- apps -->
+    <section>
+      <div class="flex items-baseline justify-between mb-3">
+        <h3 class="disp font-bold text-xl">Registered apps</h3>
+        <button data-goto="apps" class="mono text-[11px] underline decoration-[var(--volt)] underline-offset-4">add an app</button>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        ${APPS.map(a=>{
+          const dot = a.status==='up'?'var(--permit)':a.status==='degraded'?'var(--signal)':'var(--deny)';
+          const mx=Math.max(...a.hits);
+          return `
+          <div class="card p-4 flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-semibold leading-tight">${a.name}</div>
+                <a href="${a.url}" class="mono text-[11px] text-[var(--volt)] break-all">${a.url}</a>
+              </div>
+              <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style="background:${dot}" title="${a.status}"></span>
+            </div>
+            <div class="flex items-end gap-1 h-14">
+              ${a.hits.map((h,i)=>`<div class="flex-1 bg-[var(--ink)]/85 hover:bg-[var(--volt)]" style="height:${Math.max(4,h/mx*100)}%" title="${DAYS[i]}: ${h} requests"></div>`).join('')}
+            </div>
+            <div class="flex items-center justify-between mono text-[10px] text-[var(--ink)]/55 border-t border-[var(--rule)] pt-2">
+              <span>v${a.version} · ${ENDPOINTS[a.id].length} routes</span>
+              <button data-app="${a.id}" class="underline underline-offset-2 hover:text-[var(--volt)]">rules</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>
+
+    <!-- traffic table -->
+    <section class="card">
+      <div class="px-5 py-4 border-b border-[var(--rule)] flex items-baseline justify-between">
+        <h3 class="disp font-bold text-xl">Most visited routes</h3>
+        <span class="mono text-[11px] text-[var(--ink)]/55">last 7 days</span>
+      </div>
+      <div class="divide-y divide-[var(--rule)]">
+      ${PAGE_HITS.map(p=>`
+        <div class="px-5 py-3 grid grid-cols-[1fr_auto] md:grid-cols-[200px_1fr_90px_70px] gap-3 items-center">
+          <div class="mono text-[11px] text-[var(--ink)]/60 truncate">${p.app}</div>
+          <div class="hidden md:flex items-center gap-3">
+            <span class="mono text-sm">${p.route}</span>
+            <span class="h-2 bg-[var(--volt)]/85" style="width:${p.hits/max*100}%"></span>
+          </div>
+          <div class="mono text-sm text-right">${p.hits.toLocaleString()}</div>
+          <div class="mono text-[11px] text-right" style="color:${p.trend>=0?'var(--permit)':'var(--deny)'}">${p.trend>=0?'+':''}${p.trend}%</div>
+        </div>`).join('')}
+      </div>
+    </section>
+  </div>`;
+}
+
+function viewEndpoints(){
+  const app=APPS.find(a=>a.id===state.app);
+  const list=ENDPOINTS[state.app].filter(e=>{
+    const q=state.q.toLowerCase();
+    const okQ=!q||e.p.toLowerCase().includes(q)||e.s.toLowerCase().includes(q)||e.m.toLowerCase()===q;
+    const okT=state.filterTag==='all'|| (state.filterTag==='none'?e.tags.length===0:e.tags.includes(state.filterTag));
+    return okQ&&okT;
+  });
+
+  return `
+  <div class="fade space-y-5">
+    <div class="flex flex-wrap gap-3 items-center">
+      <select id="appSel" class="mono text-xs bg-white border border-[var(--rule)] px-3 py-2">
+        ${APPS.map(a=>`<option value="${a.id}" ${a.id===state.app?'selected':''}>${a.name} — ${a.url}</option>`).join('')}
+      </select>
+      <input id="q" value="${esc(state.q)}" placeholder="filter path, summary or method…" class="mono text-xs bg-white border border-[var(--rule)] px-3 py-2 flex-1 min-w-[220px]" />
+      <select id="ft" class="mono text-xs bg-white border border-[var(--rule)] px-3 py-2">
+        <option value="all">all endpoints</option>
+        <option value="none" ${state.filterTag==='none'?'selected':''}>untagged only</option>
+        ${TAGS.map(t=>`<option value="${t.id}" ${state.filterTag===t.id?'selected':''}>tag: ${t.label}</option>`).join('')}
+      </select>
+      <button id="resync" class="mono text-xs px-3 py-2 border border-[var(--ink)] hover:bg-[var(--ink)] hover:text-white">Re-sync OpenAPI</button>
+    </div>
+
+    <p class="mono text-[11px] text-[var(--ink)]/55">Parsed from <span class="text-[var(--volt)]">${app.url}${app.spec}</span> · a user reaches an endpoint if they hold <em>any</em> tag switched on for that row. No tag on = nobody gets in.</p>
+
+    <div class="card overflow-x-auto scrollx">
+      <table class="w-full text-sm min-w-[820px]">
+        <thead>
+          <tr class="border-b border-[var(--rule)] bg-[var(--ink)]/[0.03]">
+            <th class="text-left px-4 py-3 mono text-[11px] font-medium text-[var(--ink)]/60 w-[46%]">endpoint</th>
+            ${TAGS.map(t=>`<th class="px-2 py-3 mono text-[10px] font-bold" style="color:${t.color}"><span class="[writing-mode:vertical-rl] rotate-180 md:writing-mode-horizontal md:rotate-0 md:[writing-mode:horizontal-tb]">${t.label}</span></th>`).join('')}
+            <th class="px-3 py-3 mono text-[11px] font-medium text-[var(--ink)]/60">reach</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[var(--rule)]">
+        ${list.map(e=>{
+          const key=`${state.app}|${e.m}|${e.p}`;
+          return `<tr class="hover:bg-[var(--volt)]/[0.04] ${e.tags.length===0?'bg-[var(--deny)]/[0.05]':''}">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">${methodChip(e.m)}<span class="mono">${e.p}</span></div>
+              <div class="text-[12px] text-[var(--ink)]/55 mt-1">${e.s}</div>
+            </td>
+            ${TAGS.map(t=>{
+              const on=e.tags.includes(t.id);
+              return `<td class="px-2 py-3 text-center">
+                <button role="switch" aria-checked="${on}" aria-label="${t.label} on ${e.m} ${e.p}"
+                  data-cell="${key}" data-tag="${t.id}"
+                  class="tagchip w-7 h-7 border border-[var(--rule)] grid place-items-center"
+                  style="background:${on?t.color:'#fff'}">
+                  ${on?'<span class="text-white text-xs font-bold">✓</span>':''}
+                </button></td>`;
+            }).join('')}
+            <td class="px-3 py-3 mono text-[11px] whitespace-nowrap ${e.tags.length===0?'text-[var(--deny)]':'text-[var(--ink)]/60'}">
+              ${e.tags.length===0?'blocked':e.tags.length+' tag'+(e.tags.length>1?'s':'')}
+            </td>
+          </tr>`;
+        }).join('') || `<tr><td colspan="${TAGS.length+2}" class="px-4 py-10 text-center mono text-xs text-[var(--ink)]/50">No endpoint matches that filter. Clear it to see all ${ENDPOINTS[state.app].length} routes.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function viewApps(){
+  return `
+  <div class="fade grid gap-6 lg:grid-cols-[1fr_380px]">
+    <section class="card">
+      <div class="px-5 py-4 border-b border-[var(--rule)]"><h3 class="disp font-bold text-xl">Connected services</h3></div>
+      <div class="divide-y divide-[var(--rule)]">
+        ${APPS.map(a=>{
+          const dot=a.status==='up'?'var(--permit)':a.status==='degraded'?'var(--signal)':'var(--deny)';
+          return `<div class="px-5 py-4 flex flex-wrap items-center gap-4 justify-between">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${dot}"></span><span class="font-semibold">${a.name}</span><span class="mono text-[10px] text-[var(--ink)]/50">v${a.version}</span></div>
+              <div class="mono text-[11px] text-[var(--ink)]/60 mt-1 truncate">${a.url}${a.spec}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="mono text-[11px] text-[var(--ink)]/55">${ENDPOINTS[a.id].length} routes</span>
+              <button data-app="${a.id}" class="mono text-[11px] px-2.5 py-1.5 border border-[var(--ink)] hover:bg-[var(--ink)] hover:text-white">Edit rules</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>
+
+    <section class="card p-5 h-fit">
+      <h3 class="disp font-bold text-xl">Add an app</h3>
+      <p class="mono text-[11px] text-[var(--ink)]/55 mt-1 mb-4">Keyring reads the OpenAPI document and imports every operation as an untagged — and therefore closed — endpoint.</p>
+      <form id="addApp" class="space-y-3">
+        <label class="block"><span class="mono text-[11px] text-[var(--ink)]/60">Display name</span>
+          <input required name="name" placeholder="Reporting Service" class="w-full mt-1 border border-[var(--rule)] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="mono text-[11px] text-[var(--ink)]/60">Base URL</span>
+          <input required name="url" value="http://localhost:" class="w-full mt-1 border border-[var(--rule)] px-3 py-2 mono text-sm"></label>
+        <label class="block"><span class="mono text-[11px] text-[var(--ink)]/60">OpenAPI path</span>
+          <input required name="spec" value="/openapi.json" class="w-full mt-1 border border-[var(--rule)] px-3 py-2 mono text-sm"></label>
+        <button class="w-full mono text-xs px-3 py-2.5 bg-[var(--volt)] text-white hover:bg-[var(--ink)]">Fetch spec and import routes</button>
+      </form>
+    </section>
+  </div>`;
+}
+
+function viewTags(){
+  const all=Object.entries(ENDPOINTS).flatMap(([app,list])=>list.map(e=>({app,...e})));
+  const users=[
+    {n:'raja.chauhan@gib21.de', t:['admin']},
+    {n:'lena.hoff@gib21.de',    t:['support','billing']},
+    {n:'m.okafor@gib21.de',     t:['analyst']},
+    {n:'partner@acme.io',       t:['partner','public']},
+  ];
+  return `
+  <div class="fade grid gap-6 lg:grid-cols-2">
+    <section class="card">
+      <div class="px-5 py-4 border-b border-[var(--rule)]"><h3 class="disp font-bold text-xl">Tags</h3></div>
+      <div class="divide-y divide-[var(--rule)]">
+        ${TAGS.map(t=>{
+          const n=all.filter(e=>e.tags.includes(t.id)).length;
+          return `<div class="px-5 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2"><span class="w-3 h-3" style="background:${t.color}"></span><span class="mono text-sm">${t.label}</span></div>
+            <span class="mono text-[11px] text-[var(--ink)]/55">${n} endpoints reachable</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>
+    <section class="card">
+      <div class="px-5 py-4 border-b border-[var(--rule)]"><h3 class="disp font-bold text-xl">Users</h3></div>
+      <div class="divide-y divide-[var(--rule)]">
+        ${users.map(u=>`
+          <div class="px-5 py-3">
+            <div class="text-sm font-medium">${u.n}</div>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              ${u.t.map(id=>{const m=tagMeta(id);return `<span class="mono text-[10px] px-1.5 py-0.5 text-white" style="background:${m.color}">${m.label}</span>`}).join('')}
+            </div>
+            <div class="mono text-[10px] text-[var(--ink)]/50 mt-2">${all.filter(e=>e.tags.some(x=>u.t.includes(x))).length} endpoints reachable</div>
+          </div>`).join('')}
+      </div>
+    </section>
+  </div>`;
+}
+
+/* ---------------- render + events ---------------- */
+function render(){
+  renderNav();
+  const r=ROUTES.find(x=>x.id===state.route);
+  document.getElementById('pageTitle').textContent=r.label;
+  document.getElementById('pageSub').textContent=r.sub;
+  const v=document.getElementById('view');
+  v.innerHTML = state.route==='dashboard'?viewDashboard()
+              : state.route==='endpoints'?viewEndpoints()
+              : state.route==='apps'?viewApps() : viewTags();
+  wire();
+}
+
+function wire(){
+  document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{state.route=b.dataset.goto;render();});
+  document.querySelectorAll('[data-app]').forEach(b=>b.onclick=()=>{state.app=b.dataset.app;state.route='endpoints';state.q='';state.filterTag='all';render();});
+
+  const sel=document.getElementById('appSel'); if(sel) sel.onchange=e=>{state.app=e.target.value;render();};
+  const q=document.getElementById('q'); if(q) q.oninput=e=>{state.q=e.target.value;const p=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(p,p);};
+  const ft=document.getElementById('ft'); if(ft) ft.onchange=e=>{state.filterTag=e.target.value;render();};
+  const rs=document.getElementById('resync'); if(rs) rs.onclick=()=>toast('Spec re-read — no new operations found.');
+
+  document.querySelectorAll('[data-cell]').forEach(btn=>{
+    btn.onclick=()=>{
+      const [app,m,p]=btn.dataset.cell.split('|');
+      const ep=ENDPOINTS[app].find(e=>e.m===m&&e.p===p);
+      const t=btn.dataset.tag;
+      ep.tags.includes(t) ? ep.tags.splice(ep.tags.indexOf(t),1) : ep.tags.push(t);
+      markDirty(); render();
+      toast(`${t} ${ep.tags.includes(t)?'can now call':'no longer calls'} ${m} ${p}`);
+    };
+  });
+
+  const f=document.getElementById('addApp');
+  if(f) f.onsubmit=(ev)=>{
+    ev.preventDefault();
+    const d=Object.fromEntries(new FormData(f));
+    const id=d.name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    APPS.push({id,name:d.name,url:d.url,spec:d.spec,status:'up',version:'1.0.0',hits:[0,0,0,0,0,0,0]});
+    ENDPOINTS[id]=[
+      {m:'GET',p:'/health',s:'Liveness probe',tags:[]},
+      {m:'GET',p:'/items',s:'List items',tags:[]},
+      {m:'POST',p:'/items',s:'Create item',tags:[]},
+    ];
+    state.app=id;state.route='endpoints';render();
+    toast(`${d.name} imported — 3 routes, all closed until you tag them.`);
+  };
+}
+
+document.getElementById('saveBtn').onclick=()=>{
+  state.dirty=false;document.getElementById('dirty').classList.add('hidden');
+  toast('Rule set saved and pushed to the gateway.');
+};
+
+render();
+</script>
+</body>
+</html>

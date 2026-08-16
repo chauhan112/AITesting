@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Document Scanner</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PDF generation -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <style>
+    body {
+      overscroll-behavior: none;
+    }
+
+    .page-card.dragging {
+      opacity: 0.35;
+    }
+
+    .checkerboard {
+      background-color: #e5e7eb;
+      background-image:
+        linear-gradient(45deg, #d1d5db 25%, transparent 25%),
+        linear-gradient(-45deg, #d1d5db 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #d1d5db 75%),
+        linear-gradient(-45deg, transparent 75%, #d1d5db 75%);
+      background-size: 20px 20px;
+      background-position:
+        0 0,
+        0 10px,
+        10px -10px,
+        -10px 0;
+    }
+
+    input[type="range"] {
+      accent-color: #2563eb;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+      <div>
+        <h1 class="text-xl font-bold">Document Scanner</h1>
+        <p class="text-xs text-slate-500">
+          Enhance images and export them as PDF
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          id="addImagesButton"
+          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+        >
+          Add images
+        </button>
+
+        <button
+          id="cameraButton"
+          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+        >
+          Camera
+        </button>
+
+        <button
+          id="exportButton"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled
+        >
+          Export PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hidden file inputs -->
+  <input
+    id="imageInput"
+    class="hidden"
+    type="file"
+    accept="image/*"
+    multiple
+  />
+
+  <input
+    id="cameraInput"
+    class="hidden"
+    type="file"
+    accept="image/*"
+    capture="environment"
+  />
+
+  <main class="mx-auto grid max-w-7xl gap-4 p-4 lg:grid-cols-[250px_minmax(0,1fr)_280px]">
+    <!-- Page list -->
+    <aside class="rounded-xl border bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b px-4 py-3">
+        <div>
+          <h2 class="font-semibold">Pages</h2>
+          <p id="pageCount" class="text-xs text-slate-500">0 pages</p>
+        </div>
+
+        <button
+          id="clearButton"
+          class="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-40"
+          disabled
+        >
+          Clear
+        </button>
+      </div>
+
+      <div
+        id="emptyPagesMessage"
+        class="p-6 text-center text-sm text-slate-500"
+      >
+        Add images to create a document.
+      </div>
+
+      <div
+        id="pageList"
+        class="grid max-h-[calc(100vh-180px)] grid-cols-2 gap-3 overflow-y-auto p-3 lg:grid-cols-1"
+      ></div>
+    </aside>
+
+    <!-- Main preview -->
+    <section class="min-h-[500px] overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+        <div>
+          <h2 class="font-semibold">Preview</h2>
+          <p id="selectedPageLabel" class="text-xs text-slate-500">
+            No page selected
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="rotateLeftButton"
+            class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-40"
+            disabled
+          >
+            ↶ Rotate
+          </button>
+
+          <button
+            id="rotateRightButton"
+            class="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-40"
+            disabled
+          >
+            Rotate ↷
+          </button>
+
+          <button
+            id="deleteButton"
+            class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+            disabled
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="previewContainer"
+        class="checkerboard flex min-h-[500px] items-center justify-center overflow-auto p-4 lg:min-h-[calc(100vh-180px)]"
+      >
+        <div id="emptyPreview" class="max-w-sm rounded-xl bg-white/90 p-8 text-center shadow">
+          <div class="mb-3 text-5xl">📄</div>
+          <h3 class="font-semibold">No document pages</h3>
+          <p class="mt-2 text-sm text-slate-500">
+            Import a cropped and deskewed image to start building your PDF.
+          </p>
+        </div>
+
+        <canvas
+          id="previewCanvas"
+          class="hidden max-h-[calc(100vh-220px)] max-w-full bg-white shadow-xl"
+        ></canvas>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <aside class="space-y-4">
+      <!-- Image filters -->
+      <div class="rounded-xl border bg-white shadow-sm">
+        <div class="border-b px-4 py-3">
+          <h2 class="font-semibold">Image enhancement</h2>
+          <p class="text-xs text-slate-500">
+            Applied to the selected page
+          </p>
+        </div>
+
+        <div class="space-y-5 p-4">
+          <div>
+            <label for="filterMode" class="mb-1 block text-sm font-medium">
+              Filter
+            </label>
+
+            <select
+              id="filterMode"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+              disabled
+            >
+              <option value="color">Original color</option>
+              <option value="grayscale">Grayscale</option>
+              <option value="bw">Black and white</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="mb-1 flex justify-between text-sm">
+              <label for="brightness">Brightness</label>
+              <span id="brightnessValue">0</span>
+            </div>
+
+            <input
+              id="brightness"
+              class="w-full"
+              type="range"
+              min="-100"
+              max="100"
+              value="0"
+              disabled
+            />
+          </div>
+
+          <div>
+            <div class="mb-1 flex justify-between text-sm">
+              <label for="contrast">Contrast</label>
+              <span id="contrastValue">0</span>
+            </div>
+
+            <input
+              id="contrast"
+              class="w-full"
+              type="range"
+              min="-100"
+              max="100"
+              value="0"
+              disabled
+            />
+          </div>
+
+          <div id="thresholdSection" class="hidden">
+            <div class="mb-1 flex justify-between text-sm">
+              <label for="threshold">B&amp;W threshold</label>
+              <span id="thresholdValue">160</span>
+            </div>
+
+            <input
+              id="threshold"
+              class="w-full"
+              type="range"
+              min="50"
+              max="230"
+              value="160"
+              disabled
+            />
+          </div>
+
+          <button
+            id="resetFiltersButton"
+            class="w-full rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-40"
+            disabled
+          >
+            Reset enhancement
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF settings -->
+      <div class="rounded-xl border bg-white shadow-sm">
+        <div class="border-b px-4 py-3">
+          <h2 class="font-semibold">PDF settings</h2>
+        </div>
+
+        <div class="space-y-4 p-4">
+          <div>
+            <label for="fileName" class="mb-1 block text-sm font-medium">
+              File name
+            </label>
+
+            <input
+              id="fileName"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              type="text"
+              value="scanned-document"
+            />
+          </div>
+
+          <div>
+            <label for="pageSize" class="mb-1 block text-sm font-medium">
+              Page size
+            </label>
+
+            <select
+              id="pageSize"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="a4">A4</option>
+              <option value="letter">US Letter</option>
+              <option value="image">Match image</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="orientation" class="mb-1 block text-sm font-medium">
+              Orientation
+            </label>
+
+            <select
+              id="orientation"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="auto">Automatic</option>
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="mb-1 flex justify-between text-sm">
+              <label for="jpegQuality">Image quality</label>
+              <span id="jpegQualityValue">85%</span>
+            </div>
+
+            <input
+              id="jpegQuality"
+              class="w-full"
+              type="range"
+              min="50"
+              max="100"
+              value="85"
+            />
+          </div>
+
+          <div>
+            <label for="maxResolution" class="mb-1 block text-sm font-medium">
+              Maximum resolution
+            </label>
+
+            <select
+              id="maxResolution"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="1600">1600 px — small PDF</option>
+              <option value="2480" selected>2480 px — recommended</option>
+              <option value="3508">3508 px — high quality</option>
+            </select>
+          </div>
+
+          <p class="text-xs leading-5 text-slate-500">
+            Text documents generally work well with grayscale or black-and-white
+            mode and 2480 px resolution.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Export progress -->
+  <div
+    id="progressOverlay"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4"
+  >
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+      <h2 class="text-lg font-semibold">Generating PDF</h2>
+
+      <p id="progressText" class="mt-1 text-sm text-slate-500">
+        Processing pages...
+      </p>
+
+      <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div
+          id="progressBar"
+          class="h-full w-0 rounded-full bg-blue-600 transition-all"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { PDFDocument, rgb } = PDFLib;
+
+    const state = {
+      pages: [],
+      selectedPageId: null,
+      draggedPageId: null,
+      previewRenderToken: 0
+    };
+
+    const elements = {
+      imageInput: document.getElementById("imageInput"),
+      cameraInput: document.getElementById("cameraInput"),
+      addImagesButton: document.getElementById("addImagesButton"),
+      cameraButton: document.getElementById("cameraButton"),
+      exportButton: document.getElementById("exportButton"),
+      clearButton: document.getElementById("clearButton"),
+
+      pageList: document.getElementById("pageList"),
+      pageCount: document.getElementById("pageCount"),
+      emptyPagesMessage: document.getElementById("emptyPagesMessage"),
+
+      selectedPageLabel: document.getElementById("selectedPageLabel"),
+      emptyPreview: document.getElementById("emptyPreview"),
+      previewCanvas: document.getElementById("previewCanvas"),
+
+      rotateLeftButton: document.getElementById("rotateLeftButton"),
+      rotateRightButton: document.getElementById("rotateRightButton"),
+      deleteButton: document.getElementById("deleteButton"),
+
+      filterMode: document.getElementById("filterMode"),
+      brightness: document.getElementById("brightness"),
+      contrast: document.getElementById("contrast"),
+      threshold: document.getElementById("threshold"),
+      thresholdSection: document.getElementById("thresholdSection"),
+
+      brightnessValue: document.getElementById("brightnessValue"),
+      contrastValue: document.getElementById("contrastValue"),
+      thresholdValue: document.getElementById("thresholdValue"),
+      resetFiltersButton: document.getElementById("resetFiltersButton"),
+
+      fileName: document.getElementById("fileName"),
+      pageSize: document.getElementById("pageSize"),
+      orientation: document.getElementById("orientation"),
+      jpegQuality: document.getElementById("jpegQuality"),
+      jpegQualityValue: document.getElementById("jpegQualityValue"),
+      maxResolution: document.getElementById("maxResolution"),
+
+      progressOverlay: document.getElementById("progressOverlay"),
+      progressText: document.getElementById("progressText"),
+      progressBar: document.getElementById("progressBar")
+    };
+
+    function createId() {
+      return crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
+    }
+
+    function getSelectedPage() {
+      return state.pages.find(
+        page => page.id === state.selectedPageId
+      );
+    }
+
+    function clamp(value, min = 0, max = 255) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function normalizeRotation(rotation) {
+      return ((rotation % 360) + 360) % 360;
+    }
+
+    function waitForBrowser() {
+      return new Promise(resolve => {
+        requestAnimationFrame(() => setTimeout(resolve, 0));
+      });
+    }
+
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(
+          new Error("Could not decode the selected image.")
+        );
+
+        image.src = url;
+      });
+    }
+
+    function canvasToBlob(canvas, type, quality) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(
+          blob => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Could not encode image."));
+            }
+          },
+          type,
+          quality
+        );
+      });
+    }
+
+    /**
+     * Add a Blob/File to the document.
+     *
+     * Call this after your crop and deskew operation:
+     *
+     *   window.addScannedPage(croppedDeskewedBlob, "Page 1");
+     */
+    async function addPageFromBlob(blob, name = "Scanned page") {
+      if (!blob || !blob.type.startsWith("image/")) {
+        throw new Error("The supplied blob must be an image.");
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const image = await loadImage(objectUrl);
+
+      const page = {
+        id: createId(),
+        name,
+        objectUrl,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        rotation: 0,
+        filter: "color",
+        brightness: 0,
+        contrast: 0,
+        threshold: 160
+      };
+
+      state.pages.push(page);
+      state.selectedPageId = page.id;
+
+      renderApplication();
+    }
+
+    // Integration point for an existing crop/deskew implementation.
+    window.addScannedPage = addPageFromBlob;
+
+    async function addFiles(fileList) {
+      const files = Array.from(fileList).filter(
+        file => file.type.startsWith("image/")
+      );
+
+      for (const file of files) {
+        try {
+          /*
+           * If you already have cropping/deskewing, replace `file` below
+           * with the Blob produced by your processing pipeline.
+           */
+          await addPageFromBlob(file, file.name);
+        } catch (error) {
+          console.error(error);
+          alert(`Could not import "${file.name}".`);
+        }
+      }
+    }
+
+    async function renderProcessedCanvas(page, maxEdge = 1200) {
+      const image = await loadImage(page.objectUrl);
+
+      const sourceWidth = image.naturalWidth;
+      const sourceHeight = image.naturalHeight;
+
+      const scale = Math.min(
+        1,
+        maxEdge / Math.max(sourceWidth, sourceHeight)
+      );
+
+      const scaledWidth = Math.max(
+        1,
+        Math.round(sourceWidth * scale)
+      );
+
+      const scaledHeight = Math.max(
+        1,
+        Math.round(sourceHeight * scale)
+      );
+
+      const rotation = normalizeRotation(page.rotation);
+      const swapsDimensions = rotation === 90 || rotation === 270;
+
+      const outputWidth = swapsDimensions
+        ? scaledHeight
+        : scaledWidth;
+
+      const outputHeight = swapsDimensions
+        ? scaledWidth
+        : scaledHeight;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+
+      const context = canvas.getContext("2d", {
+        willReadFrequently: true
+      });
+
+      // White background prevents transparent areas from becoming black
+      // when the canvas is converted to JPEG.
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, outputWidth, outputHeight);
+
+      context.save();
+      context.translate(outputWidth / 2, outputHeight / 2);
+      context.rotate(rotation * Math.PI / 180);
+
+      context.drawImage(
+        image,
+        -scaledWidth / 2,
+        -scaledHeight / 2,
+        scaledWidth,
+        scaledHeight
+      );
+
+      context.restore();
+
+      applyImageEnhancements(context, canvas, page);
+
+      return canvas;
+    }
+
+    function applyImageEnhancements(context, canvas, page) {
+      const shouldProcess =
+        page.filter !== "color" ||
+        page.brightness !== 0 ||
+        page.contrast !== 0;
+
+      if (!shouldProcess) {
+        return;
+      }
+
+      const imageData = context.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      const data = imageData.data;
+
+      const brightnessOffset =
+        Number(page.brightness) * 2.55;
+
+      const contrastValue =
+        Number(page.contrast) * 2.55;
+
+      const contrastFactor =
+        (259 * (contrastValue + 255)) /
+        (255 * (259 - contrastValue));
+
+      for (let index = 0; index < data.length; index += 4) {
+        let red = data[index];
+        let green = data[index + 1];
+        let blue = data[index + 2];
+
+        // Brightness
+        red += brightnessOffset;
+        green += brightnessOffset;
+        blue += brightnessOffset;
+
+        // Contrast
+        red = contrastFactor * (red - 128) + 128;
+        green = contrastFactor * (green - 128) + 128;
+        blue = contrastFactor * (blue - 128) + 128;
+
+        red = clamp(red);
+        green = clamp(green);
+        blue = clamp(blue);
+
+        if (page.filter === "grayscale" || page.filter === "bw") {
+          // Perceptual luminance.
+          const luminance =
+            0.299 * red +
+            0.587 * green +
+            0.114 * blue;
+
+          if (page.filter === "bw") {
+            const value =
+              luminance >= Number(page.threshold) ? 255 : 0;
+
+            red = value;
+            green = value;
+            blue = value;
+          } else {
+            red = luminance;
+            green = luminance;
+            blue = luminance;
+          }
+        }
+
+        data[index] = red;
+        data[index + 1] = green;
+        data[index + 2] = blue;
+        data[index + 3] = 255;
+      }
+
+      context.putImageData(imageData, 0, 0);
+    }
+
+    async function renderPreview() {
+      const page = getSelectedPage();
+      const token = ++state.previewRenderToken;
+
+      if (!page) {
+        elements.previewCanvas.classList.add("hidden");
+        elements.emptyPreview.classList.remove("hidden");
+        elements.selectedPageLabel.textContent = "No page selected";
+        return;
+      }
+
+      elements.emptyPreview.classList.add("hidden");
+      elements.selectedPageLabel.textContent = page.name;
+
+      try {
+        const renderedCanvas = await renderProcessedCanvas(page, 1400);
+
+        // Ignore an old render if settings changed while processing.
+        if (token !== state.previewRenderToken) {
+          return;
+        }
+
+        elements.previewCanvas.width = renderedCanvas.width;
+        elements.previewCanvas.height = renderedCanvas.height;
+
+        const context = elements.previewCanvas.getContext("2d");
+        context.clearRect(
+          0,
+          0,
+          elements.previewCanvas.width,
+          elements.previewCanvas.height
+        );
+
+        context.drawImage(renderedCanvas, 0, 0);
+        elements.previewCanvas.classList.remove("hidden");
+      } catch (error) {
+        console.error(error);
+        alert("Could not render this image.");
+      }
+    }
+
+    async function createThumbnail(page, imageElement) {
+      try {
+        const canvas = await renderProcessedCanvas(page, 320);
+        imageElement.src = canvas.toDataURL("image/jpeg", 0.75);
+      } catch (error) {
+        console.error("Thumbnail error:", error);
+      }
+    }
+
+    function renderPageList() {
+      elements.pageList.innerHTML = "";
+
+      state.pages.forEach((page, index) => {
+        const card = document.createElement("div");
+
+        card.className = [
+          "page-card",
+          "group",
+          "cursor-pointer",
+          "rounded-xl",
+          "border-2",
+          "bg-white",
+          "p-2",
+          "transition",
+          page.id === state.selectedPageId
+            ? "border-blue-500 ring-2 ring-blue-100"
+            : "border-transparent hover:border-slate-300"
+        ].join(" ");
+
+        card.draggable = true;
+        card.dataset.pageId = page.id;
+
+        const imageWrapper = document.createElement("div");
+        imageWrapper.className =
+          "relative aspect-[3/4] overflow-hidden rounded-lg bg-slate-100";
+
+        const thumbnail = document.createElement("img");
+        thumbnail.className =
+          "h-full w-full object-contain";
+        thumbnail.alt = `Page ${index + 1}`;
+
+        const numberBadge = document.createElement("div");
+        numberBadge.className =
+          "absolute left-2 top-2 rounded-full bg-slate-950/75 px-2 py-1 text-xs font-semibold text-white";
+        numberBadge.textContent = index + 1;
+
+        imageWrapper.append(thumbnail, numberBadge);
+
+        const footer = document.createElement("div");
+        footer.className =
+          "mt-2 flex items-center justify-between gap-2";
+
+        const pageName = document.createElement("div");
+        pageName.className =
+          "min-w-0 truncate text-xs font-medium";
+        pageName.textContent = page.name;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className =
+          "rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50";
+        deleteButton.textContent = "Delete";
+
+        deleteButton.addEventListener("click", event => {
+          event.stopPropagation();
+          removePage(page.id);
+        });
+
+        footer.append(pageName, deleteButton);
+        card.append(imageWrapper, footer);
+
+        card.addEventListener("click", () => {
+          state.selectedPageId = page.id;
+          renderApplication();
+        });
+
+        card.addEventListener("dragstart", event => {
+          state.draggedPageId = page.id;
+          card.classList.add("dragging");
+
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", page.id);
+        });
+
+        card.addEventListener("dragend", () => {
+          state.draggedPageId = null;
+          card.classList.remove("dragging");
+        });
+
+        card.addEventListener("dragover", event => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        });
+
+        card.addEventListener("drop", event => {
+          event.preventDefault();
+
+          const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            state.draggedPageId;
+
+          reorderPage(draggedId, page.id);
+        });
+
+        elements.pageList.appendChild(card);
+        createThumbnail(page, thumbnail);
+      });
+    }
+
+    function reorderPage(draggedId, targetId) {
+      if (!draggedId || draggedId === targetId) {
+        return;
+      }
+
+      const draggedIndex = state.pages.findIndex(
+        page => page.id === draggedId
+      );
+
+      const targetIndex = state.pages.findIndex(
+        page => page.id === targetId
+      );
+
+      if (draggedIndex < 0 || targetIndex < 0) {
+        return;
+      }
+
+      const [draggedPage] = state.pages.splice(draggedIndex, 1);
+      state.pages.splice(targetIndex, 0, draggedPage);
+
+      renderApplication();
+    }
+
+    function syncControls() {
+      const page = getSelectedPage();
+      const hasPage = Boolean(page);
+      const hasPages = state.pages.length > 0;
+
+      elements.exportButton.disabled = !hasPages;
+      elements.clearButton.disabled = !hasPages;
+
+      elements.rotateLeftButton.disabled = !hasPage;
+      elements.rotateRightButton.disabled = !hasPage;
+      elements.deleteButton.disabled = !hasPage;
+
+      elements.filterMode.disabled = !hasPage;
+      elements.brightness.disabled = !hasPage;
+      elements.contrast.disabled = !hasPage;
+      elements.threshold.disabled = !hasPage;
+      elements.resetFiltersButton.disabled = !hasPage;
+
+      elements.pageCount.textContent =
+        `${state.pages.length} ${state.pages.length === 1 ? "page" : "pages"}`;
+
+      elements.emptyPagesMessage.classList.toggle(
+        "hidden",
+        hasPages
+      );
+
+      if (!page) {
+        return;
+      }
+
+      elements.filterMode.value = page.filter;
+      elements.brightness.value = page.brightness;
+      elements.contrast.value = page.contrast;
+      elements.threshold.value = page.threshold;
+
+      elements.brightnessValue.textContent = page.brightness;
+      elements.contrastValue.textContent = page.contrast;
+      elements.thresholdValue.textContent = page.threshold;
+
+      elements.thresholdSection.classList.toggle(
+        "hidden",
+        page.filter !== "bw"
+      );
+    }
+
+    function renderApplication() {
+      syncControls();
+      renderPageList();
+      renderPreview();
+    }
+
+    function removePage(pageId) {
+      const index = state.pages.findIndex(
+        page => page.id === pageId
+      );
+
+      if (index < 0) {
+        return;
+      }
+
+      const [removedPage] = state.pages.splice(index, 1);
+      URL.revokeObjectURL(removedPage.objectUrl);
+
+      if (state.selectedPageId === pageId) {
+        const nextPage =
+          state.pages[index] ||
+          state.pages[index - 1] ||
+          null;
+
+        state.selectedPageId = nextPage?.id ?? null;
+      }
+
+      renderApplication();
+    }
+
+    function clearPages() {
+      if (!state.pages.length) {
+        return;
+      }
+
+      if (!confirm("Remove all document pages?")) {
+        return;
+      }
+
+      for (const page of state.pages) {
+        URL.revokeObjectURL(page.objectUrl);
+      }
+
+      state.pages = [];
+      state.selectedPageId = null;
+
+      renderApplication();
+    }
+
+    function rotateSelectedPage(amount) {
+      const page = getSelectedPage();
+
+      if (!page) {
+        return;
+      }
+
+      page.rotation = normalizeRotation(
+        page.rotation + amount
+      );
+
+      renderApplication();
+    }
+
+    let settingsRenderTimer;
+
+    function updateSelectedPageSetting(property, value) {
+      const page = getSelectedPage();
+
+      if (!page) {
+        return;
+      }
+
+      page[property] = value;
+      syncControls();
+
+      clearTimeout(settingsRenderTimer);
+
+      // Debounce expensive pixel processing while sliders move.
+      settingsRenderTimer = setTimeout(() => {
+        renderPageList();
+        renderPreview();
+      }, 120);
+    }
+
+    function resetSelectedPageFilters() {
+      const page = getSelectedPage();
+
+      if (!page) {
+        return;
+      }
+
+      page.filter = "color";
+      page.brightness = 0;
+      page.contrast = 0;
+      page.threshold = 160;
+
+      renderApplication();
+    }
+
+    function getPdfPageDimensions(imageWidth, imageHeight) {
+      const size = elements.pageSize.value;
+      const orientation = elements.orientation.value;
+
+      let pageWidth;
+      let pageHeight;
+
+      if (size === "a4") {
+        // PDF points: 72 points per inch.
+        pageWidth = 595.28;
+        pageHeight = 841.89;
+      } else if (size === "letter") {
+        pageWidth = 612;
+        pageHeight = 792;
+      } else {
+        // Treat source pixels as approximately 150 DPI.
+        pageWidth = imageWidth * 72 / 150;
+        pageHeight = imageHeight * 72 / 150;
+
+        // Avoid invalid or excessively large PDF pages.
+        const maximumDimension = 14400;
+        const scale = Math.min(
+          1,
+          maximumDimension / Math.max(pageWidth, pageHeight)
+        );
+
+        pageWidth *= scale;
+        pageHeight *= scale;
+      }
+
+      const imageIsLandscape = imageWidth > imageHeight;
+
+      let shouldUseLandscape;
+
+      if (orientation === "landscape") {
+        shouldUseLandscape = true;
+      } else if (orientation === "portrait") {
+        shouldUseLandscape = false;
+      } else {
+        shouldUseLandscape = imageIsLandscape;
+      }
+
+      const currentIsLandscape = pageWidth > pageHeight;
+
+      if (shouldUseLandscape !== currentIsLandscape) {
+        [pageWidth, pageHeight] = [pageHeight, pageWidth];
+      }
+
+      return [pageWidth, pageHeight];
+    }
+
+    function sanitizeFileName(name) {
+      return (
+        name
+          .trim()
+          .replace(/\.pdf$/i, "")
+          .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-") ||
+        "scanned-document"
+      );
+    }
+
+    function downloadBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = fileName;
+
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function setExportProgress(current, total, message) {
+      const percent = Math.round((current / total) * 100);
+
+      elements.progressBar.style.width = `${percent}%`;
+      elements.progressText.textContent =
+        message || `Processing page ${current} of ${total}`;
+    }
+
+    async function exportPdf() {
+      if (!state.pages.length) {
+        return;
+      }
+
+      elements.progressOverlay.classList.remove("hidden");
+      elements.progressOverlay.classList.add("flex");
+      elements.exportButton.disabled = true;
+
+      setExportProgress(0, state.pages.length, "Preparing document...");
+
+      try {
+        const pdfDocument = await PDFDocument.create();
+
+        pdfDocument.setTitle(
+          sanitizeFileName(elements.fileName.value)
+        );
+
+        pdfDocument.setAuthor("Document Scanner");
+        pdfDocument.setCreator("Document Scanner Web App");
+        pdfDocument.setProducer("pdf-lib");
+        pdfDocument.setCreationDate(new Date());
+        pdfDocument.setModificationDate(new Date());
+
+        const maxResolution = Number(
+          elements.maxResolution.value
+        );
+
+        const quality =
+          Number(elements.jpegQuality.value) / 100;
+
+        for (
+          let index = 0;
+          index < state.pages.length;
+          index++
+        ) {
+          const sourcePage = state.pages[index];
+
+          setExportProgress(
+            index,
+            state.pages.length,
+            `Processing page ${index + 1} of ${state.pages.length}`
+          );
+
+          await waitForBrowser();
+
+          const canvas = await renderProcessedCanvas(
+            sourcePage,
+            maxResolution
+          );
+
+          const jpegBlob = await canvasToBlob(
+            canvas,
+            "image/jpeg",
+            quality
+          );
+
+          const jpegBytes = await jpegBlob.arrayBuffer();
+          const embeddedImage =
+            await pdfDocument.embedJpg(jpegBytes);
+
+          const [pdfWidth, pdfHeight] =
+            getPdfPageDimensions(canvas.width, canvas.height);
+
+          const pdfPage = pdfDocument.addPage([
+            pdfWidth,
+            pdfHeight
+          ]);
+
+          pdfPage.drawRectangle({
+            x: 0,
+            y: 0,
+            width: pdfWidth,
+            height: pdfHeight,
+            color: rgb(1, 1, 1)
+          });
+
+          const pageUsesImageSize =
+            elements.pageSize.value === "image";
+
+          const margin = pageUsesImageSize ? 0 : 24;
+
+          const availableWidth = pdfWidth - margin * 2;
+          const availableHeight = pdfHeight - margin * 2;
+
+          const imageScale = Math.min(
+            availableWidth / embeddedImage.width,
+            availableHeight / embeddedImage.height
+          );
+
+          const drawWidth =
+            embeddedImage.width * imageScale;
+
+          const drawHeight =
+            embeddedImage.height * imageScale;
+
+          const x = (pdfWidth - drawWidth) / 2;
+          const y = (pdfHeight - drawHeight) / 2;
+
+          pdfPage.drawImage(embeddedImage, {
+            x,
+            y,
+            width: drawWidth,
+            height: drawHeight
+          });
+
+          // Release the large canvas backing store sooner.
+          canvas.width = 1;
+          canvas.height = 1;
+
+          setExportProgress(
+            index + 1,
+            state.pages.length,
+            `Processed page ${index + 1} of ${state.pages.length}`
+          );
+        }
+
+        elements.progressText.textContent =
+          "Finalizing PDF...";
+
+        await waitForBrowser();
+
+        const pdfBytes = await pdfDocument.save({
+          useObjectStreams: true
+        });
+
+        const pdfBlob = new Blob(
+          [pdfBytes],
+          { type: "application/pdf" }
+        );
+
+        const fileName =
+          `${sanitizeFileName(elements.fileName.value)}.pdf`;
+
+        downloadBlob(pdfBlob, fileName);
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          "PDF generation failed. Try using a lower maximum resolution or fewer images."
+        );
+      } finally {
+        elements.progressOverlay.classList.add("hidden");
+        elements.progressOverlay.classList.remove("flex");
+        elements.progressBar.style.width = "0%";
+        elements.exportButton.disabled =
+          state.pages.length === 0;
+      }
+    }
+
+    // File controls
+    elements.addImagesButton.addEventListener("click", () => {
+      elements.imageInput.click();
+    });
+
+    elements.cameraButton.addEventListener("click", () => {
+      elements.cameraInput.click();
+    });
+
+    elements.imageInput.addEventListener("change", async event => {
+      await addFiles(event.target.files);
+      event.target.value = "";
+    });
+
+    elements.cameraInput.addEventListener("change", async event => {
+      await addFiles(event.target.files);
+      event.target.value = "";
+    });
+
+    // Page controls
+    elements.rotateLeftButton.addEventListener("click", () => {
+      rotateSelectedPage(-90);
+    });
+
+    elements.rotateRightButton.addEventListener("click", () => {
+      rotateSelectedPage(90);
+    });
+
+    elements.deleteButton.addEventListener("click", () => {
+      const page = getSelectedPage();
+
+      if (page) {
+        removePage(page.id);
+      }
+    });
+
+    elements.clearButton.addEventListener("click", clearPages);
+
+    // Enhancement controls
+    elements.filterMode.addEventListener("change", event => {
+      updateSelectedPageSetting("filter", event.target.value);
+    });
+
+    elements.brightness.addEventListener("input", event => {
+      updateSelectedPageSetting(
+        "brightness",
+        Number(event.target.value)
+      );
+    });
+
+    elements.contrast.addEventListener("input", event => {
+      updateSelectedPageSetting(
+        "contrast",
+        Number(event.target.value)
+      );
+    });
+
+    elements.threshold.addEventListener("input", event => {
+      updateSelectedPageSetting(
+        "threshold",
+        Number(event.target.value)
+      );
+    });
+
+    elements.resetFiltersButton.addEventListener(
+      "click",
+      resetSelectedPageFilters
+    );
+
+    // PDF controls
+    elements.jpegQuality.addEventListener("input", event => {
+      elements.jpegQualityValue.textContent =
+        `${event.target.value}%`;
+    });
+
+    elements.exportButton.addEventListener(
+      "click",
+      exportPdf
+    );
+
+    // Cleanup Blob URLs when the page closes.
+    window.addEventListener("beforeunload", () => {
+      for (const page of state.pages) {
+        URL.revokeObjectURL(page.objectUrl);
+      }
+    });
+
+    renderApplication();
+  </script>
+</body>
+</html>

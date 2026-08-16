@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coding Agent Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden font-sans bg-slate-950">
+
+  <!-- GLOBAL NAVBAR WITH MODE SWITCHER -->
+  <header class="h-12 border-b border-slate-800 bg-slate-900/80 px-4 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 font-bold text-sm text-slate-200">
+        <i data-lucide="bot" class="w-5 h-5 text-indigo-400"></i>
+        <span>Agent Workspace</span>
+      </div>
+      <span id="nav-run-id" class="text-[11px] font-mono px-2 py-0.5 bg-slate-800 text-slate-400 rounded">No active run</span>
+    </div>
+
+    <!-- MODE TOGGLE BUTTONS -->
+    <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800">
+      <button id="btn-mode-ide" onclick="switchMode('ide')" class="px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition bg-indigo-600 text-white">
+        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> IDE Mode
+      </button>
+      <button id="btn-mode-canvas" onclick="switchMode('canvas')" class="px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition text-slate-400 hover:text-slate-200">
+        <i data-lucide="layout-panel-left" class="w-3.5 h-3.5"></i> Canvas Mode
+      </button>
+    </div>
+
+    <div id="nav-run-actions" class="hidden flex items-center gap-2">
+      <button id="btn-cancel-run" class="p-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-md text-xs">
+        <i data-lucide="square" class="w-3.5 h-3.5"></i>
+      </button>
+      <button id="btn-delete-run" class="p-1.5 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-md text-xs">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MODE 1: IDE MULTI-PANE STUDIO ================= -->
+  <div id="view-ide" class="flex-1 flex overflow-hidden">
+    <!-- Left Runs List -->
+    <aside class="w-72 border-r border-slate-800 bg-slate-900/40 flex flex-col shrink-0">
+      <div class="p-3 border-b border-slate-800 flex justify-between items-center text-xs text-slate-400 font-semibold">
+        <span>RUN HISTORY</span>
+        <button id="btn-new-run-ide" class="p-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <div id="ide-runs-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+    </aside>
+
+    <!-- Center Console Stream -->
+    <main class="flex-1 flex flex-col border-r border-slate-800 overflow-hidden">
+      <div class="px-4 py-2 border-b border-slate-800 bg-slate-900/20 flex justify-between text-xs text-slate-400 font-mono">
+        <span class="flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> Execution Stream</span>
+      </div>
+      <div id="ide-console" class="flex-1 overflow-y-auto p-4 font-mono text-xs text-slate-300 space-y-1 bg-slate-950/80">
+        <div class="text-slate-600 italic">Select a run from the sidebar...</div>
+      </div>
+      <!-- Prompt Bar -->
+      <form id="form-ide-prompt" class="p-3 border-t border-slate-800 bg-slate-900/50 flex gap-2">
+        <input type="text" id="ide-task-input" placeholder="Type a task for the agent..." required
+          class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        <button type="submit" class="px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">Run</button>
+      </form>
+    </main>
+
+    <!-- Right File Browser & Code Preview -->
+    <aside class="w-80 flex flex-col shrink-0 bg-slate-900/20">
+      <div class="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Workspace Files</div>
+      <div id="ide-files-tree" class="flex-1 overflow-y-auto p-3 text-xs space-y-1 text-slate-400"></div>
+    </aside>
+  </div>
+
+  <!-- ================= MODE 2: AGENT TIMELINE + CANVAS MODE ================= -->
+  <div id="view-canvas" class="hidden flex-1 flex overflow-hidden">
+    <!-- Left Timeline Chat Feed (40%) -->
+    <div class="w-[420px] border-r border-slate-800 flex flex-col bg-slate-900/30 shrink-0">
+      <div class="p-3 border-b border-slate-800 flex justify-between items-center text-xs font-semibold text-slate-300">
+        <span class="flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4 text-indigo-400"></i> Agent Conversation</span>
+      </div>
+      <div id="canvas-timeline" class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs text-slate-300">
+        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-500 italic text-center">
+          No run selected. Create or select a run to open canvas.
+        </div>
+      </div>
+      <!-- Task Prompt Box -->
+      <form id="form-canvas-prompt" class="p-3 border-t border-slate-800 bg-slate-900/60 flex flex-col gap-2">
+        <textarea id="canvas-task-input" rows="2" placeholder="Ask agent to code or refactor..." required
+          class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+        <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Start Task
+        </button>
+      </form>
+    </div>
+
+    <!-- Right Main Interactive Code Canvas (60%) -->
+    <div class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+      <!-- File Tabs Top Bar -->
+      <div class="h-10 border-b border-slate-800 bg-slate-900/40 px-3 flex items-center gap-2 overflow-x-auto text-xs" id="canvas-file-tabs">
+        <span class="text-slate-500 italic px-2">No file open in canvas</span>
+      </div>
+      <!-- Code Canvas Area -->
+      <div class="flex-1 overflow-auto p-4 bg-slate-950/60 font-mono text-xs text-slate-200">
+        <pre id="canvas-code-viewer" class="text-slate-500 italic">Select a file from workspace list to inspect content...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE VIEWER MODAL (IDE MODE) -->
+  <div id="modal-file-viewer" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <span id="modal-file-path" class="text-xs font-mono text-indigo-400">file.js</span>
+        <button onclick="document.getElementById('modal-file-viewer').classList.add('hidden')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <pre id="modal-file-content" class="flex-1 p-4 overflow-auto font-mono text-xs text-slate-300 bg-slate-950/50"></pre>
+    </div>
+  </div>
+
+  <!-- SHARED JS LOGIC -->
+  <script>
+    lucide.createIcons();
+
+    let currentMode = 'ide'; // 'ide' or 'canvas'
+    let activeRunId = null;
+    let eventSource = null;
+
+    // Switch between Mode 1 and Mode 2
+    function switchMode(mode) {
+      currentMode = mode;
+      const ideView = document.getElementById('view-ide');
+      const canvasView = document.getElementById('view-canvas');
+      const btnIde = document.getElementById('btn-mode-ide');
+      const btnCanvas = document.getElementById('btn-mode-canvas');
+
+      if (mode === 'ide') {
+        ideView.classList.remove('hidden');
+        canvasView.classList.add('hidden');
+        btnIde.className = "px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition bg-indigo-600 text-white";
+        btnCanvas.className = "px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition text-slate-400 hover:text-slate-200";
+      } else {
+        ideView.classList.add('hidden');
+        canvasView.classList.remove('hidden');
+        btnCanvas.className = "px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition bg-indigo-600 text-white";
+        btnIde.className = "px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition text-slate-400 hover:text-slate-200";
+      }
+      lucide.createIcons();
+    }
+
+    async function apiRequest(endpoint, body = {}) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        return await res.json();
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    async function loadRuns() {
+      const data = await apiRequest('/api/agent/runs/read_all', {});
+      const runs = Array.isArray(data) ? data : (data?.runs || []);
+      const container = document.getElementById('ide-runs-list');
+      container.innerHTML = '';
+
+      runs.forEach(r => {
+        const id = r.id || r.run || r;
+        const task = r.task || 'Agent Run';
+        const item = document.createElement('div');
+        item.className = `p-2 rounded-md border text-xs cursor-pointer ${activeRunId === id ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200' : 'border-slate-800 hover:bg-slate-900 text-slate-400'}`;
+        item.onclick = () => selectRun(id);
+        item.innerHTML = `<div class="font-mono text-[10px] text-slate-500">${id}</div><div class="truncate">${task}</div>`;
+        container.appendChild(item);
+      });
+    }
+
+    async function selectRun(id) {
+      activeRunId = id;
+      document.getElementById('nav-run-id').textContent = id;
+      document.getElementById('nav-run-actions').classList.remove('hidden');
+      
+      // Clear screens
+      document.getElementById('ide-console').innerHTML = '';
+      document.getElementById('canvas-timeline').innerHTML = '';
+
+      connectStream(id);
+      loadFiles(id);
+      loadRuns();
+    }
+
+    function connectStream(id) {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource(`/api/agent/runs/stream/${id}`);
+
+      eventSource.onmessage = (e) => {
+        // Mode 1: Log line
+        const line = document.createElement('div');
+        line.textContent = e.data;
+        document.getElementById('ide-console').appendChild(line);
+
+        // Mode 2: Card log
+        const card = document.createElement('div');
+        card.className = "p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono";
+        card.textContent = e.data;
+        document.getElementById('canvas-timeline').appendChild(card);
+      };
+    }
+
+    async function loadFiles(id) {
+      const data = await apiRequest(`/api/agent/runs/${id}/files/read_all`, {});
+      const files = data?.files || data || [];
+      
+      // IDE Mode Tree
+      const tree = document.getElementById('ide-files-tree');
+      tree.innerHTML = '';
+      
+      // Canvas Tabs Bar
+      const tabs = document.getElementById('canvas-file-tabs');
+      tabs.innerHTML = '';
+
+      if (Array.isArray(files)) {
+        files.forEach(f => {
+          // Add to IDE
+          const fileEl = document.createElement('div');
+          fileEl.className = 'flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer';
+          fileEl.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i> ${f}`;
+          fileEl.onclick = () => openFileModal(id, f);
+          tree.appendChild(fileEl);
+
+          // Add to Canvas Tabs
+          const tab = document.createElement('button');
+          tab.className = 'px-3 py-1 bg-slate-900 border border-slate-800 rounded-t hover:bg-slate-800 text-slate-300 text-xs font-mono shrink-0';
+          tab.textContent = f;
+          tab.onclick = async () => {
+            const res = await apiRequest(`/api/agent/runs/${id}/files/read`, { path: f });
+            document.getElementById('canvas-code-viewer').textContent = res?.content || res;
+          };
+          tabs.appendChild(tab);
+        });
+        lucide.createIcons();
+      }
+    }
+
+    async function openFileModal(id, path) {
+      document.getElementById('modal-file-path').textContent = path;
+      document.getElementById('modal-file-viewer').classList.remove('hidden');
+      const res = await apiRequest(`/api/agent/runs/${id}/files/read`, { path });
+      document.getElementById('modal-file-content').textContent = res?.content || res;
+    }
+
+    // Forms
+    document.getElementById('form-ide-prompt').onsubmit = createRun;
+    document.getElementById('form-canvas-prompt').onsubmit = createRun;
+
+    async function createRun(e) {
+      e.preventDefault();
+      const task = (document.getElementById('ide-task-input').value || document.getElementById('canvas-task-input').value).trim();
+      if (!task) return;
+
+      const res = await apiRequest('/api/agent/runs/create', { task });
+      document.getElementById('ide-task-input').value = '';
+      document.getElementById('canvas-task-input').value = '';
+
+      if (res && (res.id || res.run_id || res.run)) {
+        selectRun(res.id || res.run_id || res.run);
+      }
+    }
+
+    loadRuns();
+  </script>
+</body>
+</html>
