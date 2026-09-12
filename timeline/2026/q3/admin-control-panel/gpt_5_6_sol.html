@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Auth Gateway</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui"],
+            mono: ['"JetBrains Mono"', "ui-monospace", "monospace"]
+          },
+          colors: {
+            accent: {
+              400: "#818cf8",
+              500: "#6366f1",
+              600: "#4f46e5"
+            }
+          },
+          boxShadow: {
+            glow: "0 0 40px rgba(99,102,241,.15)"
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+    body { min-height: 100vh; }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(99,102,241,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    .tag-role { color:#c4b5fd; border-color:#6d28d9; background:#4c1d9528; }
+    .tag-project { color:#67e8f9; border-color:#0e7490; background:#164e6328; }
+    .tag-team { color:#86efac; border-color:#15803d; background:#14532d28; }
+    .tag-env { color:#fcd34d; border-color:#a16207; background:#713f1228; }
+    dialog::backdrop { background: rgba(2,6,23,.8); backdrop-filter: blur(5px); }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+  <div id="app"></div>
+
+  <dialog id="modal" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-slate-700 bg-white p-0 text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-slate-100">
+    <div id="modal-content"></div>
+  </dialog>
+
+  <div id="toast" class="pointer-events-none fixed bottom-5 right-5 z-50 translate-y-5 rounded-xl border border-emerald-500/30 bg-slate-900 px-4 py-3 text-sm text-white opacity-0 shadow-xl transition-all">
+    <span class="inline-flex items-center gap-2">
+      <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-400"></i>
+      <span id="toast-text"></span>
+    </span>
+  </div>
+
+  <script>
+    const state = {
+      authenticated: true,
+      role: "admin",
+      loginStep: "password",
+      theme: localStorage.theme || "dark",
+      impersonating: null,
+      mobileNav: false,
+      simulator: null
+    };
+
+    const users = [
+      { id: 1042, name: "Alice Chen", email: "alice@example.test", tags: ["role:admin", "team:platform"], mfa: true, active: true },
+      { id: 1043, name: "Bob Rivera", email: "bob@example.test", tags: ["project:alpha", "team:engineering"], mfa: false, active: true },
+      { id: 1044, name: "Maya Singh", email: "maya@example.test", tags: ["project:beta", "team:finance"], mfa: true, active: true },
+      { id: 1045, name: "Jordan Lee", email: "jordan@example.test", tags: ["team:support"], mfa: false, active: false }
+    ];
+
+    const apps = [
+      {
+        name: "Atlas",
+        icon: "map",
+        description: "Internal project and deployment dashboard.",
+        upstream: "http://atlas.internal:8080",
+        tags: ["project:alpha"],
+        endpoints: [
+          { path: "/atlas/health", method: "GET", rule: "public" },
+          { path: "/atlas/*", method: "ANY", rule: "tags_all: project:alpha" }
+        ]
+      },
+      {
+        name: "Grafana",
+        icon: "chart-no-axes-combined",
+        description: "Metrics, alerts and infrastructure observability.",
+        upstream: "http://grafana.monitoring:3000",
+        tags: ["team:platform"],
+        endpoints: [
+          { path: "/grafana/*", method: "ANY", rule: "tags_any: team:platform, role:admin" }
+        ]
+      },
+      {
+        name: "Ledger",
+        icon: "landmark",
+        description: "Finance reporting and reconciliation.",
+        upstream: "http://ledger.internal:9000",
+        tags: ["team:finance"],
+        endpoints: [
+          { path: "/ledger/reports/*", method: "GET", rule: "tags_all: team:finance" }
+        ]
+      }
+    ];
+
+    const $ = (selector) => document.querySelector(selector);
+
+    function icon(name, cls = "h-4 w-4") {
+      return `<i data-lucide="${name}" class="${cls}"></i>`;
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+      })[c]);
+    }
+
+    function tagClass(tag) {
+      if (tag.startsWith("role:")) return "tag-role";
+      if (tag.startsWith("project:")) return "tag-project";
+      if (tag.startsWith("team:")) return "tag-team";
+      return "tag-env";
+    }
+
+    function tag(tagName) {
+      return `<span class="inline-flex items-center rounded-md border px-2 py-1 font-mono text-[11px] ${tagClass(tagName)}">${escapeHTML(tagName)}</span>`;
+    }
+
+    function button(label, options = {}) {
+      const style = options.style || "primary";
+      const styles = {
+        primary: "bg-accent-600 text-white hover:bg-accent-500",
+        secondary: "border border-slate-300 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800",
+        danger: "border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20"
+      };
+      return `<button ${options.id ? `id="${options.id}"` : ""} ${options.onclick ? `onclick="${options.onclick}"` : ""}
+        class="inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition ${styles[style]}">
+        ${options.icon ? icon(options.icon) : ""}${label}
+      </button>`;
+    }
+
+    function applyTheme() {
+      document.documentElement.classList.toggle("dark", state.theme === "dark");
+      localStorage.theme = state.theme;
+    }
+
+    function navigate(path) {
+      history.pushState({}, "", path);
+      state.mobileNav = false;
+      render();
+    }
+
+    function isActive(path) {
+      return location.pathname === path;
+    }
+
+    function navItem(path, label, iconName, admin = false) {
+      return `
+        <a href="${path}" data-link class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+          ${isActive(path)
+            ? "bg-accent-500/10 text-accent-400 ring-1 ring-accent-500/20"
+            : "text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"}">
+          ${icon(iconName)}
+          <span class="flex-1">${label}</span>
+          ${admin ? `<span title="Admin only" class="text-amber-400">${icon("shield", "h-3.5 w-3.5")}</span>` : ""}
+        </a>`;
+    }
+
+    function sidebar() {
+      return `
+        <aside class="${state.mobileNav ? "flex" : "hidden"} fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 md:flex">
+          <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-5 dark:border-slate-800">
+            <div class="grid h-9 w-9 place-items-center rounded-xl bg-accent-500 text-white shadow-glow">
+              ${icon("shield-check", "h-5 w-5")}
+            </div>
+            <div>
+              <div class="text-sm font-semibold">Auth Gateway</div>
+              <div class="font-mono text-[10px] text-slate-500">CONTROL PLANE</div>
+            </div>
+            <button onclick="state.mobileNav=false;render()" class="ml-auto md:hidden">${icon("x")}</button>
+          </div>
+
+          <nav class="flex-1 space-y-1 p-3">
+            <div class="px-3 pb-2 pt-3 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-500">Workspace</div>
+            ${navItem("/", "Dashboard", "layout-dashboard")}
+            ${state.role === "admin" ? navItem("/users", "Users", "users", true) : ""}
+            ${state.role === "admin" ? navItem("/apps", "Apps", "blocks", true) : ""}
+            ${state.role === "admin" ? navItem("/simulator", "Simulator", "flask-conical", true) : ""}
+
+            <div class="px-3 pb-2 pt-6 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-500">Account</div>
+            ${navItem("/profile", "Profile", "circle-user")}
+            <button onclick="logout()" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white">
+              ${icon("log-out")} Sign out
+            </button>
+          </nav>
+
+          <div class="border-t border-slate-200 p-4 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 text-sm font-semibold text-white">AC</div>
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium">Alice Chen</div>
+                <div class="truncate text-xs text-slate-500">alice@example.test</div>
+              </div>
+              <button onclick="toggleTheme()" title="Toggle theme" class="rounded-lg p-2 hover:bg-slate-200 dark:hover:bg-slate-800">
+                ${icon(state.theme === "dark" ? "sun" : "moon")}
+              </button>
+            </div>
+          </div>
+        </aside>`;
+    }
+
+    function pageHeader(title, description, action = "") {
+      return `
+        <div class="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">${title}</h1>
+            <p class="mt-1 text-sm text-slate-500">${description}</p>
+          </div>
+          ${action}
+        </div>`;
+    }
+
+    function appShell(content) {
+      return `
+        ${sidebar()}
+        ${state.mobileNav ? `<button onclick="state.mobileNav=false;render()" class="fixed inset-0 z-30 bg-slate-950/70 md:hidden"></button>` : ""}
+
+        <div class="min-h-screen md:pl-64">
+          <header class="sticky top-0 z-20 flex h-16 items-center border-b border-slate-200 bg-white/85 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 md:px-7">
+            <button onclick="state.mobileNav=true;render()" class="mr-3 rounded-lg p-2 hover:bg-slate-200 dark:hover:bg-slate-900 md:hidden">
+              ${icon("menu", "h-5 w-5")}
+            </button>
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              ${icon("server", "h-3.5 w-3.5")}
+              <span class="font-mono">gateway.local</span>
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <span>Healthy</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2">
+              <span class="hidden rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-amber-500 sm:inline-flex">Elevated access</span>
+              <button onclick="toggleTheme()" class="rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                ${icon(state.theme === "dark" ? "sun" : "moon")}
+              </button>
+            </div>
+          </header>
+
+          ${state.impersonating ? `
+            <div class="flex items-center justify-center gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-600 dark:text-amber-300">
+              ${icon("masks", "h-4 w-4")}
+              <span>Impersonating <strong>${escapeHTML(state.impersonating)}</strong></span>
+              <button onclick="stopImpersonating()" class="font-medium underline">Exit</button>
+            </div>` : ""}
+
+          <main class="mx-auto max-w-[1500px] p-4 md:p-7">${content}</main>
+        </div>`;
+    }
+
+    function loginView() {
+      const otp = state.loginStep === "otp";
+
+      return `
+        <main class="grid min-h-screen lg:grid-cols-2">
+          <section class="grid-bg relative hidden overflow-hidden border-r border-slate-800 bg-slate-950 p-12 text-white lg:flex lg:flex-col">
+            <div class="absolute left-1/3 top-1/3 h-80 w-80 rounded-full bg-accent-500/20 blur-[100px]"></div>
+            <div class="relative flex items-center gap-3">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-accent-500">${icon("shield-check", "h-6 w-6")}</div>
+              <span class="text-lg font-semibold">Auth Gateway</span>
+            </div>
+            <div class="relative my-auto max-w-lg">
+              <div class="mb-5 inline-flex rounded-full border border-accent-400/20 bg-accent-500/10 px-3 py-1 text-xs text-accent-400">
+                Self-hosted identity-aware proxy
+              </div>
+              <h1 class="text-5xl font-semibold leading-tight">Secure access to every internal app.</h1>
+              <p class="mt-6 max-w-md text-lg leading-8 text-slate-400">
+                Identity, tag-based policy enforcement, MFA and application proxying in one control plane.
+              </p>
+            </div>
+            <div class="relative font-mono text-xs text-slate-500">AUTH_GATEWAY / BUILD 2.4.1</div>
+          </section>
+
+          <section class="flex items-center justify-center bg-slate-100 p-5 dark:bg-slate-950">
+            <div class="w-full max-w-md">
+              <div class="mb-8 flex items-center gap-3 lg:hidden">
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-accent-500 text-white">${icon("shield-check")}</div>
+                <strong>Auth Gateway</strong>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <div class="mb-7">
+                  <h2 class="text-2xl font-semibold">${otp ? "Verify your identity" : "Sign in"}</h2>
+                  <p class="mt-2 text-sm text-slate-500">
+                    ${otp ? "Enter the 6-digit code from your authenticator app." : "Access the Auth Gateway control plane."}
+                  </p>
+                </div>
+
+                ${otp ? `
+                  <form onsubmit="completeLogin(event)">
+                    <div class="mb-5 flex justify-between gap-2">
+                      ${Array.from({length: 6}, (_, i) => `
+                        <input maxlength="1" inputmode="numeric" aria-label="OTP digit ${i+1}"
+                          oninput="moveOtp(this)"
+                          class="h-12 w-full min-w-0 rounded-lg border border-slate-300 bg-transparent text-center font-mono text-xl outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 dark:border-slate-700" />
+                      `).join("")}
+                    </div>
+                    <button class="w-full rounded-lg bg-accent-600 px-4 py-2.5 font-medium text-white hover:bg-accent-500">Verify</button>
+                    <button type="button" class="mt-4 w-full text-sm text-accent-500 hover:underline">Use a recovery code instead</button>
+                  </form>
+                ` : `
+                  <form onsubmit="showOtp(event)" class="space-y-4">
+                    <label class="block">
+                      <span class="mb-1.5 block text-sm font-medium">Email</span>
+                      <input type="email" required value="alice@example.test"
+                        class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 dark:border-slate-700" />
+                    </label>
+                    <label class="block">
+                      <span class="mb-1.5 block text-sm font-medium">Password</span>
+                      <input type="password" required value="password"
+                        class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 dark:border-slate-700" />
+                    </label>
+                    <div class="text-right">
+                      <a href="#" class="text-sm text-accent-500 hover:underline">Forgot password?</a>
+                    </div>
+                    <button class="w-full rounded-lg bg-accent-600 px-4 py-2.5 font-medium text-white hover:bg-accent-500">Sign in</button>
+                  </form>
+                `}
+              </div>
+              <p class="mt-6 text-center text-xs text-slate-500">Protected by rate limiting, secure sessions and MFA.</p>
+            </div>
+          </section>
+        </main>`;
+    }
+
+    function dashboardView() {
+      const stats = [
+        ["Users", "42", "users"],
+        ["Apps", "8", "blocks"],
+        ["Endpoints", "31", "route"],
+        ["MFA-enabled", "76%", "key-round"]
+      ];
+
+      return appShell(`
+        ${pageHeader("Dashboard", "Gateway status and applications available to your identity.")}
+
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          ${stats.map(([label, value, iconName]) => `
+            <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60">
+              <div class="flex items-center justify-between text-slate-500">
+                <span class="text-sm">${label}</span>
+                ${icon(iconName)}
+              </div>
+              <div class="mt-4 text-3xl font-semibold">${value}</div>
+            </div>
+          `).join("")}
+        </div>
+
+        <section class="mt-9">
+          <div class="mb-4">
+            <h2 class="text-lg font-semibold">Your apps</h2>
+            <p class="mt-1 text-sm text-slate-500">Applications approved by your current access tags.</p>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            ${apps.map(app => `
+              <article class="group rounded-xl border border-slate-200 bg-white p-5 transition hover:border-accent-500/40 hover:shadow-glow dark:border-slate-800 dark:bg-slate-900/60">
+                <div class="flex items-start gap-4">
+                  <div class="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-slate-100 text-accent-500 dark:border-slate-700 dark:bg-slate-800">
+                    ${icon(app.icon, "h-5 w-5")}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-semibold">${app.name}</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">${app.description}</p>
+                  </div>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2">${app.tags.map(tag).join("")}</div>
+                <div class="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
+                  <a href="/apps/${app.name.toLowerCase()}/" target="_blank"
+                     class="inline-flex items-center gap-2 text-sm font-medium text-accent-500 hover:text-accent-400">
+                    Open application ${icon("external-link", "h-3.5 w-3.5")}
+                  </a>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      `);
+    }
+
+    function usersView() {
+      if (state.role !== "admin") return forbidden();
+
+      return appShell(`
+        ${pageHeader(
+          "Users",
+          "Manage identities, access tags and multi-factor authentication.",
+          button("Create user", { icon: "user-plus", onclick: "openCreateUser()" })
+        )}
+
+        <div class="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/50">
+          <div class="flex flex-col gap-3 border-b border-slate-200 p-4 dark:border-slate-800 sm:flex-row">
+            <label class="relative flex-1">
+              ${icon("search", "absolute left-3 top-2.5 h-4 w-4 text-slate-500")}
+              <input oninput="filterUsers(this.value)" placeholder="Search users..."
+                class="w-full rounded-lg border border-slate-300 bg-transparent py-2 pl-9 pr-3 text-sm outline-none focus:border-accent-500 dark:border-slate-700" />
+            </label>
+            <select class="rounded-lg border border-slate-300 bg-transparent px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <option>All tags</option>
+              <option>role:admin</option>
+              <option>project:alpha</option>
+              <option>team:finance</option>
+            </select>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[850px] text-left text-sm">
+              <thead class="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+                <tr>
+                  <th class="px-5 py-3 font-medium">User</th>
+                  <th class="px-5 py-3 font-medium">ID</th>
+                  <th class="px-5 py-3 font-medium">Tags</th>
+                  <th class="px-5 py-3 font-medium">MFA</th>
+                  <th class="px-5 py-3 font-medium">Active</th>
+                  <th class="px-5 py-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody id="user-rows" class="divide-y divide-slate-200 dark:divide-slate-800">
+                ${renderUserRows(users)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `);
+    }
+
+    function renderUserRows(list) {
+      return list.map((user, index) => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900" data-search="${(user.name + user.email).toLowerCase()}">
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-3">
+              <div class="grid h-9 w-9 place-items-center rounded-full bg-slate-200 text-xs font-semibold dark:bg-slate-800">
+                ${user.name.split(" ").map(n => n[0]).join("")}
+              </div>
+              <div>
+                <div class="font-medium">${user.name}</div>
+                <div class="text-xs text-slate-500">${user.email}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-5 py-4 font-mono text-xs text-slate-500">${user.id}</td>
+          <td class="px-5 py-4"><div class="flex flex-wrap gap-1">${user.tags.map(tag).join("")}</div></td>
+          <td class="px-5 py-4">
+            <span class="inline-flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full ${user.mfa ? "bg-emerald-400" : "bg-slate-500"}"></span>
+              ${user.mfa ? "Enabled" : "Disabled"}
+            </span>
+          </td>
+          <td class="px-5 py-4">
+            <button onclick="toggleUser(${index})" class="relative h-6 w-11 rounded-full transition ${user.active ? "bg-emerald-500" : "bg-slate-600"}">
+              <span class="absolute top-1 h-4 w-4 rounded-full bg-white transition ${user.active ? "left-6" : "left-1"}"></span>
+            </button>
+          </td>
+          <td class="px-5 py-4">
+            <div class="flex justify-end gap-1">
+              <button title="Impersonate" onclick="impersonate('${user.name}')" class="rounded-lg p-2 text-slate-500 hover:bg-amber-500/10 hover:text-amber-500">
+                ${icon("masks")}
+              </button>
+              <button title="Edit" class="rounded-lg p-2 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800">${icon("pencil")}</button>
+              <button title="Delete" onclick="confirmDelete('${user.name}')" class="rounded-lg p-2 text-slate-500 hover:bg-red-500/10 hover:text-red-500">
+                ${icon("trash-2")}
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function appsView() {
+      if (state.role !== "admin") return forbidden();
+      const selected = apps[0];
+
+      return appShell(`
+        ${pageHeader(
+          "Apps & Endpoints",
+          "Configure proxied applications and live access policies.",
+          `<div class="flex gap-2">
+            ${button("Import OpenAPI", { style: "secondary", icon: "download" })}
+            ${button("Add app", { icon: "plus" })}
+          </div>`
+        )}
+
+        <div class="grid min-h-[650px] overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/50 lg:grid-cols-[280px_1fr]">
+          <aside class="border-b border-slate-200 p-3 dark:border-slate-800 lg:border-b-0 lg:border-r">
+            <div class="mb-3 px-2 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-500">Applications</div>
+            ${apps.map((app, index) => `
+              <button onclick="showApp(${index})" class="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left
+                ${index === 0 ? "bg-accent-500/10 text-accent-500 ring-1 ring-accent-500/20" : "hover:bg-slate-100 dark:hover:bg-slate-800"}">
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 dark:bg-slate-800">${icon(app.icon)}</span>
+                <span class="min-w-0">
+                  <span class="block text-sm font-medium">${app.name}</span>
+                  <span class="block truncate text-xs text-slate-500">${app.upstream}</span>
+                </span>
+              </button>
+            `).join("")}
+          </aside>
+
+          <section id="app-detail" class="p-4 md:p-6">${appDetail(selected)}</section>
+        </div>
+      `);
+    }
+
+    function appDetail(app) {
+      return `
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-800 sm:flex-row sm:items-start">
+          <div>
+            <div class="flex items-center gap-3">
+              <h2 class="text-xl font-semibold">${app.name}</h2>
+              <span class="inline-flex items-center gap-1 text-xs text-emerald-500">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Live
+              </span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">${app.description}</p>
+            <div class="mt-3 font-mono text-xs text-cyan-500">${app.upstream}</div>
+          </div>
+          ${button("Save changes", { onclick: "savePolicy()", icon: "save" })}
+        </div>
+
+        <div class="my-5 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-sm">
+          ${icon("shield-alert", "mt-0.5 h-4 w-4 text-amber-500")}
+          <div>
+            <strong class="text-amber-500">Default-deny is active.</strong>
+            <p class="mt-1 text-slate-500">Requests that do not match an endpoint rule return HTTP 404.</p>
+          </div>
+        </div>
+
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold">Endpoints</h3>
+            <p class="mt-1 text-xs text-slate-500">Rules are evaluated from top to bottom.</p>
+          </div>
+          ${button("Add endpoint", { style: "secondary", icon: "plus" })}
+        </div>
+
+        <div class="space-y-3">
+          ${app.endpoints.map(endpoint => `
+            <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
+                <div class="flex min-w-[250px] items-center gap-3">
+                  <span class="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-medium text-cyan-600 dark:bg-slate-800 dark:text-cyan-400">${endpoint.method}</span>
+                  <code class="font-mono text-sm">${endpoint.path}</code>
+                </div>
+
+                <div class="flex-1 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950">
+                  <div class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Allow when</div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-md border border-slate-300 px-2 py-1 font-mono text-xs dark:border-slate-700">${endpoint.rule}</span>
+                    <button class="rounded-md border border-dashed border-slate-400 px-2 py-1 text-xs text-slate-500 hover:text-accent-500">+ AND condition</button>
+                  </div>
+                </div>
+
+                <button class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">${icon("more-horizontal")}</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function simulatorView() {
+      if (state.role !== "admin") return forbidden();
+
+      return appShell(`
+        ${pageHeader("Policy Simulator", "Test gateway policy decisions without sending a real request.")}
+
+        <div class="grid gap-5 xl:grid-cols-[420px_1fr]">
+          <section class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/50">
+            <h2 class="font-semibold">Request context</h2>
+            <form onsubmit="simulate(event)" class="mt-5 space-y-4">
+              <label class="block">
+                <span class="mb-1.5 block text-sm font-medium">User</span>
+                <select id="sim-user" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+                  ${users.map(user => `<option value="${user.id}">${user.name} — ${user.email}</option>`).join("")}
+                  <option value="anonymous">Anonymous / unauthenticated</option>
+                </select>
+              </label>
+
+              <div class="grid grid-cols-[120px_1fr] gap-3">
+                <label>
+                  <span class="mb-1.5 block text-sm font-medium">Method</span>
+                  <select id="sim-method" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+                    <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="mb-1.5 block text-sm font-medium">Path</span>
+                  <input id="sim-path" value="/atlas/projects" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 font-mono text-sm dark:border-slate-700" />
+                </label>
+              </div>
+
+              <button class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 font-medium text-white hover:bg-accent-500">
+                ${icon("play")} Evaluate policy
+              </button>
+            </form>
+          </section>
+
+          <section id="sim-result" class="rounded-xl border border-dashed border-slate-300 p-7 dark:border-slate-700">
+            <div class="flex min-h-[320px] flex-col items-center justify-center text-center text-slate-500">
+              ${icon("flask-conical", "mb-4 h-10 w-10")}
+              <h2 class="font-medium text-slate-700 dark:text-slate-300">No simulation yet</h2>
+              <p class="mt-2 text-sm">Choose a user and request, then evaluate the policy.</p>
+            </div>
+          </section>
+        </div>
+      `);
+    }
+
+    function profileView() {
+      return appShell(`
+        ${pageHeader("Profile", "Manage your personal details, security and active sessions.")}
+
+        <div class="grid gap-5 lg:grid-cols-[220px_1fr]">
+          <div class="space-y-1">
+            <button class="flex w-full items-center gap-2 rounded-lg bg-accent-500/10 px-3 py-2 text-sm font-medium text-accent-500">${icon("user")} General</button>
+            <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-900">${icon("lock-keyhole")} Security</button>
+            <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-900">${icon("key-round")} Sessions & tokens</button>
+          </div>
+
+          <div class="space-y-5">
+            <section class="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/50">
+              <h2 class="font-semibold">General information</h2>
+              <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <label>
+                  <span class="mb-1.5 block text-sm">Name</span>
+                  <input value="Alice Chen" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm dark:border-slate-700" />
+                </label>
+                <label>
+                  <span class="mb-1.5 block text-sm">Email</span>
+                  <input value="alice@example.test" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2.5 text-sm dark:border-slate-700" />
+                </label>
+              </div>
+              <div class="mt-5">${button("Save profile", { onclick: "showToast('Profile saved')" })}</div>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/50">
+              <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="font-semibold">Multi-factor authentication</h2>
+                    <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-500">Enabled</span>
+                  </div>
+                  <p class="mt-2 text-sm text-slate-500">Authenticator app configured on August 12, 2026.</p>
+                </div>
+                <div class="flex gap-2">
+                  ${button("Recovery codes", { style: "secondary", onclick: "showRecoveryCodes()" })}
+                  ${button("Disable MFA", { style: "danger", onclick: "confirmDisableMfa()" })}
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/50">
+              <h2 class="font-semibold">Sessions & API tokens</h2>
+              <div class="mt-4 flex flex-col justify-between gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800 sm:flex-row sm:items-center">
+                <div>
+                  <div class="text-sm font-medium">Current session</div>
+                  <div class="mt-1 font-mono text-xs text-slate-500">Chrome · 192.168.1.42 · expires in 6d</div>
+                </div>
+                ${button("Log out all sessions", { style: "danger", onclick: "showToast('All other sessions revoked')" })}
+              </div>
+            </section>
+          </div>
+        </div>
+      `);
+    }
+
+    function forbidden() {
+      return appShell(`
+        <div class="grid min-h-[60vh] place-items-center text-center">
+          <div>
+            ${icon("shield-x", "mx-auto h-12 w-12 text-red-500")}
+            <h1 class="mt-4 text-2xl font-semibold">Access denied</h1>
+            <p class="mt-2 text-slate-500">This route requires the role:admin tag.</p>
+          </div>
+        </div>
+      `);
+    }
+
+    function notFound() {
+      return appShell(`
+        <div class="grid min-h-[60vh] place-items-center text-center">
+          <div>
+            <div class="font-mono text-6xl font-semibold text-accent-500">404</div>
+            <h1 class="mt-4 text-xl font-semibold">No matching route</h1>
+            <button onclick="navigate('/')" class="mt-5 text-accent-500 hover:underline">Return to dashboard</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function render() {
+      applyTheme();
+
+      if (!state.authenticated || location.pathname === "/login") {
+        $("#app").innerHTML = loginView();
+      } else {
+        const views = {
+          "/": dashboardView,
+          "/users": usersView,
+          "/apps": appsView,
+          "/simulator": simulatorView,
+          "/profile": profileView
+        };
+        $("#app").innerHTML = (views[location.pathname] || notFound)();
+      }
+
+      document.querySelectorAll("[data-link]").forEach(link => {
+        link.addEventListener("click", event => {
+          event.preventDefault();
+          navigate(link.getAttribute("href"));
+        });
+      });
+
+      lucide.createIcons();
+    }
+
+    function showOtp(event) {
+      event.preventDefault();
+      state.loginStep = "otp";
+      render();
+    }
+
+    function moveOtp(input) {
+      input.value = input.value.replace(/\D/g, "").slice(0, 1);
+      if (input.value && input.nextElementSibling) input.nextElementSibling.focus();
+    }
+
+    function completeLogin(event) {
+      event.preventDefault();
+      state.authenticated = true;
+      const next = new URLSearchParams(location.search).get("next") || "/";
+      navigate(next);
+    }
+
+    function logout() {
+      state.authenticated = false;
+      history.pushState({}, "", "/login");
+      render();
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+      render();
+    }
+
+    function filterUsers(value) {
+      const query = value.toLowerCase();
+      document.querySelectorAll("#user-rows tr").forEach(row => {
+        row.hidden = !row.dataset.search.includes(query);
+      });
+    }
+
+    function toggleUser(index) {
+      users[index].active = !users[index].active;
+      render();
+      showToast(users[index].active ? "User enabled" : "User disabled");
+    }
+
+    function impersonate(name) {
+      state.impersonating = name;
+      render();
+    }
+
+    function stopImpersonating() {
+      state.impersonating = null;
+      render();
+    }
+
+    function showApp(index) {
+      $("#app-detail").innerHTML = appDetail(apps[index]);
+      lucide.createIcons();
+    }
+
+    function savePolicy() {
+      showToast("Policy updated across all workers");
+    }
+
+    function simulate(event) {
+      event.preventDefault();
+
+      const id = $("#sim-user").value;
+      const path = $("#sim-path").value.trim();
+      const method = $("#sim-method").value;
+      const user = users.find(u => String(u.id) === id);
+
+      let allow = false;
+      let reason = "";
+      let matched = "No matching rule";
+      let required = [];
+
+      if (!user) {
+        reason = "not authenticated";
+      } else if (path.startsWith("/atlas/")) {
+        matched = "/atlas/*";
+        required = ["project:alpha"];
+        allow = user.tags.includes("project:alpha") || user.tags.includes("role:admin");
+        reason = allow ? "User satisfies the required access tags." : "missing tag project:alpha";
+      } else if (path.startsWith("/grafana/")) {
+        matched = "/grafana/*";
+        required = ["team:platform", "role:admin"];
+        allow = required.some(t => user.tags.includes(t));
+        reason = allow ? "User satisfies tags_any." : "missing tag team:platform or role:admin";
+      } else if (path === "/atlas/health" && method === "GET") {
+        matched = "/atlas/health";
+        allow = true;
+        reason = "Endpoint is public.";
+      } else {
+        reason = "no matching rule (default-deny)";
+      }
+
+      $("#sim-result").innerHTML = `
+        <div class="rounded-xl border p-6 ${allow ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"}">
+          <div class="flex items-center gap-4">
+            <div class="grid h-14 w-14 place-items-center rounded-full ${allow ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"}">
+              ${icon(allow ? "check" : "x", "h-7 w-7")}
+            </div>
+            <div>
+              <div class="font-mono text-xs uppercase tracking-[.25em] text-slate-500">Policy verdict</div>
+              <div class="mt-1 text-4xl font-bold ${allow ? "text-emerald-500" : "text-red-500"}">${allow ? "ALLOW" : "DENY"}</div>
+            </div>
+          </div>
+
+          <div class="mt-7 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-lg border border-slate-300/30 bg-white/30 p-4 dark:bg-slate-950/30">
+              <div class="text-xs uppercase tracking-wider text-slate-500">Matched rule</div>
+              <div class="mt-2 font-mono text-sm">${matched}</div>
+            </div>
+            <div class="rounded-lg border border-slate-300/30 bg-white/30 p-4 dark:bg-slate-950/30">
+              <div class="text-xs uppercase tracking-wider text-slate-500">Reason</div>
+              <div class="mt-2 text-sm">${reason}</div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-slate-300/30 bg-white/30 p-4 dark:bg-slate-950/30">
+            <div class="text-xs uppercase tracking-wider text-slate-500">User tags</div>
+            <div class="mt-2 flex flex-wrap gap-2">${user ? user.tags.map(tag).join("") : `<span class="text-sm text-slate-500">None</span>`}</div>
+            <div class="mt-4 text-xs uppercase tracking-wider text-slate-500">Required tags</div>
+            <div class="mt-2 flex flex-wrap gap-2">${required.length ? required.map(tag).join("") : `<span class="text-sm text-slate-500">None</span>`}</div>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function openModal(content) {
+      $("#modal-content").innerHTML = content;
+      $("#modal").showModal();
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      $("#modal").close();
+    }
+
+    function openCreateUser() {
+      openModal(`
+        <form onsubmit="createUser(event)">
+          <div class="flex items-center justify-between border-b border-slate-200 p-5 dark:border-slate-800">
+            <div>
+              <h2 class="font-semibold">Create user</h2>
+              <p class="mt-1 text-xs text-slate-500">Add a gateway identity and access tags.</p>
+            </div>
+            <button type="button" onclick="closeModal()" class="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800">${icon("x")}</button>
+          </div>
+          <div class="space-y-4 p-5">
+            <label class="block"><span class="mb-1 block text-sm">Name</span><input required class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700"></label>
+            <label class="block"><span class="mb-1 block text-sm">Email</span><input required type="email" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700"></label>
+            <label class="block"><span class="mb-1 block text-sm">Temporary password</span><input required type="password" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700"></label>
+            <label class="block"><span class="mb-1 block text-sm">Tags</span><input placeholder="project:alpha, team:engineering" class="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 font-mono text-sm dark:border-slate-700"></label>
+          </div>
+          <div class="flex justify-end gap-2 border-t border-slate-200 p-5 dark:border-slate-800">
+            ${button("Cancel", { style: "secondary", onclick: "closeModal()" })}
+            ${button("Create user")}
+          </div>
+        </form>
+      `);
+    }
+
+    function createUser(event) {
+      event.preventDefault();
+      closeModal();
+      showToast("User created");
+    }
+
+    function confirmDelete(name) {
+      openModal(`
+        <div class="p-6">
+          <div class="grid h-11 w-11 place-items-center rounded-full bg-red-500/10 text-red-500">${icon("trash-2")}</div>
+          <h2 class="mt-4 text-lg font-semibold">Delete ${escapeHTML(name)}?</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-500">This permanently removes the user and revokes all active sessions.</p>
+          <div class="mt-6 flex justify-end gap-2">
+            ${button("Cancel", { style: "secondary", onclick: "closeModal()" })}
+            ${button("Delete user", { style: "danger", onclick: "closeModal();showToast('User deleted')" })}
+          </div>
+        </div>
+      `);
+    }
+
+    function confirmDisableMfa() {
+      openModal(`
+        <div class="p-6">
+          <h2 class="text-lg font-semibold">Disable MFA</h2>
+          <p class="mt-2 text-sm text-slate-500">Enter your current authenticator code to continue.</p>
+          <input maxlength="6" placeholder="000000" class="mt-5 w-full rounded-lg border border-slate-300 bg-transparent px-3 py-3 text-center font-mono text-xl tracking-[.5em] dark:border-slate-700">
+          <div class="mt-6 flex justify-end gap-2">
+            ${button("Cancel", { style: "secondary", onclick: "closeModal()" })}
+            ${button("Disable MFA", { style: "danger", onclick: "closeModal();showToast('MFA disabled')" })}
+          </div>
+        </div>
+      `);
+    }
+
+    function showRecoveryCodes() {
+      const codes = ["GW8X-K2PM", "FA9N-R3QD", "YP7C-M8VL", "TK2H-Z6WA", "NE4B-J9XR"];
+      openModal(`
+        <div class="p-6">
+          <div class="flex justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Recovery codes</h2>
+              <p class="mt-2 text-sm text-slate-500">Each code can be used once. Store them securely.</p>
+            </div>
+            <button onclick="closeModal()">${icon("x")}</button>
+          </div>
+          <div class="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-4 font-mono text-sm dark:bg-slate-950">
+            ${codes.map(code => `<span>${code}</span>`).join("")}
+          </div>
+          <div class="mt-5 flex gap-2">
+            ${button("Copy all", { style: "secondary", icon: "copy", onclick: `navigator.clipboard?.writeText('${codes.join("\\n")}');showToast('Codes copied')` })}
+            ${button("Download", { style: "secondary", icon: "download" })}
+          </div>
+        </div>
+      `);
+    }
+
+    let toastTimer;
+    function showToast(message) {
+      $("#toast-text").textContent = message;
+      $("#toast").classList.remove("translate-y-5", "opacity-0");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        $("#toast").classList.add("translate-y-5", "opacity-0");
+      }, 2800);
+      lucide.createIcons();
+    }
+
+    window.addEventListener("popstate", render);
+    applyTheme();
+    render();
+  </script>
+</body>
+</html>

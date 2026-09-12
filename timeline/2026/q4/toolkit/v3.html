@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dusk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Curated Tools Hub</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Lucide Icons CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* 1. OBSIDIAN NEON (Dark) */
+    [data-theme="obsidian"] {
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --bg-main: #060913;
+      --bg-surface: rgba(15, 23, 42, 0.85);
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --bg-card-hover: rgba(30, 41, 59, 0.95);
+      --border: rgba(99, 102, 241, 0.18);
+      --border-hover: rgba(99, 102, 241, 0.45);
+      --text-title: #f8fafc;
+      --text-body: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-contrast: #ffffff;
+      --glow-1: rgba(99, 102, 241, 0.18);
+      --glow-2: rgba(168, 85, 247, 0.14);
+      --badge-bg: rgba(99, 102, 241, 0.12);
+      --badge-border: rgba(99, 102, 241, 0.25);
+      --badge-text: #c7d2fe;
+    }
+
+    /* 2. NORDIC PINE (Dark) */
+    [data-theme="pine"] {
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --bg-main: #051310;
+      --bg-surface: rgba(9, 29, 25, 0.88);
+      --bg-card: rgba(12, 36, 31, 0.7);
+      --bg-card-hover: rgba(19, 54, 47, 0.95);
+      --border: rgba(52, 211, 153, 0.18);
+      --border-hover: rgba(52, 211, 153, 0.45);
+      --text-title: #f0fdf4;
+      --text-body: #9ca3af;
+      --text-muted: #4ade80;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --accent-contrast: #ffffff;
+      --glow-1: rgba(16, 185, 129, 0.16);
+      --glow-2: rgba(245, 158, 11, 0.10);
+      --badge-bg: rgba(16, 185, 129, 0.12);
+      --badge-border: rgba(16, 185, 129, 0.25);
+      --badge-text: #a7f3d0;
+    }
+
+    /* 3. TOKYO DUSK (Dark Sunset) */
+    [data-theme="dusk"] {
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --bg-main: #0c0714;
+      --bg-surface: rgba(21, 12, 34, 0.88);
+      --bg-card: rgba(28, 16, 46, 0.7);
+      --bg-card-hover: rgba(45, 23, 73, 0.95);
+      --border: rgba(244, 63, 94, 0.2);
+      --border-hover: rgba(251, 146, 60, 0.55);
+      --text-title: #fff1f2;
+      --text-body: #cbd5e1;
+      --text-muted: #fda4af;
+      --accent: #f43f5e;
+      --accent-hover: #e11d48;
+      --accent-contrast: #ffffff;
+      --glow-1: rgba(244, 63, 94, 0.22);
+      --glow-2: rgba(249, 115, 22, 0.18);
+      --badge-bg: rgba(244, 63, 94, 0.14);
+      --badge-border: rgba(244, 63, 94, 0.3);
+      --badge-text: #fecdd3;
+    }
+
+    /* 4. EDITORIAL PAPER (Light) */
+    [data-theme="paper"] {
+      --font-heading: 'Playfair Display', serif;
+      --bg-main: #f9f6f0;
+      --bg-surface: rgba(243, 238, 228, 0.92);
+      --bg-card: #ffffff;
+      --bg-card-hover: #ffffff;
+      --border: #e6ded2;
+      --border-hover: #c2612a;
+      --text-title: #231f20;
+      --text-body: #57534e;
+      --text-muted: #8c827a;
+      --accent: #b45309;
+      --accent-hover: #92400e;
+      --accent-contrast: #ffffff;
+      --glow-1: rgba(180, 83, 9, 0.08);
+      --glow-2: rgba(194, 97, 42, 0.08);
+      --badge-bg: rgba(180, 83, 9, 0.08);
+      --badge-border: rgba(180, 83, 9, 0.2);
+      --badge-text: #92400e;
+    }
+
+    /* 5. GLACIER FROST (Light) */
+    [data-theme="frost"] {
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --bg-main: #f1f5f9;
+      --bg-surface: rgba(255, 255, 255, 0.9);
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-card-hover: #ffffff;
+      --border: #e2e8f0;
+      --border-hover: #3b82f6;
+      --text-title: #0f172a;
+      --text-body: #475569;
+      --text-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-contrast: #ffffff;
+      --glow-1: rgba(37, 99, 235, 0.12);
+      --glow-2: rgba(147, 197, 253, 0.25);
+      --badge-bg: rgba(37, 99, 235, 0.08);
+      --badge-border: rgba(37, 99, 235, 0.2);
+      --badge-text: #2563eb;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-title);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    .brand-heading {
+      font-family: var(--font-heading);
+    }
+
+    /* Hide scrollbars for slick mobile tabs horizontal swipe */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            app: {
+              main: 'var(--bg-main)',
+              surface: 'var(--bg-surface)',
+              card: 'var(--bg-card)',
+              cardHover: 'var(--bg-card-hover)',
+              border: 'var(--border)',
+              borderHover: 'var(--border-hover)',
+              title: 'var(--text-title)',
+              body: 'var(--text-body)',
+              muted: 'var(--text-muted)',
+              accent: 'var(--accent)',
+              accentHover: 'var(--accent-hover)',
+              contrast: 'var(--accent-contrast)',
+              badgeBg: 'var(--badge-bg)',
+              badgeBorder: 'var(--badge-border)',
+              badgeText: 'var(--badge-text)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen antialiased flex flex-col selection:bg-app-accent selection:text-white">
+
+  <!-- Background decorative glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10 transition-all duration-700">
+    <div class="absolute -top-32 -left-32 w-72 sm:w-[32rem] h-72 sm:h-[32rem] rounded-full blur-3xl transition-all duration-700" style="background-color: var(--glow-1)"></div>
+    <div class="absolute top-1/2 -right-32 w-72 sm:w-[30rem] h-72 sm:h-[30rem] rounded-full blur-3xl transition-all duration-700" style="background-color: var(--glow-2)"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="border-b border-app-border sticky top-0 z-30 backdrop-blur-xl bg-app-surface transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3.5 pb-2.5 sm:py-4">
+      
+      <!-- Top Bar: Logo + Theme Switcher -->
+      <div class="flex items-center justify-between gap-3">
+        <!-- Logo -->
+        <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+          <div class="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-app-accent text-app-contrast flex items-center justify-center shadow-md shadow-app-accent/25 flex-shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-xl font-bold tracking-tight text-app-title brand-heading flex items-center gap-1.5 leading-tight truncate">
+              <span>Tools Hub</span>
+              <span class="text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-app-badgeBg text-app-badgeText border border-app-badgeBorder">PRO</span>
+            </h1>
+            <p class="text-[11px] sm:text-xs text-app-body truncate">Curated workspace directory</p>
+          </div>
+        </div>
+
+        <!-- Theme Selector (Dropdown) -->
+        <div class="relative flex-shrink-0">
+          <button 
+            id="themeToggleBtn" 
+            aria-label="Select theme"
+            class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-app-card hover:bg-app-cardHover border border-app-border rounded-xl text-xs sm:text-sm font-medium text-app-title transition shadow-sm active:scale-95"
+          >
+            <i data-lucide="palette" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-app-accent"></i>
+            <span id="currentThemeName" class="font-semibold text-xs hidden xs:inline sm:inline">Theme</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-app-muted"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="themeMenu" class="hidden absolute right-0 mt-2 w-52 sm:w-56 p-1.5 bg-app-surface border border-app-border rounded-2xl shadow-2xl backdrop-blur-2xl z-50">
+            <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-app-muted">Dark Themes</div>
+            
+            <button onclick="setTheme('dusk')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-app-title hover:bg-app-card transition text-left">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-slate-900"></span>
+                <span>Tokyo Dusk</span>
+              </div>
+              <span class="text-[10px] text-app-muted">Sunset</span>
+            </button>
+
+            <button onclick="setTheme('obsidian')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-app-title hover:bg-app-card transition text-left">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-2 ring-slate-900"></span>
+                <span>Obsidian Neon</span>
+              </div>
+              <span class="text-[10px] text-app-muted">Dark</span>
+            </button>
+
+            <button onclick="setTheme('pine')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-app-title hover:bg-app-card transition text-left">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900"></span>
+                <span>Nordic Pine</span>
+              </div>
+              <span class="text-[10px] text-app-muted">Forest</span>
+            </button>
+
+            <div class="my-1 border-t border-app-border"></div>
+            <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-app-muted">Light Themes</div>
+
+            <button onclick="setTheme('paper')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-app-title hover:bg-app-card transition text-left">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-700 ring-2 ring-stone-200"></span>
+                <span>Editorial Paper</span>
+              </div>
+              <span class="text-[10px] text-app-muted">Warm</span>
+            </button>
+
+            <button onclick="setTheme('frost')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-app-title hover:bg-app-card transition text-left">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-slate-200"></span>
+                <span>Glacier Frost</span>
+              </div>
+              <span class="text-[10px] text-app-muted">Clean</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Input (Full width, avoids mobile iOS auto-zoom with 16px text-base) -->
+      <div class="mt-3 sm:mt-4">
+        <div class="relative w-full">
+          <i data-lucide="search" class="w-4 h-4 text-app-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search applications or keywords..." 
+            class="w-full pl-9 pr-4 py-2 sm:py-2.5 bg-app-card border border-app-border rounded-xl text-base sm:text-sm text-app-title placeholder:text-app-muted focus:outline-none focus:border-app-accent transition-all shadow-sm"
+          >
+        </div>
+      </div>
+
+      <!-- Scrollable Category Tabs (Smooth mobile swipeable touch container) -->
+      <div class="flex items-center gap-2 mt-2.5 sm:mt-3 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar touch-pan-x">
+        <!-- Favorites Filter -->
+        <button data-filter="favorites" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body text-xs sm:text-sm transition flex items-center gap-1.5 whitespace-nowrap active:scale-95 flex-shrink-0">
+          <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+          <span>Favorites</span>
+          <span id="favCount" class="text-xs px-1.5 py-0.5 rounded-full bg-app-border/40 font-mono">0</span>
+        </button>
+
+        <!-- All Apps Filter -->
+        <button data-filter="all" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body text-xs sm:text-sm transition flex items-center gap-1.5 whitespace-nowrap active:scale-95 flex-shrink-0">
+          <span>All Apps</span>
+          <span id="allCount" class="text-xs px-1.5 py-0.5 rounded-full bg-app-border/40 font-mono">0</span>
+        </button>
+
+        <div class="h-4 w-[1px] bg-app-border mx-0.5 flex-shrink-0"></div>
+        <button data-filter="Development" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body hover:text-app-title text-xs sm:text-sm transition whitespace-nowrap active:scale-95 flex-shrink-0">Development</button>
+        <button data-filter="Design" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body hover:text-app-title text-xs sm:text-sm transition whitespace-nowrap active:scale-95 flex-shrink-0">Design</button>
+        <button data-filter="Productivity" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body hover:text-app-title text-xs sm:text-sm transition whitespace-nowrap active:scale-95 flex-shrink-0">Productivity</button>
+        <button data-filter="AI" class="filter-btn px-3 py-1.5 rounded-xl font-medium border border-app-border bg-app-card text-app-body hover:text-app-title text-xs sm:text-sm transition whitespace-nowrap active:scale-95 flex-shrink-0">AI</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Card Grid -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 w-full">
+    <div id="appsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-5"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden flex-col items-center justify-center text-center py-16 sm:py-24 px-4">
+      <div class="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-app-card border border-app-border flex items-center justify-center text-app-muted mb-3.5 shadow-sm">
+        <i data-lucide="inbox" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+      </div>
+      <h3 class="text-base sm:text-lg font-bold text-app-title brand-heading">No applications found</h3>
+      <p class="text-xs sm:text-sm text-app-body mt-1 max-w-xs sm:max-w-sm">No apps match your criteria. Try adjusting your search or selecting a different tab.</p>
+    </div>
+  </main>
+
+  <script>
+    // App Inventory Data
+    const defaultApps = [
+      {
+        id: "app-1",
+        title: "GitHub",
+        url: "https://github.com",
+        description: "Source code repository, developer workflows, code reviews, and CI/CD pipelines.",
+        category: "Development"
+      },
+      {
+        id: "app-2",
+        title: "Figma",
+        url: "https://figma.com",
+        description: "Collaborative interface design platform for modern apps, design systems, and prototypes.",
+        category: "Design"
+      },
+      {
+        id: "app-3",
+        title: "Claude",
+        url: "https://claude.ai",
+        description: "Anthropic's conversational AI assistant for nuanced reasoning, writing, and code analysis.",
+        category: "AI"
+      },
+      {
+        id: "app-4",
+        title: "Notion",
+        url: "https://notion.so",
+        description: "Connected workspace for team documentation, product roadmaps, and wiki knowledge.",
+        category: "Productivity"
+      },
+      {
+        id: "app-5",
+        title: "Vercel",
+        url: "https://vercel.com",
+        description: "Frontend cloud platform providing instant deployments and reliable serverless infrastructure.",
+        category: "Development"
+      },
+      {
+        id: "app-6",
+        title: "Linear",
+        url: "https://linear.app",
+        description: "Streamlined issue tracking and sprint management engineered for high-velocity software teams.",
+        category: "Productivity"
+      },
+      {
+        id: "app-7",
+        title: "Midjourney",
+        url: "https://midjourney.com",
+        description: "State-of-the-art generative AI platform transforming natural text into visual artwork.",
+        category: "AI"
+      },
+      {
+        id: "app-8",
+        title: "Raycast",
+        url: "https://raycast.com",
+        description: "Ultra-fast keystroke productivity launcher that replaces standard desktop application search.",
+        category: "Productivity"
+      }
+    ];
+
+    // State Variables - Persistent LocalStorage
+    let apps = defaultApps;
+    let favorites = new Set(JSON.parse(localStorage.getItem("app_favorites")) || ["app-1", "app-3"]);
+    
+    // Default to 'favorites' and persist filter choice
+    let currentFilter = localStorage.getItem("app_active_filter") || "favorites";
+    let searchQuery = "";
+    let activeTheme = localStorage.getItem("app_theme") || "dusk";
+
+    // Theme metadata
+    const themeNames = {
+      dusk: "Tokyo Dusk",
+      obsidian: "Obsidian",
+      pine: "Nordic Pine",
+      paper: "Editorial",
+      frost: "Frost"
+    };
+
+    // DOM Elements
+    const appsGrid = document.getElementById("appsGrid");
+    const emptyState = document.getElementById("emptyState");
+    const searchInput = document.getElementById("searchInput");
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const allCountEl = document.getElementById("allCount");
+    const favCountEl = document.getElementById("favCount");
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const themeMenu = document.getElementById("themeMenu");
+    const currentThemeNameEl = document.getElementById("currentThemeName");
+
+    function getDomain(url) {
+      try {
+        return new URL(url).hostname;
+      } catch (e) {
+        return 'google.com';
+      }
+    }
+
+    // Set Theme
+    window.setTheme = function(themeName) {
+      activeTheme = themeName;
+      document.documentElement.setAttribute("data-theme", themeName);
+      localStorage.setItem("app_theme", themeName);
+      currentThemeNameEl.textContent = themeNames[themeName] || "Theme";
+      themeMenu.classList.add("hidden");
+    };
+
+    // Update Filter Tab Buttons
+    function updateFilterUI(filterValue) {
+      filterButtons.forEach(btn => {
+        const isMatch = btn.getAttribute("data-filter") === filterValue;
+        const countBadge = btn.querySelector("span:last-child");
+
+        if (isMatch) {
+          btn.classList.add("active", "bg-app-accent", "text-app-contrast", "border-app-accent", "font-semibold", "shadow-sm");
+          btn.classList.remove("bg-app-card", "text-app-body", "border-app-border", "font-medium");
+          if (countBadge) {
+            countBadge.className = "text-xs px-1.5 py-0.5 rounded-full bg-black/15 font-mono";
+          }
+        } else {
+          btn.classList.remove("active", "bg-app-accent", "text-app-contrast", "border-app-accent", "font-semibold", "shadow-sm");
+          btn.classList.add("bg-app-card", "text-app-body", "border-app-border", "font-medium");
+          if (countBadge) {
+            countBadge.className = "text-xs px-1.5 py-0.5 rounded-full bg-app-border/40 font-mono";
+          }
+        }
+      });
+    }
+
+    // Filter Buttons Interaction
+    filterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentFilter = btn.getAttribute("data-filter");
+        localStorage.setItem("app_active_filter", currentFilter);
+        updateFilterUI(currentFilter);
+        renderApps();
+      });
+    });
+
+    // Theme Dropdown Toggle
+    themeToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      themeMenu.classList.toggle("hidden");
+    });
+    document.addEventListener("click", () => themeMenu.classList.add("hidden"));
+
+    // Render Grid
+    function renderApps() {
+      const filtered = apps.filter(app => {
+        const matchesSearch = 
+          app.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          app.category.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        let matchesFilter = true;
+        if (currentFilter === "favorites") {
+          matchesFilter = favorites.has(app.id);
+        } else if (currentFilter !== "all") {
+          matchesFilter = app.category.toLowerCase() === currentFilter.toLowerCase();
+        }
+
+        return matchesSearch && matchesFilter;
+      });
+
+      allCountEl.textContent = apps.length;
+      favCountEl.textContent = favorites.size;
+
+      if (filtered.length === 0) {
+        appsGrid.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        emptyState.classList.add("flex");
+        return;
+      } else {
+        emptyState.classList.add("hidden");
+        emptyState.classList.remove("flex");
+      }
+
+      appsGrid.innerHTML = filtered.map(app => {
+        const isFav = favorites.has(app.id);
+        const domain = getDomain(app.url);
+        const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
+        return `
+          <div class="group relative bg-app-card hover:bg-app-cardHover border border-app-border hover:border-app-borderHover rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
+            <div>
+              <!-- Top Row: Icon, Category Badge & Favorite Star -->
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-app-main border border-app-border flex items-center justify-center p-2 group-hover:scale-105 transition-transform overflow-hidden shadow-inner flex-shrink-0">
+                  <img src="${iconUrl}" alt="${app.title}" class="h-full w-full object-contain rounded-md" onerror="this.src='https://avatar.vercel.sh/${app.title}.svg'" />
+                </div>
+                
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-app-badgeBg text-app-badgeText border border-app-badgeBorder">
+                    ${app.category}
+                  </span>
+                  <button 
+                    onclick="toggleFavorite('${app.id}', event)" 
+                    title="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
+                    aria-label="Toggle favorite"
+                    class="p-2 sm:p-1.5 rounded-xl border transition-all active:scale-90 ${
+                      isFav 
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' 
+                        : 'border-app-border bg-app-main/50 text-app-muted hover:text-app-title'
+                    }"
+                  >
+                    <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-amber-400' : ''}"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Title -->
+              <h2 class="font-bold text-app-title text-base group-hover:text-app-accent transition-colors brand-heading">
+                ${app.title}
+              </h2>
+
+              <!-- Description -->
+              <p class="text-xs text-app-body line-clamp-2 leading-relaxed mt-1">
+                ${app.description}
+              </p>
+            </div>
+
+            <!-- Card Bottom: Host URL & Launch Button -->
+            <div class="mt-4 sm:mt-5 pt-3 border-t border-app-border flex items-center justify-between">
+              <span class="text-[11px] text-app-muted font-mono truncate max-w-[130px] sm:max-w-[150px]">${domain}</span>
+              <a 
+                href="${app.url}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-app-title bg-app-surface hover:bg-app-accent hover:text-app-contrast border border-app-border hover:border-app-accent px-3 py-1.5 rounded-xl transition-all shadow-sm active:scale-95"
+              >
+                <span>Launch</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // Toggle Favorite
+    window.toggleFavorite = function(id, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      if (favorites.has(id)) {
+        favorites.delete(id);
+      } else {
+        favorites.add(id);
+      }
+
+      localStorage.setItem("app_favorites", JSON.stringify(Array.from(favorites)));
+      renderApps();
+    };
+
+    // Instant Search
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value.trim();
+      renderApps();
+    });
+
+    // Initialize
+    setTheme(activeTheme);
+    updateFilterUI(currentFilter);
+    renderApps();
+  </script>
+</body>
+</html>

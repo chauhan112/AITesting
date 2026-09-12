@@ -1,0 +1,1782 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <title>LinguaReader</title>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            app: {
+              background: "var(--color-background)",
+              surface: "var(--color-surface)",
+              elevated: "var(--color-elevated)",
+              border: "var(--color-border)",
+              text: "var(--color-text)",
+              muted: "var(--color-muted)",
+              primary: "var(--color-primary)",
+              "primary-hover": "var(--color-primary-hover)",
+              "primary-soft": "var(--color-primary-soft)",
+              danger: "var(--color-danger)"
+            }
+          },
+          boxShadow: {
+            app: "0 10px 35px var(--color-shadow)",
+            card: "0 4px 18px var(--color-shadow)"
+          }
+        }
+      }
+    };
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Light theme 1 */
+    html[data-theme="paper"] {
+      color-scheme: light;
+      --color-background: #f6f1e8;
+      --color-surface: #fffdf8;
+      --color-elevated: #ffffff;
+      --color-border: #ded5c8;
+      --color-text: #29231d;
+      --color-muted: #756b60;
+      --color-primary: #9a5b2e;
+      --color-primary-hover: #7c4521;
+      --color-primary-soft: #f1dfcf;
+      --color-danger: #c33f3f;
+      --color-shadow: rgba(70, 52, 35, 0.12);
+    }
+
+    /* Light theme 2 */
+    html[data-theme="arctic"] {
+      color-scheme: light;
+      --color-background: #eef4f8;
+      --color-surface: #f9fcff;
+      --color-elevated: #ffffff;
+      --color-border: #cfdae3;
+      --color-text: #132431;
+      --color-muted: #627583;
+      --color-primary: #1679a7;
+      --color-primary-hover: #0f6087;
+      --color-primary-soft: #d9edf6;
+      --color-danger: #c53f52;
+      --color-shadow: rgba(33, 67, 89, 0.12);
+    }
+
+    /* Dark theme 1 */
+    html[data-theme="midnight"] {
+      color-scheme: dark;
+      --color-background: #08111f;
+      --color-surface: #0e1a2b;
+      --color-elevated: #142238;
+      --color-border: #273853;
+      --color-text: #e7eef8;
+      --color-muted: #91a1b7;
+      --color-primary: #65a9ff;
+      --color-primary-hover: #8bbfff;
+      --color-primary-soft: #173a61;
+      --color-danger: #ff7180;
+      --color-shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Dark theme 2 */
+    html[data-theme="graphite"] {
+      color-scheme: dark;
+      --color-background: #151515;
+      --color-surface: #1d1d1d;
+      --color-elevated: #272727;
+      --color-border: #3b3b3b;
+      --color-text: #f0f0ed;
+      --color-muted: #a5a5a0;
+      --color-primary: #d4a84f;
+      --color-primary-hover: #e5bd6c;
+      --color-primary-soft: #44371d;
+      --color-danger: #ff6e6e;
+      --color-shadow: rgba(0, 0, 0, 0.32);
+    }
+
+    html {
+      background: var(--color-background);
+    }
+
+    body {
+      background: var(--color-background);
+      color: var(--color-text);
+      transition:
+        background-color 160ms ease,
+        color 160ms ease;
+    }
+
+    button,
+    input,
+    select {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .safe-bottom {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    .reader-text {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .reader-text[dir="rtl"] {
+      font-family: "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif;
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .modal-backdrop {
+      animation: fade-in 140ms ease-out;
+    }
+
+    .modal-panel {
+      animation: slide-up 180ms ease-out;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-app-background text-app-text antialiased">
+
+  <!-- Toast -->
+  <div
+    id="toast"
+    class="pointer-events-none fixed left-1/2 top-4 z-[80] hidden
+           -translate-x-1/2 rounded-xl border border-app-border
+           bg-app-elevated px-4 py-3 text-sm font-medium text-app-text
+           shadow-app"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <!-- Application -->
+  <div class="min-h-screen lg:flex">
+
+    <!-- Desktop sidebar -->
+    <aside
+      class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col
+             border-r border-app-border bg-app-surface lg:flex"
+    >
+      <div class="flex h-20 items-center gap-3 px-6">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-xl
+                 bg-app-primary text-lg font-bold text-white"
+        >
+          L
+        </div>
+
+        <div>
+          <p class="font-semibold tracking-tight">LinguaReader</p>
+          <p class="text-xs text-app-muted">Local PDF translator</p>
+        </div>
+      </div>
+
+      <nav id="desktopNav" class="flex-1 space-y-1 px-3 py-3">
+        <button data-view="library" class="desktop-nav-item w-full">
+          <span>▦</span>
+          <span>Library</span>
+        </button>
+
+        <button data-view="recent" class="desktop-nav-item w-full">
+          <span>◷</span>
+          <span>Recent</span>
+        </button>
+
+        <button data-view="favorites" class="desktop-nav-item w-full">
+          <span>★</span>
+          <span>Favorites</span>
+        </button>
+
+        <button data-view="tags" class="desktop-nav-item w-full">
+          <span>⌗</span>
+          <span>Tags</span>
+        </button>
+      </nav>
+
+      <div class="border-t border-app-border p-4">
+        <button
+          data-open-theme
+          class="flex w-full items-center gap-3 rounded-xl px-3 py-3
+                 text-left text-sm text-app-muted transition
+                 hover:bg-app-primary-soft hover:text-app-text"
+        >
+          <span>◐</span>
+          <span class="flex-1">Change theme</span>
+          <span>›</span>
+        </button>
+
+        <div class="mt-3 flex items-center gap-3 px-3 py-2">
+          <div
+            class="flex h-9 w-9 items-center justify-center rounded-full
+                   bg-app-primary-soft text-sm font-bold text-app-primary"
+          >
+            UA
+          </div>
+
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium">User A</p>
+            <p class="truncate text-xs text-app-muted">Gateway user</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main application area -->
+    <main class="min-w-0 flex-1 lg:ml-64">
+
+      <!-- Library view -->
+      <section id="libraryView" class="min-h-screen pb-24 lg:pb-8">
+        <header
+          class="sticky top-0 z-20 border-b border-app-border
+                 bg-app-background/95 backdrop-blur"
+        >
+          <div
+            class="mx-auto flex max-w-7xl items-center gap-3
+                   px-4 py-4 sm:px-6 lg:px-8"
+          >
+            <div class="min-w-0 flex-1">
+              <h1 id="viewTitle" class="truncate text-xl font-bold sm:text-2xl">
+                Your library
+              </h1>
+              <p id="viewSubtitle" class="hidden text-sm text-app-muted sm:block">
+                Continue reading or upload a new document.
+              </p>
+            </div>
+
+            <button
+              data-open-theme
+              class="flex h-11 w-11 items-center justify-center rounded-xl
+                     border border-app-border bg-app-surface text-lg
+                     transition hover:bg-app-elevated lg:hidden"
+              aria-label="Change theme"
+            >
+              ◐
+            </button>
+
+            <button
+              id="uploadButton"
+              class="inline-flex h-11 items-center justify-center gap-2
+                     rounded-xl bg-app-primary px-4 text-sm font-semibold
+                     text-white transition hover:bg-app-primary-hover"
+            >
+              <span class="text-lg leading-none">＋</span>
+              <span class="hidden sm:inline">Upload PDF</span>
+              <span class="sm:hidden">Upload</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <!-- Search and filters -->
+          <div class="mb-6 flex flex-col gap-3 sm:flex-row">
+            <label class="relative flex-1">
+              <span class="sr-only">Search documents</span>
+              <span
+                class="pointer-events-none absolute left-4 top-1/2
+                       -translate-y-1/2 text-app-muted"
+              >
+                ⌕
+              </span>
+
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search documents or tags..."
+                class="h-12 w-full rounded-xl border border-app-border
+                       bg-app-surface pl-11 pr-4 text-sm outline-none
+                       placeholder:text-app-muted focus:border-app-primary
+                       focus:ring-2 focus:ring-app-primary-soft"
+              >
+            </label>
+
+            <select
+              id="sortSelect"
+              class="h-12 rounded-xl border border-app-border
+                     bg-app-surface px-4 text-sm outline-none
+                     focus:border-app-primary"
+              aria-label="Sort documents"
+            >
+              <option value="recent">Recently opened</option>
+              <option value="newest">Newest upload</option>
+              <option value="title">Title</option>
+              <option value="progress">Reading progress</option>
+            </select>
+          </div>
+
+          <!-- Tag filter -->
+          <div
+            id="tagFilters"
+            class="mb-6 hidden flex-wrap gap-2"
+          ></div>
+
+          <!-- Documents -->
+          <div
+            id="documentGrid"
+            class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          ></div>
+
+          <!-- Empty state -->
+          <div
+            id="emptyState"
+            class="hidden rounded-2xl border border-dashed border-app-border
+                   bg-app-surface px-5 py-14 text-center"
+          >
+            <div
+              class="mx-auto mb-4 flex h-14 w-14 items-center justify-center
+                     rounded-2xl bg-app-primary-soft text-2xl"
+            >
+              ▤
+            </div>
+
+            <h2 class="text-lg font-semibold">No documents found</h2>
+
+            <p
+              id="emptyMessage"
+              class="mx-auto mt-2 max-w-md text-sm text-app-muted"
+            >
+              Upload your first PDF to begin reading and translating.
+            </p>
+
+            <button
+              data-empty-upload
+              class="mt-5 rounded-xl bg-app-primary px-4 py-2.5
+                     text-sm font-semibold text-white
+                     hover:bg-app-primary-hover"
+            >
+              Upload PDF
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reader view -->
+      <section id="readerView" class="hidden min-h-screen pb-24 lg:pb-5">
+
+        <!-- Reader header -->
+        <header
+          class="sticky top-0 z-30 border-b border-app-border
+                 bg-app-background/95 backdrop-blur"
+        >
+          <div
+            class="mx-auto flex h-16 max-w-6xl items-center gap-2
+                   px-3 sm:gap-4 sm:px-6"
+          >
+            <button
+              id="backToLibrary"
+              class="flex h-10 w-10 shrink-0 items-center justify-center
+                     rounded-xl border border-app-border bg-app-surface
+                     text-lg hover:bg-app-elevated"
+              aria-label="Back to library"
+            >
+              ←
+            </button>
+
+            <div class="min-w-0 flex-1">
+              <h1
+                id="readerTitle"
+                class="truncate text-sm font-semibold sm:text-base"
+              ></h1>
+              <p
+                id="readerPageInfo"
+                class="truncate text-xs text-app-muted"
+              ></p>
+            </div>
+
+            <button
+              id="readerFavoriteButton"
+              class="flex h-10 w-10 shrink-0 items-center justify-center
+                     rounded-xl border border-app-border bg-app-surface
+                     text-xl hover:bg-app-elevated"
+              aria-label="Toggle favorite"
+            >
+              ☆
+            </button>
+
+            <button
+              data-open-theme
+              class="hidden h-10 w-10 shrink-0 items-center justify-center
+                     rounded-xl border border-app-border bg-app-surface
+                     hover:bg-app-elevated sm:flex"
+              aria-label="Change theme"
+            >
+              ◐
+            </button>
+          </div>
+        </header>
+
+        <!-- Reader toolbar -->
+        <div
+          class="border-b border-app-border bg-app-surface"
+        >
+          <div
+            class="mx-auto flex max-w-6xl flex-wrap items-center gap-3
+                   px-4 py-3 sm:px-6"
+          >
+            <label class="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+              <span class="text-xs font-medium text-app-muted">Language</span>
+
+              <select
+                id="languageSelect"
+                class="h-10 min-w-0 flex-1 rounded-lg border
+                       border-app-border bg-app-elevated px-3 text-sm
+                       outline-none focus:border-app-primary sm:w-40"
+              >
+                <option value="original">Original</option>
+                <option value="en">English</option>
+                <option value="de">German</option>
+                <option value="ar">Arabic</option>
+              </select>
+            </label>
+
+            <button
+              id="toggleOriginalButton"
+              class="h-10 rounded-lg border border-app-border
+                     bg-app-elevated px-3 text-xs font-medium
+                     hover:bg-app-primary-soft sm:text-sm"
+            >
+              Show original
+            </button>
+
+            <div
+              id="translationState"
+              class="hidden items-center gap-2 text-xs text-app-muted"
+            >
+              <span
+                class="h-2 w-2 animate-pulse rounded-full bg-app-primary"
+              ></span>
+              Translating page…
+            </div>
+          </div>
+        </div>
+
+        <!-- Reader paper -->
+        <div class="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
+          <article
+            id="readerPaper"
+            class="mx-auto min-h-[65vh] max-w-3xl rounded-2xl
+                   border border-app-border bg-app-surface
+                   px-5 py-8 shadow-card sm:px-10 sm:py-12 lg:px-14"
+          >
+            <div id="readerContent"></div>
+          </article>
+        </div>
+
+        <!-- Reader pagination -->
+        <div
+          class="fixed inset-x-0 bottom-[4.5rem] z-20 lg:bottom-4 lg:left-64"
+        >
+          <div
+            class="mx-auto flex w-fit items-center gap-2 rounded-2xl
+                   border border-app-border bg-app-elevated/95
+                   p-2 shadow-app backdrop-blur"
+          >
+            <button
+              id="previousPageButton"
+              class="flex h-11 items-center gap-2 rounded-xl px-3
+                     text-sm font-medium hover:bg-app-primary-soft
+                     disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← <span class="hidden sm:inline">Previous</span>
+            </button>
+
+            <button
+              id="pagePickerButton"
+              class="h-11 min-w-24 rounded-xl border border-app-border
+                     bg-app-surface px-3 text-sm font-semibold"
+            >
+              Page 1 / 1
+            </button>
+
+            <button
+              id="nextPageButton"
+              class="flex h-11 items-center gap-2 rounded-xl px-3
+                     text-sm font-medium hover:bg-app-primary-soft
+                     disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span class="hidden sm:inline">Next</span> →
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Mobile bottom navigation -->
+  <nav
+    id="mobileNav"
+    class="safe-bottom fixed inset-x-0 bottom-0 z-40
+           grid grid-cols-4 border-t border-app-border
+           bg-app-surface px-2 pt-2 lg:hidden"
+  >
+    <button data-view="library" class="mobile-nav-item">
+      <span class="text-lg">▦</span>
+      <span>Library</span>
+    </button>
+
+    <button data-view="recent" class="mobile-nav-item">
+      <span class="text-lg">◷</span>
+      <span>Recent</span>
+    </button>
+
+    <button data-view="favorites" class="mobile-nav-item">
+      <span class="text-lg">★</span>
+      <span>Favorites</span>
+    </button>
+
+    <button data-view="tags" class="mobile-nav-item">
+      <span class="text-lg">⌗</span>
+      <span>Tags</span>
+    </button>
+  </nav>
+
+  <!-- Upload modal -->
+  <div
+    id="uploadModal"
+    class="modal-backdrop fixed inset-0 z-50 hidden items-end
+           justify-center bg-black/50 p-0 sm:items-center sm:p-5"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="uploadModalTitle"
+  >
+    <div
+      class="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-3xl
+             border border-app-border bg-app-elevated p-5 shadow-app
+             sm:max-w-lg sm:rounded-2xl sm:p-6"
+    >
+      <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h2 id="uploadModalTitle" class="text-xl font-bold">
+            Upload a PDF
+          </h2>
+          <p class="mt-1 text-sm text-app-muted">
+            The mock stores document metadata in this browser.
+          </p>
+        </div>
+
+        <button
+          id="closeUploadModal"
+          class="flex h-10 w-10 items-center justify-center rounded-xl
+                 hover:bg-app-primary-soft"
+          aria-label="Close upload dialog"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form id="uploadForm">
+        <label
+          id="fileDropZone"
+          class="flex cursor-pointer flex-col items-center justify-center
+                 rounded-2xl border-2 border-dashed border-app-border
+                 bg-app-surface px-5 py-10 text-center transition
+                 hover:border-app-primary hover:bg-app-primary-soft"
+        >
+          <input
+            id="pdfFileInput"
+            type="file"
+            accept="application/pdf,.pdf"
+            class="sr-only"
+            required
+          >
+
+          <span
+            class="mb-3 flex h-14 w-14 items-center justify-center
+                   rounded-2xl bg-app-primary-soft text-2xl
+                   text-app-primary"
+          >
+            ⇧
+          </span>
+
+          <strong id="fileDropTitle" class="text-sm">
+            Select a PDF file
+          </strong>
+
+          <span id="fileDropDescription" class="mt-1 text-xs text-app-muted">
+            Click here or drop a PDF into this area
+          </span>
+        </label>
+
+        <div class="mt-5">
+          <label
+            for="documentTitleInput"
+            class="mb-2 block text-sm font-medium"
+          >
+            Display title
+            <span class="font-normal text-app-muted">(optional)</span>
+          </label>
+
+          <input
+            id="documentTitleInput"
+            type="text"
+            maxlength="200"
+            placeholder="Filename will be used if empty"
+            class="h-12 w-full rounded-xl border border-app-border
+                   bg-app-surface px-4 text-sm outline-none
+                   placeholder:text-app-muted focus:border-app-primary
+                   focus:ring-2 focus:ring-app-primary-soft"
+          >
+        </div>
+
+        <div class="mt-5">
+          <label
+            for="documentTagsInput"
+            class="mb-2 block text-sm font-medium"
+          >
+            Tags
+            <span class="font-normal text-app-muted">(optional)</span>
+          </label>
+
+          <input
+            id="documentTagsInput"
+            type="text"
+            placeholder="language, study, work"
+            class="h-12 w-full rounded-xl border border-app-border
+                   bg-app-surface px-4 text-sm outline-none
+                   placeholder:text-app-muted focus:border-app-primary
+                   focus:ring-2 focus:ring-app-primary-soft"
+          >
+
+          <p class="mt-2 text-xs text-app-muted">
+            Separate multiple tags with commas.
+          </p>
+        </div>
+
+        <div class="mt-7 flex gap-3">
+          <button
+            id="cancelUploadButton"
+            type="button"
+            class="h-12 flex-1 rounded-xl border border-app-border
+                   bg-app-surface text-sm font-semibold
+                   hover:bg-app-primary-soft"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="h-12 flex-1 rounded-xl bg-app-primary
+                   text-sm font-semibold text-white
+                   hover:bg-app-primary-hover"
+          >
+            Add document
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Theme modal -->
+  <div
+    id="themeModal"
+    class="modal-backdrop fixed inset-0 z-50 hidden items-end
+           justify-center bg-black/50 sm:items-center sm:p-5"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="themeModalTitle"
+  >
+    <div
+      class="modal-panel w-full rounded-t-3xl border border-app-border
+             bg-app-elevated p-5 shadow-app
+             sm:max-w-lg sm:rounded-2xl sm:p-6"
+    >
+      <div class="mb-5 flex items-center justify-between">
+        <div>
+          <h2 id="themeModalTitle" class="text-xl font-bold">
+            Reader theme
+          </h2>
+          <p class="mt-1 text-sm text-app-muted">
+            Choose between two light and two dark themes.
+          </p>
+        </div>
+
+        <button
+          id="closeThemeModal"
+          class="flex h-10 w-10 items-center justify-center rounded-xl
+                 hover:bg-app-primary-soft"
+          aria-label="Close theme dialog"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          data-theme-choice="paper"
+          class="theme-choice rounded-2xl border-2 p-3 text-left"
+        >
+          <span
+            class="mb-3 block h-20 rounded-xl border border-[#ded5c8]
+                   bg-[#f6f1e8] p-3"
+          >
+            <span class="block h-2 w-3/4 rounded bg-[#9a5b2e]"></span>
+            <span class="mt-2 block h-1.5 rounded bg-[#756b60]/50"></span>
+            <span class="mt-1 block h-1.5 w-4/5 rounded bg-[#756b60]/50"></span>
+          </span>
+          <strong class="block text-sm">Paper</strong>
+          <span class="text-xs text-app-muted">Warm light</span>
+        </button>
+
+        <button
+          data-theme-choice="arctic"
+          class="theme-choice rounded-2xl border-2 p-3 text-left"
+        >
+          <span
+            class="mb-3 block h-20 rounded-xl border border-[#cfdae3]
+                   bg-[#eef4f8] p-3"
+          >
+            <span class="block h-2 w-3/4 rounded bg-[#1679a7]"></span>
+            <span class="mt-2 block h-1.5 rounded bg-[#627583]/50"></span>
+            <span class="mt-1 block h-1.5 w-4/5 rounded bg-[#627583]/50"></span>
+          </span>
+          <strong class="block text-sm">Arctic</strong>
+          <span class="text-xs text-app-muted">Cool light</span>
+        </button>
+
+        <button
+          data-theme-choice="midnight"
+          class="theme-choice rounded-2xl border-2 p-3 text-left"
+        >
+          <span
+            class="mb-3 block h-20 rounded-xl border border-[#273853]
+                   bg-[#08111f] p-3"
+          >
+            <span class="block h-2 w-3/4 rounded bg-[#65a9ff]"></span>
+            <span class="mt-2 block h-1.5 rounded bg-[#91a1b7]/50"></span>
+            <span class="mt-1 block h-1.5 w-4/5 rounded bg-[#91a1b7]/50"></span>
+          </span>
+          <strong class="block text-sm">Midnight</strong>
+          <span class="text-xs text-app-muted">Blue dark</span>
+        </button>
+
+        <button
+          data-theme-choice="graphite"
+          class="theme-choice rounded-2xl border-2 p-3 text-left"
+        >
+          <span
+            class="mb-3 block h-20 rounded-xl border border-[#3b3b3b]
+                   bg-[#151515] p-3"
+          >
+            <span class="block h-2 w-3/4 rounded bg-[#d4a84f]"></span>
+            <span class="mt-2 block h-1.5 rounded bg-[#a5a5a0]/50"></span>
+            <span class="mt-1 block h-1.5 w-4/5 rounded bg-[#a5a5a0]/50"></span>
+          </span>
+          <strong class="block text-sm">Graphite</strong>
+          <span class="text-xs text-app-muted">Neutral dark</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page picker modal -->
+  <div
+    id="pagePickerModal"
+    class="modal-backdrop fixed inset-0 z-50 hidden items-end
+           justify-center bg-black/50 p-0 sm:items-center sm:p-5"
+    role="dialog"
+    aria-modal="true"
+  >
+    <form
+      id="pagePickerForm"
+      class="modal-panel w-full rounded-t-3xl border border-app-border
+             bg-app-elevated p-5 shadow-app
+             sm:max-w-sm sm:rounded-2xl sm:p-6"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold">Go to page</h2>
+
+        <button
+          id="closePagePicker"
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-xl
+                 hover:bg-app-primary-soft"
+        >
+          ✕
+        </button>
+      </div>
+
+      <label for="pageNumberInput" class="mt-5 block text-sm font-medium">
+        Page number
+      </label>
+
+      <input
+        id="pageNumberInput"
+        type="number"
+        min="1"
+        class="mt-2 h-12 w-full rounded-xl border border-app-border
+               bg-app-surface px-4 text-lg outline-none
+               focus:border-app-primary"
+      >
+
+      <button
+        type="submit"
+        class="mt-5 h-12 w-full rounded-xl bg-app-primary
+               font-semibold text-white hover:bg-app-primary-hover"
+      >
+        Open page
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "lingua-reader-mock-documents";
+    const THEME_KEY = "lingua-reader-theme";
+
+    const supportedThemes = ["paper", "arctic", "midnight", "graphite"];
+
+    const sampleDocuments = [
+      {
+        id: crypto.randomUUID(),
+        title: "Learning German Through Stories",
+        originalFilename: "german-short-stories.pdf",
+        originalTitle: "Deutsche Kurzgeschichten",
+        pageCount: 42,
+        currentPage: 8,
+        favorite: true,
+        tags: ["German", "Study"],
+        selectedLanguage: "en",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 8,
+        lastOpenedAt: Date.now() - 1000 * 60 * 18
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Introduction to Arabic",
+        originalFilename: "arabic-introduction.pdf",
+        originalTitle: "مقدمة في اللغة العربية",
+        pageCount: 68,
+        currentPage: 14,
+        favorite: false,
+        tags: ["Arabic", "Language"],
+        selectedLanguage: "en",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 16,
+        lastOpenedAt: Date.now() - 1000 * 60 * 60 * 22
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Distributed Systems Notes",
+        originalFilename: "distributed-systems.pdf",
+        originalTitle: "Distributed Systems",
+        pageCount: 116,
+        currentPage: 3,
+        favorite: true,
+        tags: ["Technical", "Work"],
+        selectedLanguage: "de",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 30,
+        lastOpenedAt: Date.now() - 1000 * 60 * 60 * 24 * 4
+      }
+    ];
+
+    const translations = {
+      original: {
+        heading: "A chapter about language and understanding",
+        paragraphs: [
+          "Language allows people to share ideas, preserve knowledge, and understand experiences beyond their immediate surroundings.",
+          "When reading in another language, context is often more important than translating each individual word. A paragraph carries relationships that isolated words cannot express.",
+          "This mock reader separates a document into pages and text blocks. In the real application, those blocks can be extracted from native PDF text or generated through OCR.",
+          "Translations are requested only when a page is opened. Once generated, they can be stored and reused without running the model again."
+        ]
+      },
+      en: {
+        heading: "A chapter about language and understanding",
+        paragraphs: [
+          "Language allows people to share ideas, preserve knowledge, and understand experiences beyond their immediate surroundings.",
+          "When reading in another language, context is often more important than translating each individual word. A paragraph carries relationships that isolated words cannot express.",
+          "This mock reader separates a document into pages and text blocks. In the real application, those blocks can be extracted from native PDF text or generated through OCR.",
+          "Translations are requested only when a page is opened. Once generated, they can be stored and reused without running the model again."
+        ]
+      },
+      de: {
+        heading: "Ein Kapitel über Sprache und Verständnis",
+        paragraphs: [
+          "Sprache ermöglicht es Menschen, Ideen auszutauschen, Wissen zu bewahren und Erfahrungen außerhalb ihrer unmittelbaren Umgebung zu verstehen.",
+          "Beim Lesen in einer anderen Sprache ist der Kontext oft wichtiger als die Übersetzung jedes einzelnen Wortes. Ein Absatz enthält Zusammenhänge, die einzelne Wörter nicht ausdrücken können.",
+          "Dieser Beispiel-Reader unterteilt ein Dokument in Seiten und Textblöcke. In der echten Anwendung können diese Blöcke aus dem nativen PDF-Text extrahiert oder durch OCR erzeugt werden.",
+          "Übersetzungen werden erst angefordert, wenn eine Seite geöffnet wird. Nach der Erstellung können sie gespeichert und wiederverwendet werden, ohne das Modell erneut auszuführen."
+        ]
+      },
+      ar: {
+        heading: "فصل عن اللغة والفهم",
+        paragraphs: [
+          "تتيح اللغة للناس مشاركة الأفكار وحفظ المعرفة وفهم التجارب التي تتجاوز محيطهم المباشر.",
+          "عند القراءة بلغة أخرى، يكون السياق غالبًا أكثر أهمية من ترجمة كل كلمة على حدة. فالفقرة تحتوي على علاقات لا تستطيع الكلمات المنفصلة التعبير عنها.",
+          "يقسم هذا القارئ التجريبي المستند إلى صفحات وكتل نصية. وفي التطبيق الحقيقي يمكن استخراج هذه الكتل من نص ملف PDF أو إنشاؤها باستخدام التعرف الضوئي على الحروف.",
+          "لا يتم طلب الترجمة إلا عند فتح الصفحة. وبعد إنشائها يمكن تخزينها وإعادة استخدامها دون تشغيل النموذج مرة أخرى."
+        ]
+      }
+    };
+
+    let state = {
+      documents: loadDocuments(),
+      currentView: "library",
+      currentDocumentId: null,
+      selectedTag: null,
+      search: "",
+      sort: "recent",
+      showOriginal: false,
+      translating: false
+    };
+
+    function loadDocuments() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+        if (Array.isArray(stored)) {
+          return stored;
+        }
+      } catch (error) {
+        console.warn("Could not load local documents", error);
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleDocuments));
+      return sampleDocuments;
+    }
+
+    function saveDocuments() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.documents));
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatRelativeDate(timestamp) {
+      if (!timestamp) return "Never opened";
+
+      const difference = Date.now() - timestamp;
+      const minutes = Math.floor(difference / 60000);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (minutes < 1) return "Just now";
+      if (minutes < 60) return `${minutes}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      if (days < 7) return `${days}d ago`;
+
+      return new Date(timestamp).toLocaleDateString();
+    }
+
+    function getProgress(document) {
+      if (!document.pageCount) return 0;
+
+      return Math.min(
+        100,
+        Math.round((document.currentPage / document.pageCount) * 100)
+      );
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+
+      clearTimeout(showToast.timer);
+
+      showToast.timer = setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 2200);
+    }
+
+    function setTheme(theme) {
+      if (!supportedThemes.includes(theme)) return;
+
+      document.documentElement.dataset.theme = theme;
+      localStorage.setItem(THEME_KEY, theme);
+      updateThemeSelection();
+    }
+
+    function updateThemeSelection() {
+      const selected = document.documentElement.dataset.theme;
+
+      document.querySelectorAll(".theme-choice").forEach((button) => {
+        const active = button.dataset.themeChoice === selected;
+
+        button.classList.toggle("border-app-primary", active);
+        button.classList.toggle("bg-app-primary-soft", active);
+        button.classList.toggle("border-app-border", !active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+
+    function openModal(modal) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    function closeModal(modal) {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    function setActiveNavigation() {
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        const active = button.dataset.view === state.currentView;
+
+        if (button.classList.contains("desktop-nav-item")) {
+          button.className = [
+            "desktop-nav-item flex w-full items-center gap-3 rounded-xl",
+            "px-4 py-3 text-sm font-medium transition",
+            active
+              ? "bg-app-primary-soft text-app-primary"
+              : "text-app-muted hover:bg-app-elevated hover:text-app-text"
+          ].join(" ");
+        } else {
+          button.className = [
+            "mobile-nav-item flex flex-col items-center justify-center gap-1",
+            "rounded-xl py-1.5 text-[11px] font-medium transition",
+            active
+              ? "text-app-primary"
+              : "text-app-muted"
+          ].join(" ");
+        }
+      });
+    }
+
+    function getFilteredDocuments() {
+      let documents = [...state.documents];
+
+      if (state.currentView === "recent") {
+        documents = documents.filter((item) => item.lastOpenedAt);
+      }
+
+      if (state.currentView === "favorites") {
+        documents = documents.filter((item) => item.favorite);
+      }
+
+      if (state.currentView === "tags" && state.selectedTag) {
+        documents = documents.filter((item) =>
+          item.tags.some((tag) =>
+            tag.toLowerCase() === state.selectedTag.toLowerCase()
+          )
+        );
+      }
+
+      const search = state.search.trim().toLowerCase();
+
+      if (search) {
+        documents = documents.filter((item) => {
+          return (
+            item.title.toLowerCase().includes(search) ||
+            item.originalFilename.toLowerCase().includes(search) ||
+            item.tags.some((tag) => tag.toLowerCase().includes(search))
+          );
+        });
+      }
+
+      documents.sort((a, b) => {
+        if (state.sort === "newest") {
+          return b.createdAt - a.createdAt;
+        }
+
+        if (state.sort === "title") {
+          return a.title.localeCompare(b.title);
+        }
+
+        if (state.sort === "progress") {
+          return getProgress(b) - getProgress(a);
+        }
+
+        return (b.lastOpenedAt || 0) - (a.lastOpenedAt || 0);
+      });
+
+      return documents;
+    }
+
+    function renderTagFilters() {
+      const container = document.getElementById("tagFilters");
+
+      if (state.currentView !== "tags") {
+        container.classList.add("hidden");
+        return;
+      }
+
+      const tags = [
+        ...new Set(state.documents.flatMap((item) => item.tags))
+      ].sort();
+
+      container.classList.remove("hidden");
+      container.classList.add("flex");
+
+      container.innerHTML = `
+        <button
+          data-tag-filter=""
+          class="rounded-full border px-3 py-1.5 text-xs font-medium
+                 ${state.selectedTag === null
+                   ? "border-app-primary bg-app-primary-soft text-app-primary"
+                   : "border-app-border bg-app-surface text-app-muted"}"
+        >
+          All tags
+        </button>
+
+        ${tags.map((tag) => `
+          <button
+            data-tag-filter="${escapeHTML(tag)}"
+            class="rounded-full border px-3 py-1.5 text-xs font-medium
+                   ${state.selectedTag === tag
+                     ? "border-app-primary bg-app-primary-soft text-app-primary"
+                     : "border-app-border bg-app-surface text-app-muted"}"
+          >
+            ${escapeHTML(tag)}
+          </button>
+        `).join("")}
+      `;
+
+      container.querySelectorAll("[data-tag-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedTag = button.dataset.tagFilter || null;
+          renderLibrary();
+        });
+      });
+    }
+
+    function renderDocumentCard(item) {
+      const progress = getProgress(item);
+
+      return `
+        <article
+          class="group overflow-hidden rounded-2xl border border-app-border
+                 bg-app-surface shadow-card transition
+                 hover:-translate-y-0.5 hover:border-app-primary"
+        >
+          <button
+            data-open-document="${item.id}"
+            class="block w-full text-left"
+          >
+            <div
+              class="relative flex h-36 items-center justify-center
+                     bg-gradient-to-br from-app-primary-soft
+                     to-app-elevated"
+            >
+              <div
+                class="flex h-20 w-16 flex-col rounded-md border
+                       border-app-border bg-app-elevated p-2 shadow-card"
+              >
+                <span class="h-2 w-3/4 rounded bg-app-primary"></span>
+                <span class="mt-3 h-1 rounded bg-app-border"></span>
+                <span class="mt-1.5 h-1 rounded bg-app-border"></span>
+                <span class="mt-1.5 h-1 w-4/5 rounded bg-app-border"></span>
+                <span class="mt-auto text-[8px] font-bold text-app-muted">
+                  PDF
+                </span>
+              </div>
+
+              <span
+                class="absolute bottom-3 right-3 rounded-full
+                       bg-app-elevated/90 px-2.5 py-1 text-xs font-medium
+                       text-app-muted backdrop-blur"
+              >
+                ${item.pageCount} pages
+              </span>
+            </div>
+
+            <div class="p-4">
+              <div class="flex items-start gap-3">
+                <div class="min-w-0 flex-1">
+                  <h2 class="line-clamp-2 font-semibold leading-snug">
+                    ${escapeHTML(item.title)}
+                  </h2>
+
+                  <p class="mt-1 truncate text-xs text-app-muted">
+                    ${escapeHTML(item.originalFilename)}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-1.5">
+                ${item.tags.slice(0, 3).map((tag) => `
+                  <span
+                    class="rounded-full bg-app-primary-soft px-2.5 py-1
+                           text-[11px] font-medium text-app-primary"
+                  >
+                    ${escapeHTML(tag)}
+                  </span>
+                `).join("")}
+              </div>
+
+              <div class="mt-5">
+                <div class="mb-2 flex justify-between text-xs text-app-muted">
+                  <span>Page ${item.currentPage} of ${item.pageCount}</span>
+                  <span>${progress}%</span>
+                </div>
+
+                <div class="h-1.5 overflow-hidden rounded-full bg-app-border">
+                  <div
+                    class="h-full rounded-full bg-app-primary"
+                    style="width: ${progress}%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <div
+            class="flex items-center justify-between border-t
+                   border-app-border px-4 py-3"
+          >
+            <span class="text-xs text-app-muted">
+              ${formatRelativeDate(item.lastOpenedAt)}
+            </span>
+
+            <button
+              data-toggle-favorite="${item.id}"
+              class="flex h-9 w-9 items-center justify-center rounded-lg
+                     text-xl transition hover:bg-app-primary-soft
+                     ${item.favorite ? "text-app-primary" : "text-app-muted"}"
+              aria-label="Toggle favorite"
+            >
+              ${item.favorite ? "★" : "☆"}
+            </button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderLibrary() {
+      const titleMap = {
+        library: ["Your library", "Continue reading or upload a new document."],
+        recent: ["Recent reading", "Documents you opened recently."],
+        favorites: ["Favorites", "Your saved documents."],
+        tags: ["Tags", "Browse your documents by tag."]
+      };
+
+      const [title, subtitle] = titleMap[state.currentView];
+
+      document.getElementById("viewTitle").textContent = title;
+      document.getElementById("viewSubtitle").textContent = subtitle;
+
+      renderTagFilters();
+      setActiveNavigation();
+
+      const documents = getFilteredDocuments();
+      const grid = document.getElementById("documentGrid");
+      const emptyState = document.getElementById("emptyState");
+      const emptyMessage = document.getElementById("emptyMessage");
+
+      grid.innerHTML = documents.map(renderDocumentCard).join("");
+      grid.classList.toggle("hidden", documents.length === 0);
+      emptyState.classList.toggle("hidden", documents.length !== 0);
+
+      if (state.currentView === "favorites") {
+        emptyMessage.textContent = "Documents marked as favorites will appear here.";
+      } else if (state.currentView === "recent") {
+        emptyMessage.textContent = "Documents you open will appear here.";
+      } else if (state.search) {
+        emptyMessage.textContent = "No document matches your search.";
+      } else {
+        emptyMessage.textContent =
+          "Upload your first PDF to begin reading and translating.";
+      }
+
+      grid.querySelectorAll("[data-open-document]").forEach((button) => {
+        button.addEventListener("click", () => {
+          openReader(button.dataset.openDocument);
+        });
+      });
+
+      grid.querySelectorAll("[data-toggle-favorite]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          toggleFavorite(button.dataset.toggleFavorite);
+        });
+      });
+    }
+
+    function toggleFavorite(documentId) {
+      const item = state.documents.find((document) => document.id === documentId);
+      if (!item) return;
+
+      item.favorite = !item.favorite;
+      saveDocuments();
+
+      if (state.currentDocumentId === documentId) {
+        renderReader();
+      } else {
+        renderLibrary();
+      }
+
+      showToast(item.favorite ? "Added to favorites" : "Removed from favorites");
+    }
+
+    function openReader(documentId) {
+      const item = state.documents.find((document) => document.id === documentId);
+      if (!item) return;
+
+      state.currentDocumentId = documentId;
+      item.lastOpenedAt = Date.now();
+      saveDocuments();
+
+      document.getElementById("libraryView").classList.add("hidden");
+      document.getElementById("readerView").classList.remove("hidden");
+      document.getElementById("mobileNav").classList.add("hidden");
+
+      renderReader();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function closeReader() {
+      state.currentDocumentId = null;
+      state.showOriginal = false;
+
+      document.getElementById("readerView").classList.add("hidden");
+      document.getElementById("libraryView").classList.remove("hidden");
+      document.getElementById("mobileNav").classList.remove("hidden");
+
+      renderLibrary();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function getCurrentDocument() {
+      return state.documents.find(
+        (document) => document.id === state.currentDocumentId
+      );
+    }
+
+    function renderReaderContent(item) {
+      const requestedLanguage = item.selectedLanguage || "original";
+      const language = state.showOriginal ? "original" : requestedLanguage;
+      const content = translations[language] || translations.original;
+      const rtl = language === "ar";
+      const pageVariation = item.currentPage;
+
+      return `
+        <div
+          class="reader-text"
+          lang="${escapeHTML(language === "original" ? "en" : language)}"
+          dir="${rtl ? "rtl" : "ltr"}"
+        >
+          <div class="mb-8 border-b border-app-border pb-6">
+            <p
+              class="mb-3 text-xs font-bold uppercase tracking-[0.18em]
+                     text-app-primary"
+            >
+              ${language === "ar"
+                ? `الصفحة ${pageVariation}`
+                : `Page ${pageVariation}`}
+            </p>
+
+            <h2 class="text-2xl font-bold leading-tight sm:text-3xl">
+              ${escapeHTML(content.heading)}
+            </h2>
+          </div>
+
+          <div class="space-y-6 text-[17px] leading-8 sm:text-lg sm:leading-9">
+            ${content.paragraphs.map((paragraph, index) => `
+              <p>
+                ${escapeHTML(paragraph)}
+                ${index === 1
+                  ? ` <span class="text-app-muted">(${pageVariation}.${index + 1})</span>`
+                  : ""}
+              </p>
+            `).join("")}
+          </div>
+
+          <div
+            class="mt-10 rounded-xl border border-app-border
+                   bg-app-primary-soft p-4 text-sm leading-6"
+          >
+            <strong class="text-app-primary">
+              ${language === "ar" ? "ملاحظة تجريبية" : "Mock reader note"}
+            </strong>
+
+            <p class="mt-1 text-app-muted">
+              ${language === "ar"
+                ? "سيتم استبدال هذا المحتوى بكتل النص المستخرجة من واجهة Django."
+                : "This content will eventually be replaced by text blocks returned from the Django API."}
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderReader() {
+      const item = getCurrentDocument();
+      if (!item) return;
+
+      document.getElementById("readerTitle").textContent = item.title;
+      document.getElementById("readerPageInfo").textContent =
+        `${item.originalFilename} · ${item.pageCount} pages`;
+
+      document.getElementById("readerFavoriteButton").textContent =
+        item.favorite ? "★" : "☆";
+
+      document.getElementById("readerFavoriteButton")
+        .classList.toggle("text-app-primary", item.favorite);
+
+      document.getElementById("languageSelect").value =
+        item.selectedLanguage || "original";
+
+      document.getElementById("toggleOriginalButton").classList.toggle(
+        "bg-app-primary-soft",
+        state.showOriginal
+      );
+
+      document.getElementById("toggleOriginalButton").textContent =
+        state.showOriginal ? "Show translation" : "Show original";
+
+      document.getElementById("readerContent").innerHTML =
+        renderReaderContent(item);
+
+      document.getElementById("pagePickerButton").textContent =
+        `Page ${item.currentPage} / ${item.pageCount}`;
+
+      document.getElementById("previousPageButton").disabled =
+        item.currentPage <= 1;
+
+      document.getElementById("nextPageButton").disabled =
+        item.currentPage >= item.pageCount;
+
+      document.getElementById("pageNumberInput").max = item.pageCount;
+      document.getElementById("pageNumberInput").value = item.currentPage;
+    }
+
+    function changePage(pageNumber) {
+      const item = getCurrentDocument();
+      if (!item) return;
+
+      const nextPage = Math.max(
+        1,
+        Math.min(Number(pageNumber), item.pageCount)
+      );
+
+      if (!Number.isFinite(nextPage)) return;
+
+      item.currentPage = nextPage;
+      item.lastOpenedAt = Date.now();
+
+      saveDocuments();
+      renderReader();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function simulateTranslation(language) {
+      const item = getCurrentDocument();
+      if (!item) return;
+
+      item.selectedLanguage = language;
+      state.showOriginal = false;
+      state.translating = language !== "original";
+
+      const status = document.getElementById("translationState");
+
+      if (state.translating) {
+        status.classList.remove("hidden");
+        status.classList.add("flex");
+      }
+
+      saveDocuments();
+
+      window.setTimeout(() => {
+        state.translating = false;
+        status.classList.add("hidden");
+        status.classList.remove("flex");
+        renderReader();
+        showToast("Translation loaded from mock cache");
+      }, language === "original" ? 0 : 650);
+    }
+
+    function setView(view) {
+      state.currentView = view;
+      state.selectedTag = null;
+
+      if (state.currentDocumentId) {
+        closeReader();
+      }
+
+      renderLibrary();
+    }
+
+    // Initial theme
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    setTheme(supportedThemes.includes(savedTheme) ? savedTheme : "paper");
+
+    // Navigation
+    document.querySelectorAll("[data-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setView(button.dataset.view);
+      });
+    });
+
+    // Search and sorting
+    document.getElementById("searchInput").addEventListener("input", (event) => {
+      state.search = event.target.value;
+      renderLibrary();
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", (event) => {
+      state.sort = event.target.value;
+      renderLibrary();
+    });
+
+    // Upload modal
+    const uploadModal = document.getElementById("uploadModal");
+    const uploadForm = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("pdfFileInput");
+    const titleInput = document.getElementById("documentTitleInput");
+    const tagsInput = document.getElementById("documentTagsInput");
+    const dropZone = document.getElementById("fileDropZone");
+
+    function openUploadModal() {
+      uploadForm.reset();
+      document.getElementById("fileDropTitle").textContent = "Select a PDF file";
+      document.getElementById("fileDropDescription").textContent =
+        "Click here or drop a PDF into this area";
+
+      openModal(uploadModal);
+    }
+
+    function closeUploadModal() {
+      closeModal(uploadModal);
+    }
+
+    document.getElementById("uploadButton")
+      .addEventListener("click", openUploadModal);
+
+    document.querySelectorAll("[data-empty-upload]").forEach((button) => {
+      button.addEventListener("click", openUploadModal);
+    });
+
+    document.getElementById("closeUploadModal")
+      .addEventListener("click", closeUploadModal);
+
+    document.getElementById("cancelUploadButton")
+      .addEventListener("click", closeUploadModal);
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      document.getElementById("fileDropTitle").textContent = file.name;
+      document.getElementById("fileDropDescription").textContent =
+        `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+
+      if (!titleInput.value.trim()) {
+        titleInput.placeholder = file.name.replace(/\.pdf$/i, "");
+      }
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("border-app-primary", "bg-app-primary-soft");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("border-app-primary", "bg-app-primary-soft");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer.files[0];
+
+      if (!file || file.type !== "application/pdf") {
+        showToast("Please select a PDF file");
+        return;
+      }
+
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      fileInput.files = transfer.files;
+      fileInput.dispatchEvent(new Event("change"));
+    });
+
+    uploadForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        showToast("Select a PDF file first");
+        return;
+      }
+
+      const tags = tagsInput.value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 10);
+
+      const filenameTitle = file.name.replace(/\.pdf$/i, "");
+
+      const item = {
+        id: crypto.randomUUID(),
+        title: titleInput.value.trim() || filenameTitle,
+        originalFilename: file.name,
+        originalTitle: "",
+        pageCount: Math.floor(Math.random() * 80) + 20,
+        currentPage: 1,
+        favorite: false,
+        tags,
+        selectedLanguage: "original",
+        createdAt: Date.now(),
+        lastOpenedAt: null
+      };
+
+      state.documents.unshift(item);
+      saveDocuments();
+      closeUploadModal();
+      renderLibrary();
+
+      showToast("Document added to the mock library");
+    });
+
+    // Theme modal
+    const themeModal = document.getElementById("themeModal");
+
+    document.querySelectorAll("[data-open-theme]").forEach((button) => {
+      button.addEventListener("click", () => {
+        updateThemeSelection();
+        openModal(themeModal);
+      });
+    });
+
+    document.getElementById("closeThemeModal").addEventListener("click", () => {
+      closeModal(themeModal);
+    });
+
+    document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setTheme(button.dataset.themeChoice);
+        showToast(`Theme changed to ${button.dataset.themeChoice}`);
+      });
+    });
+
+    // Reader
+    document.getElementById("backToLibrary")
+      .addEventListener("click", closeReader);
+
+    document.getElementById("readerFavoriteButton")
+      .addEventListener("click", () => {
+        const item = getCurrentDocument();
+        if (item) toggleFavorite(item.id);
+      });
+
+    document.getElementById("previousPageButton")
+      .addEventListener("click", () => {
+        const item = getCurrentDocument();
+        if (item) changePage(item.currentPage - 1);
+      });
+
+    document.getElementById("nextPageButton")
+      .addEventListener("click", () => {
+        const item = getCurrentDocument();
+        if (item) changePage(item.currentPage + 1);
+      });
+
+    document.getElementById("languageSelect")
+      .addEventListener("change", (event) => {
+        simulateTranslation(event.target.value);
+      });
+
+    document.getElementById("toggleOriginalButton")
+      .addEventListener("click", () => {
+        state.showOriginal = !state.showOriginal;
+        renderReader();
+      });
+
+    // Page picker
+    const pagePickerModal = document.getElementById("pagePickerModal");
+
+    document.getElementById("pagePickerButton")
+      .addEventListener("click", () => {
+        const item = getCurrentDocument();
+
+        if (item) {
+          document.getElementById("pageNumberInput").value = item.currentPage;
+          document.getElementById("pageNumberInput").max = item.pageCount;
+        }
+
+        openModal(pagePickerModal);
+      });
+
+    document.getElementById("closePagePicker")
+      .addEventListener("click", () => closeModal(pagePickerModal));
+
+    document.getElementById("pagePickerForm")
+      .addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        changePage(document.getElementById("pageNumberInput").value);
+        closeModal(pagePickerModal);
+      });
+
+    // Close dialogs by clicking backdrop
+    [uploadModal, themeModal, pagePickerModal].forEach((modal) => {
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+          closeModal(modal);
+        }
+      });
+    });
+
+    // Keyboard handling
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        [uploadModal, themeModal, pagePickerModal].forEach((modal) => {
+          if (!modal.classList.contains("hidden")) {
+            closeModal(modal);
+          }
+        });
+      }
+
+      if (!state.currentDocumentId) return;
+
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+
+      if (["input", "select", "textarea"].includes(activeTag)) return;
+
+      const item = getCurrentDocument();
+      if (!item) return;
+
+      if (event.key === "ArrowLeft") {
+        changePage(item.currentPage - 1);
+      }
+
+      if (event.key === "ArrowRight") {
+        changePage(item.currentPage + 1);
+      }
+    });
+
+    renderLibrary();
+  </script>
+</body>
+</html>

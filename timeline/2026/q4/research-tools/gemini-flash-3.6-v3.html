@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de" class="dark-slate">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PULSE 30 — Minimale Markt-Intelligenz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+            sans: ['Inter', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 4 Minimale Farb-Paletten */
+    html.dark-slate {
+      --bg: #09090b;
+      --card: #121215;
+      --border: #27272a;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #38bdf8;
+    }
+    html.dark-midnight {
+      --bg: #0b0f19;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #818cf8;
+    }
+    html.light-paper {
+      --bg: #fbf9f5;
+      --card: #f3efe6;
+      --border: #e2dacd;
+      --text: #1c1917;
+      --muted: #78716c;
+      --accent: #2563eb;
+    }
+    html.light-zinc {
+      --bg: #ffffff;
+      --card: #f4f4f5;
+      --border: #e4e4e7;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #0284c7;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    .theme-card {
+      background-color: var(--card);
+      border-color: var(--border);
+    }
+    .theme-border { border-color: var(--border); }
+    .theme-muted { color: var(--muted); }
+    .theme-accent { color: var(--accent); }
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Minimalistischer Header -->
+  <header class="border-b theme-border px-8 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <span class="font-mono font-bold tracking-widest text-sm uppercase">PULSE<span class="theme-accent">30</span></span>
+      <span class="text-xs font-mono px-2 py-0.5 rounded border theme-border theme-muted">Ollama Lokal (DACH)</span>
+    </div>
+
+    <!-- Theme-Umschalter -->
+    <div class="flex items-center gap-1 p-1 rounded-lg border theme-border theme-card text-xs font-mono">
+      <button onclick="setTheme('dark-slate')" id="btn-dark-slate" class="px-2.5 py-1 rounded transition theme-muted hover:text-white">Dunkel 1</button>
+      <button onclick="setTheme('dark-midnight')" id="btn-dark-midnight" class="px-2.5 py-1 rounded transition theme-muted hover:text-white">Dunkel 2</button>
+      <div class="w-px h-3 bg-zinc-700 mx-1"></div>
+      <button onclick="setTheme('light-paper')" id="btn-light-paper" class="px-2.5 py-1 rounded transition theme-muted hover:text-black">Hell 1</button>
+      <button onclick="setTheme('light-zinc')" id="btn-light-zinc" class="px-2.5 py-1 rounded transition theme-muted hover:text-black">Hell 2</button>
+    </div>
+  </header>
+
+  <!-- Haupt-Layout -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-12 gap-8">
+
+    <!-- Linke Spalte: Kontrolle & Presets (4 Spalten) -->
+    <div class="md:col-span-4 space-y-6">
+
+      <!-- Preset-Vorlagen -->
+      <div class="space-y-2">
+        <label class="block text-xs font-mono uppercase tracking-wider theme-muted">Recherche-Vorlagen</label>
+        <div class="space-y-1.5" id="presets">
+          <button onclick="loadPreset('churn')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Wettbewerber-Kritik (DACH)</span>
+            <span class="theme-muted text-[11px]">Personio / SAP Kritik auf LinkedIn & Reddit</span>
+          </button>
+          <button onclick="loadPreset('trend')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Tech-Trends in Deutschland</span>
+            <span class="theme-muted text-[11px]">Entwickler-Debatten auf Heise, Golem & GitHub</span>
+          </button>
+          <button onclick="loadPreset('copy')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Kunden-Sprache (B2B Copy)</span>
+            <span class="theme-muted text-[11px]">Echte Begriffe aus XING- & LinkedIn-Beiträgen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- System-Parameter -->
+      <div class="p-4 rounded-lg border theme-border theme-card text-xs space-y-3 font-mono">
+        <div class="flex justify-between">
+          <span class="theme-muted">Skill:</span>
+          <span>/last30days v1.2</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="theme-muted">Netzwerke:</span>
+          <span>LinkedIn, XING, Reddit, Heise</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="theme-muted">Algorithmus:</span>
+          <span class="theme-accent">Interaktion > SEO</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Rechte Spalte: Eingabe & Ergebnisse (8 Spalten) -->
+    <div class="md:col-span-8 space-y-6">
+
+      <!-- Eingabefeld -->
+      <div class="p-4 rounded-lg border theme-border theme-card space-y-3">
+        <textarea id="prompt-box" rows="2" class="w-full bg-transparent text-sm focus:outline-none resize-none font-mono" placeholder="Suchanfrage eingeben..."></textarea>
+        <div class="flex justify-between items-center pt-2 border-t theme-border">
+          <span class="text-xs font-mono theme-muted">Zeitfenster: <strong class="text-current">Letzte 30 Tage</strong></span>
+          <button onclick="runResearch()" class="px-4 py-1.5 rounded text-xs font-mono font-bold bg-current text-white dark:text-black transition opacity-90 hover:opacity-100">
+            Recherche starten
+          </button>
+        </div>
+      </div>
+
+      <!-- Ausgabebereich -->
+      <div id="output-box" class="p-6 rounded-lg border theme-border theme-card min-h-[340px] flex flex-col justify-between">
+        
+        <!-- Bereitschafts-Zustand -->
+        <div id="idle-state" class="m-auto text-center space-y-2">
+          <i class="fa-solid fa-terminal theme-muted text-2xl"></i>
+          <p class="text-xs font-mono theme-muted">Wähle eine Vorlage und klicke auf "Recherche starten".</p>
+        </div>
+
+        <!-- Lade-Zustand -->
+        <div id="loading-state" class="hidden m-auto text-center space-y-3">
+          <div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs font-mono theme-muted" id="status-step">Durchsuche LinkedIn, XING & Reddit der letzten 30 Tage...</p>
+        </div>
+
+        <!-- Ergebnis-Zustand -->
+        <div id="content-state" class="hidden space-y-6">
+          <div class="flex justify-between items-start border-b theme-border pb-3">
+            <div>
+              <span class="text-[10px] font-mono uppercase theme-accent font-bold">Synthetisierter Report</span>
+              <h2 id="report-title" class="text-sm font-bold mt-0.5">Wettbewerber-Analyse</h2>
+            </div>
+            <span class="text-xs font-mono theme-muted">14 Verifizierte Quellen</span>
+          </div>
+
+          <!-- Report-Text -->
+          <div id="report-body" class="text-xs space-y-3 font-mono leading-relaxed"></div>
+
+          <!-- Verifizierte Quellen -->
+          <div class="pt-4 border-t theme-border space-y-2">
+            <span class="text-[10px] font-mono uppercase theme-muted block">Geprüfte Community-Reaktionen (30 Tage)</span>
+            <div id="sources-list" class="space-y-1.5 font-mono text-[11px]"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    const presets = {
+      churn: {
+        prompt: "/last30days analysiere Reaktionen und Nutzerkritik zu Personio und SAP SuccessFactors auf LinkedIn DACH, XING und Reddit der letzten 30 Tage.",
+        title: "Wettbewerber-Analyse: SaaS im DACH-Raum",
+        body: "• <strong>Preisanpassungen:</strong> Nutzer auf LinkedIn beklagen unübersichtliche Modul-Preise (+340 Likes).<br>• <strong>Integration:</strong> Kritik auf XING bezüglich langsamer API-Schnittstellen bei Zeiterfassungs-Tools.<br>• <strong>Wechselbereitschaft:</strong> Steigende Nachfrage nach schlanken deutschen Alternativen in r/arbeitsleben.",
+        sources: [
+          { name: "LinkedIn DACH", score: "👍 340 Likes", title: "Debatte über HR-Software Kosten 2026" },
+          { name: "Reddit r/arbeitsleben", score: "↑ 210 Upvotes", title: "Erfahrungen mit Zeiterfassungs-Pflicht" },
+          { name: "XING News", score: "💬 85 Kommentare", title: "Mittelstand schlägt Alarm bei Lizenzpreisen" }
+        ]
+      },
+      trend: {
+        prompt: "/last30days recherchiere Entwickler-Trends zu Cloud vs On-Premise in Deutschland auf Heise, Golem und GitHub.",
+        title: "Tech-Trends: Cloud vs. Sovereign Hosting",
+        body: "• <strong>Datenschutz-Fokus:</strong> Auf Heise Online dominiert die Diskussion um europäische Hosting-Alternativen (Hetzner, OVH).<br>• <strong>Open-Source LLMs:</strong> Starker Anstieg bei GitHub-Stars für lokal hosted KI-Modelle in deutschen Entwickler-Teams.",
+        sources: [
+          { name: "Heise Online Forum", score: "💬 420 Kommentare", title: "Cloud-Souveränität im deutschen Mittelstand" },
+          { name: "Golem.de", score: "👍 185 Reaktionen", title: "Lokale LLMs lösen Datenschutz-Probleme" },
+          { name: "GitHub DACH", score: "★ 890 Stars", title: "Self-hosted Stack für DSGVO-Konformität" }
+        ]
+      },
+      copy: {
+        prompt: "/last30days extrahiere die exakte Wortwahl von B2B-Entscheidern zu 'Fachkräftemangel' auf XING und LinkedIn.",
+        title: "Kunden-Sprache (B2B Copywriting)",
+        body: "• <strong>Verwendete Begriffe:</strong> 'Bewerber-Flaute', 'Prozess-Stau', 'Überlastete Teams'.<br>• <strong>Empfehlung für Marketing-Text:</strong> Statt 'Optimiertes Recruiting' direkt formulieren: 'Schluss mit der Bewerber-Flaute'.",
+        sources: [
+          { name: "LinkedIn DACH", score: "👍 510 Likes", title: "Warum klassisches Stellenportal-Recruiting ausdient" },
+          { name: "XING Gruppen", score: "💬 140 Beiträge", title: "HR-Leiter diskutieren Recruiting-Engpässe" }
+        ]
+      }
+    };
+
+    let selectedKey = 'churn';
+
+    function loadPreset(key) {
+      selectedKey = key;
+      document.getElementById('prompt-box').value = presets[key].prompt;
+    }
+
+    function setTheme(themeName) {
+      document.documentElement.className = themeName;
+      ['dark-slate', 'dark-midnight', 'light-paper', 'light-zinc'].forEach(t => {
+        const btn = document.getElementById('btn-' + t);
+        if (t === themeName) {
+          btn.classList.add('bg-zinc-700/20', 'text-current', 'font-bold');
+        } else {
+          btn.classList.remove('bg-zinc-700/20', 'text-current', 'font-bold');
+        }
+      });
+    }
+
+    function runResearch() {
+      document.getElementById('idle-state').classList.add('hidden');
+      document.getElementById('content-state').classList.add('hidden');
+      document.getElementById('loading-state').classList.remove('hidden');
+
+      setTimeout(() => {
+        const data = presets[selectedKey];
+        document.getElementById('report-title').innerText = data.title;
+        document.getElementById('report-body').innerHTML = data.body;
+        
+        const list = document.getElementById('sources-list');
+        list.innerHTML = '';
+        data.sources.forEach(s => {
+          list.innerHTML += `
+            <div class="flex justify-between items-center p-2 rounded border theme-border theme-card">
+              <span><strong class="theme-accent">${s.name}:</strong> ${s.title}</span>
+              <span class="theme-muted">${s.score}</span>
+            </div>`;
+        });
+
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('content-state').classList.remove('hidden');
+      }, 1200);
+    }
+
+    // Standard-Startwerte
+    setTheme('dark-slate');
+    loadPreset('churn');
+  </script>
+</body>
+</html>

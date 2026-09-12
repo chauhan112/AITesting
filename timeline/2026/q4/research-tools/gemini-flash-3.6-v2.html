@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" class="dark-slate">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PULSE 30 — Minimal Market Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+            sans: ['Inter', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 4 Distinct Minimalist Color Palettes */
+    html.dark-slate {
+      --bg: #09090b;
+      --card: #121215;
+      --border: #27272a;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #38bdf8;
+    }
+    html.dark-midnight {
+      --bg: #0b0f19;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #818cf8;
+    }
+    html.light-paper {
+      --bg: #fbf9f5;
+      --card: #f3efe6;
+      --border: #e2dacd;
+      --text: #1c1917;
+      --muted: #78716c;
+      --accent: #2563eb;
+    }
+    html.light-zinc {
+      --bg: #ffffff;
+      --card: #f4f4f5;
+      --border: #e4e4e7;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #0284c7;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    .theme-card {
+      background-color: var(--card);
+      border-color: var(--border);
+    }
+    .theme-border { border-color: var(--border); }
+    .theme-muted { color: var(--muted); }
+    .theme-accent { color: var(--accent); }
+    .theme-accent-bg { background-color: var(--accent); }
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Minimal Header -->
+  <header class="border-b theme-border px-8 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <span class="font-mono font-bold tracking-widest text-sm uppercase">PULSE<span class="theme-accent">30</span></span>
+      <span class="text-xs font-mono px-2 py-0.5 rounded border theme-border theme-muted">Ollama Local</span>
+    </div>
+
+    <!-- Theme Switcher Controls -->
+    <div class="flex items-center gap-1 p-1 rounded-lg border theme-border theme-card text-xs font-mono">
+      <button onclick="setTheme('dark-slate')" id="btn-dark-slate" class="px-2.5 py-1 rounded transition theme-muted hover:text-white">Dark 1</button>
+      <button onclick="setTheme('dark-midnight')" id="btn-dark-midnight" class="px-2.5 py-1 rounded transition theme-muted hover:text-white">Dark 2</button>
+      <div class="w-px h-3 bg-zinc-700 mx-1"></div>
+      <button onclick="setTheme('light-paper')" id="btn-light-paper" class="px-2.5 py-1 rounded transition theme-muted hover:text-black">Light 1</button>
+      <button onclick="setTheme('light-zinc')" id="btn-light-zinc" class="px-2.5 py-1 rounded transition theme-muted hover:text-black">Light 2</button>
+    </div>
+  </header>
+
+  <!-- Workspace Grid -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-12 gap-8">
+
+    <!-- Left: Minimal Control Panel (4 Cols) -->
+    <div class="md:col-span-4 space-y-6">
+
+      <!-- Preset Pills -->
+      <div class="space-y-2">
+        <label class="block text-xs font-mono uppercase tracking-wider theme-muted">Preset Strategies</label>
+        <div class="space-y-1.5" id="presets">
+          <button onclick="loadPreset('churn')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Competitor Churn</span>
+            <span class="theme-muted text-[11px]">Reddit & HN user complaints</span>
+          </button>
+          <button onclick="loadPreset('trend')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Tech Adoption</span>
+            <span class="theme-muted text-[11px]">GitHub star velocity & developer feedback</span>
+          </button>
+          <button onclick="loadPreset('copy')" class="w-full text-left p-3 rounded-lg border theme-border theme-card hover:border-zinc-400 transition text-xs font-medium">
+            <span class="block font-bold">Customer Vocabulary</span>
+            <span class="theme-muted text-[11px]">Exact language used in discussions</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Execution Parameters -->
+      <div class="p-4 rounded-lg border theme-border theme-card text-xs space-y-3 font-mono">
+        <div class="flex justify-between">
+          <span class="theme-muted">Skill:</span>
+          <span>/last30days v1.2</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="theme-muted">Sources:</span>
+          <span>Reddit, HN, GitHub</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="theme-muted">Ranking:</span>
+          <span class="theme-accent">Upvotes > SEO</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: Query Input & Clean Results (8 Cols) -->
+    <div class="md:col-span-8 space-y-6">
+
+      <!-- Query Bar -->
+      <div class="p-4 rounded-lg border theme-border theme-card space-y-3">
+        <textarea id="prompt-box" rows="2" class="w-full bg-transparent text-sm focus:outline-none resize-none font-mono" placeholder="Enter market research query..."></textarea>
+        <div class="flex justify-between items-center pt-2 border-t theme-border">
+          <span class="text-xs font-mono theme-muted">Target Window: <strong class="text-current">30 Days</strong></span>
+          <button onclick="runResearch()" class="px-4 py-1.5 rounded text-xs font-mono font-bold bg-current text-white dark:text-black transition opacity-90 hover:opacity-100">
+            Execute
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Viewport -->
+      <div id="output-box" class="p-6 rounded-lg border theme-border theme-card min-h-[340px] flex flex-col justify-between">
+        
+        <!-- Idle State -->
+        <div id="idle-state" class="m-auto text-center space-y-2">
+          <i class="fa-solid fa-terminal theme-muted text-2xl"></i>
+          <p class="text-xs font-mono theme-muted">Select a preset and click Execute to run local Ollama agent.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden m-auto text-center space-y-3">
+          <div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs font-mono theme-muted" id="status-step">Querying community upvotes...</p>
+        </div>
+
+        <!-- Content State -->
+        <div id="content-state" class="hidden space-y-6">
+          <div class="flex justify-between items-start border-b theme-border pb-3">
+            <div>
+              <span class="text-[10px] font-mono uppercase theme-accent font-bold">Research Brief</span>
+              <h2 id="report-title" class="text-sm font-bold mt-0.5">Competitor Churn Signals</h2>
+            </div>
+            <span class="text-xs font-mono theme-muted">12 Grounded Sources</span>
+          </div>
+
+          <!-- Report Body -->
+          <div id="report-body" class="text-xs space-y-3 font-mono leading-relaxed"></div>
+
+          <!-- Grounded Sources List -->
+          <div class="pt-4 border-t theme-border space-y-2">
+            <span class="text-[10px] font-mono uppercase theme-muted block">Top Community Sources</span>
+            <div id="sources-list" class="space-y-1.5 font-mono text-[11px]"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    const presets = {
+      churn: {
+        prompt: "/last30days find top user complaints for Notion AI on Reddit and Hacker News.",
+        title: "Competitor Analysis: Notion AI",
+        body: "• <strong>Billing Friction:</strong> Users reporting unexpected price tier changes (400+ upvotes).<br>• <strong>Performance Drop:</strong> Latency issues cited in Hacker News discussions.<br>• <strong>Migration:</strong> High interest in local markdown-based alternatives.",
+        sources: [
+          { name: "Reddit r/Notion", score: "↑ 480 upvotes", title: "Bill jumped after latest update" },
+          { name: "Hacker News", score: "↑ 310 upvotes", title: "HN Discussion: Local AI vs SaaS workspace" }
+        ]
+      },
+      trend: {
+        prompt: "/last30days identify emerging TypeScript ORMs on GitHub and Hacker News.",
+        title: "Tech Adoption: Next-Gen ORMs",
+        body: "• <strong>Serverless First:</strong> Developers choosing zero-dependency ORMs.<br>• <strong>Edge Support:</strong> Native Cloudflare Workers compatibility prioritized over Node.js legacy drivers.",
+        sources: [
+          { name: "GitHub Trends", score: "★ 1.4k stars", title: "drizzle-orm velocity" },
+          { name: "Hacker News", score: "↑ 210 comments", title: "What ORM are you using in 2026?" }
+        ]
+      },
+      copy: {
+        prompt: "/last30days analyze how users talk about context switching in r/productivity.",
+        title: "Voice of Customer Matrix",
+        body: "• <strong>Phrasing:</strong> 'Context hopping', 'Brain fragmentation'.<br>• <strong>Recommendation:</strong> Use 'Stop context-hopping' in landing page copy.",
+        sources: [
+          { name: "Reddit r/productivity", score: "↑ 610 upvotes", title: "How to handle multi-project fatigue?" }
+        ]
+      }
+    };
+
+    let selectedKey = 'churn';
+
+    function loadPreset(key) {
+      selectedKey = key;
+      document.getElementById('prompt-box').value = presets[key].prompt;
+    }
+
+    function setTheme(themeName) {
+      document.documentElement.className = themeName;
+      ['dark-slate', 'dark-midnight', 'light-paper', 'light-zinc'].forEach(t => {
+        const btn = document.getElementById('btn-' + t);
+        if (t === themeName) {
+          btn.classList.add('bg-zinc-700/20', 'text-current', 'font-bold');
+        } else {
+          btn.classList.remove('bg-zinc-700/20', 'text-current', 'font-bold');
+        }
+      });
+    }
+
+    function runResearch() {
+      document.getElementById('idle-state').classList.add('hidden');
+      document.getElementById('content-state').classList.add('hidden');
+      document.getElementById('loading-state').classList.remove('hidden');
+
+      setTimeout(() => {
+        const data = presets[selectedKey];
+        document.getElementById('report-title').innerText = data.title;
+        document.getElementById('report-body').innerHTML = data.body;
+        
+        const list = document.getElementById('sources-list');
+        list.innerHTML = '';
+        data.sources.forEach(s => {
+          list.innerHTML += `
+            <div class="flex justify-between items-center p-2 rounded border theme-border theme-card">
+              <span><strong class="theme-accent">${s.name}:</strong> ${s.title}</span>
+              <span class="theme-muted">${s.score}</span>
+            </div>`;
+        });
+
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('content-state').classList.remove('hidden');
+      }, 1200);
+    }
+
+    // Default init
+    setTheme('dark-slate');
+    loadPreset('churn');
+  </script>
+</body>
+</html>

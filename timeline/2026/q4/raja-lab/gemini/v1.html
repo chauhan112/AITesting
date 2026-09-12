@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Python Notebook Debugger & Data Pinning Mock</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .font-mono-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- TOP NAVBAR & DEBUG CONTROLS -->
+  <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 font-bold text-lg tracking-wide text-indigo-400">
+        <svg class="w-6 h-6 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+        <span>PyFlow<span class="text-slate-400 font-normal text-xs ml-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">DAP + Pinning</span></span>
+      </div>
+      <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        Kernel: Python 3.12 (Idle)
+      </span>
+    </div>
+
+    <!-- Debug Controls (Interactive) -->
+    <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700 shadow-sm">
+      <button id="btn-resume" onclick="handleResume()" title="Run / Continue" class="px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-700 rounded flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Continue
+      </button>
+      <button id="btn-pause" onclick="handlePause()" title="Pause" class="px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-slate-700 rounded flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause
+      </button>
+      <div class="w-px h-4 bg-slate-700 mx-1"></div>
+      <button onclick="handleStepOver()" title="Step Over (F10)" class="px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 rounded flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 stroke-current fill-none" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m0 0l-4-4m4 4l4-4"/></svg> Step Over
+      </button>
+      <button onclick="handleStepIn()" title="Step In (F11)" class="px-2.5 py-1 text-xs font-medium text-indigo-300 hover:bg-slate-700 rounded flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 stroke-current fill-none" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg> Step In
+      </button>
+      <button onclick="handleStepOut()" title="Step Out (Shift+F11)" class="px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 rounded flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 stroke-current fill-none" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7"/></svg> Step Out
+      </button>
+      <div class="w-px h-4 bg-slate-700 mx-1"></div>
+      <button onclick="handleStop()" title="Stop Session" class="p-1 text-rose-400 hover:bg-slate-700 rounded">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      </button>
+    </div>
+
+    <!-- Active State indicator -->
+    <div id="debug-status" class="text-xs font-mono text-slate-400">
+      Status: <span class="text-emerald-400">Ready</span>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT: NOTEBOOK CELLS CANVAS -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-950">
+      
+      <!-- CELL 1: Upstream Data Source (Pinned) -->
+      <section class="border border-slate-800 bg-slate-900/60 rounded-xl overflow-hidden shadow-lg transition-all focus-within:border-indigo-500/60">
+        <header class="bg-slate-800/60 px-4 py-2 flex items-center justify-between border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-slate-400">[1]</span>
+            <span class="font-semibold text-slate-300">Data Ingestion</span>
+          </div>
+          <!-- n8n Pinning Action -->
+          <div class="flex items-center gap-2">
+            <button id="pin-cell-1" onclick="togglePin('cell-1')" class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[11px] transition">
+              <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+              <span>Pinned (2 Records)</span>
+            </button>
+            <button class="text-slate-400 hover:text-white">Run</button>
+          </div>
+        </header>
+
+        <!-- Code Block -->
+        <div class="p-3 font-mono-code text-xs text-slate-300 bg-slate-950/40">
+          <span class="text-purple-400">raw_users</span> = [ {"id": <span class="text-emerald-400">101</span>, "tier": <span class="text-amber-300">"VIP"</span>}, {"id": <span class="text-emerald-400">102</span>, "tier": <span class="text-amber-300">"FREE"</span>} ]
+        </div>
+        <!-- Pinned Alert Notice -->
+        <div class="bg-amber-950/20 border-t border-amber-500/20 px-4 py-1.5 flex items-center justify-between text-[11px] text-amber-400">
+          <span>📌 Upstream execution bypassed. Using cached local schema mock.</span>
+          <span class="underline cursor-pointer hover:text-amber-300">Edit JSON</span>
+        </div>
+      </section>
+
+      <!-- CELL 2: Active Debugger Cell -->
+      <section class="border border-indigo-500/60 bg-slate-900 rounded-xl overflow-hidden shadow-2xl relative">
+        <header class="bg-slate-800/80 px-4 py-2 flex items-center justify-between border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-indigo-400 font-bold">[2]</span>
+            <span class="font-semibold text-slate-200">Processing & Scoring (Debugging)</span>
+            <span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30">Active Frame</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 flex items-center gap-1 text-[11px]">
+              <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Step from Top
+            </button>
+          </div>
+        </header>
+
+        <!-- Code lines with breakpoint gutter and active arrow -->
+        <div class="font-mono-code text-xs relative select-text" id="editor-lines">
+          <!-- Dynamically populated lines -->
+        </div>
+
+        <!-- Cell Output -->
+        <div class="border-t border-slate-800 bg-slate-950/70 p-3 text-xs font-mono">
+          <div class="text-slate-400 mb-1 text-[11px] uppercase tracking-wider font-semibold">Output (stdout)</div>
+          <div id="stdout-log" class="text-slate-300 space-y-0.5 text-xs">
+            <span class="text-slate-600">// Press Step Over or Continue to run through breakpoints...</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT: INSPECTOR & STATE SIDEBAR -->
+    <aside class="w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0">
+      
+      <!-- Sidebar Header -->
+      <div class="h-10 border-b border-slate-800 px-3 flex items-center justify-between bg-slate-900/90 text-xs font-semibold uppercase text-slate-400 tracking-wider">
+        <span>Debugger & State</span>
+        <div class="flex gap-1 text-[11px] font-normal">
+          <button class="px-2 py-0.5 bg-slate-800 text-slate-200 rounded">Variables</button>
+          <button class="px-2 py-0.5 text-slate-400 hover:text-slate-200">Call Stack</button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs font-mono">
+        
+        <!-- SECTION: Pinned Inputs (n8n flavor) -->
+        <div>
+          <div class="flex items-center justify-between text-slate-400 mb-2 font-bold uppercase text-[10px] tracking-wider">
+            <span class="flex items-center gap-1.5 text-amber-400">
+              <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+              Pinned Scope (Overridden)
+            </span>
+            <span class="text-[10px] text-slate-400 underline cursor-pointer">Unpin All</span>
+          </div>
+          <div class="bg-slate-950 p-2.5 rounded-md border border-amber-500/20 text-slate-300 space-y-1">
+            <div class="flex justify-between items-center text-amber-300/90">
+              <span>raw_users</span>
+              <span class="text-[10px] text-slate-400">list [len: 2]</span>
+            </div>
+            <div class="text-[11px] text-slate-400 truncate pl-2">
+              [{"id": 101, "tier": "VIP"}, ...]
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: Local Variables -->
+        <div>
+          <div class="text-slate-400 mb-2 font-bold uppercase text-[10px] tracking-wider flex items-center justify-between">
+            <span>Locals (Paused Line)</span>
+            <span class="text-slate-400 font-normal lowercase">frame: cell_2</span>
+          </div>
+          
+          <div class="bg-slate-950 rounded-md border border-slate-800 divide-y divide-slate-800/60 overflow-hidden" id="variables-list">
+            <!-- Populated dynamically via JS based on current step -->
+          </div>
+        </div>
+
+        <!-- SECTION: Stack Frames -->
+        <div>
+          <div class="text-slate-400 mb-2 font-bold uppercase text-[10px] tracking-wider">Call Stack</div>
+          <div class="bg-slate-950 rounded border border-slate-800 p-2 text-xs space-y-1" id="stack-list">
+            <div class="text-indigo-400 flex items-center justify-between">
+              <span>&gt; calculate_bonus()</span>
+              <span class="text-slate-400 text-[10px]" id="stack-line-indicator">line 3</span>
+            </div>
+            <div class="text-slate-400 pl-3 text-[11px]">
+              &lt;module&gt; (Cell 2) : line 6
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Eval / Watch / REPL Console -->
+      <div class="p-2 border-t border-slate-800 bg-slate-950">
+        <div class="text-[10px] font-mono text-slate-400 mb-1 flex justify-between">
+          <span>Evaluate / Watch Expression</span>
+          <span class="text-indigo-400 cursor-pointer">Eval</span>
+        </div>
+        <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-2 py-1">
+          <span class="text-indigo-400 text-xs font-mono">&gt;</span>
+          <input type="text" placeholder="e.g. tier == 'VIP'" class="bg-transparent border-none text-xs font-mono text-slate-200 outline-none w-full placeholder-slate-600">
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- CLIENT-SIDE SIMULATION LOGIC -->
+  <script>
+    // Cell 2 Python Code definition
+    const codeLines = [
+      { line: 1, text: "def calculate_bonus(tier, factor=1.5):" },
+      { line: 2, text: "    base = 100 if tier == 'VIP' else 20" },
+      { line: 3, text: "    return base * factor" },
+      { line: 4, text: "" },
+      { line: 5, text: "scored_users = []" },
+      { line: 6, text: "for u in raw_users:  # (Using Pinned Data)" },
+      { line: 7, text: "    bonus = calculate_bonus(u['tier'])" },
+      { line: 8, text: "    scored_users.append({'id': u['id'], 'bonus': bonus})" },
+      { line: 9, text: "print(f'Done! Processed {len(scored_users)} users')" }
+    ];
+
+    // Execution sequence simulate step-by-step
+    const executionFlow = [
+      { line: 5, frame: "<module>", vars: { scored_users: "[]", "raw_users": "list[2] (📌 Pinned)" } },
+      { line: 6, frame: "<module>", vars: { scored_users: "[]", u: "{'id': 101, 'tier': 'VIP'}" } },
+      { line: 7, frame: "<module>", vars: { scored_users: "[]", u: "{'id': 101, 'tier': 'VIP'}" } },
+      { line: 1, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5" } },
+      { line: 2, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100" } },
+      { line: 3, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100", return_val: "150.0" } },
+      { line: 8, frame: "<module>", vars: { bonus: "150.0", scored_users: "[{'id': 101, 'bonus': 150.0}]" } },
+      { line: 9, frame: "<module>", vars: { scored_users: "list[2]", bonus: "30.0" }, stdout: "Done! Processed 2 users" }
+    ];
+
+    let currentStepIndex = 0;
+    let isPaused = true;
+    let breakpoints = new Set([2, 7]); // Default breakpoints on lines 2 and 7
+
+    function renderEditor() {
+      const container = document.getElementById("editor-lines");
+      container.innerHTML = "";
+
+      const currentTargetLine = executionFlow[currentStepIndex]?.line;
+
+      codeLines.forEach(item => {
+        const hasBreakpoint = breakpoints.has(item.line);
+        const isCurrentLine = (item.line === currentTargetLine) && isPaused;
+
+        const row = document.createElement("div");
+        row.className = `flex items-center leading-6 hover:bg-slate-800/40 transition-colors ${isCurrentLine ? 'bg-indigo-950/70 border-l-4 border-indigo-500' : 'pl-1'}`;
+
+        // Breakpoint Gutter
+        const gutter = document.createElement("div");
+        gutter.className = "w-8 text-right pr-2 text-slate-600 select-none cursor-pointer flex items-center justify-end gap-1";
+        gutter.onclick = () => toggleBreakpoint(item.line);
+
+        const bpCircle = document.createElement("span");
+        bpCircle.className = `w-2.5 h-2.5 rounded-full inline-block transition-transform ${hasBreakpoint ? 'bg-rose-500 scale-100 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-transparent hover:bg-slate-700'}`;
+        
+        const lineNum = document.createElement("span");
+        lineNum.className = `${isCurrentLine ? 'text-indigo-400 font-bold' : ''}`;
+        lineNum.textContent = item.line;
+
+        gutter.appendChild(bpCircle);
+        gutter.appendChild(lineNum);
+
+        // Code Content
+        const codeText = document.createElement("div");
+        codeText.className = "flex-1 pl-4 py-0.5 text-slate-300 whitespace-pre";
+        codeText.textContent = item.text;
+
+        row.appendChild(gutter);
+        row.appendChild(codeText);
+
+        // Arrow indicator for current paused line
+        if (isCurrentLine) {
+          const arrow = document.createElement("div");
+          arrow.className = "pr-3 text-indigo-400 text-xs font-bold";
+          arrow.innerHTML = "◀ PAUSED";
+          row.appendChild(arrow);
+        }
+
+        container.appendChild(row);
+      });
+
+      renderVariables();
+    }
+
+    function renderVariables() {
+      const varContainer = document.getElementById("variables-list");
+      const stackLineIndicator = document.getElementById("stack-line-indicator");
+      varContainer.innerHTML = "";
+
+      const currentData = executionFlow[currentStepIndex];
+      stackLineIndicator.innerText = `line ${currentData.line}`;
+
+      for (const [key, val] of Object.entries(currentData.vars)) {
+        const item = document.createElement("div");
+        item.className = "px-3 py-1.5 flex justify-between items-center text-[11px] hover:bg-slate-900";
+        item.innerHTML = `
+          <span class="text-indigo-300 font-semibold">${key}</span>
+          <span class="text-slate-300 truncate max-w-[160px] font-mono text-[10px]">${val}</span>
+        `;
+        varContainer.appendChild(item);
+      }
+
+      if (currentData.stdout) {
+        document.getElementById("stdout-log").innerHTML = `<span class="text-emerald-400">&gt; ${currentData.stdout}</span>`;
+      }
+    }
+
+    function toggleBreakpoint(line) {
+      if (breakpoints.has(line)) breakpoints.delete(line);
+      else breakpoints.add(line);
+      renderEditor();
+    }
+
+    function handleStepOver() {
+      if (currentStepIndex < executionFlow.length - 1) {
+        currentStepIndex++;
+        isPaused = true;
+        updateStatus("Paused on step");
+        renderEditor();
+      }
+    }
+
+    function handleStepIn() {
+      handleStepOver(); // Simulated behavior
+    }
+
+    function handleStepOut() {
+      // Fast forward out of calculate_bonus if inside
+      if (currentStepIndex < 6) {
+        currentStepIndex = 6;
+        renderEditor();
+      }
+    }
+
+    function handleResume() {
+      // Advance to next breakpoint or finish
+      let nextBpIndex = executionFlow.findIndex((step, idx) => idx > currentStepIndex && breakpoints.has(step.line));
+      if (nextBpIndex !== -1) {
+        currentStepIndex = nextBpIndex;
+        updateStatus(`Breakpoint hit at line ${executionFlow[currentStepIndex].line}`);
+      } else {
+        currentStepIndex = executionFlow.length - 1;
+        updateStatus("Execution finished");
+      }
+      renderEditor();
+    }
+
+    function handlePause() {
+      isPaused = true;
+      updateStatus("Execution Paused manually");
+      renderEditor();
+    }
+
+    function handleStop() {
+      currentStepIndex = 0;
+      isPaused = true;
+      document.getElementById("stdout-log").innerHTML = `<span class="text-slate-600">// Session reset.</span>`;
+      updateStatus("Stopped");
+      renderEditor();
+    }
+
+    function updateStatus(text) {
+      document.getElementById("debug-status").innerHTML = `Status: <span class="text-indigo-400">${text}</span>`;
+    }
+
+    function togglePin(cellId) {
+      const btn = document.getElementById(`pin-${cellId}`);
+      if (btn.classList.contains("bg-amber-500/10")) {
+        btn.className = "px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1 text-[11px]";
+        btn.innerHTML = `<span>Unpinned (Live)</span>`;
+      } else {
+        btn.className = "px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 text-[11px]";
+        btn.innerHTML = `<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg><span>Pinned (2 Records)</span>`;
+      }
+    }
+
+    // Initial Render
+    renderEditor();
+  </script>
+</body>
+</html>

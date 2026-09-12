@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyFlow - Jupyter Notebook with Debugger & Pinning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .font-mono-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- TOP JUPYTER-STYLE TOOLBAR -->
+  <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 shrink-0 flex items-center justify-between gap-3">
+    <!-- Brand & Notebook Meta -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 font-bold text-sm text-indigo-400">
+        <i data-lucide="book-open-check" class="w-5 h-5 text-indigo-500"></i>
+        <span>pipeline_scoring.ipynb</span>
+      </div>
+      <span class="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Python 3.12 (ipykernel)
+      </span>
+    </div>
+
+    <!-- Jupyter Actions + Global Debugger Toggle -->
+    <div class="flex items-center gap-2">
+      <!-- Standard Notebook Buttons -->
+      <div class="flex items-center gap-1 border-r border-slate-800 pr-2">
+        <button onclick="addNewCell()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded" title="Insert Cell Below">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+        </button>
+        <button onclick="runCellNormally(2)" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded" title="Run Selected Cell (Shift+Enter)">
+          <i data-lucide="play" class="w-4 h-4"></i>
+        </button>
+        <button onclick="resetNotebook()" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded" title="Restart Kernel">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- JupyterLab Global Debugger Switch -->
+      <div class="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+        <i data-lucide="bug" id="global-bug-icon" class="w-4 h-4 text-slate-400"></i>
+        <span class="text-xs font-medium text-slate-300 hidden md:inline">Debugger</span>
+        <button id="toggle-debug-mode-btn" onclick="toggleGlobalDebugger()" class="w-9 h-5 bg-slate-700 rounded-full p-0.5 transition-colors relative flex items-center">
+          <span id="debug-switch-knob" class="w-4 h-4 rounded-full bg-slate-400 transition-transform transform translate-x-0"></span>
+        </button>
+      </div>
+
+      <!-- Variable Inspector Drawer Toggle -->
+      <button onclick="toggleInspectorPanel()" id="inspector-toggle-btn" class="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-slate-800 rounded relative" title="Toggle Variable Inspector">
+        <i data-lucide="variable" class="w-4 h-4"></i>
+        <span id="inspector-dot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- NOTEBOOK CANVASES -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-950">
+
+      <!-- ================= CELL 1: Standard Completed Cell (With n8n Pinning) ================= -->
+      <div class="group border border-slate-800 hover:border-slate-700 focus-within:border-indigo-500 bg-slate-900/60 rounded-xl transition-all shadow-sm">
+        
+        <!-- Cell Meta & Controls Bar -->
+        <div class="px-3 py-1.5 bg-slate-800/40 border-b border-slate-800/60 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-slate-500 font-semibold text-[11px]">In [1]:</span>
+            <span class="text-slate-400 text-[11px]">Data Load & Transformation</span>
+          </div>
+
+          <!-- Cell Actions (n8n Pinning) -->
+          <div class="flex items-center gap-1.5">
+            <button id="pin-btn-cell-1" onclick="togglePinCell1()" class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 transition">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i>
+              <span id="pin-label-cell-1">Pinned Output</span>
+            </button>
+            <button onclick="runCellNormally(1)" class="p-1 text-slate-400 hover:text-white rounded">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cell Input Code -->
+        <div class="p-3 font-mono-code text-xs text-slate-300 bg-slate-950/40 overflow-x-auto">
+          <span class="text-purple-400">raw_users</span> = [ {"id": <span class="text-emerald-400">101</span>, "tier": <span class="text-amber-300">"VIP"</span>}, {"id": <span class="text-emerald-400">102</span>, "tier": <span class="text-amber-300">"FREE"</span>} ]<br>
+          <span class="text-slate-500"># Output is locked so downstream cells use it directly</span><br>
+          raw_users
+        </div>
+
+        <!-- Cell Output (Jupyter Out [1]) with n8n Pin Ribbon -->
+        <div class="border-t border-slate-800/80 bg-slate-950/70 p-3 text-xs">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-mono text-slate-500 font-semibold text-[11px]">Out [1]:</span>
+            <div id="pin-banner-1" class="text-[10px] text-amber-400 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i>
+              <span>Locked for downstream cells</span>
+            </div>
+          </div>
+          <!-- Formatted Output Table / JSON -->
+          <pre class="font-mono text-[11px] text-slate-300 bg-slate-900 p-2.5 rounded border border-slate-800 overflow-x-auto">[
+  { "id": 101, "tier": "VIP" },
+  { "id": 102, "tier": "FREE" }
+]</pre>
+        </div>
+      </div>
+
+      <!-- ================= CELL 2: Interactive Cell (Normal OR Debug Mode) ================= -->
+      <div id="cell-2-container" class="group border border-slate-800 bg-slate-900 rounded-xl transition-all shadow-md overflow-hidden">
+        
+        <!-- Cell 2 Header: Changes depending on Debug Mode -->
+        <div id="cell-2-header" class="px-3 py-2 bg-slate-800/50 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-slate-400 font-semibold text-[11px]" id="cell-2-prompt">In [2]:</span>
+            <span class="text-slate-300 font-medium">Scoring Logic</span>
+            <span id="debug-pill" class="hidden text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <i data-lucide="bug" class="w-3 h-3"></i> Paused in Debugger
+            </span>
+          </div>
+
+          <!-- Cell Header Controls -->
+          <div class="flex items-center gap-1">
+            <!-- Normal Run Button -->
+            <button id="btn-normal-run" onclick="runCellNormally(2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center gap-1 text-[11px]" title="Run Cell (Shift+Enter)">
+              <i data-lucide="play" class="w-3 h-3 text-emerald-400"></i>
+              <span>Run</span>
+            </button>
+
+            <!-- Debug Cell Button (Enter Debug Mode) -->
+            <button id="btn-enter-debug" onclick="startDebuggingCell(2)" class="px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded flex items-center gap-1 text-[11px]" title="Debug this Cell">
+              <i data-lucide="bug" class="w-3 h-3 text-indigo-400"></i>
+              <span>Debug Cell</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SPECIAL DEBUGGER STEPPING TOOLBAR (Only shown when debugging Cell 2) -->
+        <div id="cell-debug-toolbar" class="hidden bg-indigo-950/40 border-b border-indigo-500/30 px-3 py-1.5 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1 text-slate-300 text-[11px]">
+            <span class="text-indigo-400 font-mono font-bold">Step Controls:</span>
+          </div>
+          
+          <div class="flex items-center gap-1 bg-slate-900/90 border border-indigo-500/40 p-1 rounded-md">
+            <button onclick="dbgResume()" class="p-1 text-emerald-400 hover:bg-slate-800 rounded" title="Continue / Resume">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            </button>
+            <button onclick="dbgStepOver()" class="px-2 py-0.5 text-xs font-mono text-slate-200 hover:bg-slate-800 rounded flex items-center gap-1" title="Step Over (F10)">
+              <i data-lucide="corner-down-right" class="w-3 h-3"></i>
+              <span>Over</span>
+            </button>
+            <button onclick="dbgStepIn()" class="px-2 py-0.5 text-xs font-mono text-indigo-300 hover:bg-slate-800 rounded flex items-center gap-1" title="Step In (F11)">
+              <i data-lucide="corner-right-down" class="w-3 h-3"></i>
+              <span>In</span>
+            </button>
+            <button onclick="dbgStepOut()" class="px-2 py-0.5 text-xs font-mono text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1" title="Step Out (Shift+F11)">
+              <i data-lucide="corner-left-up" class="w-3 h-3"></i>
+              <span>Out</span>
+            </button>
+            <div class="w-px h-3 bg-slate-700 mx-1"></div>
+            <button onclick="stopDebugging()" class="p-1 text-rose-400 hover:bg-slate-800 rounded" title="Stop Debugger">
+              <i data-lucide="square" class="w-3 h-3 fill-current"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cell Code Area (Gutter + Breakpoints appear during or when preparing debug mode) -->
+        <div class="font-mono-code text-xs select-text overflow-x-auto" id="editor-lines">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Output section (Out [2]) -->
+        <div id="cell-2-output-box" class="border-t border-slate-800 bg-slate-950/70 p-3 text-xs font-mono">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-slate-500 font-semibold text-[11px]" id="cell-2-out-prompt">Out [2]:</span>
+            <span id="output-badge" class="hidden text-[10px] text-emerald-400">Execution Completed</span>
+          </div>
+          <div id="cell-2-output" class="text-slate-400">
+            <span class="text-slate-600">// Click [Run] to execute normally or [Debug Cell] to step line-by-line</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT DRAWER: JUPYTER-STYLE VARIABLE INSPECTOR (Slides in on Debug mode) -->
+    <aside id="inspector-panel" class="hidden w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 transition-all">
+      <div class="h-10 border-b border-slate-800 px-3 flex items-center justify-between bg-slate-900/90 text-xs font-semibold uppercase text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="variable" class="w-4 h-4 text-indigo-400"></i>
+          <span>Variable Inspector</span>
+        </div>
+        <button onclick="toggleInspectorPanel()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs font-mono">
+        
+        <!-- n8n Pinned Data Injector Scope -->
+        <div>
+          <div class="flex items-center justify-between text-slate-400 mb-1.5 font-bold uppercase text-[10px]">
+            <span class="flex items-center gap-1 text-amber-400">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i> Pinned Upstream Inputs
+            </span>
+          </div>
+          <div id="inspector-pinned-card" class="bg-slate-950 p-2.5 rounded-md border border-amber-500/30 text-slate-300 space-y-1">
+            <div class="flex justify-between items-center text-amber-300 font-semibold">
+              <span>raw_users</span>
+              <span class="text-[10px] text-slate-500">list [len: 2]</span>
+            </div>
+            <div class="text-[11px] text-slate-400 truncate pl-2">
+              [{"id": 101, "tier": "VIP"}, ...]
+            </div>
+          </div>
+        </div>
+
+        <!-- Locals In Current Scope -->
+        <div>
+          <div class="text-slate-400 mb-1.5 font-bold uppercase text-[10px] flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="layers" class="w-3 h-3 text-indigo-400"></i> Local Variables
+            </span>
+            <span class="text-slate-500 font-normal lowercase" id="inspector-frame-name">frame: cell_2</span>
+          </div>
+          <div class="bg-slate-950 rounded-md border border-slate-800 divide-y divide-slate-800/60" id="variables-list">
+            <!-- Dynamically injected -->
+          </div>
+        </div>
+
+        <!-- Call Stack -->
+        <div>
+          <div class="text-slate-400 mb-1.5 font-bold uppercase text-[10px]">Call Stack</div>
+          <div class="bg-slate-950 rounded border border-slate-800 p-2 text-xs space-y-1">
+            <div class="text-indigo-400 flex items-center justify-between font-semibold" id="stack-top-frame">
+              <span>&gt; &lt;module&gt;</span>
+              <span class="text-slate-500 text-[10px]" id="stack-line">line 5</span>
+            </div>
+            <div class="text-slate-500 pl-3 text-[11px]">
+              Cell [2]
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Eval / Watch -->
+      <div class="p-2.5 border-t border-slate-800 bg-slate-950">
+        <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded px-2.5 py-1">
+          <span class="text-indigo-400 text-xs font-mono font-bold">&gt;</span>
+          <input type="text" placeholder="Evaluate expression in frame..." class="bg-transparent border-none text-xs font-mono text-slate-200 outline-none w-full placeholder-slate-600">
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- JAVASCRIPT STATE CONTROLLER -->
+  <script>
+    const cellCode = [
+      { line: 1, text: "def calculate_bonus(tier, factor=1.5):" },
+      { line: 2, text: "    base = 100 if tier == 'VIP' else 20" },
+      { line: 3, text: "    return base * factor" },
+      { line: 4, text: "" },
+      { line: 5, text: "scored_users = []" },
+      { line: 6, text: "for u in raw_users:  # (Injected from Pinned Out [1])" },
+      { line: 7, text: "    bonus = calculate_bonus(u['tier'])" },
+      { line: 8, text: "    scored_users.append({'id': u['id'], 'bonus': bonus})" },
+      { line: 9, text: "scored_users" }
+    ];
+
+    // Execution steps simulation
+    const debugSteps = [
+      { line: 5, frame: "<module>", vars: { "raw_users": "list[2] (📌 Pinned)", scored_users: "[]" } },
+      { line: 6, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 7, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 1, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5" } },
+      { line: 2, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100" } },
+      { line: 3, frame: "calculate_bonus()", vars: { return_val: "150.0" } },
+      { line: 8, frame: "<module>", vars: { bonus: "150.0", scored_users: "[{'id': 101, 'bonus': 150.0}]" } },
+      { line: 9, frame: "<module>", vars: { scored_users: "[{'id': 101, 'bonus': 150.0}, {'id': 102, 'bonus': 30.0}]" } }
+    ];
+
+    let isGlobalDebugActive = false;
+    let isCellDebugging = false;
+    let currentStep = 0;
+    let breakpoints = new Set([2, 7]);
+    let isInspectorOpen = false;
+    let cell1Pinned = true;
+
+    function renderCell2() {
+      const container = document.getElementById("editor-lines");
+      container.innerHTML = "";
+
+      const activeLine = isCellDebugging ? debugSteps[currentStep]?.line : null;
+
+      cellCode.forEach(item => {
+        const hasBreakpoint = breakpoints.has(item.line);
+        const isCurrentLine = isCellDebugging && (item.line === activeLine);
+
+        const row = document.createElement("div");
+        row.className = `flex items-center min-h-[26px] leading-relaxed transition-colors ${
+          isCurrentLine ? 'bg-indigo-950/80 border-l-4 border-indigo-500' : 'pl-1 hover:bg-slate-800/40'
+        }`;
+
+        // Breakpoint gutter (always available or revealed when debug mode is on)
+        const gutter = document.createElement("div");
+        gutter.className = "w-9 text-right pr-2 select-none cursor-pointer flex items-center justify-end gap-1 shrink-0";
+        gutter.onclick = () => toggleBreakpoint(item.line);
+
+        const bpCircle = document.createElement("span");
+        bpCircle.className = `w-2 h-2 rounded-full inline-block transition-transform ${
+          hasBreakpoint ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)] scale-110' : 'bg-transparent hover:bg-slate-700'
+        }`;
+
+        const lineNum = document.createElement("span");
+        lineNum.className = `text-[11px] ${isCurrentLine ? 'text-indigo-400 font-bold' : 'text-slate-600'}`;
+        lineNum.textContent = item.line;
+
+        gutter.appendChild(bpCircle);
+        gutter.appendChild(lineNum);
+
+        // Code Text
+        const codeText = document.createElement("div");
+        codeText.className = "flex-1 pl-3 text-slate-300 whitespace-pre font-mono text-[11.5px]";
+        codeText.textContent = item.text;
+
+        row.appendChild(gutter);
+        row.appendChild(codeText);
+
+        if (isCurrentLine) {
+          const arrow = document.createElement("div");
+          arrow.className = "pr-3 text-indigo-400 text-[10px] font-bold shrink-0";
+          arrow.innerHTML = "◀ PAUSED";
+          row.appendChild(arrow);
+        }
+
+        container.appendChild(row);
+      });
+
+      renderInspector();
+      lucide.createIcons();
+    }
+
+    function renderInspector() {
+      if (!isCellDebugging) return;
+      const data = debugSteps[currentStep];
+      document.getElementById("stack-line").innerText = `line ${data.line}`;
+      document.getElementById("stack-top-frame").innerHTML = `<span>&gt; ${data.frame}</span><span class="text-slate-500 text-[10px]">line ${data.line}</span>`;
+      document.getElementById("inspector-frame-name").innerText = `frame: ${data.frame}`;
+
+      const varList = document.getElementById("variables-list");
+      varList.innerHTML = "";
+
+      for (const [key, val] of Object.entries(data.vars)) {
+        const row = document.createElement("div");
+        row.className = "px-3 py-1.5 flex justify-between items-center text-[11px] hover:bg-slate-900";
+        row.innerHTML = `
+          <span class="text-indigo-300 font-semibold">${key}</span>
+          <span class="text-slate-300 font-mono text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">${val}</span>
+        `;
+        varList.appendChild(row);
+      }
+    }
+
+    // Normal Jupyter Execution (Runs straight through)
+    function runCellNormally(cellId) {
+      if (cellId === 2) {
+        stopDebugging(); // Exit debug mode if running normally
+        const outBox = document.getElementById("cell-2-output");
+        outBox.innerHTML = `<span class="text-indigo-400 animate-pulse">Running...</span>`;
+        
+        setTimeout(() => {
+          outBox.innerHTML = `<pre class="text-slate-300 text-[11px]">[
+  { "id": 101, "bonus": 150.0 },
+  { "id": 102, "bonus": 30.0 }
+]</pre>`;
+          document.getElementById("output-badge").classList.remove("hidden");
+        }, 300);
+      }
+    }
+
+    // Enter Debug Mode on Cell 2
+    function startDebuggingCell(cellId) {
+      isCellDebugging = true;
+      currentStep = 0;
+
+      // Update UI components
+      document.getElementById("cell-2-container").classList.add("border-indigo-500", "shadow-indigo-950/40");
+      document.getElementById("cell-debug-toolbar").classList.remove("hidden");
+      document.getElementById("debug-pill").classList.remove("hidden");
+      document.getElementById("cell-2-output").innerHTML = `<span class="text-amber-400">// Debug session in progress. Stepping enabled.</span>`;
+      
+      // Auto-open inspector drawer
+      openInspector();
+      renderCell2();
+    }
+
+    function stopDebugging() {
+      isCellDebugging = false;
+      document.getElementById("cell-2-container").classList.remove("border-indigo-500", "shadow-indigo-950/40");
+      document.getElementById("cell-debug-toolbar").classList.add("hidden");
+      document.getElementById("debug-pill").classList.add("hidden");
+      renderCell2();
+    }
+
+    // Stepping controls
+    function dbgStepOver() {
+      if (currentStep < debugSteps.length - 1) {
+        currentStep++;
+        renderCell2();
+      } else {
+        finishDebugRun();
+      }
+    }
+
+    function dbgStepIn() {
+      dbgStepOver();
+    }
+
+    function dbgStepOut() {
+      currentStep = Math.min(currentStep + 3, debugSteps.length - 1);
+      renderCell2();
+    }
+
+    function dbgResume() {
+      let nextBp = debugSteps.findIndex((s, i) => i > currentStep && breakpoints.has(s.line));
+      if (nextBp !== -1) {
+        currentStep = nextBp;
+        renderCell2();
+      } else {
+        finishDebugRun();
+      }
+    }
+
+    function finishDebugRun() {
+      stopDebugging();
+      document.getElementById("cell-2-output").innerHTML = `<pre class="text-emerald-400 text-[11px]">Debugger completed.<br>[
+  { "id": 101, "bonus": 150.0 },
+  { "id": 102, "bonus": 30.0 }
+]</pre>`;
+      document.getElementById("output-badge").classList.remove("hidden");
+    }
+
+    function toggleBreakpoint(line) {
+      if (breakpoints.has(line)) breakpoints.delete(line);
+      else breakpoints.add(line);
+      renderCell2();
+    }
+
+    // JupyterLab Global Debug Switch
+    function toggleGlobalDebugger() {
+      isGlobalDebugActive = !isGlobalDebugActive;
+      const knob = document.getElementById("debug-switch-knob");
+      const icon = document.getElementById("global-bug-icon");
+
+      if (isGlobalDebugActive) {
+        knob.classList.add("translate-x-4", "bg-indigo-400");
+        icon.classList.add("text-indigo-400");
+        startDebuggingCell(2);
+      } else {
+        knob.classList.remove("translate-x-4", "bg-indigo-400");
+        icon.classList.remove("text-indigo-400");
+        stopDebugging();
+      }
+    }
+
+    // Inspector Drawer
+    function toggleInspectorPanel() {
+      if (isInspectorOpen) closeInspector();
+      else openInspector();
+    }
+
+    function openInspector() {
+      isInspectorOpen = true;
+      document.getElementById("inspector-panel").classList.remove("hidden");
+      document.getElementById("inspector-dot").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeInspector() {
+      isInspectorOpen = false;
+      document.getElementById("inspector-panel").classList.add("hidden");
+      document.getElementById("inspector-dot").classList.add("hidden");
+    }
+
+    // n8n Pinning Toggle for Cell 1
+    function togglePinCell1() {
+      cell1Pinned = !cell1Pinned;
+      const btn = document.getElementById("pin-btn-cell-1");
+      const label = document.getElementById("pin-label-cell-1");
+      const banner = document.getElementById("pin-banner-1");
+      const card = document.getElementById("inspector-pinned-card");
+
+      if (cell1Pinned) {
+        btn.className = "px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 transition";
+        label.innerText = "Pinned Output";
+        banner.classList.remove("hidden");
+        card.classList.remove("opacity-40");
+      } else {
+        btn.className = "px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1 transition";
+        label.innerText = "Unpinned";
+        banner.classList.add("hidden");
+        card.classList.add("opacity-40");
+      }
+      lucide.createIcons();
+    }
+
+    function resetNotebook() {
+      stopDebugging();
+      currentStep = 0;
+      document.getElementById("cell-2-output").innerHTML = `<span class="text-slate-600">// Kernel restarted. Cell outputs cleared.</span>`;
+      document.getElementById("output-badge").classList.add("hidden");
+    }
+
+    function addNewCell() {
+      alert("New Jupyter cell appended.");
+    }
+
+    // Initialize
+    window.addEventListener("DOMContentLoaded", () => {
+      renderCell2();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

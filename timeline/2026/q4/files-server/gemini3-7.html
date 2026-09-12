@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Server Atelier</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* THEME SYSTEM */
+    :root {
+      /* 1. Cyber Obsidian (Dark) */
+      --bg-body: #06090e;
+      --bg-surface: #0c121c;
+      --bg-card: #111a28;
+      --bg-input: #080d15;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-contrast: #040810;
+      --badge-bg: #162438;
+      --badge-text: #7dd3fc;
+      --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+
+    body.theme-espresso {
+      /* 2. Espresso Velvet (Dark Warm) */
+      --bg-body: #120e0c;
+      --bg-surface: #1c1613;
+      --bg-card: #251e1a;
+      --bg-input: #140f0d;
+      --border: #3b302a;
+      --border-focus: #f59e0b;
+      --text-main: #faf4eb;
+      --text-muted: #a89c91;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --accent-contrast: #120e0c;
+      --badge-bg: #38291e;
+      --badge-text: #fcd34d;
+      --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    }
+
+    body.theme-atelier {
+      /* 3. Atelier Linen (Light Warm) */
+      --bg-body: #f7f4ed;
+      --bg-surface: #ffffff;
+      --bg-card: #efe9dc;
+      --bg-input: #ffffff;
+      --border: #dfd5c4;
+      --border-focus: #c2410c;
+      --text-main: #26211c;
+      --text-muted: #786f64;
+      --accent: #c2410c;
+      --accent-hover: #9a3412;
+      --accent-glow: rgba(194, 65, 12, 0.15);
+      --accent-contrast: #ffffff;
+      --badge-bg: #fae4d7;
+      --badge-text: #9a3412;
+      --card-shadow: 0 8px 25px -8px rgba(100, 80, 60, 0.08);
+    }
+
+    body.theme-nordic {
+      /* 4. Nordic Frost (Light Cool) */
+      --bg-body: #f0f4f9;
+      --bg-surface: #ffffff;
+      --bg-card: #e2eaf4;
+      --bg-input: #ffffff;
+      --border: #cad8e8;
+      --border-focus: #4f46e5;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-glow: rgba(79, 70, 229, 0.2);
+      --accent-contrast: #ffffff;
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --card-shadow: 0 8px 25px -8px rgba(30, 60, 110, 0.08);
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* THEME UTILITIES */
+    .bg-theme-body { background-color: var(--bg-body); }
+    .bg-theme-surface { background-color: var(--bg-surface); }
+    .bg-theme-card { background-color: var(--bg-card); }
+    .bg-theme-input { background-color: var(--bg-input); }
+    .border-theme { border-color: var(--border); }
+    .text-theme-main { color: var(--text-main); }
+    .text-theme-muted { color: var(--text-muted); }
+    .bg-theme-badge { background-color: var(--badge-bg); }
+    .text-theme-badge { color: var(--badge-text); }
+    .shadow-artistic { box-shadow: var(--card-shadow); }
+
+    .btn-accent {
+      background-color: var(--accent);
+      color: var(--accent-contrast);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-accent:hover {
+      background-color: var(--accent-hover);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .text-accent { color: var(--accent); }
+    .border-accent { border-color: var(--accent); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- HEADER -->
+  <header class="bg-theme-surface/90 border-b border-theme backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-3.5 transition-colors">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-lg transition-transform hover:scale-105 btn-accent">
+          ◈
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm sm:text-base tracking-tight text-theme-main">FILE SERVER <span class="text-accent font-mono font-medium text-xs sm:text-sm">ATELIER</span></h1>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <p class="text-[10px] sm:text-[11px] font-mono text-theme-muted truncate max-w-[200px] sm:max-w-none">/api/file_server/files/*</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Switcher & Actions -->
+      <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+        <div class="flex items-center gap-1 bg-theme-input p-1 rounded-xl border border-theme">
+          <button onclick="setTheme('')" id="btnThemeCyber" title="Dark: Cyber Obsidian" class="px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-medium transition">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span>
+            <span class="hidden md:inline text-[11px]">Obsidian</span>
+          </button>
+          <button onclick="setTheme('theme-espresso')" id="btnThemeEspresso" title="Dark: Espresso Velvet" class="px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-medium transition">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+            <span class="hidden md:inline text-[11px]">Espresso</span>
+          </button>
+          <button onclick="setTheme('theme-atelier')" id="btnThemeAtelier" title="Light: Atelier Linen" class="px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-medium transition">
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-600 inline-block"></span>
+            <span class="hidden md:inline text-[11px]">Linen</span>
+          </button>
+          <button onclick="setTheme('theme-nordic')" id="btnThemeNordic" title="Light: Nordic Frost" class="px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-medium transition">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+            <span class="hidden md:inline text-[11px]">Frost</span>
+          </button>
+        </div>
+
+        <button onclick="fetchFiles()" class="bg-theme-card hover:border-accent border border-theme text-theme-main px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+          <span>↺</span> <span class="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN WORKBENCH -->
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- LEFT COLUMN: OPERATIONS & LIST (7 cols) -->
+    <div class="lg:col-span-7 flex flex-col space-y-6">
+
+      <!-- 1. ARTISAN UPLOAD CARD -->
+      <section class="bg-theme-surface border border-theme rounded-2xl p-5 sm:p-6 shadow-artistic transition-colors relative overflow-hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent"></span>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-theme-muted font-mono">1. Ingestion / Upload</h2>
+          </div>
+          <span class="text-[10px] font-mono bg-theme-badge text-theme-badge px-2 py-0.5 rounded-md font-semibold">POST /upload</span>
+        </div>
+
+        <div class="border-2 border-dashed border-theme hover:border-accent transition-all duration-300 rounded-2xl p-6 text-center cursor-pointer relative group bg-theme-input/40 flex flex-col items-center justify-center">
+          <input type="file" id="uploadInput" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" onchange="onFileSelected(this)" />
+          <div class="space-y-2" id="uploadPrompt">
+            <div class="w-12 h-12 mx-auto rounded-xl bg-theme-card flex items-center justify-center text-xl text-accent shadow transition-transform group-hover:scale-110">
+              ↑
+            </div>
+            <div class="text-xs font-semibold text-theme-main">Choose file or drag & drop</div>
+            <div class="text-[11px] text-theme-muted font-mono">Payload auto-converts to Base64 JSON</div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 mt-4">
+          <input type="text" id="customFileName" placeholder="Custom file alias (optional)..." class="flex-1 bg-theme-input border border-theme rounded-xl px-3.5 py-2.5 text-xs text-theme-main outline-none focus:border-accent transition" />
+          <button onclick="submitUpload()" class="btn-accent font-bold text-xs px-6 py-2.5 rounded-xl transition active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+            <span>Upload Document</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. FILE EXPLORER TABLE -->
+      <section class="bg-theme-surface border border-theme rounded-2xl p-5 sm:p-6 shadow-artistic transition-colors space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent"></span>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-theme-muted font-mono">2. Stored Registry</h2>
+          </div>
+          <div class="relative">
+            <input type="text" id="searchInput" oninput="fetchFiles()" placeholder="Search registry..." class="w-full sm:w-48 bg-theme-input border border-theme rounded-xl pl-8 pr-3 py-1.5 text-xs text-theme-main outline-none focus:border-accent transition" />
+            <span class="absolute left-2.5 top-2 text-[11px] text-theme-muted">🔍</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Table Container -->
+        <div class="overflow-x-auto border border-theme rounded-xl bg-theme-input/30">
+          <table class="w-full text-left text-xs border-collapse min-w-[520px]">
+            <thead>
+              <tr class="bg-theme-card/60 border-b border-theme text-theme-muted font-mono text-[10px] uppercase tracking-wider">
+                <th class="py-3 px-3.5">ID</th>
+                <th class="py-3 px-3.5">Document</th>
+                <th class="py-3 px-3.5">Kind</th>
+                <th class="py-3 px-3.5">Security</th>
+                <th class="py-3 px-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="filesTableBody" class="divide-y border-theme divide-theme text-theme-main">
+              <tr><td colspan="5" class="text-center py-8 text-theme-muted italic">No files in registry.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3. MEDIA TRANSFORMATIONS -->
+      <section class="bg-theme-surface border border-theme rounded-2xl p-5 sm:p-6 shadow-artistic transition-colors space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-accent"></span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-theme-muted font-mono">3. Media Manipulations</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Image Resize -->
+          <div class="p-4 bg-theme-input/60 border border-theme rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-theme-main">Image Scaler</span>
+              <span class="text-[9px] font-mono bg-theme-badge text-theme-badge px-1.5 py-0.5 rounded font-semibold">POST /image</span>
+            </div>
+            <input type="number" id="imageFileId" placeholder="Target Image ID" class="w-full bg-theme-surface border border-theme rounded-lg px-3 py-2 text-xs text-theme-main outline-none focus:border-accent transition" />
+            <select id="imageSize" class="w-full bg-theme-surface border border-theme rounded-lg px-3 py-2 text-xs text-theme-main outline-none">
+              <option value="thumbnail">thumbnail (160px max edge)</option>
+              <option value="low">low (480px max edge)</option>
+              <option value="mid">mid (1280px max edge)</option>
+              <option value="original">original (raw dimensions)</option>
+            </select>
+            <button onclick="requestImageResize()" class="w-full bg-theme-card hover:border-accent border border-theme text-theme-main text-xs py-2 rounded-lg font-semibold transition active:scale-95">
+              Render & Resize
+            </button>
+          </div>
+
+          <!-- Video / Audio Compress -->
+          <div class="p-4 bg-theme-input/60 border border-theme rounded-xl space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-theme-main">Media Compressor</span>
+              <span class="text-[9px] font-mono bg-theme-badge text-theme-badge px-1.5 py-0.5 rounded font-semibold">POST /compress</span>
+            </div>
+            <input type="number" id="compressFileId" placeholder="Target Video/Audio ID" class="w-full bg-theme-surface border border-theme rounded-lg px-3 py-2 text-xs text-theme-main outline-none focus:border-accent transition" />
+            <select id="compressLevel" class="w-full bg-theme-surface border border-theme rounded-lg px-3 py-2 text-xs text-theme-main outline-none">
+              <option value="low">Quality: Low (max compress)</option>
+              <option value="medium" selected>Quality: Medium (balanced)</option>
+              <option value="high">Quality: High (preserving)</option>
+            </select>
+            <button onclick="requestCompression()" class="w-full bg-theme-card hover:border-accent border border-theme text-theme-main text-xs py-2 rounded-lg font-semibold transition active:scale-95">
+              Execute Compression
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: PREVIEW CANVAS & ENVELOPE INSPECTOR (5 cols) -->
+    <div class="lg:col-span-5 flex flex-col space-y-6">
+
+      <!-- PREVIEW CANVAS -->
+      <section class="bg-theme-surface border border-theme rounded-2xl p-5 sm:p-6 shadow-artistic transition-colors flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-theme-muted font-mono">Visual Canvas</h3>
+          </div>
+          <span id="previewTag" class="text-[10px] font-mono bg-theme-badge text-theme-badge px-2 py-0.5 rounded-md font-semibold">Standby</span>
+        </div>
+        <div id="previewArea" class="bg-theme-input/60 border border-theme rounded-xl min-h-[220px] flex flex-col items-center justify-center p-4 text-xs text-theme-muted text-center transition-all">
+          <div class="text-2xl mb-2 opacity-50">🖼️</div>
+          <span>Decoded base64 images and streams will render here</span>
+        </div>
+      </section>
+
+      <!-- ENVELOPE INSPECTOR (HELP + RESPONSE) -->
+      <section class="bg-theme-surface border border-theme rounded-2xl p-5 sm:p-6 shadow-artistic transition-colors flex flex-col flex-1">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent"></span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-theme-muted font-mono">Envelope Inspector</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="statusBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold"></span>
+            <span id="timeBadge" class="text-[10px] font-mono text-theme-muted">0ms</span>
+          </div>
+        </div>
+        <div class="relative flex-1">
+          <pre id="jsonInspector" class="w-full h-full min-h-[280px] max-h-[460px] bg-theme-input border border-theme rounded-xl p-4 font-mono text-[11px] text-theme-main overflow-auto leading-relaxed whitespace-pre-wrap select-all focus:outline-none">{\n  "status": "ready",\n  "envelope": "POST only -> { help: {...}, response: {...} }"\n}</pre>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- PASSWORD MODAL (FOR GENERATED ENCRYPTION KEYS) -->
+  <div id="keyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-theme-surface border border-theme max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-2 text-amber-500">
+        <span class="text-xl">🔐</span>
+        <h3 class="text-sm font-bold tracking-tight text-theme-main">File Encrypted Successfully</h3>
+      </div>
+      <p class="text-xs text-theme-muted leading-relaxed">
+        The server generated this unique decryption password. <b class="text-theme-main">It is returned only once</b> (cached on server for 24h).
+      </p>
+      <div class="flex items-center gap-2 bg-theme-input p-3 rounded-xl border border-theme">
+        <code id="modalPasswordText" class="font-mono text-xs font-semibold text-accent flex-1 select-all break-all"></code>
+        <button onclick="copyModalPassword()" class="btn-accent px-3 py-1.5 rounded-lg text-xs font-semibold">Copy</button>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeKeyModal()" class="bg-theme-card hover:border-accent border border-theme text-theme-main px-4 py-2 rounded-xl text-xs font-semibold">
+          I Saved It
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFIER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-[90vw] sm:max-w-md"></div>
+
+  <!-- CLIENT SCRIPTS -->
+  <script>
+    const API_BASE = 'http://localhost:8000/api/file_server/files';
+
+    // --- THEME SWITCHER LOGIC ---
+    function setTheme(themeClass) {
+      document.body.className = themeClass ? `${themeClass} min-h-screen flex flex-col antialiased` : 'min-h-screen flex flex-col antialiased';
+      localStorage.setItem('fs_theme', themeClass);
+      updateThemeButtons(themeClass);
+    }
+
+    function updateThemeButtons(activeTheme) {
+      const themes = {
+        '': 'btnThemeCyber',
+        'theme-espresso': 'btnThemeEspresso',
+        'theme-atelier': 'btnThemeAtelier',
+        'theme-nordic': 'btnThemeNordic'
+      };
+      Object.keys(themes).forEach(t => {
+        const btn = document.getElementById(themes[t]);
+        if (t === activeTheme) {
+          btn.className = 'px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-semibold btn-accent shadow-sm';
+        } else {
+          btn.className = 'px-2.5 py-1 text-xs rounded-lg flex items-center gap-1 font-medium text-theme-muted hover:text-theme-main';
+        }
+      });
+    }
+
+    // --- API POST ENVELOPE HANDLER ---
+    async function apiPost(action, payload = {}) {
+      const url = `${API_BASE}/${action}`;
+      const t0 = performance.now();
+      const inspector = document.getElementById('jsonInspector');
+      const statusBadge = document.getElementById('statusBadge');
+      const timeBadge = document.getElementById('timeBadge');
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const elapsed = Math.round(performance.now() - t0);
+        timeBadge.innerText = `${elapsed}ms`;
+
+        statusBadge.classList.remove('hidden');
+        if (res.ok) {
+          statusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800';
+          statusBadge.innerText = `${res.status} OK`;
+        } else {
+          statusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold bg-rose-950/80 text-rose-400 border border-rose-800';
+          statusBadge.innerText = `${res.status} ${res.statusText}`;
+        }
+
+        const data = await res.json();
+        inspector.innerText = JSON.stringify(data, null, 2);
+
+        if (!res.ok) {
+          showToast(`Error ${res.status}: ${data.detail || JSON.stringify(data)}`, 'error');
+        }
+
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        const elapsed = Math.round(performance.now() - t0);
+        timeBadge.innerText = `${elapsed}ms`;
+        statusBadge.classList.remove('hidden');
+        statusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold bg-rose-950 text-rose-400 border border-rose-800';
+        statusBadge.innerText = 'CORS/NETWORK ERR';
+        inspector.innerText = JSON.stringify({ error: err.message, target: url }, null, 2);
+        showToast(`Request failed: ${err.message}`, 'error');
+        return { ok: false, error: err };
+      }
+    }
+
+    // --- BASE64 HELPER ---
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve({ base64, name: file.name, type: file.type });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // --- TRIGGER FILE DOWNLOAD ---
+    function triggerDownload(base64Data, filename) {
+      const link = document.createElement('a');
+      link.href = `data:application/octet-stream;base64,${base64Data}`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Downloaded: ${filename}`, 'success');
+    }
+
+    // --- TOAST NOTIFIER ---
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const borderClass = type === 'error' ? 'border-rose-700 text-rose-300 bg-rose-950/90' :
+                          type === 'success' ? 'border-emerald-700 text-emerald-300 bg-emerald-950/90' :
+                          'border-theme text-theme-main bg-theme-surface/90';
+
+      toast.className = `border px-4 py-3 rounded-xl text-xs shadow-2xl backdrop-blur-md pointer-events-auto flex items-center gap-2.5 transition-all duration-300 ${borderClass}`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ'}</span><span class="font-medium">${msg}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- MODAL CONTROLS ---
+    function openKeyModal(password) {
+      document.getElementById('modalPasswordText').innerText = password;
+      document.getElementById('keyModal').classList.remove('hidden');
+    }
+    function closeKeyModal() {
+      document.getElementById('keyModal').classList.add('hidden');
+    }
+    function copyModalPassword() {
+      const pwd = document.getElementById('modalPasswordText').innerText;
+      navigator.clipboard.writeText(pwd);
+      showToast('Password copied to clipboard', 'success');
+    }
+
+    // --- UPLOAD HANDLER ---
+    function onFileSelected(input) {
+      if (input.files.length > 0) {
+        const file = input.files[0];
+        document.getElementById('uploadPrompt').innerHTML = `
+          <div class="w-12 h-12 mx-auto rounded-xl bg-theme-card flex items-center justify-center text-xl text-accent shadow">📄</div>
+          <div class="text-xs font-bold text-accent">${file.name}</div>
+          <div class="text-[10px] text-theme-muted font-mono">${(file.size / 1024).toFixed(1)} KB • ${file.type || 'Generic Stream'}</div>
+        `;
+      }
+    }
+
+    async function submitUpload() {
+      const input = document.getElementById('uploadInput');
+      const nameOverride = document.getElementById('customFileName').value.trim();
+
+      if (!input.files.length) return showToast('Select a file to upload', 'error');
+
+      const fileData = await fileToBase64(input.files[0]);
+      const payload = {
+        data: fileData.base64,
+        name: nameOverride || fileData.name,
+        content_type: fileData.type || undefined
+      };
+
+      const res = await apiPost('upload', payload);
+      if (res.ok) {
+        showToast('File stored successfully', 'success');
+        input.value = '';
+        document.getElementById('customFileName').value = '';
+        document.getElementById('uploadPrompt').innerHTML = `
+          <div class="w-12 h-12 mx-auto rounded-xl bg-theme-card flex items-center justify-center text-xl text-accent shadow">↑</div>
+          <div class="text-xs font-semibold text-theme-main">Choose file or drag & drop</div>
+          <div class="text-[11px] text-theme-muted font-mono">Payload auto-converts to Base64 JSON</div>
+        `;
+        fetchFiles();
+      }
+    }
+
+    // --- FILE REGISTRY (READ_ALL) ---
+    async function fetchFiles() {
+      const search = document.getElementById('searchInput').value.trim();
+      const payload = { page: 1, page_size: 50 };
+      if (search) payload.search = search;
+
+      const res = await apiPost('read_all', payload);
+      if (!res.ok) return;
+
+      const items = res.data.response.items || res.data.response || [];
+      const tbody = document.getElementById('filesTableBody');
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-theme-muted italic">No files found on server.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(f => `
+        <tr class="hover:bg-theme-card/40 transition-colors font-mono">
+          <td class="py-2.5 px-3.5 text-accent font-semibold">${f.id}</td>
+          <td class="py-2.5 px-3.5 text-theme-main font-sans font-medium">
+            <div class="truncate max-w-[140px] sm:max-w-[200px]" title="${f.name || ''}">${f.name || 'Untitled'}</div>
+          </td>
+          <td class="py-2.5 px-3.5 font-sans">
+            <span class="px-2 py-0.5 rounded-md text-[10px] bg-theme-badge text-theme-badge font-semibold font-mono">${f.kind || 'other'}</span>
+          </td>
+          <td class="py-2.5 px-3.5 font-sans">
+            ${f.is_encrypted ?
+              '<span class="text-amber-500 text-[10px] font-semibold flex items-center gap-1 font-mono">🔒 Encrypted</span>' :
+              '<span class="text-theme-muted text-[10px] font-mono">Plain</span>'
+            }
+          </td>
+          <td class="py-2.5 px-3.5 text-right space-x-1 font-sans">
+            <button onclick="downloadFile(${f.id}, '${f.name}')" class="px-2 py-1 text-[11px] bg-theme-card hover:border-accent border border-theme rounded-lg text-theme-main transition" title="Download">↓</button>
+            <button onclick="renameFile(${f.id}, '${f.name}')" class="px-2 py-1 text-[11px] bg-theme-card hover:border-accent border border-theme rounded-lg text-theme-main transition" title="Rename">✎</button>
+            ${f.is_encrypted ?
+              `<button onclick="decryptFile(${f.id})" class="px-2.5 py-1 text-[11px] bg-amber-500 text-slate-950 font-bold rounded-lg transition hover:bg-amber-400">Decrypt</button>` :
+              `<button onclick="encryptFile(${f.id})" class="px-2 py-1 text-[11px] bg-theme-card hover:border-accent border border-theme rounded-lg text-theme-main transition">Encrypt</button>`
+            }
+            <button onclick="deleteFile(${f.id})" class="px-2 py-1 text-[11px] bg-rose-950/40 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-lg transition" title="Delete">✕</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // --- INDIVIDUAL FILE ACTIONS ---
+    async function downloadFile(fileId, fileName) {
+      const res = await apiPost('download', { file: fileId });
+      if (res.ok && res.data.response.data) {
+        triggerDownload(res.data.response.data, fileName || `file_${fileId}`);
+      }
+    }
+
+    async function renameFile(fileId, currentName) {
+      const newName = prompt(`Enter new name for file #${fileId}:`, currentName);
+      if (!newName || newName === currentName) return;
+
+      const res = await apiPost('update', { id: fileId, name: newName });
+      if (res.ok) {
+        showToast(`File renamed to ${newName}`, 'success');
+        fetchFiles();
+      }
+    }
+
+    async function encryptFile(fileId) {
+      const res = await apiPost('encrypt', { file: fileId });
+      if (res.ok) {
+        const password = res.data.response.password;
+        openKeyModal(password);
+        fetchFiles();
+      }
+    }
+
+    async function decryptFile(fileId) {
+      const password = prompt('Enter decryption password (leave empty if within 1-day cache TTL):');
+      const payload = { file: fileId };
+      if (password) payload.password = password;
+
+      const res = await apiPost('decrypt', payload);
+      if (res.ok) {
+        showToast(`File #${fileId} decrypted successfully!`, 'success');
+        fetchFiles();
+      }
+    }
+
+    async function deleteFile(fileId) {
+      if (!confirm(`Permanently remove file #${fileId}?`)) return;
+      const res = await apiPost('delete', { file: fileId });
+      if (res.ok) {
+        showToast(`File #${fileId} deleted`, 'success');
+        fetchFiles();
+      }
+    }
+
+    // --- MEDIA MANIPULATIONS ---
+    async function requestImageResize() {
+      const fileId = parseInt(document.getElementById('imageFileId').value);
+      const size = document.getElementById('imageSize').value;
+
+      if (!fileId) return showToast('Please enter an Image File ID', 'error');
+
+      const res = await apiPost('image', { file: fileId, size });
+      if (res.ok && res.data.response.data) {
+        const payload = res.data.response;
+        document.getElementById('previewTag').innerText = `IMG (${size})`;
+        document.getElementById('previewArea').innerHTML = `
+          <div class="flex flex-col items-center space-y-2.5 w-full">
+            <img src="data:image/png;base64,${payload.data}" class="max-h-64 rounded-xl border border-theme object-contain shadow-lg" />
+            <span class="text-[10px] text-theme-muted font-mono">${payload.width || '?'} × ${payload.height || '?'} px • ${payload.name || 'image'}</span>
+          </div>
+        `;
+      }
+    }
+
+    async function requestCompression() {
+      const fileId = parseInt(document.getElementById('compressFileId').value);
+      const level = document.getElementById('compressLevel').value;
+
+      if (!fileId) return showToast('Please enter a Video/Audio File ID', 'error');
+
+      const res = await apiPost('compress', { file: fileId, level });
+      if (res.ok) {
+        showToast('Compression finished. New file added to registry.', 'success');
+        fetchFiles();
+      }
+    }
+
+    // --- INITIALIZE ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('fs_theme') || '';
+      setTheme(savedTheme);
+      fetchFiles();
+    });
+  </script>
+</body>
+</html>

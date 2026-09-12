@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyFlow - Mobile Notebook Debugger</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .font-mono-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- TOP APP BAR -->
+  <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="terminal" class="w-5 h-5 text-indigo-400"></i>
+        <span class="font-bold text-base text-indigo-400">PyFlow</span>
+        <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">DAP</span>
+      </div>
+
+      <!-- Compact Status Badge -->
+      <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="debug-status">Ready</span>
+      </span>
+    </div>
+
+    <!-- DEBUGGER TOOLBAR -->
+    <div class="flex items-center justify-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700 overflow-x-auto">
+      <button onclick="handleResume()" title="Continue (Play)" class="p-2 sm:px-2.5 sm:py-1 text-xs font-medium text-emerald-400 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center gap-1">
+        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+        <span class="hidden sm:inline">Continue</span>
+      </button>
+
+      <button onclick="handlePause()" title="Pause" class="p-2 sm:px-2.5 sm:py-1 text-xs font-medium text-amber-400 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center gap-1">
+        <i data-lucide="pause" class="w-4 h-4 fill-current"></i>
+        <span class="hidden sm:inline">Pause</span>
+      </button>
+
+      <div class="w-px h-4 bg-slate-700 mx-0.5 sm:mx-1"></div>
+
+      <button onclick="handleStepOver()" title="Step Over (F10)" class="p-2 sm:px-2.5 sm:py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center gap-1">
+        <i data-lucide="corner-down-right" class="w-4 h-4"></i>
+        <span class="hidden md:inline">Over</span>
+      </button>
+
+      <button onclick="handleStepIn()" title="Step In (F11)" class="p-2 sm:px-2.5 sm:py-1 text-xs font-medium text-indigo-300 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center gap-1">
+        <i data-lucide="corner-right-down" class="w-4 h-4"></i>
+        <span class="hidden md:inline">In</span>
+      </button>
+
+      <button onclick="handleStepOut()" title="Step Out (Shift+F11)" class="p-2 sm:px-2.5 sm:py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 active:bg-slate-600 rounded flex items-center gap-1">
+        <i data-lucide="corner-left-up" class="w-4 h-4"></i>
+        <span class="hidden md:inline">Out</span>
+      </button>
+
+      <div class="w-px h-4 bg-slate-700 mx-0.5 sm:mx-1"></div>
+
+      <button onclick="handleStop()" title="Reset Session" class="p-2 text-rose-400 hover:bg-slate-700 active:bg-slate-600 rounded">
+        <i data-lucide="square" class="w-4 h-4 fill-current"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE NAVIGATION TABS (Visible on < lg screens) -->
+  <nav class="lg:hidden flex bg-slate-900 border-b border-slate-800 text-xs font-medium shrink-0">
+    <button id="tab-btn-editor" onclick="switchMobileTab('editor')" class="flex-1 py-2.5 text-center text-indigo-400 border-b-2 border-indigo-500 flex items-center justify-center gap-1.5">
+      <i data-lucide="code-2" class="w-4 h-4"></i>
+      <span>Notebook</span>
+    </button>
+    <button id="tab-btn-inspector" onclick="switchMobileTab('inspector')" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5">
+      <i data-lucide="variable" class="w-4 h-4"></i>
+      <span>Variables</span>
+      <span class="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full text-indigo-300 font-mono" id="mobile-var-badge">3</span>
+    </button>
+    <button id="tab-btn-console" onclick="switchMobileTab('console')" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5">
+      <i data-lucide="terminal-square" class="w-4 h-4"></i>
+      <span>Output</span>
+    </button>
+  </nav>
+
+  <!-- MAIN VIEWPORT -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT PANEL: NOTEBOOK CELLS -->
+    <main id="view-editor" class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 w-full">
+      
+      <!-- CELL 1: Upstream Data Source with n8n Pinning -->
+      <section class="border border-slate-800 bg-slate-900/70 rounded-xl overflow-hidden shadow-lg">
+        <header class="bg-slate-800/60 px-3 py-2 flex items-center justify-between border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-1.5">
+            <span class="font-mono text-slate-400 text-[11px]">[1]</span>
+            <span class="font-semibold text-slate-300">Data Source</span>
+          </div>
+
+          <!-- n8n Pin Button -->
+          <button id="pin-btn" onclick="togglePin()" class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 active:scale-95 flex items-center gap-1 text-[11px] transition">
+            <i data-lucide="pin" class="w-3 h-3 fill-current"></i>
+            <span id="pin-label">Pinned</span>
+          </button>
+        </header>
+
+        <!-- Code block with horizontal scroll protection -->
+        <div class="p-3 font-mono-code text-xs text-slate-300 bg-slate-950/40 overflow-x-auto">
+          <span class="text-purple-400">raw_users</span> = [ {"id": <span class="text-emerald-400">101</span>, "tier": <span class="text-amber-300">"VIP"</span>}, {"id": <span class="text-emerald-400">102</span>, "tier": <span class="text-amber-300">"FREE"</span>} ]
+        </div>
+
+        <div id="pin-alert" class="bg-amber-950/20 border-t border-amber-500/20 px-3 py-1.5 flex items-center justify-between text-[11px] text-amber-400/90">
+          <span class="flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+            <span>Cached payload injected downstream.</span>
+          </span>
+          <span class="underline cursor-pointer">Edit</span>
+        </div>
+      </section>
+
+      <!-- CELL 2: Active Debugger Cell -->
+      <section class="border border-indigo-500/60 bg-slate-900 rounded-xl overflow-hidden shadow-2xl">
+        <header class="bg-slate-800/80 px-3 py-2 flex items-center justify-between border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-indigo-400 font-bold text-[11px]">[2]</span>
+            <span class="font-semibold text-slate-200 truncate">Process & Bonus Logic</span>
+          </div>
+          <span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30 shrink-0">Debug Frame</span>
+        </header>
+
+        <!-- Code Lines Editor & Gutter -->
+        <div class="font-mono-code text-xs overflow-x-auto select-text" id="editor-lines">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Inline Output on Desktop (Hidden on mobile tab mode unless active) -->
+        <div id="view-console" class="hidden lg:block border-t border-slate-800 bg-slate-950/80 p-3 text-xs font-mono">
+          <div class="text-slate-500 text-[10px] uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
+            <i data-lucide="terminal" class="w-3 h-3"></i> Stdout Console
+          </div>
+          <div id="stdout-log" class="text-slate-300">
+            <span class="text-slate-600">// Tap 'Step Over' or line numbers to set breakpoints.</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT PANEL: INSPECTOR & STATE (Toggleable on mobile) -->
+    <aside id="view-inspector" class="hidden lg:flex w-full lg:w-80 xl:w-96 bg-slate-900 border-l border-slate-800 flex-col shrink-0">
+      
+      <div class="h-10 border-b border-slate-800 px-3 flex items-center justify-between bg-slate-900/90 text-xs font-semibold uppercase text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="braces" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>State Inspector</span>
+        </div>
+        <span class="text-[10px] text-slate-500 font-normal">Active Session</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs font-mono">
+        
+        <!-- SECTION: Pinned Scope -->
+        <div>
+          <div class="flex items-center justify-between text-slate-400 mb-1.5 font-bold uppercase text-[10px]">
+            <span class="flex items-center gap-1 text-amber-400">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i> Pinned Overrides
+            </span>
+            <button onclick="togglePin()" class="text-[10px] text-slate-500 hover:text-slate-300 underline">Toggle</button>
+          </div>
+          <div id="pinned-inspector-card" class="bg-slate-950 p-2.5 rounded-md border border-amber-500/20 text-slate-300 space-y-1">
+            <div class="flex justify-between items-center text-amber-300 font-semibold">
+              <span>raw_users</span>
+              <span class="text-[10px] text-slate-500">list [len: 2]</span>
+            </div>
+            <div class="text-[11px] text-slate-400 truncate pl-2">
+              [{"id": 101, "tier": "VIP"}, ...]
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: Locals (Interactive) -->
+        <div>
+          <div class="text-slate-400 mb-1.5 font-bold uppercase text-[10px] flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="variable" class="w-3 h-3 text-indigo-400"></i> Local Scope
+            </span>
+            <span class="text-slate-500 font-normal lowercase" id="scope-frame-title">frame: cell_2</span>
+          </div>
+          <div class="bg-slate-950 rounded-md border border-slate-800 divide-y divide-slate-800/60" id="variables-list">
+            <!-- Dynamic variables -->
+          </div>
+        </div>
+
+        <!-- SECTION: Call Stack -->
+        <div>
+          <div class="text-slate-400 mb-1.5 font-bold uppercase text-[10px] flex items-center gap-1">
+            <i data-lucide="layers" class="w-3 h-3 text-indigo-400"></i> Call Stack
+          </div>
+          <div class="bg-slate-950 rounded border border-slate-800 p-2 text-xs space-y-1">
+            <div class="text-indigo-400 flex items-center justify-between font-semibold">
+              <span id="stack-frame-name">&gt; &lt;module&gt;</span>
+              <span class="text-slate-500 text-[10px]" id="stack-line-indicator">line 5</span>
+            </div>
+            <div class="text-slate-500 pl-3 text-[11px]">
+              Cell [1] (Completed)
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Eval / Watch Input -->
+      <div class="p-2 border-t border-slate-800 bg-slate-950">
+        <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5">
+          <span class="text-indigo-400 text-xs font-mono font-bold">&gt;</span>
+          <input type="text" placeholder="Evaluate expression (e.g. tier)..." class="bg-transparent border-none text-xs font-mono text-slate-200 outline-none w-full placeholder-slate-600">
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- JAVASCRIPT STATE ENGINE -->
+  <script>
+    const codeLines = [
+      { line: 1, text: "def calculate_bonus(tier, factor=1.5):" },
+      { line: 2, text: "    base = 100 if tier == 'VIP' else 20" },
+      { line: 3, text: "    return base * factor" },
+      { line: 4, text: "" },
+      { line: 5, text: "scored_users = []" },
+      { line: 6, text: "for u in raw_users:  # (Using Pinned Data)" },
+      { line: 7, text: "    bonus = calculate_bonus(u['tier'])" },
+      { line: 8, text: "    scored_users.append({'id': u['id'], 'bonus': bonus})" },
+      { line: 9, text: "print(f'Done! Processed {len(scored_users)} users')" }
+    ];
+
+    const executionFlow = [
+      { line: 5, frame: "<module>", vars: { scored_users: "[]", raw_users: "list[2] (📌 Pinned)" } },
+      { line: 6, frame: "<module>", vars: { scored_users: "[]", u: "{'id': 101, 'tier': 'VIP'}" } },
+      { line: 7, frame: "<module>", vars: { scored_users: "[]", u: "{'id': 101, 'tier': 'VIP'}" } },
+      { line: 1, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5" } },
+      { line: 2, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100" } },
+      { line: 3, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100", return_val: "150.0" } },
+      { line: 8, frame: "<module>", vars: { bonus: "150.0", scored_users: "[{'id': 101, ...}]" } },
+      { line: 9, frame: "<module>", vars: { scored_users: "list[2]", bonus: "30.0" }, stdout: "Done! Processed 2 users" }
+    ];
+
+    let currentStepIndex = 0;
+    let isPaused = true;
+    let breakpoints = new Set([2, 7]);
+    let isPinned = true;
+
+    function renderEditor() {
+      const container = document.getElementById("editor-lines");
+      container.innerHTML = "";
+
+      const currentTargetLine = executionFlow[currentStepIndex]?.line;
+
+      codeLines.forEach(item => {
+        const hasBreakpoint = breakpoints.has(item.line);
+        const isCurrentLine = (item.line === currentTargetLine) && isPaused;
+
+        const row = document.createElement("div");
+        row.className = `flex items-center min-h-[30px] leading-relaxed transition-colors ${
+          isCurrentLine ? 'bg-indigo-950/70 border-l-4 border-indigo-500' : 'pl-1 hover:bg-slate-800/40'
+        }`;
+
+        // Touch-friendly Breakpoint Gutter (width 10 for thumb taps)
+        const gutter = document.createElement("div");
+        gutter.className = "w-10 text-right pr-2 select-none cursor-pointer flex items-center justify-end gap-1.5 shrink-0";
+        gutter.onclick = () => toggleBreakpoint(item.line);
+
+        const bpCircle = document.createElement("span");
+        bpCircle.className = `w-2.5 h-2.5 rounded-full inline-block transition-transform ${
+          hasBreakpoint ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)] scale-110' : 'bg-transparent hover:bg-slate-700'
+        }`;
+
+        const lineNum = document.createElement("span");
+        lineNum.className = `text-[11px] ${isCurrentLine ? 'text-indigo-400 font-bold' : 'text-slate-600'}`;
+        lineNum.textContent = item.line;
+
+        gutter.appendChild(bpCircle);
+        gutter.appendChild(lineNum);
+
+        // Code block
+        const codeText = document.createElement("div");
+        codeText.className = "flex-1 pl-3 text-slate-300 whitespace-pre font-mono text-[11.5px] overflow-x-auto";
+        codeText.textContent = item.text;
+
+        row.appendChild(gutter);
+        row.appendChild(codeText);
+
+        // Indicator on mobile & desktop
+        if (isCurrentLine) {
+          const arrow = document.createElement("div");
+          arrow.className = "pr-2 text-indigo-400 text-[10px] font-bold shrink-0";
+          arrow.innerHTML = "◀ PAUSED";
+          row.appendChild(arrow);
+        }
+
+        container.appendChild(row);
+      });
+
+      renderVariables();
+      lucide.createIcons();
+    }
+
+    function renderVariables() {
+      const varContainer = document.getElementById("variables-list");
+      const currentData = executionFlow[currentStepIndex];
+
+      document.getElementById("stack-line-indicator").innerText = `line ${currentData.line}`;
+      document.getElementById("stack-frame-name").innerText = `> ${currentData.frame}`;
+      document.getElementById("scope-frame-title").innerText = `frame: ${currentData.frame}`;
+
+      varContainer.innerHTML = "";
+      const varEntries = Object.entries(currentData.vars);
+      document.getElementById("mobile-var-badge").innerText = varEntries.length;
+
+      for (const [key, val] of varEntries) {
+        const item = document.createElement("div");
+        item.className = "px-3 py-2 flex justify-between items-center text-[11px] hover:bg-slate-900/60";
+        item.innerHTML = `
+          <span class="text-indigo-300 font-semibold font-mono">${key}</span>
+          <span class="text-slate-300 truncate max-w-[170px] font-mono text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">${val}</span>
+        `;
+        varContainer.appendChild(item);
+      }
+
+      if (currentData.stdout) {
+        document.getElementById("stdout-log").innerHTML = `<span class="text-emerald-400">&gt; ${currentData.stdout}</span>`;
+      }
+    }
+
+    function toggleBreakpoint(line) {
+      if (breakpoints.has(line)) breakpoints.delete(line);
+      else breakpoints.add(line);
+      renderEditor();
+    }
+
+    function handleStepOver() {
+      if (currentStepIndex < executionFlow.length - 1) {
+        currentStepIndex++;
+        isPaused = true;
+        updateStatus("Paused");
+        renderEditor();
+      }
+    }
+
+    function handleStepIn() {
+      handleStepOver();
+    }
+
+    function handleStepOut() {
+      if (currentStepIndex < 6) {
+        currentStepIndex = 6;
+        renderEditor();
+      }
+    }
+
+    function handleResume() {
+      let nextBpIndex = executionFlow.findIndex((step, idx) => idx > currentStepIndex && breakpoints.has(step.line));
+      if (nextBpIndex !== -1) {
+        currentStepIndex = nextBpIndex;
+        updateStatus(`Paused (Ln ${executionFlow[currentStepIndex].line})`);
+      } else {
+        currentStepIndex = executionFlow.length - 1;
+        updateStatus("Finished");
+      }
+      renderEditor();
+    }
+
+    function handlePause() {
+      isPaused = true;
+      updateStatus("Paused");
+      renderEditor();
+    }
+
+    function handleStop() {
+      currentStepIndex = 0;
+      isPaused = true;
+      document.getElementById("stdout-log").innerHTML = `<span class="text-slate-600">// Session reset.</span>`;
+      updateStatus("Ready");
+      renderEditor();
+    }
+
+    function updateStatus(text) {
+      document.getElementById("debug-status").textContent = text;
+    }
+
+    function togglePin() {
+      isPinned = !isPinned;
+      const btn = document.getElementById("pin-btn");
+      const label = document.getElementById("pin-label");
+      const alert = document.getElementById("pin-alert");
+      const pinnedCard = document.getElementById("pinned-inspector-card");
+
+      if (isPinned) {
+        btn.className = "px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 active:scale-95 flex items-center gap-1 text-[11px] transition";
+        label.innerText = "Pinned";
+        alert.classList.remove("hidden");
+        pinnedCard.classList.remove("opacity-40");
+      } else {
+        btn.className = "px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 active:scale-95 flex items-center gap-1 text-[11px] transition";
+        label.innerText = "Unpinned";
+        alert.classList.add("hidden");
+        pinnedCard.classList.add("opacity-40");
+      }
+      lucide.createIcons();
+    }
+
+    // Mobile View Tab Switching
+    function switchMobileTab(tab) {
+      const editorView = document.getElementById("view-editor");
+      const inspectorView = document.getElementById("view-inspector");
+      const consoleView = document.getElementById("view-console");
+
+      // Reset Tab Bar Styles
+      ["editor", "inspector", "console"].forEach(t => {
+        const b = document.getElementById(`tab-btn-${t}`);
+        b.className = "flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5";
+      });
+
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      activeBtn.className = "flex-1 py-2.5 text-center text-indigo-400 border-b-2 border-indigo-500 flex items-center justify-center gap-1.5";
+
+      if (tab === "editor") {
+        editorView.classList.remove("hidden");
+        inspectorView.classList.add("hidden");
+        consoleView.classList.add("hidden");
+      } else if (tab === "inspector") {
+        editorView.classList.add("hidden");
+        inspectorView.classList.remove("hidden");
+        consoleView.classList.add("hidden");
+      } else if (tab === "console") {
+        editorView.classList.add("hidden");
+        inspectorView.classList.add("hidden");
+        consoleView.classList.remove("hidden");
+      }
+      lucide.createIcons();
+    }
+
+    // Initialize
+    window.addEventListener("DOMContentLoaded", () => {
+      renderEditor();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

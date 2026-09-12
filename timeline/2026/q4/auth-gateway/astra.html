@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeGate — App Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button, a { transition: all .15s; }
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid #34d399;
+      outline-offset: 3px;
+    }
+    dialog::backdrop { background: rgb(2 6 23 / .8); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+  <div class="min-h-screen md:flex">
+    <!-- Sidebar -->
+    <aside class="border-b border-slate-800 bg-slate-900/50 p-6 md:w-64 md:border-b-0 md:border-r">
+      <a href="#" class="flex items-center gap-3 text-xl font-bold text-white">
+        <span class="rounded-xl bg-emerald-400 px-3 py-1 text-slate-950">H</span>
+        HomeGate
+      </a>
+      <p class="mt-3 text-xs text-slate-500">Your family's private cloud</p>
+
+      <nav id="navigation" class="mt-8 flex flex-wrap gap-2 md:flex-col"></nav>
+
+      <div class="mt-10 rounded-xl border border-slate-800 p-4">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          Gateway healthy
+        </div>
+        <p class="mt-2 text-xs text-slate-500">Traefik · Authentik · Tailscale</p>
+      </div>
+      <p class="mt-5 text-xs text-amber-300">Demo mode · changes stay in memory</p>
+    </aside>
+
+    <main class="min-w-0 flex-1">
+      <header class="flex items-center justify-between border-b border-slate-800 px-6 py-5 md:px-10">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-500">Family workspace</p>
+          <h1 id="pageTitle" class="mt-1 text-xl font-semibold text-white"></h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="hidden text-sm text-slate-400 sm:block">Alex · Administrator</span>
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">AL</span>
+        </div>
+      </header>
+      <div id="content" class="space-y-8 p-6 md:p-10"></div>
+    </main>
+  </div>
+
+  <!-- Add app -->
+  <dialog id="appDialog" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200">
+    <form id="appForm" class="space-y-4">
+      <h2 class="text-xl font-semibold text-white">Deploy an application</h2>
+      <p class="text-sm text-slate-400">Connect a repository. Routing and authentication are handled for you.</p>
+
+      <label class="block text-sm">Application name
+        <input name="name" required placeholder="Family Photos"
+          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3" />
+      </label>
+      <label class="block text-sm">GitHub repository
+        <input name="repo" type="url" required placeholder="https://github.com/family/photos"
+          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3" />
+      </label>
+      <label class="block text-sm">Public hostname
+        <input name="domain" required placeholder="photos.example.com"
+          pattern="[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3" />
+      </label>
+      <label class="block text-sm">Environment file <span class="text-slate-500">(optional)</span>
+        <input name="env" type="file" class="mt-2 block w-full text-sm text-slate-400" />
+      </label>
+      <p class="rounded-lg bg-emerald-400/10 p-3 text-xs text-emerald-300">
+        Protected by default. Grant user access after deployment.
+      </p>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="appDialog.close()" class="rounded-lg px-4 py-2 hover:bg-slate-800">Cancel</button>
+        <button class="rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-300">Deploy app</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Token creation -->
+  <dialog id="tokenDialog" class="w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200">
+    <form id="tokenForm" class="space-y-4">
+      <h2 class="text-xl font-semibold text-white">Create API token</h2>
+      <label class="block text-sm">Token name
+        <input name="name" required placeholder="Backup script"
+          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3" />
+      </label>
+      <label class="block text-sm">Allowed application
+        <select id="tokenApp" name="app" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3"></select>
+      </label>
+      <label class="block text-sm">Permission
+        <select name="scope" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3">
+          <option>Read only</option>
+          <option>Read & write</option>
+        </select>
+      </label>
+      <p class="text-xs text-slate-400">Personal token · expires in 30 days · simulated permissions</p>
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="tokenDialog.close()" class="rounded-lg px-4 py-2 hover:bg-slate-800">Cancel</button>
+        <button class="rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Create token</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" class="fixed bottom-6 right-6 hidden max-w-sm rounded-xl border border-emerald-400/30 bg-slate-900 px-5 py-4 text-sm shadow-xl"></div>
+
+  <script>
+    const apps = [
+      { id: 1, name: 'Family Notes', domain: 'notes.example.com', icon: '✎', type: 'Frontend + API', requests: '2,481' },
+      { id: 2, name: 'Family Photos', domain: 'photos.example.com', icon: '▧', type: 'Frontend + API', requests: '8,902' },
+      { id: 3, name: 'File Server', domain: 'files.otherdomain.com', icon: '▤', type: 'Remote · Tailscale', requests: '1,247' }
+    ];
+    const users = [
+      { name: 'Alex', email: 'alex@example.com', role: 'Administrator', access: [1, 2, 3] },
+      { name: 'Sam', email: 'sam@example.com', role: 'Member', access: [1, 2] },
+      { name: 'Jamie', email: 'jamie@example.com', role: 'Member', access: [2] }
+    ];
+    let tokens = [{ id: 1, name: 'Nightly backup', app: 'File Server', scope: 'Read only', expires: 'In 12 days' }];
+    let page = 'Applications';
+    let toastTimer;
+    const content = document.getElementById('content');
+    const appDialog = document.getElementById('appDialog');
+    const tokenDialog = document.getElementById('tokenDialog');
+
+    const escape = value => String(value).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const badge = text => `<span class="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs text-emerald-300">${escape(text)}</span>`;
+    const panel = 'rounded-2xl border border-slate-800 bg-slate-900/50';
+    const primary = 'rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-300';
+
+    function notify(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    function navigate(target) {
+      page = target;
+      render();
+    }
+
+    function render() {
+      document.getElementById('pageTitle').textContent = page;
+      document.getElementById('navigation').innerHTML =
+        ['Applications', 'Users & Access', 'API Tokens', 'Infrastructure'].map(name => `
+          <button onclick="navigate('${name}')" ${page === name ? 'aria-current="page"' : ''}
+            class="rounded-lg px-4 py-3 text-left text-sm ${page === name
+              ? 'bg-emerald-400/10 font-medium text-emerald-300'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'}">${name}</button>
+        `).join('');
+
+      if (page === 'Applications') renderApps();
+      if (page === 'Users & Access') renderUsers();
+      if (page === 'API Tokens') renderTokens();
+      if (page === 'Infrastructure') renderInfrastructure();
+    }
+
+    function renderApps() {
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          ${[
+            ['Applications', apps.length, 'All services online'],
+            ['Family members', users.length, 'Managed by Authentik'],
+            ['Requests / 24h', '12,630', 'Illustrative traffic'],
+            ['Gateway latency', '24 ms', 'Illustrative p95']
+          ].map(([label, value, note]) => `
+            <div class="${panel} p-5">
+              <p class="text-sm text-slate-400">${label}</p>
+              <p class="mt-3 text-3xl font-semibold text-white">${value}</p>
+              <p class="mt-2 text-xs text-slate-500">${note}</p>
+            </div>`).join('')}
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-lg font-semibold text-white">Your applications</h2>
+            <p class="mt-1 text-sm text-slate-400">Private by default. Available wherever you are.</p></div>
+          <button onclick="appDialog.showModal()" class="${primary} whitespace-nowrap">+ Add app</button>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          ${apps.map(app => `
+            <article class="${panel} p-6">
+              <div class="flex items-center justify-between">
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15 text-2xl text-indigo-300">${app.icon}</span>
+                ${badge('Healthy')}
+              </div>
+              <h3 class="mt-5 text-lg font-semibold text-white">${escape(app.name)}</h3>
+              <p class="mt-1 break-all text-sm text-slate-500">${escape(app.domain)}</p>
+              <div class="mt-5 flex justify-between text-xs text-slate-400">
+                <span>${escape(app.type)}</span><span>${app.requests} requests</span>
+              </div>
+              <div class="mt-5 flex gap-2 border-t border-slate-800 pt-4">
+                <button onclick="notify('Demo: this would open the protected application.')"
+                  class="flex-1 rounded-lg bg-slate-800 py-2 text-sm hover:bg-slate-700">Open app ↗</button>
+                <button onclick="navigate('Users & Access')"
+                  class="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Access</button>
+              </div>
+            </article>`).join('')}
+        </div>`;
+    }
+
+    function renderUsers() {
+      content.innerHTML = `
+        <div>
+          <h2 class="text-lg font-semibold text-white">Who can access what?</h2>
+          <p class="mt-1 text-sm text-slate-400">Toggle app access below. Production changes must be enforced by the gateway.</p>
+        </div>
+        <div class="${panel} overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-slate-800 text-slate-400">
+              <tr><th class="p-5">User</th><th class="p-5">Role</th>
+              ${apps.map(a => `<th class="p-5 text-center">${escape(a.name)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>${users.map((user, index) => `
+              <tr class="border-b border-slate-800/60 last:border-0">
+                <td class="p-5"><p class="font-medium text-white">${user.name}</p>
+                  <p class="mt-1 text-xs text-slate-500">${user.email}</p></td>
+                <td class="p-5 text-slate-400">${user.role}</td>
+                ${apps.map(app => `
+                  <td class="p-5 text-center">
+                    <input type="checkbox" ${user.access.includes(app.id) ? 'checked' : ''}
+                      aria-label="${escape(user.name)} access to ${escape(app.name)}"
+                      onchange="toggleAccess(${index}, ${app.id}, this.checked)"
+                      class="h-5 w-5 cursor-pointer accent-emerald-400" />
+                  </td>`).join('')}
+              </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function toggleAccess(index, appId, allowed) {
+      const user = users[index];
+      user.access = allowed ? [...user.access, appId] : user.access.filter(id => id !== appId);
+      notify(`${allowed ? 'Granted' : 'Revoked'} access for ${user.name} (demo).`);
+    }
+
+    function openTokenDialog() {
+      const allowedApps = apps.filter(a => users[0].access.includes(a.id));
+      if (!allowedApps.length) return notify('Grant Alex access to an app first.');
+      document.getElementById('tokenApp').innerHTML = allowedApps.map(a =>
+        `<option value="${a.id}">${escape(a.name)}</option>`).join('');
+      tokenDialog.showModal();
+    }
+
+    function renderTokens() {
+      content.innerHTML = `
+        <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-lg font-semibold text-white">API credentials</h2>
+            <p class="mt-1 text-sm text-slate-400">Personal tokens for Alex’s scripts and integrations.</p></div>
+          <button onclick="openTokenDialog()" class="${primary} whitespace-nowrap">+ Create token</button>
+        </div>
+        <div class="${panel} divide-y divide-slate-800">
+          ${tokens.length ? tokens.map(t => `
+            <div class="flex flex-wrap items-center justify-between gap-4 p-5">
+              <div><p class="font-medium text-white">${escape(t.name)}</p>
+                <p class="mt-1 text-sm text-slate-400">${escape(t.app)} · ${escape(t.scope)} · Expires ${escape(t.expires)}</p>
+              </div>
+              <button onclick="revokeToken(${t.id})" class="rounded-lg px-3 py-2 text-sm text-rose-400 hover:bg-rose-400/10">Revoke</button>
+            </div>`).join('') : '<p class="p-6 text-slate-400">No API tokens yet.</p>'}
+        </div>
+        <div class="${panel} p-6">
+          <p class="mb-3 text-sm text-slate-400">Example backend request</p>
+          <pre class="overflow-x-auto text-sm text-emerald-300"><code>curl https://notes.example.com/api/projects \\
+  -H "Authorization: Bearer $PLATFORM_TOKEN"</code></pre>
+        </div>`;
+    }
+
+    function revokeToken(id) {
+      if (!confirm('Revoke this demo token?')) return;
+      tokens = tokens.filter(t => t.id !== id);
+      render();
+      notify('Token revoked (demo).');
+    }
+
+    function renderInfrastructure() {
+      const services = [
+        ['Gateway', 'Traefik · HTTPS + protected routing', 'gateway · local', 'Healthy'],
+        ['Authentication', 'Authentik · SSO + access policies', 'auth · local', 'Healthy'],
+        ['PostgreSQL', 'Shared instance · separate database/user per app', 'postgres · private Docker network', 'Healthy'],
+        ['Remote file server', 'Private origin · gateway-only network access', 'files · Tailscale', 'Connected'],
+        ['Database backups', 'Daily snapshots · off-host storage', 'Last backup: today, 03:00', 'Completed']
+      ];
+      content.innerHTML = `
+        <div><h2 class="text-lg font-semibold text-white">Connected infrastructure</h2>
+          <p class="mt-1 text-sm text-slate-400">Illustrative status. Only the gateway is publicly reachable.</p></div>
+        <div class="${panel} divide-y divide-slate-800">
+          ${services.map(([name, description, location, status]) => `
+            <div class="flex items-center justify-between gap-4 p-6">
+              <div><h3 class="font-medium text-white">${name}</h3>
+                <p class="mt-1 text-sm text-slate-400">${description}</p>
+                <p class="mt-2 text-xs text-slate-500">${location}</p></div>
+              ${badge(status)}
+            </div>`).join('')}
+        </div>
+        <div class="rounded-xl border border-indigo-400/20 bg-indigo-400/5 p-5 text-sm text-indigo-200">
+          Tailscale connects your hosts privately. Gateway authentication still controls user and API access.
+        </div>`;
+    }
+
+    document.getElementById('appForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      let repo;
+      try { repo = new URL(data.get('repo')); } catch { return; }
+      if (repo.hostname !== 'github.com' || repo.protocol !== 'https:') {
+        return notify('Enter an HTTPS github.com repository URL.');
+      }
+      apps.push({
+        id: Date.now(),
+        name: data.get('name'),
+        domain: data.get('domain'),
+        icon: '◇',
+        type: 'Docker application',
+        requests: '0'
+      });
+      appDialog.close();
+      event.target.reset();
+      render();
+      notify('Demo app added. No repository was built or env file uploaded.');
+    });
+
+    document.getElementById('tokenForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const app = apps.find(a => a.id === Number(data.get('app')));
+      if (!app || !users[0].access.includes(app.id)) return notify('App access required.');
+      tokens.push({
+        id: Date.now(), name: data.get('name'),
+        app: app.name, scope: data.get('scope'), expires: 'in 30 days'
+      });
+      tokenDialog.close();
+      event.target.reset();
+      render();
+      notify('Demo credential added. No real bearer token was issued.');
+    });
+
+    render();
+  </script>
+</body>
+</html>

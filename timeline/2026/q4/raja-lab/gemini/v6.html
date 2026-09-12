@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyFlow - Notebook with Markdown Groups & Debugger</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .font-mono-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* 4 THEMES */
+    :root, [data-theme="slate-dark"] {
+      --bg-canvas: #020617;
+      --bg-surface: #0f172a;
+      --bg-subtle: #1e293b;
+      --bg-code: #090d16;
+      --border-main: #334155;
+      --border-focus: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --accent: #818cf8;
+      --accent-bg: rgba(99, 102, 241, 0.15);
+      --paused-bg: rgba(49, 46, 129, 0.5);
+      --md-bg: rgba(15, 23, 42, 0.5);
+      --syn-keyword: #c084fc;
+      --syn-string: #fde047;
+      --syn-num: #34d399;
+      --syn-comment: #64748b;
+    }
+
+    [data-theme="dracula-dark"] {
+      --bg-canvas: #151320;
+      --bg-surface: #1e1a2f;
+      --bg-subtle: #29233f;
+      --bg-code: #100e19;
+      --border-main: #423863;
+      --border-focus: #bd93f9;
+      --text-main: #f8f8f2;
+      --text-muted: #b8aff0;
+      --text-faint: #7970a3;
+      --accent: #bd93f9;
+      --accent-bg: rgba(189, 147, 249, 0.18);
+      --paused-bg: rgba(98, 45, 140, 0.45);
+      --md-bg: rgba(30, 26, 47, 0.5);
+      --syn-keyword: #ff79c6;
+      --syn-string: #f1fa8c;
+      --syn-num: #50fa7b;
+      --syn-comment: #6272a4;
+    }
+
+    [data-theme="jupyter-light"] {
+      --bg-canvas: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-code: #f8fafc;
+      --border-main: #cbd5e1;
+      --border-focus: #2563eb;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-faint: #94a3b8;
+      --accent: #2563eb;
+      --accent-bg: rgba(37, 99, 235, 0.1);
+      --paused-bg: rgba(219, 234, 254, 0.85);
+      --md-bg: rgba(248, 250, 252, 0.8);
+      --syn-keyword: #7c3aed;
+      --syn-string: #b45309;
+      --syn-num: #059669;
+      --syn-comment: #94a3b8;
+    }
+
+    [data-theme="warm-light"] {
+      --bg-canvas: #fdf6e2;
+      --bg-surface: #eee8d5;
+      --bg-subtle: #e3dac1;
+      --bg-code: #f8f1dc;
+      --border-main: #d3c7a6;
+      --border-focus: #b58900;
+      --text-main: #073642;
+      --text-muted: #586e75;
+      --text-faint: #93a1a1;
+      --accent: #b58900;
+      --accent-bg: rgba(181, 137, 0, 0.15);
+      --paused-bg: rgba(254, 243, 199, 0.9);
+      --md-bg: rgba(248, 241, 220, 0.7);
+      --syn-keyword: #859900;
+      --syn-string: #cb4b16;
+      --syn-num: #2aa198;
+      --syn-comment: #93a1a1;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+    }
+    .th-surface { background-color: var(--bg-surface); }
+    .th-subtle { background-color: var(--bg-subtle); }
+    .th-code { background-color: var(--bg-code); }
+    .th-border { border-color: var(--border-main); }
+    .th-text-main { color: var(--text-main); }
+    .th-text-muted { color: var(--text-muted); }
+    .th-text-faint { color: var(--text-faint); }
+    .th-accent { color: var(--accent); }
+    .th-md { background-color: var(--md-bg); }
+  </style>
+</head>
+<body class="h-screen flex flex-col font-sans overflow-hidden select-none transition-colors duration-200" data-theme="slate-dark">
+
+  <!-- ================= TOP TOOLBAR ================= -->
+  <header class="th-surface border-b th-border px-3 py-2 shrink-0 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+    <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-1.5 font-bold text-sm th-accent">
+        <i data-lucide="book-open-check" class="w-5 h-5"></i>
+        <span>scoring_model.ipynb</span>
+      </div>
+      <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Python 3.12 (Kernel Ready)
+      </span>
+    </div>
+
+    <!-- Actions & Global Debugger Switch -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-1 border-r th-border pr-2">
+        <button onclick="addMarkdownCell()" class="px-2 py-1 text-xs th-text-muted hover:th-text-main th-subtle rounded border th-border flex items-center gap-1" title="Insert Markdown Heading Cell">
+          <i data-lucide="heading" class="w-3.5 h-3.5"></i>
+          <span>+ Markdown</span>
+        </button>
+        <button onclick="addCodeCell()" class="px-2 py-1 text-xs th-text-muted hover:th-text-main th-subtle rounded border th-border flex items-center gap-1" title="Insert Code Cell">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>+ Code</span>
+        </button>
+      </div>
+
+      <!-- Theme Switcher -->
+      <div class="flex items-center gap-1.5 th-subtle px-2 py-1 rounded-lg border th-border text-xs">
+        <i data-lucide="palette" class="w-3.5 h-3.5 th-accent"></i>
+        <select id="theme-selector" onchange="changeTheme(this.value)" class="bg-transparent th-text-main font-medium text-xs outline-none cursor-pointer">
+          <optgroup label="Dark Themes" class="bg-slate-900 text-slate-200">
+            <option value="slate-dark" selected>Slate Dark</option>
+            <option value="dracula-dark">Midnight Dracula</option>
+          </optgroup>
+          <optgroup label="Light Themes" class="bg-white text-slate-800">
+            <option value="jupyter-light">Classic Light</option>
+            <option value="warm-light">Solarized Sand</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Global Debugger Toggle -->
+      <div class="flex items-center gap-1.5 th-subtle px-2 py-1 rounded-lg border th-border">
+        <i data-lucide="bug" id="global-bug-icon" class="w-3.5 h-3.5 th-text-faint"></i>
+        <span class="text-xs font-medium th-text-main hidden sm:inline">Debugger</span>
+        <button id="toggle-debug-mode-btn" onclick="toggleGlobalDebugger()" class="w-8 h-4.5 bg-slate-500/30 rounded-full p-0.5 transition-colors relative flex items-center">
+          <span id="debug-switch-knob" class="w-3.5 h-3.5 rounded-full bg-slate-400 transition-transform transform translate-x-0"></span>
+        </button>
+      </div>
+
+      <!-- Inspector Toggle -->
+      <button onclick="toggleInspectorPanel()" class="p-1.5 th-text-muted hover:th-accent th-subtle rounded border th-border" title="Toggle Variable Inspector">
+        <i data-lucide="variable" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= WORKSPACE ================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- NOTEBOOK CANVASES -->
+    <main class="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4">
+
+      <!-- ================= MARKDOWN CELL: GROUP 1 (Acts as Section Header) ================= -->
+      <div class="th-surface border th-border rounded-xl shadow-sm transition-all focus-within:border-indigo-500" id="md-cell-1">
+        
+        <!-- Cell Meta & Type Selector Bar -->
+        <div class="px-3 py-1.5 th-subtle border-b th-border flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <!-- Cell Type Dropdown Indicator -->
+            <div class="flex items-center gap-1 th-code px-2 py-0.5 rounded border th-border text-[11px] th-text-muted font-mono font-medium">
+              <i data-lucide="file-text" class="w-3 h-3 text-indigo-400"></i>
+              <span>Markdown</span>
+            </div>
+            <span class="th-text-faint text-[10px] hidden sm:inline">(Section Heading)</span>
+          </div>
+
+          <!-- Section Controls (Folding, Pinning, Run Section) -->
+          <div class="flex items-center gap-1.5">
+            <button id="group-1-pin-btn" onclick="toggleGroupPin('group-1')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1 transition">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i>
+              <span id="group-1-pin-label">Pinned Section</span>
+            </button>
+            <button onclick="runSection('group-1')" class="px-2 py-0.5 th-subtle hover:brightness-110 th-text-main border th-border rounded text-[11px] flex items-center gap-1">
+              <i data-lucide="play" class="w-3 h-3 text-emerald-500"></i>
+              <span>Run Section</span>
+            </button>
+            <button onclick="toggleMdEdit('md-cell-1')" class="p-1 th-text-muted hover:th-text-main rounded" title="Edit Markdown">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rendered View with Fold Chevron -->
+        <div id="md-cell-1-rendered" class="p-3.5 th-md flex items-center justify-between cursor-pointer" onclick="toggleGroupFold('group-1')">
+          <div class="flex items-center gap-2.5">
+            <span class="p-1 th-subtle hover:brightness-110 rounded th-text-muted">
+              <i data-lucide="chevron-down" id="group-1-chevron" class="w-4 h-4 transition-transform duration-200"></i>
+            </span>
+            <div class="font-bold text-base tracking-tight th-text-main flex items-center gap-2">
+              <span class="text-indigo-400 font-mono text-sm">##</span>
+              <span>Group 1: User Ingestion & Enrichment</span>
+            </div>
+          </div>
+          <span class="text-[10px] th-subtle th-text-faint px-2 py-0.5 rounded-full border th-border font-mono">2 Cells Below</span>
+        </div>
+
+        <!-- Raw Markdown Edit Mode (Double-click to toggle) -->
+        <div id="md-cell-1-raw" class="hidden p-3 th-code border-t th-border">
+          <textarea id="md-cell-1-textarea" class="w-full bg-transparent th-text-main font-mono text-xs outline-none resize-none" rows="2">## Group 1: User Ingestion & Enrichment</textarea>
+          <div class="flex justify-end pt-2">
+            <button onclick="saveMdEdit('md-cell-1')" class="px-2.5 py-0.5 text-xs bg-indigo-500 text-white rounded font-medium">Save (Shift+Enter)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION 1 CELLS (Foldable) ================= -->
+      <div id="group-1-cells" class="space-y-4 pl-1 sm:pl-3 border-l-2 th-border ml-2 transition-all">
+
+        <!-- CODE CELL 1 -->
+        <div class="th-surface border th-border rounded-xl shadow-sm overflow-hidden">
+          <div class="px-3 py-1.5 th-subtle border-b th-border flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-mono th-text-faint font-semibold text-[11px]">In [1]:</span>
+              <div class="flex items-center gap-1 th-code px-1.5 py-0.2 rounded border th-border text-[10px] th-text-muted font-mono">
+                <i data-lucide="code-2" class="w-3 h-3 text-emerald-400"></i>
+                <span>Code</span>
+              </div>
+            </div>
+            <button onclick="runCellNormally(1)" class="p-1 th-text-muted hover:th-text-main rounded">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <div class="p-3 font-mono-code text-xs th-code overflow-x-auto leading-relaxed">
+            <span style="color: var(--syn-keyword)">raw_users</span> = [ {"id": <span style="color: var(--syn-num)">101</span>, "tier": <span style="color: var(--syn-string)">"VIP"</span>}, {"id": <span style="color: var(--syn-num)">102</span>, "tier": <span style="color: var(--syn-string)">"FREE"</span>} ]
+          </div>
+        </div>
+
+        <!-- CODE CELL 2 (Debuggable Cell) -->
+        <div id="cell-2-container" class="th-surface border th-border rounded-xl shadow-md overflow-hidden transition-all">
+          <div id="cell-2-header" class="px-3 py-2 th-subtle border-b th-border flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-mono th-text-faint font-semibold text-[11px]" id="cell-2-prompt">In [2]:</span>
+              <div class="flex items-center gap-1 th-code px-1.5 py-0.2 rounded border th-border text-[10px] th-text-muted font-mono">
+                <i data-lucide="code-2" class="w-3 h-3 text-emerald-400"></i>
+                <span>Code</span>
+              </div>
+              <span class="th-text-main font-medium truncate">Bonus Calculation</span>
+              <span id="debug-pill" class="hidden text-[10px] bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
+                <i data-lucide="bug" class="w-3 h-3"></i> Paused in Debugger
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button id="btn-normal-run" onclick="runCellNormally(2)" class="px-2 py-1 th-subtle hover:brightness-110 th-text-main border th-border rounded flex items-center gap-1 text-[11px]">
+                <i data-lucide="play" class="w-3 h-3 text-emerald-500"></i>
+                <span>Run</span>
+              </button>
+              <button id="btn-enter-debug" onclick="startDebuggingCell(2)" class="px-2 py-1 rounded flex items-center gap-1 text-[11px] font-medium border" style="background-color: var(--accent-bg); border-color: var(--accent); color: var(--accent);">
+                <i data-lucide="bug" class="w-3 h-3"></i>
+                <span>Debug Cell</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Debug Stepper Toolbar -->
+          <div id="cell-debug-toolbar" class="hidden border-b th-border px-3 py-1.5 flex items-center justify-between text-xs" style="background-color: var(--paused-bg);">
+            <span class="th-accent font-mono font-bold text-[11px] flex items-center gap-1">
+              <i data-lucide="git-commit" class="w-3.5 h-3.5"></i> Stepper Active
+            </span>
+            <div class="flex items-center gap-1 th-surface border th-border p-1 rounded-md shadow-sm">
+              <button onclick="dbgResume()" class="p-1 text-emerald-500 hover:th-subtle rounded" title="Resume"><i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i></button>
+              <button onclick="dbgStepOver()" class="px-2 py-0.5 text-xs font-mono th-text-main hover:th-subtle rounded flex items-center gap-1"><i data-lucide="corner-down-right" class="w-3 h-3"></i><span>Over</span></button>
+              <button onclick="dbgStepIn()" class="px-2 py-0.5 text-xs font-mono th-accent hover:th-subtle rounded flex items-center gap-1"><i data-lucide="corner-right-down" class="w-3 h-3"></i><span>In</span></button>
+              <button onclick="dbgStepOut()" class="px-2 py-0.5 text-xs font-mono th-text-muted hover:th-subtle rounded flex items-center gap-1"><i data-lucide="corner-left-up" class="w-3 h-3"></i><span>Out</span></button>
+              <div class="w-px h-3 th-border bg-current mx-1 opacity-20"></div>
+              <button onclick="stopDebugging()" class="p-1 text-rose-500 hover:th-subtle rounded"><i data-lucide="square" class="w-3 h-3 fill-current"></i></button>
+            </div>
+          </div>
+
+          <!-- Code with Breakpoint Gutter -->
+          <div class="font-mono-code text-xs select-text overflow-x-auto th-code" id="editor-lines">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- Cell Output -->
+          <div id="cell-2-output-box" class="border-t th-border th-subtle p-3 text-xs font-mono">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="th-text-faint font-semibold text-[11px]" id="cell-2-out-prompt">Out [2]:</span>
+              <span id="output-badge" class="hidden text-[10px] text-emerald-500 font-medium">Completed</span>
+            </div>
+            <div id="cell-2-output" class="th-text-muted">
+              <span class="th-text-faint">// Group 1 logic ready. Run or step through with debugger.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Folded Notification Bar -->
+      <div id="group-1-collapsed-msg" class="hidden py-2 px-4 rounded-lg th-subtle border th-border text-center th-text-faint text-xs font-mono cursor-pointer hover:th-text-muted" onclick="toggleGroupFold('group-1')">
+        ▶ 2 code cells hidden under <b>Group 1</b> (Click to unfold)
+      </div>
+
+      <!-- ================= MARKDOWN CELL: GROUP 2 ================= -->
+      <div class="th-surface border th-border rounded-xl shadow-sm transition-all focus-within:border-indigo-500" id="md-cell-2">
+        <div class="px-3 py-1.5 th-subtle border-b th-border flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 th-code px-2 py-0.5 rounded border th-border text-[11px] th-text-muted font-mono font-medium">
+              <i data-lucide="file-text" class="w-3 h-3 text-indigo-400"></i>
+              <span>Markdown</span>
+            </div>
+          </div>
+          <button onclick="runSection('group-2')" class="px-2 py-0.5 th-subtle hover:brightness-110 th-text-main border th-border rounded text-[11px] flex items-center gap-1">
+            <i data-lucide="play" class="w-3 h-3 text-emerald-500"></i>
+            <span>Run Section</span>
+          </button>
+        </div>
+
+        <div id="md-cell-2-rendered" class="p-3.5 th-md flex items-center justify-between cursor-pointer" onclick="toggleGroupFold('group-2')">
+          <div class="flex items-center gap-2.5">
+            <span class="p-1 th-subtle hover:brightness-110 rounded th-text-muted">
+              <i data-lucide="chevron-down" id="group-2-chevron" class="w-4 h-4 transition-transform duration-200"></i>
+            </span>
+            <div class="font-bold text-base tracking-tight th-text-main flex items-center gap-2">
+              <span class="text-indigo-400 font-mono text-sm">##</span>
+              <span>Group 2: Aggregations & Export</span>
+            </div>
+          </div>
+          <span class="text-[10px] th-subtle th-text-faint px-2 py-0.5 rounded-full border th-border font-mono">1 Cell Below</span>
+        </div>
+      </div>
+
+      <!-- SECTION 2 CELLS -->
+      <div id="group-2-cells" class="space-y-4 pl-1 sm:pl-3 border-l-2 th-border ml-2 transition-all">
+        <div class="th-surface border th-border rounded-xl shadow-sm overflow-hidden">
+          <div class="px-3 py-1.5 th-subtle border-b th-border flex items-center justify-between text-xs">
+            <span class="font-mono th-text-faint font-semibold text-[11px]">In [3]:</span>
+            <span class="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1 font-mono">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i> Injected from Group 1
+            </span>
+          </div>
+          <div class="p-3 font-mono-code text-xs th-code leading-relaxed">
+            <span style="color: var(--syn-keyword)">total_bonus</span> = sum(u["bonus"] <span style="color: var(--syn-keyword)">for</span> u <span style="color: var(--syn-keyword)">in</span> scored_users)<br>
+            print(f"Total reward payout: ${total_bonus}")
+          </div>
+        </div>
+      </div>
+
+      <div id="group-2-collapsed-msg" class="hidden py-2 px-4 rounded-lg th-subtle border th-border text-center th-text-faint text-xs font-mono cursor-pointer hover:th-text-muted" onclick="toggleGroupFold('group-2')">
+        ▶ 1 code cell hidden under <b>Group 2</b> (Click to unfold)
+      </div>
+
+    </main>
+
+    <!-- ================= RIGHT VARIABLE INSPECTOR ================= -->
+    <aside id="inspector-panel" class="hidden w-80 sm:w-96 th-surface border-l th-border flex flex-col shrink-0 shadow-lg">
+      <div class="h-10 border-b th-border px-3 flex items-center justify-between th-subtle text-xs font-semibold uppercase th-text-muted">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="variable" class="w-4 h-4 th-accent"></i>
+          <span>Variable Inspector</span>
+        </div>
+        <button onclick="toggleInspectorPanel()" class="th-text-muted hover:th-text-main">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs font-mono">
+        <!-- Pinned Section Scope -->
+        <div>
+          <div class="flex items-center justify-between th-text-muted mb-1.5 font-bold uppercase text-[10px]">
+            <span class="flex items-center gap-1 text-amber-500">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i> Pinned Group 1 Scope
+            </span>
+          </div>
+          <div id="inspector-pinned-card" class="th-code p-2.5 rounded-md border border-amber-500/30 space-y-1">
+            <div class="flex justify-between items-center text-amber-500 font-semibold">
+              <span>raw_users</span>
+              <span class="text-[10px] th-text-faint">list [len: 2]</span>
+            </div>
+            <div class="text-[11px] th-text-muted truncate pl-2">
+              [{"id": 101, "tier": "VIP"}, ...]
+            </div>
+          </div>
+        </div>
+
+        <!-- Locals -->
+        <div>
+          <div class="th-text-muted mb-1.5 font-bold uppercase text-[10px] flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="layers" class="w-3 h-3 th-accent"></i> Local Variables
+            </span>
+            <span class="th-text-faint font-normal lowercase" id="inspector-frame-name">frame: cell_2</span>
+          </div>
+          <div class="th-code rounded-md border th-border divide-y th-border" id="variables-list"></div>
+        </div>
+
+        <!-- Call Stack -->
+        <div>
+          <div class="th-text-muted mb-1.5 font-bold uppercase text-[10px]">Call Stack</div>
+          <div class="th-code rounded border th-border p-2 text-xs space-y-1">
+            <div class="th-accent flex items-center justify-between font-semibold" id="stack-top-frame">
+              <span>&gt; &lt;module&gt;</span>
+              <span class="th-text-faint text-[10px]" id="stack-line">line 5</span>
+            </div>
+            <div class="th-text-faint pl-3 text-[11px]">Group 1 &gt; Cell [2]</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-2.5 border-t th-border th-subtle">
+        <div class="flex items-center gap-1.5 th-surface border th-border rounded px-2.5 py-1">
+          <span class="th-accent text-xs font-mono font-bold">&gt;</span>
+          <input type="text" placeholder="Evaluate expression..." class="bg-transparent border-none text-xs font-mono th-text-main outline-none w-full placeholder:opacity-50">
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- JAVASCRIPT CONTROLLER -->
+  <script>
+    const cellCode = [
+      { line: 1, text: "def calculate_bonus(tier, factor=1.5):" },
+      { line: 2, text: "    base = 100 if tier == 'VIP' else 20" },
+      { line: 3, text: "    return base * factor" },
+      { line: 4, text: "" },
+      { line: 5, text: "scored_users = []" },
+      { line: 6, text: "for u in raw_users:  # (Injected from Group 1 Input)" },
+      { line: 7, text: "    bonus = calculate_bonus(u['tier'])" },
+      { line: 8, text: "    scored_users.append({'id': u['id'], 'bonus': bonus})" },
+      { line: 9, text: "scored_users" }
+    ];
+
+    const debugSteps = [
+      { line: 5, frame: "<module>", vars: { "raw_users": "list[2] (📌 Pinned)", scored_users: "[]" } },
+      { line: 6, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 7, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 1, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5" } },
+      { line: 2, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100" } },
+      { line: 3, frame: "calculate_bonus()", vars: { return_val: "150.0" } },
+      { line: 8, frame: "<module>", vars: { bonus: "150.0", scored_users: "[{'id': 101, ...}]" } },
+      { line: 9, frame: "<module>", vars: { scored_users: "[{'id': 101, ...}, {'id': 102, ...}]" } }
+    ];
+
+    let isGlobalDebugActive = false;
+    let isCellDebugging = false;
+    let currentStep = 0;
+    let breakpoints = new Set([2, 7]);
+    let isInspectorOpen = false;
+    const foldState = { "group-1": false, "group-2": false };
+    const pinState = { "group-1": true, "group-2": false };
+
+    // Heading Folding Triggered from the Markdown Cell
+    function toggleGroupFold(groupId) {
+      foldState[groupId] = !foldState[groupId];
+      const isFolded = foldState[groupId];
+      const cellsContainer = document.getElementById(`${groupId}-cells`);
+      const msg = document.getElementById(`${groupId}-collapsed-msg`);
+      const chevron = document.getElementById(`${groupId}-chevron`);
+
+      if (isFolded) {
+        cellsContainer.classList.add("hidden");
+        msg.classList.remove("hidden");
+        chevron.classList.add("-rotate-90");
+      } else {
+        cellsContainer.classList.remove("hidden");
+        msg.classList.add("hidden");
+        chevron.classList.remove("-rotate-90");
+      }
+    }
+
+    // Markdown Edit Mode Toggles
+    function toggleMdEdit(cellId) {
+      const rendered = document.getElementById(`${cellId}-rendered`);
+      const raw = document.getElementById(`${cellId}-raw`);
+      rendered.classList.toggle("hidden");
+      raw.classList.toggle("hidden");
+    }
+
+    function saveMdEdit(cellId) {
+      toggleMdEdit(cellId);
+    }
+
+    // Section Pinning
+    function toggleGroupPin(groupId) {
+      pinState[groupId] = !pinState[groupId];
+      const isPinned = pinState[groupId];
+      const btn = document.getElementById(`${groupId}-pin-btn`);
+      const label = document.getElementById(`${groupId}-pin-label`);
+      const card = document.getElementById("inspector-pinned-card");
+
+      if (isPinned) {
+        btn.className = "px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1 transition";
+        label.innerText = "Pinned Section";
+        card.classList.remove("opacity-40");
+      } else {
+        btn.className = "px-2 py-0.5 rounded text-[11px] font-medium th-subtle th-text-muted border th-border flex items-center gap-1 transition";
+        label.innerText = "Unpinned";
+        card.classList.add("opacity-40");
+      }
+      lucide.createIcons();
+    }
+
+    function runSection(groupId) {
+      runCellNormally(1);
+      setTimeout(() => runCellNormally(2), 200);
+    }
+
+    function changeTheme(themeName) {
+      document.body.setAttribute("data-theme", themeName);
+      renderCell2();
+      lucide.createIcons();
+    }
+
+    function renderCell2() {
+      const container = document.getElementById("editor-lines");
+      container.innerHTML = "";
+      const activeLine = isCellDebugging ? debugSteps[currentStep]?.line : null;
+
+      cellCode.forEach(item => {
+        const hasBreakpoint = breakpoints.has(item.line);
+        const isCurrentLine = isCellDebugging && (item.line === activeLine);
+
+        const row = document.createElement("div");
+        row.className = `flex items-center min-h-[26px] leading-relaxed transition-colors`;
+        if (isCurrentLine) {
+          row.style.backgroundColor = "var(--paused-bg)";
+          row.style.borderLeft = "4px solid var(--border-focus)";
+        } else {
+          row.className += " pl-1 hover:brightness-105";
+        }
+
+        const gutter = document.createElement("div");
+        gutter.className = "w-9 text-right pr-2 select-none cursor-pointer flex items-center justify-end gap-1 shrink-0";
+        gutter.onclick = () => toggleBreakpoint(item.line);
+
+        const bpCircle = document.createElement("span");
+        bpCircle.className = `w-2 h-2 rounded-full inline-block transition-transform ${
+          hasBreakpoint ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)] scale-110' : 'bg-transparent'
+        }`;
+
+        const lineNum = document.createElement("span");
+        lineNum.className = `text-[11px] ${isCurrentLine ? 'font-bold th-accent' : 'th-text-faint'}`;
+        lineNum.textContent = item.line;
+
+        gutter.appendChild(bpCircle);
+        gutter.appendChild(lineNum);
+
+        const codeText = document.createElement("div");
+        codeText.className = "flex-1 pl-3 th-text-main whitespace-pre font-mono text-[11.5px]";
+        codeText.textContent = item.text;
+
+        row.appendChild(gutter);
+        row.appendChild(codeText);
+
+        if (isCurrentLine) {
+          const arrow = document.createElement("div");
+          arrow.className = "pr-3 th-accent text-[10px] font-bold shrink-0";
+          arrow.innerHTML = "◀ PAUSED";
+          row.appendChild(arrow);
+        }
+
+        container.appendChild(row);
+      });
+
+      renderInspector();
+      lucide.createIcons();
+    }
+
+    function renderInspector() {
+      if (!isCellDebugging) return;
+      const data = debugSteps[currentStep];
+      document.getElementById("stack-line").innerText = `line ${data.line}`;
+      document.getElementById("stack-top-frame").innerHTML = `<span>&gt; ${data.frame}</span><span class="th-text-faint text-[10px]">line ${data.line}</span>`;
+      document.getElementById("inspector-frame-name").innerText = `frame: ${data.frame}`;
+
+      const varList = document.getElementById("variables-list");
+      varList.innerHTML = "";
+
+      for (const [key, val] of Object.entries(data.vars)) {
+        const row = document.createElement("div");
+        row.className = "px-3 py-1.5 flex justify-between items-center text-[11px] hover:brightness-105";
+        row.innerHTML = `
+          <span class="th-accent font-semibold">${key}</span>
+          <span class="th-text-muted font-mono text-[10px] th-subtle px-1.5 py-0.5 rounded border th-border">${val}</span>
+        `;
+        varList.appendChild(row);
+      }
+    }
+
+    function runCellNormally(cellId) {
+      if (cellId === 2) {
+        stopDebugging();
+        const outBox = document.getElementById("cell-2-output");
+        outBox.innerHTML = `<span class="th-accent animate-pulse">Running cell [2]...</span>`;
+        setTimeout(() => {
+          outBox.innerHTML = `<pre class="th-text-main text-[11px]">[
+  { "id": 101, "bonus": 150.0 },
+  { "id": 102, "bonus": 30.0 }
+]</pre>`;
+          document.getElementById("output-badge").classList.remove("hidden");
+        }, 200);
+      }
+    }
+
+    function startDebuggingCell(cellId) {
+      if (foldState["group-1"]) toggleGroupFold("group-1");
+      isCellDebugging = true;
+      currentStep = 0;
+
+      document.getElementById("cell-2-container").style.borderColor = "var(--border-focus)";
+      document.getElementById("cell-debug-toolbar").classList.remove("hidden");
+      document.getElementById("debug-pill").classList.remove("hidden");
+      document.getElementById("cell-2-output").innerHTML = `<span class="text-amber-500">// Debugger active. Step line-by-line.</span>`;
+      
+      openInspector();
+      renderCell2();
+    }
+
+    function stopDebugging() {
+      isCellDebugging = false;
+      document.getElementById("cell-2-container").style.borderColor = "";
+      document.getElementById("cell-debug-toolbar").classList.add("hidden");
+      document.getElementById("debug-pill").classList.add("hidden");
+      renderCell2();
+    }
+
+    function dbgStepOver() {
+      if (currentStep < debugSteps.length - 1) {
+        currentStep++;
+        renderCell2();
+      } else {
+        stopDebugging();
+      }
+    }
+
+    function dbgStepIn() { dbgStepOver(); }
+    function dbgStepOut() {
+      currentStep = Math.min(currentStep + 3, debugSteps.length - 1);
+      renderCell2();
+    }
+
+    function dbgResume() {
+      let nextBp = debugSteps.findIndex((s, i) => i > currentStep && breakpoints.has(s.line));
+      if (nextBp !== -1) {
+        currentStep = nextBp;
+        renderCell2();
+      } else {
+        stopDebugging();
+      }
+    }
+
+    function toggleBreakpoint(line) {
+      if (breakpoints.has(line)) breakpoints.delete(line);
+      else breakpoints.add(line);
+      renderCell2();
+    }
+
+    function toggleGlobalDebugger() {
+      isGlobalDebugActive = !isGlobalDebugActive;
+      const knob = document.getElementById("debug-switch-knob");
+      const icon = document.getElementById("global-bug-icon");
+
+      if (isGlobalDebugActive) {
+        knob.classList.add("translate-x-3.5", "bg-indigo-500");
+        icon.classList.add("th-accent");
+        startDebuggingCell(2);
+      } else {
+        knob.classList.remove("translate-x-3.5", "bg-indigo-500");
+        icon.classList.remove("th-accent");
+        stopDebugging();
+      }
+    }
+
+    function toggleInspectorPanel() {
+      if (isInspectorOpen) closeInspector();
+      else openInspector();
+    }
+
+    function openInspector() {
+      isInspectorOpen = true;
+      document.getElementById("inspector-panel").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeInspector() {
+      isInspectorOpen = false;
+      document.getElementById("inspector-panel").classList.add("hidden");
+    }
+
+    function addMarkdownCell() {
+      alert("New Markdown cell [## Section Title] added.");
+    }
+
+    function addCodeCell() {
+      alert("New Code cell [In ]: added.");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderCell2();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

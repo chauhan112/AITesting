@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Gateway // Control Plane</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            surface: {
+              50: '#18181b',
+              100: '#121215',
+              200: '#09090b',
+              border: '#27272a',
+              muted: '#71717a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #09090b;
+      color: #fafafa;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+    .grid-glow {
+      background-image: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+                        linear-gradient(to right, #1f1f23 1px, transparent 1px),
+                        linear-gradient(to bottom, #1f1f23 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased text-sm h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- ================= TOP IMPERSONATION NOTIFICATION BANNER ================= -->
+  <div id="impersonation-banner" class="hidden bg-amber-500/10 border-b border-amber-500/30 px-4 py-1.5 text-xs text-amber-300 flex items-center justify-between z-50">
+    <div class="flex items-center gap-2 font-mono">
+      <i data-feather="smile" class="w-4 h-4 text-amber-400"></i>
+      <span>IMPERSONATING: <strong id="impersonated-user-name" class="underline">Bob Martinez</strong> (role:user)</span>
+      <span class="text-amber-500/80 text-[11px]">— Privileges downgraded</span>
+    </div>
+    <button onclick="stopImpersonation()" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-[11px] font-mono tracking-wider transition-all">
+      EXIT IMPERSONATION [ESC]
+    </button>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ================= SIDEBAR NAVIGATION ================= -->
+    <aside id="sidebar" class="w-64 bg-surface-100 border-r border-surface-border flex flex-col justify-between shrink-0">
+      <div>
+        <!-- App Brand -->
+        <div class="h-14 px-5 flex items-center justify-between border-b border-surface-border">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded bg-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+              <i data-feather="shield" class="w-4 h-4"></i>
+            </div>
+            <div class="leading-none">
+              <div class="font-bold tracking-tight text-white flex items-center gap-1.5 text-sm">
+                GATEWAY <span class="text-[9px] font-mono text-brand-500 font-semibold px-1 py-0.5 rounded bg-brand-500/10 border border-brand-500/20">v2.4</span>
+              </div>
+              <span class="text-[10px] text-zinc-500 font-mono tracking-wider uppercase">Zero Trust Proxy</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Indicator Pill -->
+        <div class="px-3 pt-3">
+          <div class="px-3 py-1.5 rounded-md bg-surface-200 border border-surface-border flex items-center justify-between">
+            <span class="text-[11px] text-zinc-400 uppercase font-mono tracking-wider">Active Role</span>
+            <span id="sidebar-role-badge" class="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
+              admin
+            </span>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="p-3 space-y-1">
+          <button onclick="navigateTo('/')" id="nav-item-dashboard" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <i data-feather="grid" class="w-4 h-4 text-zinc-400 group-hover:text-white"></i>
+              <span>Dashboard</span>
+            </div>
+          </button>
+
+          <!-- Admin-Only Links -->
+          <div id="admin-nav-group" class="space-y-1">
+            <div class="pt-3 pb-1 px-3 text-[10px] font-mono tracking-wider text-zinc-500 uppercase flex items-center justify-between">
+              <span>Admin Plane</span>
+              <i data-feather="lock" class="w-3 h-3 text-zinc-600"></i>
+            </div>
+            
+            <button onclick="navigateTo('/users')" id="nav-item-users" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="users" class="w-4 h-4 text-zinc-400 group-hover:text-white"></i>
+                <span>Users</span>
+              </div>
+              <span class="text-[10px] font-mono text-zinc-500 border border-zinc-700/60 px-1 rounded">RBAC</span>
+            </button>
+
+            <button onclick="navigateTo('/apps')" id="nav-item-apps" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="layers" class="w-4 h-4 text-zinc-400 group-hover:text-white"></i>
+                <span>Apps & Proxies</span>
+              </div>
+              <span class="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-full">4</span>
+            </button>
+
+            <button onclick="navigateTo('/simulator')" id="nav-item-simulator" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="terminal" class="w-4 h-4 text-zinc-400 group-hover:text-white"></i>
+                <span>Policy Simulator</span>
+              </div>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            </button>
+          </div>
+
+          <div class="pt-3 pb-1 px-3 text-[10px] font-mono tracking-wider text-zinc-500 uppercase">Personal</div>
+
+          <button onclick="navigateTo('/profile')" id="nav-item-profile" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <i data-feather="user" class="w-4 h-4 text-zinc-400 group-hover:text-white"></i>
+              <span>Profile & Keys</span>
+            </div>
+          </button>
+        </nav>
+      </div>
+
+      <!-- User footer profile snippet -->
+      <div class="p-3 border-t border-surface-border bg-surface-200/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="user-avatar" class="w-8 h-8 rounded-full bg-brand-600/20 border border-brand-500/40 text-brand-300 font-mono flex items-center justify-center text-xs font-bold shrink-0">
+              AL
+            </div>
+            <div class="min-w-0 leading-tight">
+              <p id="user-display-name" class="font-medium text-xs text-white truncate">Alice Vance</p>
+              <p id="user-display-email" class="text-[10px] text-zinc-500 font-mono truncate">alice@internal.net</p>
+            </div>
+          </div>
+          <button onclick="navigateTo('/login')" title="Sign out" class="p-1.5 rounded text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition">
+            <i data-feather="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT VIEW CONTAINER ================= -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-surface-200">
+      
+      <!-- Top app header / live stats ticker -->
+      <header class="h-14 border-b border-surface-border bg-surface-100/70 px-6 flex items-center justify-between backdrop-blur shrink-0">
+        <div class="flex items-center gap-3">
+          <h1 id="screen-title" class="font-semibold text-white tracking-tight text-base">Dashboard</h1>
+          <span id="route-pill" class="text-[11px] font-mono text-zinc-400 bg-surface-200 border border-surface-border px-2 py-0.5 rounded">/</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>GATEWAY DAEMON: HEALTHY</span>
+          </div>
+          <button onclick="toggleQuickLogin()" class="text-xs px-2.5 py-1 border border-surface-border rounded bg-surface-50 text-zinc-400 hover:text-white transition font-mono">
+            Switch to Login Screen
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW: DASHBOARD (/) -->
+      <section id="view-dashboard" class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <!-- Metric Stats Tiles -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="p-4 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono text-zinc-400 uppercase">Proxied Users</p>
+              <p class="text-2xl font-bold font-mono text-white mt-1">24</p>
+              <p class="text-[11px] text-emerald-400 font-mono mt-0.5">↑ 2 provisioned today</p>
+            </div>
+            <div class="p-3 rounded-md bg-zinc-800/70 text-zinc-300"><i data-feather="users" class="w-5 h-5"></i></div>
+          </div>
+          <div class="p-4 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono text-zinc-400 uppercase">Active Apps</p>
+              <p class="text-2xl font-bold font-mono text-white mt-1">4</p>
+              <p class="text-[11px] text-zinc-400 font-mono mt-0.5">All upstreams 200 OK</p>
+            </div>
+            <div class="p-3 rounded-md bg-zinc-800/70 text-zinc-300"><i data-feather="box" class="w-5 h-5"></i></div>
+          </div>
+          <div class="p-4 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono text-zinc-400 uppercase">Secure Endpoints</p>
+              <p class="text-2xl font-bold font-mono text-white mt-1">38</p>
+              <p class="text-[11px] text-brand-400 font-mono mt-0.5">Strict Default-Deny</p>
+            </div>
+            <div class="p-3 rounded-md bg-zinc-800/70 text-zinc-300"><i data-feather="git-commit" class="w-5 h-5"></i></div>
+          </div>
+          <div class="p-4 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-mono text-zinc-400 uppercase">MFA Coverage</p>
+              <p class="text-2xl font-bold font-mono text-emerald-400 mt-1">87.5%</p>
+              <p class="text-[11px] text-zinc-400 font-mono mt-0.5">21 of 24 enforced</p>
+            </div>
+            <div class="p-3 rounded-md bg-zinc-800/70 text-emerald-400"><i data-feather="shield-check" class="w-5 h-5"></i></div>
+          </div>
+        </div>
+
+        <!-- Section: Your Allowed Apps -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-semibold text-white">Your Authorized Applications</h2>
+              <p class="text-xs text-zinc-400">Applications permitted by your current tag combination.</p>
+            </div>
+            <span class="text-xs font-mono text-zinc-500 bg-surface-100 px-2.5 py-1 rounded border border-surface-border">
+              Context: <span id="dash-user-tags" class="text-brand-400">role:admin, project:alpha, team:core</span>
+            </span>
+          </div>
+
+          <div id="apps-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <!-- App Card 1 -->
+            <div class="p-4 rounded-lg bg-surface-100 border border-surface-border hover:border-zinc-700 transition flex flex-col justify-between group">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded bg-indigo-950/60 border border-indigo-700/50 flex items-center justify-center text-indigo-400">
+                      <i data-feather="bar-chart-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-white text-sm">Grafana Telemetry</h3>
+                      <p class="text-[11px] font-mono text-zinc-400">https://metrics.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
+                  Internal monitoring cluster dashboards, Prometheus metrics explorer, and alerts.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950/50 text-purple-300 border border-purple-800/40">role:admin</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40">team:core</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t border-surface-border flex items-center justify-between">
+                <span class="text-[11px] font-mono text-zinc-500">Upstream: 10.0.4.12:3000</span>
+                <button onclick="window.open('#/apps/grafana', '_blank')" class="px-2.5 py-1 text-xs rounded bg-brand-600 hover:bg-brand-500 text-white font-medium flex items-center gap-1.5 transition">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- App Card 2 -->
+            <div class="p-4 rounded-lg bg-surface-100 border border-surface-border hover:border-zinc-700 transition flex flex-col justify-between group">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded bg-emerald-950/60 border border-emerald-700/50 flex items-center justify-center text-emerald-400">
+                      <i data-feather="cpu" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-white text-sm">Kubernetes Cluster UI</h3>
+                      <p class="text-[11px] font-mono text-zinc-400">https://k8s-prod.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
+                  Production workloads orchestration console, Pod diagnostics, and rolling releases.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950/50 text-purple-300 border border-purple-800/40">role:admin</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/40">env:prod</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t border-surface-border flex items-center justify-between">
+                <span class="text-[11px] font-mono text-zinc-500">Upstream: 10.0.12.80:8443</span>
+                <button onclick="window.open('#/apps/k8s', '_blank')" class="px-2.5 py-1 text-xs rounded bg-brand-600 hover:bg-brand-500 text-white font-medium flex items-center gap-1.5 transition">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- App Card 3 -->
+            <div class="p-4 rounded-lg bg-surface-100 border border-surface-border hover:border-zinc-700 transition flex flex-col justify-between group">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded bg-cyan-950/60 border border-cyan-700/50 flex items-center justify-center text-cyan-400">
+                      <i data-feather="database" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-white text-sm">Postgres Query Studio</h3>
+                      <p class="text-[11px] font-mono text-zinc-400">https://dbadmin.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
+                  Read-only replica browser for analytical ad-hoc queries and index inspection.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40">project:alpha</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t border-surface-border flex items-center justify-between">
+                <span class="text-[11px] font-mono text-zinc-500">Upstream: 10.0.99.4:5432</span>
+                <button onclick="window.open('#/apps/pgstudio', '_blank')" class="px-2.5 py-1 text-xs rounded bg-brand-600 hover:bg-brand-500 text-white font-medium flex items-center gap-1.5 transition">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: USERS (/users - ADMIN ONLY) -->
+      <section id="view-users" class="hidden flex-1 flex-col overflow-hidden">
+        <!-- Toolbar -->
+        <div class="px-6 py-3 border-b border-surface-border bg-surface-100 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3 w-96">
+            <div class="relative w-full">
+              <i data-feather="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5"></i>
+              <input type="text" placeholder="Search by name, email, or tag..." class="w-full bg-surface-200 border border-surface-border pl-9 pr-3 py-1.5 text-xs rounded text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500 font-mono" />
+            </div>
+            <select class="bg-surface-200 border border-surface-border text-xs rounded px-2.5 py-1.5 text-zinc-300 font-mono focus:outline-none focus:border-brand-500">
+              <option>All Tags</option>
+              <option>role:admin</option>
+              <option>project:alpha</option>
+              <option>team:sre</option>
+            </select>
+          </div>
+          <button onclick="openDrawer('drawer-create-user')" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium flex items-center gap-1.5 shadow-sm transition">
+            <i data-feather="user-plus" class="w-3.5 h-3.5"></i>
+            <span>Create User</span>
+          </button>
+        </div>
+
+        <!-- Table container -->
+        <div class="flex-1 overflow-auto custom-scrollbar p-6">
+          <div class="border border-surface-border rounded-lg bg-surface-100 overflow-hidden shadow">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-surface-200/80 border-b border-surface-border text-zinc-400 font-mono uppercase text-[10px]">
+                <tr>
+                  <th class="py-3 px-4">User</th>
+                  <th class="py-3 px-4">Monospace ID</th>
+                  <th class="py-3 px-4">Tags / Attributes</th>
+                  <th class="py-3 px-4">MFA</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-border" id="users-table-body">
+                <!-- User row 1: Alice (Admin) -->
+                <tr class="hover:bg-zinc-800/30 transition">
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-700/50 text-brand-300 font-mono flex items-center justify-center font-bold text-xs">AV</div>
+                    <div>
+                      <div class="font-medium text-white">Alice Vance <span class="text-[10px] text-zinc-500 font-mono">(You)</span></div>
+                      <div class="text-[11px] font-mono text-zinc-400">alice@internal.net</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-zinc-400 text-xs">usr_94827101</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">role:admin</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/50">project:alpha</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">team:core</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400"></span> TOTP active
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-mono">Active</span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button disabled class="text-zinc-600 cursor-not-allowed p-1" title="Cannot impersonate yourself">
+                      <i data-feather="smile" class="w-4 h-4"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- User row 2: Bob (SRE user) -->
+                <tr class="hover:bg-zinc-800/30 transition">
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono flex items-center justify-center font-bold text-xs">BM</div>
+                    <div>
+                      <div class="font-medium text-white">Bob Martinez</div>
+                      <div class="text-[11px] font-mono text-zinc-400">bob@internal.net</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-zinc-400 text-xs">usr_88301934</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">role:user</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">team:sre</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50">env:prod</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400"></span> TOTP active
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-mono">Active</span>
+                  </td>
+                  <td class="py-3 px-4 text-right space-x-2">
+                    <button onclick="startImpersonation('Bob Martinez', 'bob@internal.net', ['role:user', 'team:sre', 'env:prod'])" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded font-mono text-[11px] inline-flex items-center gap-1" title="Impersonate User">
+                      <i data-feather="smile" class="w-3.5 h-3.5"></i>
+                      <span>Impersonate</span>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- User row 3: Charlie (Contractor / Front-end) -->
+                <tr class="hover:bg-zinc-800/30 transition">
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono flex items-center justify-center font-bold text-xs">CD</div>
+                    <div>
+                      <div class="font-medium text-white">Charlie Davis</div>
+                      <div class="text-[11px] font-mono text-zinc-400">charlie.ext@partner.org</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-zinc-400 text-xs">usr_33109284</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">role:user</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/50">project:alpha</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 text-zinc-500 font-mono text-[11px]">
+                      <span class="w-2 h-2 rounded-full bg-zinc-600"></span> Disabled
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono">Suspended</span>
+                  </td>
+                  <td class="py-3 px-4 text-right space-x-2">
+                    <button onclick="startImpersonation('Charlie Davis', 'charlie.ext@partner.org', ['role:user', 'project:alpha'])" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded font-mono text-[11px] inline-flex items-center gap-1">
+                      <i data-feather="smile" class="w-3.5 h-3.5"></i>
+                      <span>Impersonate</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: APPS & ENDPOINTS (/apps - ADMIN ONLY) -->
+      <section id="view-apps" class="hidden flex-1 flex overflow-hidden">
+        <!-- Left: Master App List -->
+        <div class="w-80 border-r border-surface-border bg-surface-100 flex flex-col shrink-0">
+          <div class="p-3 border-b border-surface-border flex items-center justify-between">
+            <span class="text-xs font-mono font-medium text-zinc-400 uppercase tracking-wider">Configured Gateways</span>
+            <button onclick="showToast('OpenAPI importer ready.')" class="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800" title="Import OpenAPI Spec">
+              <i data-feather="download-cloud" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto divide-y divide-surface-border/50 custom-scrollbar">
+            <!-- App Item 1 -->
+            <button onclick="selectApp('grafana')" id="app-item-grafana" class="w-full text-left p-3.5 hover:bg-zinc-800/40 bg-zinc-800/50 border-l-2 border-brand-500 flex flex-col gap-1 transition">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-white text-xs">Grafana Telemetry</span>
+                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1 rounded">HEALTHY</span>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400 truncate">https://metrics.internal.gw</span>
+              <span class="text-[10px] text-zinc-500">2 registered endpoint rules</span>
+            </button>
+
+            <!-- App Item 2 -->
+            <button onclick="selectApp('k8s')" id="app-item-k8s" class="w-full text-left p-3.5 hover:bg-zinc-800/40 border-l-2 border-transparent flex flex-col gap-1 transition">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-white text-xs">Kubernetes Cluster UI</span>
+                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1 rounded">HEALTHY</span>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400 truncate">https://k8s-prod.internal.gw</span>
+              <span class="text-[10px] text-zinc-500">5 registered endpoint rules</span>
+            </button>
+
+            <!-- App Item 3 -->
+            <button onclick="selectApp('pgstudio')" id="app-item-pgstudio" class="w-full text-left p-3.5 hover:bg-zinc-800/40 border-l-2 border-transparent flex flex-col gap-1 transition">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-white text-xs">Postgres Studio</span>
+                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1 rounded">HEALTHY</span>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400 truncate">https://dbadmin.internal.gw</span>
+              <span class="text-[10px] text-zinc-500">1 registered endpoint rule</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Detail Panel & Endpoint Rule Builder -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <!-- App Header -->
+          <div class="p-5 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="detail-app-name" class="text-lg font-semibold text-white">Grafana Telemetry</h2>
+                <span class="text-xs font-mono bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-surface-border">ID: app_grf01</span>
+              </div>
+              <p class="text-xs text-zinc-400 mt-1 font-mono">Upstream: <span id="detail-app-upstream" class="text-brand-400">http://10.0.4.12:3000</span></p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="showToast('Live policy hot-reloaded across 4 edge workers')" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium flex items-center gap-1.5 shadow">
+                <i data-feather="zap" class="w-3.5 h-3.5"></i>
+                <span>Deploy Policy</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Default-Deny Warning Banner -->
+          <div class="p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2.5 font-mono">
+            <i data-feather="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold">ZERO-TRUST DEFAULT-DENY ENFORCED:</span> Any incoming request that does not match an explicit endpoint rule glob below returns an immediate synthetic <code class="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200">HTTP 404 / 403 Forbidden</code> at the edge proxy.
+            </div>
+          </div>
+
+          <!-- Endpoints Rule Table -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-mono uppercase tracking-wider text-zinc-400">Proxied Route Rules</h3>
+              <button onclick="showToast('Endpoint added')" class="text-xs text-brand-400 hover:text-brand-300 font-mono flex items-center gap-1">
+                <i data-feather="plus" class="w-3.5 h-3.5"></i>
+                <span>Add Endpoint Rule</span>
+              </button>
+            </div>
+
+            <div class="border border-surface-border rounded-lg bg-surface-100 overflow-hidden">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-surface-200 border-b border-surface-border text-zinc-400 font-mono text-[10px] uppercase">
+                  <tr>
+                    <th class="py-2.5 px-4">Method</th>
+                    <th class="py-2.5 px-4">Path Glob</th>
+                    <th class="py-2.5 px-4">Access Rule Requirements</th>
+                    <th class="py-2.5 px-4 text-right">Live Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-surface-border font-mono">
+                  <tr>
+                    <td class="py-3 px-4">
+                      <span class="px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40 text-[10px] font-bold">GET</span>
+                    </td>
+                    <td class="py-3 px-4 text-white font-semibold">/api/v1/query*</td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">authenticated ✓</span>
+                        <span class="text-[10px] text-zinc-500 font-bold">AND</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">tags_all: [role:admin]</span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4">
+                      <span class="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold">ANY</span>
+                    </td>
+                    <td class="py-3 px-4 text-white font-semibold">/public/healthz</td>
+                    <td class="py-3 px-4">
+                      <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40">public ✓ (unauthenticated)</span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-4">
+                      <span class="px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-400 border border-rose-800/40 text-[10px] font-bold">POST</span>
+                    </td>
+                    <td class="py-3 px-4 text-white font-semibold">/admin/snapshots/*</td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">authenticated ✓</span>
+                        <span class="text-[10px] text-zinc-500 font-bold">AND</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">tags_all: [role:admin, team:core]</span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded">Active</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: POLICY SIMULATOR (/simulator - ADMIN ONLY) -->
+      <section id="view-simulator" class="hidden flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div>
+            <h2 class="text-base font-semibold text-white">Zero Trust Policy Simulator</h2>
+            <p class="text-xs text-zinc-400">Dry-run incoming synthetic requests against edge policy rules without hitting upstream infrastructure.</p>
+          </div>
+
+          <!-- Simulator Input Form Card -->
+          <div class="p-5 rounded-lg bg-surface-100 border border-surface-border space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">1. User Identity</label>
+                <select id="sim-user" onchange="runSimulation()" class="w-full bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500">
+                  <option value="alice">Alice Vance (role:admin, team:core)</option>
+                  <option value="bob">Bob Martinez (role:user, team:sre)</option>
+                  <option value="charlie">Charlie Davis (role:user, project:alpha)</option>
+                  <option value="anon">Anonymous (Unauthenticated)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">2. Target App</label>
+                <select id="sim-app" onchange="runSimulation()" class="w-full bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500">
+                  <option value="grafana">Grafana Telemetry (/)</option>
+                  <option value="k8s">Kubernetes Cluster UI (/)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">3. HTTP Method</label>
+                <select id="sim-method" onchange="runSimulation()" class="w-full bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500">
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">4. Target Path</label>
+              <div class="flex gap-2">
+                <input id="sim-path" oninput="runSimulation()" type="text" value="/api/v1/query" class="flex-1 bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500" placeholder="/path/to/proxy..." />
+                <button onclick="runSimulation()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded flex items-center gap-1.5 transition">
+                  <i data-feather="play" class="w-3.5 h-3.5"></i>
+                  <span>Evaluate Policy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- VERDICT RESULT CARD -->
+          <div id="verdict-container" class="rounded-lg border p-5 transition-all">
+            <!-- Dynamic content populated by runSimulation() -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: PROFILE & KEYS (/profile) -->
+      <section id="view-profile" class="hidden flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div>
+            <h2 class="text-base font-semibold text-white">Account & Credentials</h2>
+            <p class="text-xs text-zinc-400">Manage security settings, multi-factor tokens, and session revocations.</p>
+          </div>
+
+          <!-- Profile Nav Tabs -->
+          <div class="border-b border-surface-border flex gap-6 text-xs font-medium">
+            <button onclick="switchProfileTab('general')" id="tab-btn-general" class="pb-2 text-brand-400 border-b-2 border-brand-500">General Information</button>
+            <button onclick="switchProfileTab('security')" id="tab-btn-security" class="pb-2 text-zinc-400 hover:text-white border-b-2 border-transparent">MFA & Security</button>
+            <button onclick="switchProfileTab('sessions')" id="tab-btn-sessions" class="pb-2 text-zinc-400 hover:text-white border-b-2 border-transparent">Active API Tokens</button>
+          </div>
+
+          <!-- Tab Content: General -->
+          <div id="tab-content-general" class="p-5 rounded-lg bg-surface-100 border border-surface-border space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Full Name</label>
+                <input type="text" value="Alice Vance" class="w-full bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Email Address</label>
+                <input type="email" value="alice@internal.net" class="w-full bg-surface-200 border border-surface-border text-xs rounded px-3 py-2 text-white font-mono focus:outline-none focus:border-brand-500" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Associated Tag Claims (Immutable)</label>
+              <div class="p-2 bg-surface-200 border border-surface-border rounded flex gap-1.5">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">role:admin</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/50">project:alpha</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">team:core</span>
+              </div>
+            </div>
+            <div class="pt-2">
+              <button onclick="showToast('Profile changes saved')" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition">Save Changes</button>
+            </div>
+          </div>
+
+          <!-- Tab Content: Security (MFA) -->
+          <div id="tab-content-security" class="hidden space-y-4">
+            <div class="p-5 rounded-lg bg-surface-100 border border-surface-border flex items-center justify-between">
+              <div>
+                <h3 class="font-medium text-white text-sm">Time-based One-Time Password (TOTP)</h3>
+                <p class="text-xs text-zinc-400 mt-0.5">Protect gateway sign-ins with an authenticator app (Google Authenticator, 1Password, YubiKey).</p>
+                <div class="mt-2 flex items-center gap-2">
+                  <span class="text-xs font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded">● Enabled & Enforced</span>
+                </div>
+              </div>
+              <button onclick="openModal('modal-mfa-qr')" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-mono">
+                Reconfigure Key
+              </button>
+            </div>
+
+            <div class="p-5 rounded-lg bg-surface-100 border border-surface-border">
+              <h3 class="font-medium text-white text-sm mb-2">Emergency Recovery Codes</h3>
+              <p class="text-xs text-zinc-400 mb-3">One-time codes to access your account if your authenticator device is lost.</p>
+              <div class="bg-surface-200 p-3 rounded font-mono text-xs grid grid-cols-2 gap-2 text-zinc-300 border border-surface-border">
+                <span>9481-2294-1182</span>
+                <span>8391-4401-9921</span>
+                <span>1294-0019-3382</span>
+                <span>7710-5592-4410</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content: Sessions -->
+          <div id="tab-content-sessions" class="hidden p-5 rounded-lg bg-surface-100 border border-surface-border space-y-3">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+              <div>
+                <p class="font-medium text-white text-xs">Current Browser Session</p>
+                <p class="text-[11px] font-mono text-zinc-400">192.168.1.104 • Edge Gateway Node #1 • Issued 42 mins ago</p>
+              </div>
+              <span class="text-[10px] font-mono text-emerald-400">Active Now</span>
+            </div>
+            <button onclick="showToast('All other session tokens revoked.')" class="px-3 py-1.5 rounded bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-600/40 text-xs font-mono">
+              Revoke All Other Sessions
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= OVERLAY: LOGIN VIEW (/login) ================= -->
+  <div id="screen-login" class="hidden fixed inset-0 z-50 bg-surface-200 flex">
+    <!-- Left panel: Hero / Developer brand -->
+    <div class="hidden lg:flex w-1/2 bg-surface-100 border-r border-surface-border grid-glow flex-col justify-between p-12 relative overflow-hidden">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+          <i data-feather="shield" class="w-4 h-4"></i>
+        </div>
+        <span class="font-bold tracking-tight text-white font-mono text-base">AUTH GATEWAY // DAEMON</span>
+      </div>
+
+      <div class="space-y-4 max-w-md">
+        <h2 class="text-3xl font-bold tracking-tight text-white leading-tight">Zero-trust routing and identity broker.</h2>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          Dense policy enforcement, tag-scoped downstream proxies, and fast rule compilation for modern developer microservices.
+        </p>
+        <div class="pt-2 font-mono text-xs text-zinc-500 space-y-1">
+          <div>→ TLS 1.3 Termination</div>
+          <div>→ Tag-based RBAC & ABAC compilation</div>
+          <div>→ Instant worker policy push</div>
+        </div>
+      </div>
+
+      <div class="text-xs font-mono text-zinc-600">
+        SECURE PROXY LOCALHOST • LISTENING :443
+      </div>
+    </div>
+
+    <!-- Right panel: Authentication card -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-surface-200">
+      <div class="w-full max-w-sm space-y-6">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-white">Sign in to control console</h2>
+          <p class="text-xs text-zinc-400 mt-1">Authenticate to access authorized gateway endpoints.</p>
+        </div>
+
+        <!-- Step 1: Credentials Form -->
+        <form id="login-form-credentials" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Work Email</label>
+            <input id="login-email" type="email" required value="alice@internal.net" class="w-full bg-surface-100 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-mono text-zinc-400 uppercase">Master Password</label>
+              <a href="#" onclick="showToast('Password reset link dispatched')" class="text-[11px] text-brand-400 hover:underline">Forgot?</a>
+            </div>
+            <input type="password" required value="••••••••••••" class="w-full bg-surface-100 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+          </div>
+
+          <button type="submit" class="w-full py-2 px-4 rounded bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs tracking-wide transition shadow-lg shadow-brand-500/20">
+            Sign In with Credentials →
+          </button>
+        </form>
+
+        <!-- Step 2: 6-Digit MFA Morph Card -->
+        <div id="login-form-mfa" class="hidden space-y-4">
+          <div class="p-3 bg-brand-950/40 border border-brand-800/40 rounded text-xs text-brand-300">
+            Hardware MFA detected. Enter the 6-digit code from your authenticator device.
+          </div>
+          
+          <div class="flex justify-between gap-2 my-4">
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="4" />
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="2" />
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="8" />
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="9" />
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="0" />
+            <input maxlength="1" class="otp-box w-11 h-12 text-center text-lg font-mono font-bold bg-surface-100 border border-surface-border rounded focus:border-brand-500 focus:outline-none text-white" value="1" />
+          </div>
+
+          <button onclick="finishLogin()" class="w-full py-2 px-4 rounded bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs tracking-wide transition shadow-lg shadow-brand-500/20">
+            Verify & Authorize Session
+          </button>
+
+          <div class="text-center">
+            <button onclick="showToast('Recovery fallback ready')" class="text-[11px] text-zinc-500 hover:text-zinc-300 font-mono">
+              Use emergency recovery code instead
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-surface-border pt-4 text-center">
+          <button onclick="toggleQuickLogin()" class="text-xs text-zinc-500 hover:text-white font-mono">
+            ← Cancel and return to app
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MFA QR SETUP ================= -->
+  <div id="modal-mfa-qr" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-surface-100 border border-surface-border w-full max-w-md rounded-lg p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-surface-border">
+        <h3 class="font-semibold text-white text-sm">Configure Multi-Factor Authenticator</h3>
+        <button onclick="closeModal('modal-mfa-qr')" class="text-zinc-400 hover:text-white"><i data-feather="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-zinc-400">Scan this TOTP secret in your authenticator app (1Password, Google Authenticator, Authy):</p>
+      
+      <!-- Fake QR code box -->
+      <div class="flex justify-center p-4 bg-white rounded-lg">
+        <div class="w-40 h-40 bg-zinc-950 flex flex-col items-center justify-center p-2 text-center text-[10px] font-mono text-zinc-400">
+          <i data-feather="grid" class="w-16 h-16 text-white mb-2"></i>
+          <span>[SYNTHETIC QR CODE]</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-mono text-zinc-400 uppercase mb-1">Secret Key string</label>
+        <div class="p-2 bg-surface-200 border border-surface-border rounded text-xs font-mono text-brand-300 flex justify-between items-center">
+          <span>HXDM-9942-KKQ1-8821</span>
+          <button onclick="showToast('Copied secret')" class="text-[11px] text-zinc-400 hover:text-white">Copy</button>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModal('modal-mfa-qr')" class="px-3 py-1.5 rounded bg-surface-200 hover:bg-zinc-800 text-zinc-300 text-xs font-mono">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DRAWER: CREATE USER ================= -->
+  <div id="drawer-create-user" class="hidden fixed inset-0 z-50 overflow-hidden">
+    <div onclick="closeDrawer('drawer-create-user')" class="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"></div>
+    <div class="absolute inset-y-0 right-0 max-w-md w-full bg-surface-100 border-l border-surface-border shadow-2xl flex flex-col justify-between">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+          <h3 class="font-semibold text-white text-sm">Provision Gateway Identity</h3>
+          <button onclick="closeDrawer('drawer-create-user')" class="text-zinc-400 hover:text-white"><i data-feather="x" class="w-4 h-4"></i></button>
+        </div>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Full Name</label>
+            <input type="text" placeholder="Devon Vance" class="w-full bg-surface-200 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Corporate Email</label>
+            <input type="email" placeholder="devon@internal.net" class="w-full bg-surface-200 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Initial Password</label>
+            <input type="password" value="temporarySecret123!" class="w-full bg-surface-200 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono text-zinc-400 uppercase mb-1">Assigned Tag Claims (Comma separated)</label>
+            <input type="text" value="role:user, team:sre, env:staging" class="w-full bg-surface-200 border border-surface-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+            <p class="text-[10px] text-zinc-500 font-mono mt-1">Namespaces: role:*, team:*, env:*, project:*</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-surface-border bg-surface-200 flex justify-end gap-2">
+        <button onclick="closeDrawer('drawer-create-user')" class="px-3 py-1.5 rounded bg-surface-100 hover:bg-zinc-800 text-zinc-300 text-xs font-mono">Cancel</button>
+        <button onclick="closeDrawer('drawer-create-user'); showToast('User created and keys generated')" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium">Create Identity</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-200 bg-surface-100 border border-brand-500/50 text-white px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 font-mono text-xs">
+    <i data-feather="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-message">Policy updated across all workers</span>
+  </div>
+
+  <!-- ================= CLIENT JAVASCRIPT LOGIC ================= -->
+  <script>
+    // State management
+    let currentRoute = '/';
+    let isImpersonating = false;
+    let currentUser = {
+      name: "Alice Vance",
+      email: "alice@internal.net",
+      role: "admin",
+      tags: ["role:admin", "project:alpha", "team:core"]
+    };
+
+    // Initialize Feather Icons
+    feather.replace();
+
+    // Router handling
+    function navigateTo(route) {
+      currentRoute = route;
+      const views = ['dashboard', 'users', 'apps', 'simulator', 'profile'];
+      
+      // Update screens
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
+
+      // De-highlight nav items
+      views.forEach(v => {
+        const navEl = document.getElementById(`nav-item-${v}`);
+        if (navEl) {
+          navEl.classList.remove('bg-zinc-800/80', 'text-white');
+          navEl.classList.add('text-zinc-300');
+        }
+      });
+
+      // Match Route
+      let activeView = 'dashboard';
+      let title = 'Dashboard';
+      let pathDisplay = '/';
+
+      if (route === '/users') {
+        activeView = 'users';
+        title = 'User Identity Directory';
+        pathDisplay = '/users';
+      } else if (route === '/apps') {
+        activeView = 'apps';
+        title = 'Registered Apps & Endpoint Proxies';
+        pathDisplay = '/apps';
+      } else if (route === '/simulator') {
+        activeView = 'simulator';
+        title = 'Zero Trust Policy Simulator';
+        pathDisplay = '/simulator';
+        runSimulation();
+      } else if (route === '/profile') {
+        activeView = 'profile';
+        title = 'User Profile & Credentials';
+        pathDisplay = '/profile';
+      } else if (route === '/login') {
+        document.getElementById('screen-login').classList.remove('hidden');
+        return;
+      }
+
+      const activeEl = document.getElementById(`view-${activeView}`);
+      if (activeEl) {
+        activeEl.classList.remove('hidden');
+        if (activeView === 'users' || activeView === 'apps') {
+          activeEl.classList.add('flex');
+        }
+      }
+
+      const activeNav = document.getElementById(`nav-item-${activeView}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-zinc-800/80', 'text-white');
+        activeNav.classList.remove('text-zinc-300');
+      }
+
+      document.getElementById('screen-title').innerText = title;
+      document.getElementById('route-pill').innerText = pathDisplay;
+      
+      // Re-trigger feather icon scan
+      feather.replace();
+    }
+
+    // Impersonation feature
+    function startImpersonation(name, email, tags) {
+      isImpersonating = true;
+      document.getElementById('impersonation-banner').classList.remove('hidden');
+      document.getElementById('impersonated-user-name').innerText = `${name} (${tags[0]})`;
+
+      // Update role & restrict access
+      document.getElementById('sidebar-role-badge').innerText = 'user';
+      document.getElementById('admin-nav-group').classList.add('opacity-40', 'pointer-events-none');
+      document.getElementById('user-display-name').innerText = name;
+      document.getElementById('user-display-email').innerText = email;
+      document.getElementById('user-avatar').innerText = name.split(' ').map(n=>n[0]).join('');
+      document.getElementById('dash-user-tags').innerText = tags.join(', ');
+
+      showToast(`Now impersonating ${name}. Admin features locked.`);
+      navigateTo('/');
+    }
+
+    function stopImpersonation() {
+      isImpersonating = false;
+      document.getElementById('impersonation-banner').classList.add('hidden');
+      document.getElementById('sidebar-role-badge').innerText = 'admin';
+      document.getElementById('admin-nav-group').classList.remove('opacity-40', 'pointer-events-none');
+      document.getElementById('user-display-name').innerText = currentUser.name;
+      document.getElementById('user-display-email').innerText = currentUser.email;
+      document.getElementById('user-avatar').innerText = "AV";
+      document.getElementById('dash-user-tags').innerText = currentUser.tags.join(', ');
+
+      showToast("Exited impersonation. Admin privileges restored.");
+    }
+
+    // Login screen toggle & MFA progression
+    function toggleQuickLogin() {
+      const login = document.getElementById('screen-login');
+      login.classList.toggle('hidden');
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      document.getElementById('login-form-credentials').classList.add('hidden');
+      document.getElementById('login-form-mfa').classList.remove('hidden');
+      showToast("Primary credentials accepted. TOTP required.");
+    }
+
+    function finishLogin() {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('login-form-credentials').classList.remove('hidden');
+      document.getElementById('login-form-mfa').classList.add('hidden');
+      showToast("Authentication successful. Token stored.");
+      navigateTo('/');
+    }
+
+    // App Master-Detail selector
+    function selectApp(appKey) {
+      const apps = {
+        grafana: { name: 'Grafana Telemetry', upstream: 'http://10.0.4.12:3000' },
+        k8s: { name: 'Kubernetes Cluster UI', upstream: 'https://10.0.12.80:8443' },
+        pgstudio: { name: 'Postgres Studio', upstream: 'http://10.0.99.4:5432' }
+      };
+
+      ['grafana', 'k8s', 'pgstudio'].forEach(k => {
+        const item = document.getElementById(`app-item-${k}`);
+        if (item) {
+          item.classList.remove('border-brand-500', 'bg-zinc-800/50');
+          item.classList.add('border-transparent');
+        }
+      });
+
+      const active = document.getElementById(`app-item-${appKey}`);
+      if (active) {
+        active.classList.add('border-brand-500', 'bg-zinc-800/50');
+        active.classList.remove('border-transparent');
+      }
+
+      document.getElementById('detail-app-name').innerText = apps[appKey].name;
+      document.getElementById('detail-app-upstream').innerText = apps[appKey].upstream;
+    }
+
+    // Policy Simulator Logic
+    function runSimulation() {
+      const userKey = document.getElementById('sim-user').value;
+      const method = document.getElementById('sim-method').value;
+      const path = document.getElementById('sim-path').value;
+      const verdictBox = document.getElementById('verdict-container');
+
+      // Simple mock policy database
+      // Rule 1: /api/v1/query* requires role:admin
+      // Rule 2: /public/* is allow-any
+      // Default: deny
+      let allow = false;
+      let reason = "";
+      let matchedRule = "NONE (default-deny)";
+      let userTags = [];
+
+      if (userKey === 'alice') userTags = ['role:admin', 'team:core'];
+      if (userKey === 'bob') userTags = ['role:user', 'team:sre'];
+      if (userKey === 'charlie') userTags = ['role:user', 'project:alpha'];
+
+      if (path.startsWith('/public')) {
+        allow = true;
+        matchedRule = `${method} ${path} -> [public ✓]`;
+        reason = "Matched public allow rule. No authentication required.";
+      } else if (userKey === 'anon') {
+        allow = false;
+        matchedRule = "AUTHENTICATION_REQUIRED";
+        reason = "Request rejected: target endpoint requires authenticated session token.";
+      } else if (path.startsWith('/api/v1/query')) {
+        if (userTags.includes('role:admin')) {
+          allow = true;
+          matchedRule = `${method} /api/v1/query* -> [tags_all: role:admin]`;
+          reason = "User holds claim 'role:admin' matching rule tags_all constraint.";
+        } else {
+          allow = false;
+          matchedRule = `${method} /api/v1/query* -> [tags_all: role:admin]`;
+          reason = "User is missing required tag claim 'role:admin'. Access denied.";
+        }
+      } else {
+        allow = false;
+        matchedRule = "NO_MATCHING_RULE";
+        reason = "Zero-Trust default-deny: No explicit rule configured for this path/method combination.";
+      }
+
+      // Render Verdict Card
+      if (allow) {
+        verdictBox.className = "rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-5";
+        verdictBox.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-emerald-500 text-black font-bold font-mono text-sm tracking-wider">ALLOW</span>
+              <span class="font-mono text-emerald-300 text-xs font-semibold">HTTP 200 OK (Proxy Forwarded)</span>
+            </div>
+            <span class="text-xs font-mono text-emerald-400">Latency: 0.42ms</span>
+          </div>
+          <div class="mt-4 space-y-2 text-xs font-mono">
+            <div><span class="text-zinc-500">Matched Rule:</span> <span class="text-white">${matchedRule}</span></div>
+            <div><span class="text-zinc-500">Evaluation Reason:</span> <span class="text-emerald-300">${reason}</span></div>
+            <div class="pt-2 flex items-center gap-2">
+              <span class="text-zinc-500">User Tag Set:</span>
+              <div class="flex gap-1">${userTags.map(t => `<span class="px-1.5 py-0.5 rounded bg-surface-200 border border-surface-border text-[10px] text-zinc-300">${t}</span>`).join('')}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        verdictBox.className = "rounded-lg border border-rose-500/40 bg-rose-950/20 p-5";
+        verdictBox.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-rose-500/20">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-rose-500 text-white font-bold font-mono text-sm tracking-wider">DENY</span>
+              <span class="font-mono text-rose-300 text-xs font-semibold">HTTP 403 FORBIDDEN</span>
+            </div>
+            <span class="text-xs font-mono text-rose-400">Terminated at Edge</span>
+          </div>
+          <div class="mt-4 space-y-2 text-xs font-mono">
+            <div><span class="text-zinc-500">Evaluated Rule:</span> <span class="text-white">${matchedRule}</span></div>
+            <div><span class="text-zinc-500">Rejection Reason:</span> <span class="text-rose-300">${reason}</span></div>
+            <div class="pt-2 flex items-center gap-2">
+              <span class="text-zinc-500">User Tag Set:</span>
+              <div class="flex gap-1">${userTags.length ? userTags.map(t => `<span class="px-1.5 py-0.5 rounded bg-surface-200 border border-surface-border text-[10px] text-zinc-400">${t}</span>`).join('') : '<span class="text-zinc-600">[no claims]</span>'}</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Profile Tab Switching
+    function switchProfileTab(tab) {
+      ['general', 'security', 'sessions'].forEach(t => {
+        document.getElementById(`tab-content-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.classList.remove('text-brand-400', 'border-brand-500');
+        btn.classList.add('text-zinc-400', 'border-transparent');
+      });
+
+      document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      activeBtn.classList.add('text-brand-400', 'border-brand-500');
+      activeBtn.classList.remove('text-zinc-400', 'border-transparent');
+    }
+
+    // Modal & Drawer utilities
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function openDrawer(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeDrawer(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // Toast Utility
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3200);
+    }
+
+    // Keyboard ESC shortcut to exit impersonation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isImpersonating) {
+        stopImpersonation();
+      }
+    });
+
+    // Run on startup
+    navigateTo('/');
+  </script>
+</body>
+</html>

@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-dark-violet">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Gateway // Zero Trust Control Plane</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    /* ================= DYNAMIC CSS VARIABLE THEMES ================= */
+    /* 1. DARK: Obsidian Violet (Default) */
+    html.theme-dark-violet {
+      --bg-canvas: #09090b;
+      --bg-surface-1: #121216;
+      --bg-surface-2: #18181f;
+      --bg-surface-3: #22222c;
+      --border-color: #272732;
+      --border-focus: #6366f1;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --brand-accent: #6366f1;
+      --brand-accent-hover: #4f46e5;
+      --brand-accent-text: #ffffff;
+      --brand-accent-subtle: rgba(99, 102, 241, 0.12);
+      --brand-accent-border: rgba(99, 102, 241, 0.25);
+      --card-highlight: rgba(99, 102, 241, 0.15);
+      --glow-color: rgba(99, 102, 241, 0.15);
+    }
+
+    /* 2. DARK: Carbon Emerald (High-contrast Terminal) */
+    html.theme-dark-emerald {
+      --bg-canvas: #050a08;
+      --bg-surface-1: #0b1410;
+      --bg-surface-2: #12201a;
+      --bg-surface-3: #1a2f26;
+      --border-color: #1f3d30;
+      --border-focus: #10b981;
+      --text-primary: #f0fdf4;
+      --text-secondary: #86efac;
+      --text-muted: #4ade80;
+      --brand-accent: #10b981;
+      --brand-accent-hover: #059669;
+      --brand-accent-text: #022c22;
+      --brand-accent-subtle: rgba(16, 185, 129, 0.14);
+      --brand-accent-border: rgba(16, 185, 129, 0.35);
+      --card-highlight: rgba(16, 185, 129, 0.15);
+      --glow-color: rgba(16, 185, 129, 0.15);
+    }
+
+    /* 3. LIGHT: Nordic Slate (Clean Minimalist Paper) */
+    html.theme-light-slate {
+      --bg-canvas: #f8fafc;
+      --bg-surface-1: #ffffff;
+      --bg-surface-2: #f1f5f9;
+      --bg-surface-3: #e2e8f0;
+      --border-color: #cbd5e1;
+      --border-focus: #2563eb;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --brand-accent: #2563eb;
+      --brand-accent-hover: #1d4ed8;
+      --brand-accent-text: #ffffff;
+      --brand-accent-subtle: rgba(37, 99, 235, 0.1);
+      --brand-accent-border: rgba(37, 99, 235, 0.3);
+      --card-highlight: rgba(37, 99, 235, 0.08);
+      --glow-color: rgba(37, 99, 235, 0.08);
+    }
+
+    /* 4. LIGHT: Sandstone Amber (Warm Industrial Terminal) */
+    html.theme-light-amber {
+      --bg-canvas: #fdfbf7;
+      --bg-surface-1: #f7f3ea;
+      --bg-surface-2: #eee7d8;
+      --bg-surface-3: #e4dac5;
+      --border-color: #d6c8b0;
+      --border-focus: #d97706;
+      --text-primary: #1c1917;
+      --text-secondary: #44403c;
+      --text-muted: #78716c;
+      --brand-accent: #d97706;
+      --brand-accent-hover: #b45309;
+      --brand-accent-text: #ffffff;
+      --brand-accent-subtle: rgba(217, 119, 6, 0.12);
+      --brand-accent-border: rgba(217, 119, 6, 0.35);
+      --card-highlight: rgba(217, 119, 6, 0.08);
+      --glow-color: rgba(217, 119, 6, 0.08);
+    }
+
+    /* Base mappings */
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: var(--bg-canvas);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    .grid-glow {
+      background-image: radial-gradient(circle at 50% 50%, var(--glow-color) 0%, transparent 60%),
+                        linear-gradient(to right, var(--border-color) 1px, transparent 1px),
+                        linear-gradient(to bottom, var(--border-color) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    /* Tag styles with distinct hues per namespace */
+    .chip-role { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); }
+    .chip-env { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .chip-team { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .chip-project { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); }
+    
+    html.theme-light-slate .chip-role, html.theme-light-amber .chip-role { color: #7e22ce; background: #f3e8ff; border-color: #d8b4fe; }
+    html.theme-light-slate .chip-env, html.theme-light-amber .chip-env { color: #b45309; background: #fef3c7; border-color: #fde68a; }
+    html.theme-light-slate .chip-team, html.theme-light-amber .chip-team { color: #047857; background: #d1fae5; border-color: #a7f3d0; }
+    html.theme-light-slate .chip-project, html.theme-light-amber .chip-project { color: #0369a1; background: #e0f2fe; border-color: #bae6fd; }
+  </style>
+</head>
+
+<body class="font-sans antialiased text-sm h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- ================= TOP BANNER: IMPERSONATION ACTIVE ================= -->
+  <div id="impersonation-banner" class="hidden bg-amber-500/15 border-b border-amber-500/30 px-4 py-1.5 text-xs text-amber-500 dark:text-amber-300 flex items-center justify-between z-50">
+    <div class="flex items-center gap-2 font-mono">
+      <i data-feather="smile" class="w-4 h-4 text-amber-500"></i>
+      <span>IMPERSONATING: <strong id="impersonated-user-name" class="underline">Bob Martinez</strong> (role:user)</span>
+      <span class="opacity-80 text-[11px]">— Privileges downgraded</span>
+    </div>
+    <button onclick="stopImpersonation()" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-[11px] font-mono tracking-wider transition-all">
+      EXIT IMPERSONATION [ESC]
+    </button>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ================= SIDEBAR NAVIGATION ================= -->
+    <aside id="sidebar" class="w-64 flex flex-col justify-between shrink-0 border-r"
+           style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div>
+        <!-- App Brand Header -->
+        <div class="h-14 px-5 flex items-center justify-between border-b" style="border-color: var(--border-color);">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded flex items-center justify-center font-bold shadow"
+                 style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+              <i data-feather="shield" class="w-4 h-4"></i>
+            </div>
+            <div class="leading-none">
+              <div class="font-bold tracking-tight flex items-center gap-1.5 text-sm" style="color: var(--text-primary);">
+                AUTH GATEWAY
+              </div>
+              <span class="text-[9px] font-mono tracking-wider uppercase" style="color: var(--text-muted);">Zero-Trust Proxy</span>
+            </div>
+          </div>
+          <span class="text-[9px] font-mono px-1 py-0.5 rounded" style="background-color: var(--brand-accent-subtle); color: var(--brand-accent); border: 1px solid var(--brand-accent-border);">v2.4</span>
+        </div>
+
+        <!-- Role Indicator Pill -->
+        <div class="px-3 pt-3">
+          <div class="px-3 py-1.5 rounded-md border flex items-center justify-between"
+               style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+            <span class="text-[11px] uppercase font-mono tracking-wider" style="color: var(--text-muted);">Active Role</span>
+            <span id="sidebar-role-badge" class="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded"
+                  style="background-color: var(--brand-accent-subtle); color: var(--brand-accent); border: 1px solid var(--brand-accent-border);">
+              role:admin
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Navigation Links -->
+        <nav class="p-3 space-y-1">
+          <button onclick="navigateTo('/')" id="nav-item-dashboard" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <i data-feather="grid" class="w-4 h-4"></i>
+              <span>Dashboard</span>
+            </div>
+          </button>
+
+          <!-- Apps Center (Accessible to ALL roles) -->
+          <button onclick="navigateTo('/app-center')" id="nav-item-app-center" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <i data-feather="compass" class="w-4 h-4"></i>
+              <span>Apps Center</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded" style="background-color: var(--brand-accent-subtle); color: var(--brand-accent);">CATALOG</span>
+          </button>
+
+          <!-- Admin-Only Plane -->
+          <div id="admin-nav-group" class="space-y-1">
+            <div class="pt-3 pb-1 px-3 text-[10px] font-mono tracking-wider uppercase flex items-center justify-between" style="color: var(--text-muted);">
+              <span>Admin Plane</span>
+              <i data-feather="lock" class="w-3 h-3"></i>
+            </div>
+            
+            <button onclick="navigateTo('/users')" id="nav-item-users" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="users" class="w-4 h-4"></i>
+                <span>Users</span>
+              </div>
+              <span class="text-[10px] font-mono border px-1 rounded" style="border-color: var(--border-color); color: var(--text-muted);">RBAC</span>
+            </button>
+
+            <button onclick="navigateTo('/apps')" id="nav-item-apps" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="layers" class="w-4 h-4"></i>
+                <span>Apps & Endpoints</span>
+              </div>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full" style="background-color: var(--bg-surface-2); color: var(--text-secondary);">4</span>
+            </button>
+
+            <button onclick="navigateTo('/simulator')" id="nav-item-simulator" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+              <div class="flex items-center gap-2.5">
+                <i data-feather="terminal" class="w-4 h-4"></i>
+                <span>Policy Simulator</span>
+              </div>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            </button>
+          </div>
+
+          <!-- Personal Plane -->
+          <div class="pt-3 pb-1 px-3 text-[10px] font-mono tracking-wider uppercase" style="color: var(--text-muted);">Personal</div>
+
+          <button onclick="navigateTo('/profile')" id="nav-item-profile" class="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <i data-feather="user" class="w-4 h-4"></i>
+              <span>Profile & Keys</span>
+            </div>
+          </button>
+        </nav>
+      </div>
+
+      <!-- User footer profile snippet + Settings trigger -->
+      <div class="p-3 border-t flex flex-col gap-2" style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="user-avatar" class="w-8 h-8 rounded-full border font-mono flex items-center justify-center text-xs font-bold shrink-0"
+                 style="background-color: var(--brand-accent-subtle); border-color: var(--brand-accent-border); color: var(--brand-accent);">
+              AV
+            </div>
+            <div class="min-w-0 leading-tight">
+              <p id="user-display-name" class="font-medium text-xs truncate" style="color: var(--text-primary);">Alice Vance</p>
+              <p id="user-display-email" class="text-[10px] font-mono truncate" style="color: var(--text-muted);">alice@internal.net</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-1">
+            <!-- Settings Modal Button -->
+            <button onclick="openDrawer('drawer-settings')" title="Console Settings & Theme" class="p-1.5 rounded transition"
+                    style="color: var(--text-secondary); hover:text-white;">
+              <i data-feather="settings" class="w-4 h-4"></i>
+            </button>
+            <button onclick="navigateTo('/login')" title="Sign out" class="p-1.5 rounded transition text-rose-500 hover:opacity-80">
+              <i data-feather="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT VIEW CONTAINER ================= -->
+    <main class="flex-1 flex flex-col overflow-hidden" style="background-color: var(--bg-canvas);">
+      
+      <!-- Top header / live status ticker -->
+      <header class="h-14 border-b px-6 flex items-center justify-between backdrop-blur shrink-0"
+              style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+        <div class="flex items-center gap-3">
+          <h1 id="screen-title" class="font-semibold tracking-tight text-base" style="color: var(--text-primary);">Dashboard</h1>
+          <span id="route-pill" class="text-[11px] font-mono px-2 py-0.5 rounded border"
+                style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-muted);">/</span>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <!-- Active Theme indicator badge -->
+          <button onclick="openDrawer('drawer-settings')" class="flex items-center gap-1.5 text-xs px-2.5 py-1 border rounded transition font-mono"
+                  style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-secondary);">
+            <i data-feather="moon" class="w-3.5 h-3.5"></i>
+            <span id="header-theme-name">Obsidian Violet</span>
+          </button>
+          
+          <div class="flex items-center gap-2 text-[11px] font-mono text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>GATEWAY: ACTIVE</span>
+          </div>
+
+          <button onclick="toggleQuickLogin()" class="text-xs px-2.5 py-1 border rounded transition font-mono"
+                  style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-secondary);">
+            Switch to Login
+          </button>
+        </div>
+      </header>
+
+      <!-- ================= VIEW 1: DASHBOARD (/) ================= -->
+      <section id="view-dashboard" class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <!-- Top Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="p-4 rounded-lg border flex items-center justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <p class="text-xs font-mono uppercase" style="color: var(--text-muted);">Proxied Users</p>
+              <p class="text-2xl font-bold font-mono mt-1" style="color: var(--text-primary);">24</p>
+              <p class="text-[11px] text-emerald-500 font-mono mt-0.5">↑ 2 provisioned today</p>
+            </div>
+            <div class="p-3 rounded-md" style="background-color: var(--bg-surface-2); color: var(--text-secondary);"><i data-feather="users" class="w-5 h-5"></i></div>
+          </div>
+
+          <div class="p-4 rounded-lg border flex items-center justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <p class="text-xs font-mono uppercase" style="color: var(--text-muted);">Active Apps</p>
+              <p class="text-2xl font-bold font-mono mt-1" style="color: var(--text-primary);">4</p>
+              <p class="text-[11px] font-mono mt-0.5" style="color: var(--text-muted);">All upstreams 200 OK</p>
+            </div>
+            <div class="p-3 rounded-md" style="background-color: var(--bg-surface-2); color: var(--text-secondary);"><i data-feather="box" class="w-5 h-5"></i></div>
+          </div>
+
+          <div class="p-4 rounded-lg border flex items-center justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <p class="text-xs font-mono uppercase" style="color: var(--text-muted);">Secure Endpoints</p>
+              <p class="text-2xl font-bold font-mono mt-1" style="color: var(--text-primary);">38</p>
+              <p class="text-[11px] font-mono mt-0.5" style="color: var(--brand-accent);">Strict Default-Deny</p>
+            </div>
+            <div class="p-3 rounded-md" style="background-color: var(--bg-surface-2); color: var(--text-secondary);"><i data-feather="git-commit" class="w-5 h-5"></i></div>
+          </div>
+
+          <div class="p-4 rounded-lg border flex items-center justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <p class="text-xs font-mono uppercase" style="color: var(--text-muted);">MFA Coverage</p>
+              <p class="text-2xl font-bold font-mono text-emerald-500 mt-1">87.5%</p>
+              <p class="text-[11px] font-mono mt-0.5" style="color: var(--text-muted);">21 of 24 enforced</p>
+            </div>
+            <div class="p-3 rounded-md text-emerald-500" style="background-color: var(--bg-surface-2);"><i data-feather="shield-check" class="w-5 h-5"></i></div>
+          </div>
+        </div>
+
+        <!-- Section: Your Allowed Apps -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-semibold" style="color: var(--text-primary);">Your Allowed Applications</h2>
+              <p class="text-xs" style="color: var(--text-muted);">Permitted by your current token claim tags.</p>
+            </div>
+            <span class="text-xs font-mono px-2.5 py-1 rounded border"
+                  style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-muted);">
+              Context: <span id="dash-user-tags" style="color: var(--brand-accent);">role:admin, project:alpha, team:core</span>
+            </span>
+          </div>
+
+          <div id="apps-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <!-- App Card 1 -->
+            <div class="p-4 rounded-lg border flex flex-col justify-between group transition hover:shadow-lg"
+                 style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded border flex items-center justify-center font-bold"
+                         style="background-color: var(--brand-accent-subtle); border-color: var(--brand-accent-border); color: var(--brand-accent);">
+                      <i data-feather="bar-chart-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Grafana Telemetry</h3>
+                      <p class="text-[11px] font-mono" style="color: var(--text-muted);">https://metrics.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                  Internal monitoring cluster dashboards, Prometheus metrics explorer, and alerts.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:core</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+                <span class="text-[11px] font-mono" style="color: var(--text-muted);">10.0.4.12:3000</span>
+                <button onclick="window.open('#/apps/grafana', '_blank')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 transition"
+                        style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- App Card 2 -->
+            <div class="p-4 rounded-lg border flex flex-col justify-between group transition hover:shadow-lg"
+                 style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded border flex items-center justify-center font-bold text-emerald-500"
+                         style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+                      <i data-feather="cpu" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Kubernetes Cluster UI</h3>
+                      <p class="text-[11px] font-mono" style="color: var(--text-muted);">https://k8s-prod.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                  Production workloads orchestration console, Pod diagnostics, and rolling releases.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-env">env:prod</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+                <span class="text-[11px] font-mono" style="color: var(--text-muted);">10.0.12.80:8443</span>
+                <button onclick="window.open('#/apps/k8s', '_blank')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 transition"
+                        style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- App Card 3 -->
+            <div class="p-4 rounded-lg border flex flex-col justify-between group transition hover:shadow-lg"
+                 style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+              <div>
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded border flex items-center justify-center font-bold text-sky-500"
+                         style="background-color: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3);">
+                      <i data-feather="database" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Postgres Query Studio</h3>
+                      <p class="text-[11px] font-mono" style="color: var(--text-muted);">https://dbadmin.internal.gw</p>
+                    </div>
+                  </div>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400" title="Operational"></span>
+                </div>
+                <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                  Read-only replica browser for analytical ad-hoc queries and index inspection.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-project">project:alpha</span>
+                </div>
+              </div>
+              <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+                <span class="text-[11px] font-mono" style="color: var(--text-muted);">10.0.99.4:5432</span>
+                <button onclick="window.open('#/apps/pgstudio', '_blank')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 transition"
+                        style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                  <span>Open</span>
+                  <i data-feather="external-link" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: APPS CENTER (/app-center) ================= -->
+      <section id="view-app-center" class="hidden flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <!-- Banner & Search -->
+        <div class="p-6 rounded-lg border flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+             style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+          <div>
+            <h2 class="text-lg font-bold" style="color: var(--text-primary);">Organization App Center</h2>
+            <p class="text-xs mt-1" style="color: var(--text-secondary);">
+              Browse all discoverable internal software, services, and self-hosted tools behind the zero-trust gateway.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 w-full md:w-80">
+            <div class="relative w-full">
+              <i data-feather="search" class="w-4 h-4 absolute left-3 top-2.5" style="color: var(--text-muted);"></i>
+              <input type="text" placeholder="Search catalog apps..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded border font-mono focus:outline-none"
+                     style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Tags Bar -->
+        <div class="flex items-center gap-2 border-b pb-3 text-xs" style="border-color: var(--border-color);">
+          <span class="font-mono text-[11px] uppercase mr-2" style="color: var(--text-muted);">Filter:</span>
+          <button class="px-2.5 py-1 rounded font-mono text-xs" style="background-color: var(--brand-accent); color: var(--brand-accent-text);">All (6)</button>
+          <button class="px-2.5 py-1 rounded border font-mono text-xs" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-secondary);">DevOps & SRE</button>
+          <button class="px-2.5 py-1 rounded border font-mono text-xs" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-secondary);">Databases</button>
+          <button class="px-2.5 py-1 rounded border font-mono text-xs" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-secondary);">Security & IAM</button>
+        </div>
+
+        <!-- Extended Catalog Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          
+          <!-- Catalog Card 1 (Authorized) -->
+          <div class="p-4 rounded-lg border flex flex-col justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded border flex items-center justify-center font-bold"
+                       style="background-color: var(--brand-accent-subtle); border-color: var(--brand-accent-border); color: var(--brand-accent);">
+                    <i data-feather="bar-chart-2" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Grafana Telemetry</h3>
+                    <span class="text-[10px] font-mono text-emerald-500">● Access Granted</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">READY</span>
+              </div>
+              <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                Observability metrics dashboards, traces, and alert notification manager.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-1">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:core</span>
+              </div>
+            </div>
+            <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+              <span class="text-[10px] font-mono" style="color: var(--text-muted);">metrics.internal.gw</span>
+              <button onclick="window.open('#/apps/grafana', '_blank')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5"
+                      style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                <span>Launch App</span>
+                <i data-feather="external-link" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Catalog Card 2 (Authorized) -->
+          <div class="p-4 rounded-lg border flex flex-col justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded border flex items-center justify-center font-bold text-emerald-500"
+                       style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+                    <i data-feather="cpu" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Kubernetes UI</h3>
+                    <span class="text-[10px] font-mono text-emerald-500">● Access Granted</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">READY</span>
+              </div>
+              <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                Orchestration dashboard for pod telemetry, rolling restarts, and manifests.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-1">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-env">env:prod</span>
+              </div>
+            </div>
+            <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+              <span class="text-[10px] font-mono" style="color: var(--text-muted);">k8s-prod.internal.gw</span>
+              <button onclick="window.open('#/apps/k8s', '_blank')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5"
+                      style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                <span>Launch App</span>
+                <i data-feather="external-link" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Catalog Card 3 (LOCKED - Requires Tag) -->
+          <div class="p-4 rounded-lg border flex flex-col justify-between opacity-90"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded border flex items-center justify-center font-bold text-amber-500"
+                       style="background-color: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+                    <i data-feather="key" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-sm" style="color: var(--text-primary);">HashiCorp Vault UI</h3>
+                    <span class="text-[10px] font-mono text-amber-500">○ Tag Claim Missing</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">LOCKED</span>
+              </div>
+              <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                Centralized secret store, transit crypto engine, and service PKI certificates.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-1">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:security-core</span>
+              </div>
+            </div>
+            <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+              <span class="text-[10px] font-mono" style="color: var(--text-muted);">vault.internal.gw</span>
+              <button onclick="requestAppAccess('HashiCorp Vault UI', 'team:security-core')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 border"
+                      style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+                <i data-feather="lock" class="w-3 h-3"></i>
+                <span>Request Tag</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Catalog Card 4 (LOCKED - SRE Only) -->
+          <div class="p-4 rounded-lg border flex flex-col justify-between opacity-90"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded border flex items-center justify-center font-bold text-rose-500"
+                       style="background-color: rgba(244, 63, 94, 0.1); border-color: rgba(244, 63, 94, 0.3);">
+                    <i data-feather="terminal" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Chaos Mesh Console</h3>
+                    <span class="text-[10px] font-mono text-rose-500">○ Elevated SRE Only</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">RESTRICTED</span>
+              </div>
+              <p class="text-xs mt-3 leading-relaxed" style="color: var(--text-secondary);">
+                Fault injection platform to simulate kernel panics, packet drops, and latency injection.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-1">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:sre</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-env">env:chaos</span>
+              </div>
+            </div>
+            <div class="mt-5 pt-3 border-t flex items-center justify-between" style="border-color: var(--border-color);">
+              <span class="text-[10px] font-mono" style="color: var(--text-muted);">chaos.internal.gw</span>
+              <button onclick="requestAppAccess('Chaos Mesh Console', 'team:sre')" class="px-2.5 py-1 text-xs rounded font-medium flex items-center gap-1.5 border"
+                      style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+                <i data-feather="lock" class="w-3 h-3"></i>
+                <span>Request Tag</span>
+              </button>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ================= VIEW 3: USERS (/users - ADMIN ONLY) ================= -->
+      <section id="view-users" class="hidden flex-1 flex-col overflow-hidden">
+        <!-- Toolbar -->
+        <div class="px-6 py-3 border-b flex items-center justify-between shrink-0"
+             style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+          <div class="flex items-center gap-3 w-96">
+            <div class="relative w-full">
+              <i data-feather="search" class="w-4 h-4 absolute left-3 top-2.5" style="color: var(--text-muted);"></i>
+              <input type="text" placeholder="Search by name, email, or tag..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded border font-mono focus:outline-none"
+                     style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+            </div>
+            <select class="border text-xs rounded px-2.5 py-1.5 font-mono focus:outline-none"
+                    style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+              <option>All Tags</option>
+              <option>role:admin</option>
+              <option>project:alpha</option>
+              <option>team:sre</option>
+            </select>
+          </div>
+          <button onclick="openDrawer('drawer-create-user')" class="px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 shadow transition"
+                  style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+            <i data-feather="user-plus" class="w-3.5 h-3.5"></i>
+            <span>Create User</span>
+          </button>
+        </div>
+
+        <!-- Data Table -->
+        <div class="flex-1 overflow-auto custom-scrollbar p-6">
+          <div class="border rounded-lg overflow-hidden shadow"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <table class="w-full text-left text-xs">
+              <thead class="border-b font-mono uppercase text-[10px]"
+                     style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-muted);">
+                <tr>
+                  <th class="py-3 px-4">User</th>
+                  <th class="py-3 px-4">Monospace ID</th>
+                  <th class="py-3 px-4">Tag Claims</th>
+                  <th class="py-3 px-4">MFA Status</th>
+                  <th class="py-3 px-4">State</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" style="border-color: var(--border-color);">
+                <!-- User row 1: Alice (Admin) -->
+                <tr>
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full border font-mono flex items-center justify-center font-bold text-xs"
+                         style="background-color: var(--brand-accent-subtle); border-color: var(--brand-accent-border); color: var(--brand-accent);">
+                      AV
+                    </div>
+                    <div>
+                      <div class="font-medium" style="color: var(--text-primary);">Alice Vance <span class="text-[10px] font-mono" style="color: var(--text-muted);">(You)</span></div>
+                      <div class="text-[11px] font-mono" style="color: var(--text-muted);">alice@internal.net</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-xs" style="color: var(--text-muted);">usr_94827101</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-project">project:alpha</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:core</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-emerald-500 text-[11px]">● TOTP active</td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono">Active</span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button disabled class="opacity-40 cursor-not-allowed p-1" title="Cannot impersonate yourself">
+                      <i data-feather="smile" class="w-4 h-4"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- User row 2: Bob (SRE) -->
+                <tr>
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full border font-mono flex items-center justify-center font-bold text-xs"
+                         style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-secondary);">
+                      BM
+                    </div>
+                    <div>
+                      <div class="font-medium" style="color: var(--text-primary);">Bob Martinez</div>
+                      <div class="text-[11px] font-mono" style="color: var(--text-muted);">bob@internal.net</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-xs" style="color: var(--text-muted);">usr_88301934</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:user</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:sre</span>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-env">env:prod</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-emerald-500 text-[11px]">● TOTP active</td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono">Active</span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="startImpersonation('Bob Martinez', 'bob@internal.net', ['role:user', 'team:sre', 'env:prod'])"
+                            class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded font-mono text-[11px] inline-flex items-center gap-1">
+                      <i data-feather="smile" class="w-3.5 h-3.5"></i>
+                      <span>Impersonate</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 4: APPS & ENDPOINTS (/apps - ADMIN ONLY) ================= -->
+      <section id="view-apps" class="hidden flex-1 flex overflow-hidden">
+        <div class="w-80 border-r flex flex-col shrink-0" style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+          <div class="p-3 border-b flex items-center justify-between" style="border-color: var(--border-color);">
+            <span class="text-xs font-mono uppercase tracking-wider" style="color: var(--text-muted);">Gateways (3)</span>
+            <button onclick="showToast('OpenAPI importer ready.')" class="p-1 rounded transition hover:opacity-80" style="color: var(--text-secondary);">
+              <i data-feather="download-cloud" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto divide-y custom-scrollbar" style="border-color: var(--border-color);">
+            <button onclick="selectApp('grafana')" id="app-item-grafana" class="w-full text-left p-3.5 border-l-2 flex flex-col gap-1 transition"
+                    style="background-color: var(--bg-surface-2); border-color: var(--brand-accent);">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-xs" style="color: var(--text-primary);">Grafana Telemetry</span>
+                <span class="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-1 rounded">HEALTHY</span>
+              </div>
+              <span class="text-[11px] font-mono truncate" style="color: var(--text-muted);">https://metrics.internal.gw</span>
+            </button>
+            <button onclick="selectApp('k8s')" id="app-item-k8s" class="w-full text-left p-3.5 border-l-2 border-transparent flex flex-col gap-1 transition">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-xs" style="color: var(--text-primary);">Kubernetes Cluster UI</span>
+                <span class="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-1 rounded">HEALTHY</span>
+              </div>
+              <span class="text-[11px] font-mono truncate" style="color: var(--text-muted);">https://k8s-prod.internal.gw</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <div class="p-5 rounded-lg border flex items-center justify-between"
+               style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="detail-app-name" class="text-lg font-semibold" style="color: var(--text-primary);">Grafana Telemetry</h2>
+                <span class="text-xs font-mono px-2 py-0.5 rounded border" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-muted);">ID: app_grf01</span>
+              </div>
+              <p class="text-xs font-mono mt-1" style="color: var(--text-muted);">Upstream: <span id="detail-app-upstream" style="color: var(--brand-accent);">http://10.0.4.12:3000</span></p>
+            </div>
+            <button onclick="showToast('Policy hot-reloaded across edge workers')" class="px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 shadow"
+                    style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+              <i data-feather="zap" class="w-3.5 h-3.5"></i>
+              <span>Deploy Policy Live</span>
+            </button>
+          </div>
+
+          <!-- Strict Default Deny Warning -->
+          <div class="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-500 dark:text-amber-300 flex items-start gap-2.5 font-mono">
+            <i data-feather="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+            <div>
+              <strong class="font-bold">ZERO-TRUST DEFAULT-DENY:</strong> Unmatched paths return immediate HTTP 404 / 403 Forbidden.
+            </div>
+          </div>
+
+          <!-- Rules Table -->
+          <div class="border rounded-lg overflow-hidden" style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="border-b uppercase text-[10px]" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-muted);">
+                <tr>
+                  <th class="py-2.5 px-4">Method</th>
+                  <th class="py-2.5 px-4">Path Glob</th>
+                  <th class="py-2.5 px-4">Access Rule Requirements</th>
+                  <th class="py-2.5 px-4 text-right">Edge Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" style="border-color: var(--border-color);">
+                <tr>
+                  <td class="py-3 px-4"><span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/30 font-bold">GET</span></td>
+                  <td class="py-3 px-4 font-semibold" style="color: var(--text-primary);">/api/v1/query*</td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] px-1.5 py-0.5 rounded border" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-secondary);">authenticated ✓</span>
+                      <span class="text-[10px] font-bold" style="color: var(--text-muted);">AND</span>
+                      <span class="text-[10px] px-1.5 py-0.5 rounded chip-role">tags_all: [role:admin]</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-right"><span class="text-[10px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">Active</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-bold">ANY</span></td>
+                  <td class="py-3 px-4 font-semibold" style="color: var(--text-primary);">/public/healthz</td>
+                  <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">public ✓ (unauthenticated)</span></td>
+                  <td class="py-3 px-4 text-right"><span class="text-[10px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 5: POLICY SIMULATOR (/simulator - ADMIN ONLY) ================= -->
+      <section id="view-simulator" class="hidden flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div>
+            <h2 class="text-base font-semibold" style="color: var(--text-primary);">Zero Trust Policy Simulator</h2>
+            <p class="text-xs" style="color: var(--text-secondary);">Test synthetic requests against compiled rule-trees before pushing to edge nodes.</p>
+          </div>
+
+          <div class="p-5 rounded-lg border space-y-4" style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">1. Test User Identity</label>
+                <select id="sim-user" onchange="runSimulation()" class="w-full border text-xs rounded px-3 py-2 font-mono focus:outline-none"
+                        style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+                  <option value="alice">Alice Vance (role:admin, team:core)</option>
+                  <option value="bob">Bob Martinez (role:user, team:sre)</option>
+                  <option value="anon">Anonymous (Unauthenticated)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">2. Target App</label>
+                <select id="sim-app" onchange="runSimulation()" class="w-full border text-xs rounded px-3 py-2 font-mono focus:outline-none"
+                        style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+                  <option value="grafana">Grafana Telemetry (/)</option>
+                  <option value="k8s">Kubernetes Cluster UI (/)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">3. Method</label>
+                <select id="sim-method" onchange="runSimulation()" class="w-full border text-xs rounded px-3 py-2 font-mono focus:outline-none"
+                        style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">4. Request Path</label>
+              <div class="flex gap-2">
+                <input id="sim-path" oninput="runSimulation()" type="text" value="/api/v1/query"
+                       class="flex-1 border text-xs rounded px-3 py-2 font-mono focus:outline-none"
+                       style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+                <button onclick="runSimulation()" class="px-4 py-2 text-xs font-medium rounded flex items-center gap-1.5 transition"
+                        style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+                  <i data-feather="play" class="w-3.5 h-3.5"></i>
+                  <span>Simulate Request</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Simulator Dynamic Verdict Card -->
+          <div id="verdict-container" class="rounded-lg border p-5 transition-all"></div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 6: PROFILE (/profile) ================= -->
+      <section id="view-profile" class="hidden flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div>
+            <h2 class="text-base font-semibold" style="color: var(--text-primary);">Identity & Security Settings</h2>
+            <p class="text-xs" style="color: var(--text-secondary);">Manage session tokens, credentials, and hardware 2FA.</p>
+          </div>
+
+          <!-- Nav Tabs -->
+          <div class="border-b flex gap-6 text-xs font-medium" style="border-color: var(--border-color);">
+            <button onclick="switchProfileTab('general')" id="tab-btn-general" class="pb-2 font-semibold" style="color: var(--brand-accent); border-bottom: 2px solid var(--brand-accent);">General Identity</button>
+            <button onclick="switchProfileTab('security')" id="tab-btn-security" class="pb-2" style="color: var(--text-muted);">MFA & Secrets</button>
+          </div>
+
+          <div id="tab-content-general" class="p-5 rounded-lg border space-y-4" style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Name</label>
+                <input type="text" value="Alice Vance" class="w-full border text-xs rounded px-3 py-2 font-mono" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+              </div>
+              <div>
+                <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Email</label>
+                <input type="email" value="alice@internal.net" class="w-full border text-xs rounded px-3 py-2 font-mono" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Attached Claim Tags</label>
+              <div class="p-2 border rounded flex gap-1.5" style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-role">role:admin</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-project">project:alpha</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded chip-team">team:core</span>
+              </div>
+            </div>
+            <button onclick="showToast('Profile changes saved successfully.')" class="px-3 py-1.5 rounded text-xs font-medium transition"
+                    style="background-color: var(--brand-accent); color: var(--brand-accent-text);">Save Updates</button>
+          </div>
+
+          <div id="tab-content-security" class="hidden p-5 rounded-lg border space-y-4" style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium text-sm" style="color: var(--text-primary);">TOTP Authenticator</h3>
+                <p class="text-xs mt-0.5" style="color: var(--text-secondary);">Enforced across all gateway control sessions.</p>
+              </div>
+              <button onclick="openModal('modal-mfa-qr')" class="px-3 py-1.5 rounded border text-xs font-mono" style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">Re-scan QR</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= DRAWER: SETTINGS (THEME CONTROLS) ================= -->
+  <div id="drawer-settings" class="hidden fixed inset-0 z-50 overflow-hidden">
+    <div onclick="closeDrawer('drawer-settings')" class="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"></div>
+    <div class="absolute inset-y-0 right-0 max-w-sm w-full border-l shadow-2xl flex flex-col justify-between"
+         style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div class="p-6 space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color: var(--border-color);">
+          <div>
+            <h3 class="font-bold text-sm" style="color: var(--text-primary);">Console Settings</h3>
+            <p class="text-[11px]" style="color: var(--text-muted);">Appearance & gateway operational node</p>
+          </div>
+          <button onclick="closeDrawer('drawer-settings')" style="color: var(--text-muted); hover:text-white;"><i data-feather="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <!-- THEME SELECTION: 2 Dark, 2 Light -->
+        <div class="space-y-3">
+          <label class="block text-xs font-mono uppercase tracking-wider" style="color: var(--text-muted);">Console Themes</label>
+          <div class="grid grid-cols-1 gap-2.5">
+            
+            <!-- Dark 1: Obsidian Violet -->
+            <button onclick="setTheme('theme-dark-violet')" class="w-full p-3 rounded-lg border text-left flex items-center justify-between transition hover:border-indigo-500"
+                    style="background-color: #121216; border-color: #272732;">
+              <div class="flex items-center gap-3">
+                <span class="w-4 h-4 rounded-full bg-indigo-500 ring-2 ring-indigo-400/30"></span>
+                <div>
+                  <p class="text-xs font-semibold text-zinc-100">Obsidian Violet</p>
+                  <p class="text-[10px] text-zinc-400 font-mono">Dark • Deep zinc & violet</p>
+                </div>
+              </div>
+              <span id="check-dark-violet" class="text-xs text-indigo-400 font-mono">ACTIVE</span>
+            </button>
+
+            <!-- Dark 2: Carbon Emerald -->
+            <button onclick="setTheme('theme-dark-emerald')" class="w-full p-3 rounded-lg border text-left flex items-center justify-between transition hover:border-emerald-500"
+                    style="background-color: #0b1410; border-color: #1f3d30;">
+              <div class="flex items-center gap-3">
+                <span class="w-4 h-4 rounded-full bg-emerald-400 ring-2 ring-emerald-500/30"></span>
+                <div>
+                  <p class="text-xs font-semibold text-emerald-50">Carbon Emerald</p>
+                  <p class="text-[10px] text-emerald-400/70 font-mono">Dark • Tactical green terminal</p>
+                </div>
+              </div>
+              <span id="check-dark-emerald" class="hidden text-xs text-emerald-400 font-mono">ACTIVE</span>
+            </button>
+
+            <!-- Light 1: Nordic Slate -->
+            <button onclick="setTheme('theme-light-slate')" class="w-full p-3 rounded-lg border text-left flex items-center justify-between transition hover:border-blue-600"
+                    style="background-color: #ffffff; border-color: #cbd5e1;">
+              <div class="flex items-center gap-3">
+                <span class="w-4 h-4 rounded-full bg-blue-600 ring-2 ring-blue-500/30"></span>
+                <div>
+                  <p class="text-xs font-semibold text-slate-900">Nordic Slate</p>
+                  <p class="text-[10px] text-slate-500 font-mono">Light • Crisp white & cobalt</p>
+                </div>
+              </div>
+              <span id="check-light-slate" class="hidden text-xs text-blue-600 font-mono">ACTIVE</span>
+            </button>
+
+            <!-- Light 2: Sandstone Amber -->
+            <button onclick="setTheme('theme-light-amber')" class="w-full p-3 rounded-lg border text-left flex items-center justify-between transition hover:border-amber-600"
+                    style="background-color: #f7f3ea; border-color: #d6c8b0;">
+              <div class="flex items-center gap-3">
+                <span class="w-4 h-4 rounded-full bg-amber-600 ring-2 ring-amber-500/30"></span>
+                <div>
+                  <p class="text-xs font-semibold text-stone-900">Sandstone Amber</p>
+                  <p class="text-[10px] text-stone-600 font-mono">Light • Warm canvas & coffee</p>
+                </div>
+              </div>
+              <span id="check-light-amber" class="hidden text-xs text-amber-600 font-mono">ACTIVE</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Node Configuration -->
+        <div class="space-y-3 pt-3 border-t" style="border-color: var(--border-color);">
+          <label class="block text-xs font-mono uppercase tracking-wider" style="color: var(--text-muted);">Gateway Edge Zone</label>
+          <select class="w-full border text-xs rounded px-3 py-2 font-mono focus:outline-none"
+                  style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">
+            <option>fra-zone-01 (Frankfurt)</option>
+            <option>iad-zone-02 (Virginia)</option>
+            <option>sin-zone-01 (Singapore)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="p-4 border-t flex justify-end" style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+        <button onclick="closeDrawer('drawer-settings')" class="px-3 py-1.5 rounded text-xs font-mono font-medium"
+                style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+          Close Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MFA QR ================= -->
+  <div id="modal-mfa-qr" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="border w-full max-w-md rounded-lg p-6 space-y-4 shadow-2xl"
+         style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div class="flex justify-between items-center pb-2 border-b" style="border-color: var(--border-color);">
+        <h3 class="font-semibold text-sm" style="color: var(--text-primary);">TOTP Authenticator Setup</h3>
+        <button onclick="closeModal('modal-mfa-qr')" style="color: var(--text-muted);"><i data-feather="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="flex justify-center p-4 bg-white rounded-lg">
+        <div class="w-36 h-36 bg-zinc-950 flex flex-col items-center justify-center p-2 text-center text-[10px] font-mono text-zinc-300">
+          <i data-feather="grid" class="w-16 h-16 text-white mb-2"></i>
+          <span>[QR_CODE]</span>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModal('modal-mfa-qr')" class="px-3 py-1.5 rounded border text-xs font-mono"
+                style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: REQUEST ACCESS CONFIRMATION ================= -->
+  <div id="modal-request-access" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="border w-full max-w-sm rounded-lg p-6 space-y-4 shadow-2xl"
+         style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div class="flex items-center gap-2 text-amber-500">
+        <i data-feather="shield" class="w-5 h-5"></i>
+        <h3 class="font-bold text-sm" style="color: var(--text-primary);">Request Tag Assignment</h3>
+      </div>
+      <p class="text-xs leading-relaxed" style="color: var(--text-secondary);">
+        Submit an instant elevated claim ticket for <strong id="req-app-name" class="font-mono underline">HashiCorp Vault</strong> to the security gateway orchestrator.
+      </p>
+      <div class="p-2.5 rounded border text-xs font-mono"
+           style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+        Required Claim: <span id="req-tag-name" class="chip-team px-1 py-0.5 rounded font-bold">team:security-core</span>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModal('modal-request-access')" class="px-3 py-1.5 rounded border text-xs font-mono"
+                style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-muted);">Cancel</button>
+        <button onclick="submitAccessRequest()" class="px-3 py-1.5 rounded text-xs font-medium"
+                style="background-color: var(--brand-accent); color: var(--brand-accent-text);">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DRAWER: CREATE USER ================= -->
+  <div id="drawer-create-user" class="hidden fixed inset-0 z-50 overflow-hidden">
+    <div onclick="closeDrawer('drawer-create-user')" class="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"></div>
+    <div class="absolute inset-y-0 right-0 max-w-md w-full border-l shadow-2xl flex flex-col justify-between"
+         style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b" style="border-color: var(--border-color);">
+          <h3 class="font-semibold text-sm" style="color: var(--text-primary);">Provision Gateway Identity</h3>
+          <button onclick="closeDrawer('drawer-create-user')" style="color: var(--text-muted);"><i data-feather="x" class="w-4 h-4"></i></button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Full Name</label>
+            <input type="text" placeholder="Devon Vance" class="w-full border rounded px-3 py-2 text-xs font-mono"
+                   style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Tags (Comma separated)</label>
+            <input type="text" value="role:user, team:sre, env:staging" class="w-full border rounded px-3 py-2 text-xs font-mono"
+                   style="background-color: var(--bg-surface-2); border-color: var(--border-color); color: var(--text-primary);" />
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t flex justify-end gap-2" style="background-color: var(--bg-surface-2); border-color: var(--border-color);">
+        <button onclick="closeDrawer('drawer-create-user')" class="px-3 py-1.5 rounded border text-xs font-mono"
+                style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-secondary);">Cancel</button>
+        <button onclick="closeDrawer('drawer-create-user'); showToast('User created with requested tag claims')" class="px-3 py-1.5 rounded text-xs font-medium"
+                style="background-color: var(--brand-accent); color: var(--brand-accent-text);">Create Identity</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= OVERLAY: LOGIN VIEW (/login) ================= -->
+  <div id="screen-login" class="hidden fixed inset-0 z-50 flex" style="background-color: var(--bg-canvas);">
+    <div class="hidden lg:flex w-1/2 border-r grid-glow flex-col justify-between p-12 relative overflow-hidden"
+         style="background-color: var(--bg-surface-1); border-color: var(--border-color);">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded flex items-center justify-center font-bold"
+             style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+          <i data-feather="shield" class="w-4 h-4"></i>
+        </div>
+        <span class="font-bold tracking-tight font-mono text-base" style="color: var(--text-primary);">AUTH GATEWAY // DAEMON</span>
+      </div>
+      <div class="space-y-4 max-w-md">
+        <h2 class="text-3xl font-bold tracking-tight leading-tight" style="color: var(--text-primary);">Zero-trust routing and identity broker.</h2>
+        <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">
+          Tag-compiled downstream authorization proxies for microservices.
+        </p>
+      </div>
+      <div class="text-xs font-mono" style="color: var(--text-muted);">AUTH GATEWAY DAEMON • PORT :443</div>
+    </div>
+
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div class="w-full max-w-sm space-y-6">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight" style="color: var(--text-primary);">Sign in to gateway</h2>
+          <p class="text-xs mt-1" style="color: var(--text-secondary);">Authenticate with master credentials.</p>
+        </div>
+
+        <form id="login-form-credentials" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Email</label>
+            <input type="email" required value="alice@internal.net" class="w-full border rounded px-3 py-2 text-xs font-mono"
+                   style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono uppercase mb-1" style="color: var(--text-muted);">Password</label>
+            <input type="password" required value="••••••••••••" class="w-full border rounded px-3 py-2 text-xs font-mono"
+                   style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" />
+          </div>
+          <button type="submit" class="w-full py-2 px-4 rounded font-medium text-xs tracking-wide transition shadow"
+                  style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+            Sign In →
+          </button>
+        </form>
+
+        <div id="login-form-mfa" class="hidden space-y-4">
+          <div class="p-3 border rounded text-xs" style="background-color: var(--brand-accent-subtle); border-color: var(--brand-accent-border); color: var(--brand-accent);">
+            TOTP Required. Enter your 6-digit code.
+          </div>
+          <div class="flex justify-between gap-2 my-4">
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="4" />
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="2" />
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="8" />
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="9" />
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="0" />
+            <input maxlength="1" class="w-11 h-12 text-center text-lg font-mono font-bold border rounded" style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);" value="1" />
+          </div>
+          <button onclick="finishLogin()" class="w-full py-2 px-4 rounded font-medium text-xs tracking-wide transition"
+                  style="background-color: var(--brand-accent); color: var(--brand-accent-text);">
+            Verify Session Token
+          </button>
+        </div>
+
+        <div class="text-center pt-2">
+          <button onclick="toggleQuickLogin()" class="text-xs font-mono" style="color: var(--text-muted);">← Return to Control Console</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST CONTAINER ================= -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-200 border px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 font-mono text-xs"
+       style="background-color: var(--bg-surface-1); border-color: var(--border-color); color: var(--text-primary);">
+    <i data-feather="check-circle" class="w-4 h-4 text-emerald-500"></i>
+    <span id="toast-message">Action processed</span>
+  </div>
+
+  <!-- ================= APP LOGIC JAVASCRIPT ================= -->
+  <script>
+    let currentRoute = '/';
+    let isImpersonating = false;
+    let currentTheme = localStorage.getItem('gateway_theme') || 'theme-dark-violet';
+
+    let currentUser = {
+      name: "Alice Vance",
+      email: "alice@internal.net",
+      role: "admin",
+      tags: ["role:admin", "project:alpha", "team:core"]
+    };
+
+    // ================= THEME SWITCHER LOGIC =================
+    function setTheme(themeName) {
+      currentTheme = themeName;
+      document.documentElement.className = themeName;
+      localStorage.setItem('gateway_theme', themeName);
+
+      const names = {
+        'theme-dark-violet': 'Obsidian Violet',
+        'theme-dark-emerald': 'Carbon Emerald',
+        'theme-light-slate': 'Nordic Slate',
+        'theme-light-amber': 'Sandstone Amber'
+      };
+
+      document.getElementById('header-theme-name').innerText = names[themeName];
+
+      // Update checks in settings drawer
+      ['dark-violet', 'dark-emerald', 'light-slate', 'light-amber'].forEach(t => {
+        const el = document.getElementById(`check-${t}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const activeKey = themeName.replace('theme-', '');
+      const activeEl = document.getElementById(`check-${activeKey}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+
+      showToast(`Theme changed: ${names[themeName]}`);
+    }
+
+    // Initialize Theme
+    setTheme(currentTheme);
+
+    // Navigation Router
+    function navigateTo(route) {
+      currentRoute = route;
+      const views = ['dashboard', 'app-center', 'users', 'apps', 'simulator', 'profile'];
+      
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+
+      // Clear styles
+      views.forEach(v => {
+        const navEl = document.getElementById(`nav-item-${v}`);
+        if (navEl) {
+          navEl.style.backgroundColor = '';
+          navEl.style.color = 'var(--text-secondary)';
+        }
+      });
+
+      let activeView = 'dashboard';
+      let title = 'Dashboard';
+      let pathDisplay = '/';
+
+      if (route === '/app-center') {
+        activeView = 'app-center';
+        title = 'App Center Catalog';
+        pathDisplay = '/app-center';
+      } else if (route === '/users') {
+        activeView = 'users';
+        title = 'User Directory & RBAC';
+        pathDisplay = '/users';
+      } else if (route === '/apps') {
+        activeView = 'apps';
+        title = 'Apps & Proxied Endpoints';
+        pathDisplay = '/apps';
+      } else if (route === '/simulator') {
+        activeView = 'simulator';
+        title = 'Zero Trust Policy Simulator';
+        pathDisplay = '/simulator';
+        runSimulation();
+      } else if (route === '/profile') {
+        activeView = 'profile';
+        title = 'Identity & Key Settings';
+        pathDisplay = '/profile';
+      } else if (route === '/login') {
+        document.getElementById('screen-login').classList.remove('hidden');
+        return;
+      }
+
+      const activeEl = document.getElementById(`view-${activeView}`);
+      if (activeEl) {
+        activeEl.classList.remove('hidden');
+        if (activeView === 'users' || activeView === 'apps') activeEl.classList.add('flex');
+      }
+
+      const activeNav = document.getElementById(`nav-item-${activeView}`);
+      if (activeNav) {
+        activeNav.style.backgroundColor = 'var(--brand-accent-subtle)';
+        activeNav.style.color = 'var(--brand-accent)';
+      }
+
+      document.getElementById('screen-title').innerText = title;
+      document.getElementById('route-pill').innerText = pathDisplay;
+      feather.replace();
+    }
+
+    // App Center Access Request Handlers
+    function requestAppAccess(appName, tagRequired) {
+      document.getElementById('req-app-name').innerText = appName;
+      document.getElementById('req-tag-name').innerText = tagRequired;
+      openModal('modal-request-access');
+    }
+
+    function submitAccessRequest() {
+      closeModal('modal-request-access');
+      showToast('Access request dispatched to tag approver queue');
+    }
+
+    // Impersonation feature
+    function startImpersonation(name, email, tags) {
+      isImpersonating = true;
+      document.getElementById('impersonation-banner').classList.remove('hidden');
+      document.getElementById('impersonated-user-name').innerText = `${name} (${tags[0]})`;
+      document.getElementById('sidebar-role-badge').innerText = 'role:user';
+      document.getElementById('admin-nav-group').classList.add('opacity-30', 'pointer-events-none');
+      document.getElementById('user-display-name').innerText = name;
+      document.getElementById('user-display-email').innerText = email;
+      document.getElementById('user-avatar').innerText = name.split(' ').map(n=>n[0]).join('');
+      document.getElementById('dash-user-tags').innerText = tags.join(', ');
+
+      showToast(`Impersonating ${name}. Admin plane locked.`);
+      navigateTo('/');
+    }
+
+    function stopImpersonation() {
+      isImpersonating = false;
+      document.getElementById('impersonation-banner').classList.add('hidden');
+      document.getElementById('sidebar-role-badge').innerText = 'role:admin';
+      document.getElementById('admin-nav-group').classList.remove('opacity-30', 'pointer-events-none');
+      document.getElementById('user-display-name').innerText = currentUser.name;
+      document.getElementById('user-display-email').innerText = currentUser.email;
+      document.getElementById('user-avatar').innerText = "AV";
+      document.getElementById('dash-user-tags').innerText = currentUser.tags.join(', ');
+
+      showToast("Exited impersonation mode. Privileges restored.");
+    }
+
+    // Simulator Runner
+    function runSimulation() {
+      const userKey = document.getElementById('sim-user').value;
+      const method = document.getElementById('sim-method').value;
+      const path = document.getElementById('sim-path').value;
+      const verdictBox = document.getElementById('verdict-container');
+
+      let allow = false;
+      let reason = "";
+      let matchedRule = "DEFAULT_DENY";
+      let userTags = [];
+
+      if (userKey === 'alice') userTags = ['role:admin', 'team:core'];
+      if (userKey === 'bob') userTags = ['role:user', 'team:sre'];
+
+      if (path.startsWith('/public')) {
+        allow = true;
+        matchedRule = `${method} ${path} -> [public ✓]`;
+        reason = "Matched public unauthenticated endpoint whitelist rule.";
+      } else if (userKey === 'anon') {
+        allow = false;
+        matchedRule = "AUTH_HEADER_REQUIRED";
+        reason = "Missing bearer session claim or zero-trust cookie.";
+      } else if (path.startsWith('/api/v1/query')) {
+        if (userTags.includes('role:admin')) {
+          allow = true;
+          matchedRule = `${method} /api/v1/query* -> [tags_all: role:admin]`;
+          reason = "Identity contains 'role:admin' token matching constraint.";
+        } else {
+          allow = false;
+          matchedRule = `${method} /api/v1/query* -> [tags_all: role:admin]`;
+          reason = "Missing mandatory claim tag 'role:admin'.";
+        }
+      } else {
+        allow = false;
+        matchedRule = "DEFAULT_DENY";
+        reason = "No matching route rule in policy table. Dropped at proxy edge.";
+      }
+
+      if (allow) {
+        verdictBox.className = "rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-5";
+        verdictBox.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-emerald-500/30">
+            <span class="px-2.5 py-1 rounded bg-emerald-500 text-black font-bold font-mono text-xs">ALLOW (200 OK)</span>
+            <span class="text-xs font-mono text-emerald-500">Latency: 0.38ms</span>
+          </div>
+          <div class="mt-3 space-y-1.5 text-xs font-mono">
+            <div><span style="color: var(--text-muted);">Rule:</span> <strong style="color: var(--text-primary);">${matchedRule}</strong></div>
+            <div class="text-emerald-500">${reason}</div>
+          </div>
+        `;
+      } else {
+        verdictBox.className = "rounded-lg border border-rose-500/50 bg-rose-500/10 p-5";
+        verdictBox.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-rose-500/30">
+            <span class="px-2.5 py-1 rounded bg-rose-500 text-white font-bold font-mono text-xs">DENY (403 FORBIDDEN)</span>
+            <span class="text-xs font-mono text-rose-500">Edge Terminated</span>
+          </div>
+          <div class="mt-3 space-y-1.5 text-xs font-mono">
+            <div><span style="color: var(--text-muted);">Rule:</span> <strong style="color: var(--text-primary);">${matchedRule}</strong></div>
+            <div class="text-rose-500">${reason}</div>
+          </div>
+        `;
+      }
+    }
+
+    // Master-Detail App selection
+    function selectApp(appKey) {
+      const apps = {
+        grafana: { name: 'Grafana Telemetry', upstream: 'http://10.0.4.12:3000' },
+        k8s: { name: 'Kubernetes Cluster UI', upstream: 'https://10.0.12.80:8443' }
+      };
+
+      ['grafana', 'k8s'].forEach(k => {
+        const item = document.getElementById(`app-item-${k}`);
+        if (item) {
+          item.style.backgroundColor = '';
+          item.style.borderLeftColor = 'transparent';
+        }
+      });
+
+      const active = document.getElementById(`app-item-${appKey}`);
+      if (active) {
+        active.style.backgroundColor = 'var(--bg-surface-2)';
+        active.style.borderLeftColor = 'var(--brand-accent)';
+      }
+
+      document.getElementById('detail-app-name').innerText = apps[appKey].name;
+      document.getElementById('detail-app-upstream').innerText = apps[appKey].upstream;
+    }
+
+    // UI Drawer & Modal controls
+    function openDrawer(id) { document.getElementById(id).classList.remove('hidden'); feather.replace(); }
+    function closeDrawer(id) { document.getElementById(id).classList.add('hidden'); }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); feather.replace(); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function toggleQuickLogin() { document.getElementById('screen-login').classList.toggle('hidden'); }
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      document.getElementById('login-form-credentials').classList.add('hidden');
+      document.getElementById('login-form-mfa').classList.remove('hidden');
+    }
+    function finishLogin() {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('login-form-credentials').classList.remove('hidden');
+      document.getElementById('login-form-mfa').classList.add('hidden');
+      showToast("Authentication successful");
+      navigateTo('/');
+    }
+
+    function switchProfileTab(tab) {
+      ['general', 'security'].forEach(t => {
+        document.getElementById(`tab-content-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).style.color = 'var(--text-muted)';
+        document.getElementById(`tab-btn-${t}`).style.borderBottom = 'none';
+      });
+      document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).style.color = 'var(--brand-accent)';
+      document.getElementById(`tab-btn-${tab}`).style.borderBottom = '2px solid var(--brand-accent)';
+    }
+
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isImpersonating) stopImpersonation();
+    });
+
+    // Boot
+    feather.replace();
+    navigateTo('/');
+  </script>
+</body>
+</html>

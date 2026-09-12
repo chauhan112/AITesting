@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PyFlow - Interactive Notebook & Debugger</title>
+  
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* THEME DEFINITIONS */
+    :root, [data-theme="slate-dark"] {
+      --bg-canvas: #090d16;
+      --bg-surface: #0f172a;
+      --bg-surface-elevated: #1e293b;
+      --bg-subtle: #162032;
+      --bg-code: #0b1120;
+      --border-main: #243248;
+      --border-focus: #6366f1;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-faint: #475569;
+      --accent: #818cf8;
+      --accent-solid: #6366f1;
+      --accent-bg: rgba(99, 102, 241, 0.12);
+      --paused-bg: rgba(99, 102, 241, 0.22);
+      --pinned-accent: #f59e0b;
+      --pinned-bg: rgba(245, 158, 11, 0.1);
+      --badge-bg: #1e293b;
+      --scrollbar-thumb: #334155;
+    }
+
+    [data-theme="dracula-dark"] {
+      --bg-canvas: #12101b;
+      --bg-surface: #191627;
+      --bg-surface-elevated: #241f38;
+      --bg-subtle: #211c33;
+      --bg-code: #0f0d18;
+      --border-main: #362f4f;
+      --border-focus: #bd93f9;
+      --text-main: #f8f8f2;
+      --text-muted: #b3a9d9;
+      --text-faint: #675e88;
+      --accent: #bd93f9;
+      --accent-solid: #a855f7;
+      --accent-bg: rgba(189, 147, 249, 0.15);
+      --paused-bg: rgba(189, 147, 249, 0.22);
+      --pinned-accent: #ffb86c;
+      --pinned-bg: rgba(255, 184, 108, 0.12);
+      --badge-bg: #29233f;
+      --scrollbar-thumb: #453b66;
+    }
+
+    [data-theme="jupyter-light"] {
+      --bg-canvas: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-subtle: #f8fafc;
+      --bg-code: #fcfdfe;
+      --border-main: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-faint: #94a3b8;
+      --accent: #2563eb;
+      --accent-solid: #2563eb;
+      --accent-bg: rgba(37, 99, 235, 0.08);
+      --paused-bg: rgba(219, 234, 254, 0.85);
+      --pinned-accent: #d97706;
+      --pinned-bg: rgba(217, 119, 6, 0.1);
+      --badge-bg: #e2e8f0;
+      --scrollbar-thumb: #cbd5e1;
+    }
+
+    [data-theme="warm-light"] {
+      --bg-canvas: #faf6eb;
+      --bg-surface: #f4eedb;
+      --bg-surface-elevated: #eae0c7;
+      --bg-subtle: #eee6cf;
+      --bg-code: #faf6ec;
+      --border-main: #dcd0b3;
+      --border-focus: #b58900;
+      --text-main: #073642;
+      --text-muted: #657b83;
+      --text-faint: #93a1a1;
+      --accent: #b58900;
+      --accent-solid: #b58900;
+      --accent-bg: rgba(181, 137, 0, 0.12);
+      --paused-bg: rgba(254, 243, 199, 0.9);
+      --pinned-accent: #cb4b16;
+      --pinned-bg: rgba(203, 75, 22, 0.1);
+      --badge-bg: #dfd4b7;
+      --scrollbar-thumb: #c8bc9c;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 9999px;
+    }
+
+    .th-surface { background-color: var(--bg-surface); }
+    .th-elevated { background-color: var(--bg-surface-elevated); }
+    .th-subtle { background-color: var(--bg-subtle); }
+    .th-code { background-color: var(--bg-code); }
+    .th-border { border-color: var(--border-main); }
+    .th-text-main { color: var(--text-main); }
+    .th-text-muted { color: var(--text-muted); }
+    .th-text-faint { color: var(--text-faint); }
+    .th-accent { color: var(--accent); }
+    
+    .active-line-indicator {
+      background-color: var(--paused-bg);
+      border-left: 3px solid var(--accent-solid);
+    }
+    
+    .glassmorphic {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col overflow-hidden select-none transition-colors duration-200" data-theme="slate-dark">
+
+  <!-- ================= TOP APP HEADER ================= -->
+  <header class="th-surface border-b th-border px-3.5 py-2 shrink-0 flex items-center justify-between gap-3 z-30 shadow-xs">
+    
+    <!-- Left: Sidebar Toggle, Workspace & Breadcrumbs -->
+    <div class="flex items-center gap-3 min-w-0">
+      <button onclick="toggleSidebar()" class="p-1.5 th-elevated rounded-lg border th-border th-text-main hover:border-indigo-500/50 flex items-center justify-center active:scale-95 transition">
+        <i data-lucide="panel-left-close" id="sidebar-toggle-icon" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Breadcrumbs -->
+      <div class="flex items-center gap-1.5 text-xs truncate">
+        <span id="header-ws-badge" class="font-semibold text-[11px] th-accent flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+          <i data-lucide="layers" class="w-3 h-3"></i>
+          <span id="header-ws-name" class="truncate max-w-[120px] sm:max-w-[180px]">Data Science</span>
+        </span>
+        <span class="th-text-faint">/</span>
+        <span id="header-notebook-title" class="font-semibold th-text-main truncate max-w-[140px] sm:max-w-[220px]">pipeline_scoring.ipynb</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="All changes saved"></span>
+      </div>
+    </div>
+
+    <!-- Center/Right: Execution & Debug Controls -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Run All Cells -->
+      <button onclick="runAllNotebook()" class="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium th-subtle border th-border th-text-muted hover:th-text-main active:scale-95 transition" title="Run All Cells">
+        <i data-lucide="fast-forward" class="w-3.5 h-3.5 text-emerald-500"></i>
+        <span>Run All</span>
+      </button>
+
+      <!-- Debug Mode Toggle Pill -->
+      <button onclick="toggleGlobalDebugger()" id="btn-toggle-debugger" class="px-2.5 py-1.5 rounded-lg text-xs font-medium border th-border th-subtle flex items-center gap-1.5 active:scale-95 transition">
+        <i data-lucide="bug" id="global-bug-icon" class="w-3.5 h-3.5 th-text-faint"></i>
+        <span id="debugger-toggle-label" class="th-text-muted text-[11px] font-medium">Debug Mode</span>
+      </button>
+
+      <div class="h-4 w-px th-border bg-current opacity-20 mx-0.5"></div>
+
+      <!-- Variable Inspector Drawer Toggle -->
+      <button onclick="toggleInspectorDrawer()" class="p-1.5 th-elevated border th-border rounded-lg th-text-muted hover:th-text-main active:scale-95 relative transition" title="Toggle Variable Watcher">
+        <i data-lucide="braces" class="w-4 h-4"></i>
+        <span id="inspector-badge" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+      </button>
+
+      <!-- User Profile / Session Menu -->
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-[11px] font-bold shadow-xs">
+        PF
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebar-backdrop" onclick="closeSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-xs transition-opacity lg:hidden"></div>
+
+    <!-- ================= MODERNIZED SIDEBAR ================= -->
+    <aside id="main-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-72 sm:w-80 th-surface border-r th-border flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out shadow-2xl lg:shadow-none">
+      
+      <!-- Workspace Switcher Selector -->
+      <div class="p-3 border-b th-border">
+        <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider th-text-faint mb-1.5">
+          <span>Workspace</span>
+          <button onclick="openCreateWorkspaceModal()" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium lowercase text-xs">
+            <i data-lucide="plus" class="w-3 h-3"></i> new
+          </button>
+        </div>
+
+        <div class="relative">
+          <select id="workspace-select" onchange="handleWorkspaceChange(this.value)" class="w-full th-code border th-border rounded-xl pl-3 pr-8 py-2 th-text-main text-xs font-semibold outline-none focus:border-indigo-500 cursor-pointer appearance-none">
+            <!-- Populated dynamically -->
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 th-text-muted">
+            <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Files / Themes / Extensions) -->
+      <div class="flex border-b th-border th-subtle text-xs font-medium px-2 pt-1 gap-1">
+        <button id="sb-tab-workspaces" onclick="switchSidebarSection('workspaces')" class="flex-1 py-2 px-3 text-center th-accent border-b-2 border-indigo-500 flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="folder-tree" class="w-3.5 h-3.5"></i>
+          <span>Notebooks</span>
+        </button>
+        <button id="sb-tab-settings" onclick="switchSidebarSection('settings')" class="flex-1 py-2 px-3 text-center th-text-muted hover:th-text-main border-b-2 border-transparent flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+          <span>Themes</span>
+        </button>
+      </div>
+
+      <!-- SIDEBAR SECTION 1: NOTEBOOKS & TREE -->
+      <div id="sb-section-workspaces" class="flex-1 flex flex-col overflow-hidden">
+        <!-- Search & Quick Action Header -->
+        <div class="p-2.5 border-b th-border flex items-center gap-2">
+          <div class="flex-1 relative flex items-center">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 th-text-faint pointer-events-none"></i>
+            <input type="text" id="filter-notebooks" oninput="filterNotebooksList(this.value)" placeholder="Filter notebooks..." class="w-full th-code border th-border rounded-lg pl-8 pr-2 py-1.5 text-xs th-text-main outline-none focus:border-indigo-500 placeholder:text-slate-500 font-mono">
+          </div>
+          <button onclick="createNewNotebook()" class="p-1.5 rounded-lg bg-indigo-500 text-white shadow-xs hover:bg-indigo-600 active:scale-95 transition" title="Create Notebook">
+            <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Notebook File List -->
+        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="sidebar-notebooks-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Pinned Scopes Summary Card -->
+        <div class="p-2.5 m-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between text-amber-500 font-semibold text-[11px]">
+            <span class="flex items-center gap-1"><i data-lucide="pin" class="w-3 h-3"></i> Pinned Pipeline Scope</span>
+            <span class="text-[9px] bg-amber-500/20 px-1 rounded">Group 1</span>
+          </div>
+          <p class="text-[10px] th-text-muted leading-tight font-mono truncate">
+            raw_users = 2 items cached
+          </p>
+        </div>
+      </div>
+
+      <!-- SIDEBAR SECTION 2: THEMES & CUSTOMIZATION -->
+      <div id="sb-section-settings" class="hidden flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+        <div>
+          <span class="text-[10px] font-bold uppercase th-text-muted block mb-2.5 tracking-wider">Appearance & Themes</span>
+          <div class="grid grid-cols-1 gap-2">
+            
+            <!-- Slate Dark -->
+            <div onclick="changeTheme('slate-dark')" class="p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:border-indigo-500/60 transition group" style="background-color: #0f172a; border-color: #334155;">
+              <div class="flex items-center gap-3">
+                <div class="flex -space-x-1">
+                  <span class="w-3.5 h-3.5 rounded-full bg-slate-950 border border-slate-700"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-indigo-500"></span>
+                </div>
+                <span class="text-slate-100 font-medium text-xs">Slate Dark</span>
+              </div>
+              <span id="theme-badge-slate-dark" class="text-[10px] text-indigo-400 font-mono font-bold">Active</span>
+            </div>
+
+            <!-- Dracula Dark -->
+            <div onclick="changeTheme('dracula-dark')" class="p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:border-purple-500/60 transition group" style="background-color: #191627; border-color: #362f4f;">
+              <div class="flex items-center gap-3">
+                <div class="flex -space-x-1">
+                  <span class="w-3.5 h-3.5 rounded-full bg-purple-950 border border-purple-800"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-purple-400"></span>
+                </div>
+                <span class="text-purple-100 font-medium text-xs">Dracula Dark</span>
+              </div>
+              <span id="theme-badge-dracula-dark" class="hidden text-[10px] text-purple-400 font-mono font-bold">Active</span>
+            </div>
+
+            <!-- Classic Light -->
+            <div onclick="changeTheme('jupyter-light')" class="p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:border-blue-500/60 transition group" style="background-color: #ffffff; border-color: #cbd5e1;">
+              <div class="flex items-center gap-3">
+                <div class="flex -space-x-1">
+                  <span class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-slate-300"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-blue-600"></span>
+                </div>
+                <span class="text-slate-900 font-medium text-xs">Classic Light</span>
+              </div>
+              <span id="theme-badge-jupyter-light" class="hidden text-[10px] text-blue-600 font-mono font-bold">Active</span>
+            </div>
+
+            <!-- Warm Sand Light -->
+            <div onclick="changeTheme('warm-light')" class="p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:border-amber-500/60 transition group" style="background-color: #f4eedb; border-color: #dcd0b3;">
+              <div class="flex items-center gap-3">
+                <div class="flex -space-x-1">
+                  <span class="w-3.5 h-3.5 rounded-full bg-amber-100 border border-amber-300"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-amber-600"></span>
+                </div>
+                <span class="text-stone-900 font-medium text-xs">Solarized Sand</span>
+              </div>
+              <span id="theme-badge-warm-light" class="hidden text-[10px] text-amber-700 font-mono font-bold">Active</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Debug Prefs -->
+        <div class="pt-3 border-t th-border space-y-2">
+          <span class="text-[10px] font-bold uppercase th-text-muted block tracking-wider">Debugger Settings</span>
+          <label class="flex items-center justify-between th-text-muted text-xs cursor-pointer p-1.5 hover:th-subtle rounded-lg">
+            <span>Show Line Breakpoints Gutter</span>
+            <input type="checkbox" checked class="rounded accent-indigo-500">
+          </label>
+          <label class="flex items-center justify-between th-text-muted text-xs cursor-pointer p-1.5 hover:th-subtle rounded-lg">
+            <span>Auto Stepping Speed: Normal</span>
+            <input type="checkbox" checked class="rounded accent-indigo-500">
+          </label>
+        </div>
+      </div>
+
+      <!-- SIDEBAR FOOTER: KERNEL STATUS HUD -->
+      <div class="p-3 border-t th-border th-subtle flex flex-col gap-1.5 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="font-mono text-[11px] th-text-main font-semibold">Python 3.11 (PyFlow Kernel)</span>
+          </div>
+          <button onclick="restartKernel()" class="th-text-faint hover:th-text-main p-1" title="Restart Kernel">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Mini Stats -->
+        <div class="flex items-center justify-between text-[10px] font-mono th-text-muted pt-1">
+          <span>MEM: 124.8 MB</span>
+          <span>CPU: 0.8%</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN NOTEBOOK CANVAS ================= -->
+    <main class="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 pb-28">
+
+      <!-- SECTION 1 (MARKDOWN GROUP HEADER) -->
+      <div class="th-surface border th-border rounded-2xl shadow-xs overflow-hidden" id="md-cell-1">
+        <!-- Section Bar -->
+        <div class="px-3 py-2 th-elevated border-b th-border flex items-center justify-between text-[11px]">
+          <div class="flex items-center gap-2">
+            <span class="px-1.5 py-0.5 rounded th-code border th-border text-[9px] font-mono font-bold text-indigo-400">MD GROUP</span>
+            <span class="th-text-faint font-mono">Scope ID: #pipeline_group_1</span>
+          </div>
+          <!-- Action controls -->
+          <div class="flex items-center gap-1.5">
+            <button id="group-1-pin-btn" onclick="toggleGroupPin('group-1')" class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1 active:scale-95 transition">
+              <i data-lucide="pin" class="w-3 h-3 fill-current"></i>
+              <span id="group-1-pin-label">Pinned</span>
+            </button>
+            <button onclick="runCellNormally(1)" class="p-1 rounded th-subtle hover:th-text-main th-text-muted active:scale-95" title="Run Entire Group">
+              <i data-lucide="play" class="w-3.5 h-3.5 text-emerald-500 fill-current"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Accordion Header -->
+        <div class="p-3.5 th-subtle flex items-center justify-between cursor-pointer hover:opacity-90 transition" onclick="toggleGroupFold('group-1')">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="chevron-down" id="group-1-chevron" class="w-4 h-4 th-text-muted transition-transform duration-200"></i>
+            <div>
+              <h2 class="text-xs sm:text-sm font-bold th-text-main flex items-center gap-2">
+                <span>1. User Data Ingestion & Bonus Scoring Engine</span>
+              </h2>
+              <p class="text-[11px] th-text-muted">Transforms raw tier payloads and injects computed bonus metrics.</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full th-elevated th-text-faint border th-border">2 Cells</span>
+        </div>
+      </div>
+
+      <!-- GROUP 1 CODE CELLS WRAPPER -->
+      <div id="group-1-cells" class="space-y-4 pl-1 sm:pl-3 border-l-2 th-border ml-2 transition-all">
+
+        <!-- CODE CELL 1: Raw Ingestion -->
+        <div class="th-surface border th-border rounded-2xl overflow-hidden shadow-xs">
+          <div class="px-3.5 py-1.5 th-elevated border-b th-border flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-emerald-500 font-bold text-[10px]">In [1]:</span>
+              <span class="th-text-faint text-[10px] font-mono"># Ingestion Source (Cached)</span>
+            </div>
+            <button onclick="runCellNormally(1)" class="p-1 text-slate-400 hover:text-white active:scale-90">
+              <i data-lucide="play" class="w-3.5 h-3.5 text-emerald-500"></i>
+            </button>
+          </div>
+          <div class="p-3 font-mono-code text-[12px] th-code overflow-x-auto leading-relaxed">
+            <span class="text-indigo-400 font-semibold">raw_users</span> = [ {"id": <span class="text-emerald-400">101</span>, "tier": <span class="text-amber-300">"VIP"</span>}, {"id": <span class="text-emerald-400">102</span>, "tier": <span class="text-amber-300">"FREE"</span>} ]
+          </div>
+        </div>
+
+        <!-- CODE CELL 2: Active Debugger Candidate -->
+        <div id="cell-2-container" class="th-surface border-2 th-border rounded-2xl overflow-hidden shadow-md transition-all">
+          <div id="cell-2-header" class="px-3.5 py-2 th-elevated border-b th-border flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-mono text-indigo-400 font-bold text-[10px]" id="cell-2-prompt">In [2]:</span>
+              <span class="th-text-main font-semibold text-[11px] truncate">calculate_bonus_pipeline</span>
+              <span id="debug-pill" class="hidden text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                Paused at Line <span id="debug-pill-line">5</span>
+              </span>
+            </div>
+            
+            <!-- Cell Control Actions -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="runCellNormally(2)" class="px-2.5 py-1 th-subtle hover:th-elevated th-text-main border th-border rounded-lg text-[10px] font-semibold flex items-center gap-1 active:scale-95 transition">
+                <i data-lucide="play" class="w-3 h-3 text-emerald-500 fill-current"></i> Run
+              </button>
+              <button onclick="startDebuggingCell(2)" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold border flex items-center gap-1 active:scale-95 transition" style="background-color: var(--accent-bg); border-color: var(--accent); color: var(--accent);">
+                <i data-lucide="bug" class="w-3 h-3"></i> Step Debug
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Lines Container -->
+          <div class="font-mono-code text-xs select-text overflow-x-auto th-code py-1" id="editor-lines">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- Execution Output Console Box -->
+          <div id="cell-2-output-box" class="border-t th-border th-subtle p-3 text-xs font-mono">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="th-text-faint font-semibold text-[10px]" id="cell-2-out-prompt">Out [2]:</span>
+              <span id="output-badge" class="hidden text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">Execution Finished (14ms)</span>
+            </div>
+            <div id="cell-2-output" class="th-text-muted text-[11.5px] leading-relaxed">
+              <span class="th-text-faint">// Click [Step Debug] to step through with line-by-line frame inspector</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Collapsed Fold Banner -->
+      <div id="group-1-collapsed-msg" class="hidden py-3 px-4 rounded-2xl th-subtle border th-border text-center th-text-faint text-xs font-mono cursor-pointer hover:th-text-main" onclick="toggleGroupFold('group-1')">
+        ▶ 2 cells folded in <b>Section 1</b> (Click to expand)
+      </div>
+
+    </main>
+
+    <!-- ================= VARIABLE INSPECTOR DRAWER (Collapsible Right Panel) ================= -->
+    <aside id="inspector-drawer" class="fixed inset-y-0 right-0 z-40 w-80 sm:w-96 th-surface border-l th-border transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+      <!-- Drawer Header -->
+      <div class="h-12 border-b th-border px-4 flex items-center justify-between th-elevated text-xs font-bold th-text-main">
+        <div class="flex items-center gap-2">
+          <i data-lucide="braces" class="w-4 h-4 th-accent"></i>
+          <span>Live Scope & Variables</span>
+        </div>
+        <button onclick="toggleInspectorDrawer()" class="th-text-muted hover:th-text-main p-1.5 rounded-lg th-subtle border th-border">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-mono">
+        <!-- Pinned Upstream Scope Card -->
+        <div>
+          <span class="text-[10px] font-bold uppercase th-text-muted block mb-1.5 flex items-center gap-1 text-amber-500">
+            <i data-lucide="pin" class="w-3 h-3 fill-current"></i> Pinned Upstream Scope
+          </span>
+          <div class="th-code p-3 rounded-xl border border-amber-500/30 space-y-1.5">
+            <div class="flex justify-between items-center text-amber-400 font-semibold text-xs">
+              <span>raw_users</span>
+              <span class="text-[10px] th-text-faint bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">List (2 items)</span>
+            </div>
+            <div class="text-[11px] th-text-muted truncate">
+              [{"id": 101, "tier": "VIP"}, {"id": 102, "tier": "FREE"}]
+            </div>
+          </div>
+        </div>
+
+        <!-- Frame Variables -->
+        <div>
+          <div class="th-text-muted mb-2 font-bold uppercase text-[10px] flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="layers" class="w-3 h-3 th-accent"></i> Local Frame Variables
+            </span>
+            <span class="th-text-faint font-normal font-mono text-[10px]" id="inspector-frame-name">frame: cell_2</span>
+          </div>
+          <div class="th-code rounded-xl border th-border divide-y th-border overflow-hidden" id="variables-list">
+            <div class="p-3 text-center th-text-faint text-xs">No active execution frame</div>
+          </div>
+        </div>
+
+        <!-- Call Stack Stacktrace -->
+        <div>
+          <span class="text-[10px] font-bold uppercase th-text-muted block mb-1.5">Call Stack</span>
+          <div class="th-code rounded-xl border th-border p-3 text-xs font-mono space-y-1.5">
+            <div class="th-accent flex items-center justify-between font-semibold" id="stack-top-frame">
+              <span>&gt; &lt;module&gt;</span>
+              <span class="th-text-faint text-[10px]" id="stack-line">line 5</span>
+            </div>
+            <div class="th-text-faint pl-3 text-[11px] border-l th-border">pipeline_scoring.ipynb &gt; Cell [2]</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= FLOATING THUMB DEBUG DOCK ================= -->
+    <div id="mobile-debug-dock" class="hidden fixed bottom-5 left-4 right-4 sm:left-auto sm:right-8 sm:w-[420px] z-40 th-surface border-2 th-border rounded-2xl shadow-2xl p-2.5 flex items-center justify-between gap-1 transition-all glassmorphic">
+      
+      <button onclick="dbgResume()" class="flex-1 py-2 px-1.5 rounded-xl th-elevated hover:bg-emerald-500/20 text-emerald-400 border th-border flex flex-col items-center gap-0.5 active:scale-95 transition" title="Resume (F5)">
+        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+        <span class="text-[9px] font-mono font-bold">Resume</span>
+      </button>
+
+      <button onclick="dbgStepOver()" class="flex-1 py-2 px-1.5 rounded-xl th-elevated hover:th-subtle th-text-main border th-border flex flex-col items-center gap-0.5 active:scale-95 transition" title="Step Over (F10)">
+        <i data-lucide="corner-down-right" class="w-4 h-4 th-accent"></i>
+        <span class="text-[9px] font-mono font-bold">Over</span>
+      </button>
+
+      <button onclick="dbgStepIn()" class="flex-1 py-2 px-1.5 rounded-xl th-elevated hover:th-subtle th-text-main border th-border flex flex-col items-center gap-0.5 active:scale-95 transition" title="Step In (F11)">
+        <i data-lucide="corner-right-down" class="w-4 h-4 th-accent"></i>
+        <span class="text-[9px] font-mono font-bold">In</span>
+      </button>
+
+      <button onclick="dbgStepOut()" class="flex-1 py-2 px-1.5 rounded-xl th-elevated hover:th-subtle th-text-main border th-border flex flex-col items-center gap-0.5 active:scale-95 transition" title="Step Out (Shift+F11)">
+        <i data-lucide="corner-left-up" class="w-4 h-4 th-accent"></i>
+        <span class="text-[9px] font-mono font-bold">Out</span>
+      </button>
+
+      <div class="w-px h-7 th-border bg-current opacity-20 mx-1"></div>
+
+      <button onclick="stopDebugging()" class="py-2 px-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 active:scale-95 transition flex flex-col items-center gap-0.5" title="Stop Debugger">
+        <i data-lucide="square" class="w-4 h-4 fill-current"></i>
+        <span class="text-[9px] font-mono font-bold">Stop</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ================= CREATE WORKSPACE MODAL ================= -->
+  <div id="modal-create-workspace" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-sm th-surface border th-border rounded-2xl p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between border-b th-border pb-3">
+        <h3 class="text-sm font-bold th-text-main flex items-center gap-2">
+          <i data-lucide="folder-plus" class="w-4 h-4 th-accent"></i> Create New Workspace
+        </h3>
+        <button onclick="closeCreateWorkspaceModal()" class="th-text-muted hover:th-text-main p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-medium th-text-muted text-xs block">Workspace Name</label>
+        <input type="text" id="input-ws-name" placeholder="e.g. Analytics Pipeline" class="w-full th-code border th-border rounded-xl px-3 py-2 text-xs th-text-main outline-none focus:border-indigo-500 font-medium">
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="closeCreateWorkspaceModal()" class="flex-1 py-2 rounded-xl border th-border th-text-muted text-xs font-semibold hover:th-elevated transition">Cancel</button>
+        <button onclick="submitCreateWorkspace()" class="flex-1 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold shadow-xs active:scale-95 transition">Create Workspace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT APP LOGIC ================= -->
+  <script>
+    // State Store
+    let workspaces = [
+      {
+        id: "ws-1",
+        name: "Data Science & Scoring",
+        notebooks: [
+          { id: "nb-1", name: "pipeline_scoring.ipynb", cells: 4, active: true },
+          { id: "nb-2", name: "churn_prediction.ipynb", cells: 8, active: false },
+          { id: "nb-3", name: "feature_store.ipynb", cells: 3, active: false }
+        ]
+      },
+      {
+        id: "ws-2",
+        name: "ETL & Integrations",
+        notebooks: [
+          { id: "nb-4", name: "etl_sync_users.ipynb", cells: 5, active: true },
+          { id: "nb-5", name: "webhook_listener.ipynb", cells: 2, active: false }
+        ]
+      }
+    ];
+
+    let activeWorkspaceId = "ws-1";
+    let activeNotebookId = "nb-1";
+    let isSidebarOpen = false;
+    let isInspectorOpen = false;
+
+    // Code & Debug Steps Data
+    const cellCode = [
+      { line: 1, text: "def calculate_bonus(tier, factor=1.5):" },
+      { line: 2, text: "    base = 100 if tier == 'VIP' else 20" },
+      { line: 3, text: "    return base * factor" },
+      { line: 4, text: "" },
+      { line: 5, text: "scored_users = []" },
+      { line: 6, text: "for u in raw_users:  # (Injected from Group 1 Input)" },
+      { line: 7, text: "    bonus = calculate_bonus(u['tier'])" },
+      { line: 8, text: "    scored_users.append({'id': u['id'], 'bonus': bonus})" },
+      { line: 9, text: "scored_users" }
+    ];
+
+    const debugSteps = [
+      { line: 5, frame: "<module>", vars: { "raw_users": "list[2] (📌 Pinned)", scored_users: "[]" } },
+      { line: 6, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 7, frame: "<module>", vars: { u: "{'id': 101, 'tier': 'VIP'}", scored_users: "[]" } },
+      { line: 1, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5" } },
+      { line: 2, frame: "calculate_bonus()", vars: { tier: "'VIP'", factor: "1.5", base: "100" } },
+      { line: 3, frame: "calculate_bonus()", vars: { return_val: "150.0" } },
+      { line: 8, frame: "<module>", vars: { bonus: "150.0", scored_users: "[{'id': 101, 'bonus': 150.0}]" } },
+      { line: 9, frame: "<module>", vars: { scored_users: "[{'id': 101, 'bonus': 150.0}, {'id': 102, 'bonus': 30.0}]" } }
+    ];
+
+    let isGlobalDebugActive = false;
+    let isCellDebugging = false;
+    let currentStep = 0;
+    let breakpoints = new Set([2, 7]);
+    const foldState = { "group-1": false };
+    const pinState = { "group-1": true };
+
+    // ================= SIDEBAR INTERACTION =================
+    function toggleSidebar() {
+      if (isSidebarOpen) closeSidebar();
+      else openSidebar();
+    }
+
+    function openSidebar() {
+      isSidebarOpen = true;
+      const sb = document.getElementById("main-sidebar");
+      const backdrop = document.getElementById("sidebar-backdrop");
+      sb.classList.remove("-translate-x-full");
+      backdrop.classList.remove("hidden");
+    }
+
+    function closeSidebar() {
+      isSidebarOpen = false;
+      const sb = document.getElementById("main-sidebar");
+      const backdrop = document.getElementById("sidebar-backdrop");
+      sb.classList.add("-translate-x-full");
+      backdrop.classList.add("hidden");
+    }
+
+    function switchSidebarSection(sec) {
+      const wsSec = document.getElementById("sb-section-workspaces");
+      const setSec = document.getElementById("sb-section-settings");
+      const tabWs = document.getElementById("sb-tab-workspaces");
+      const tabSet = document.getElementById("sb-tab-settings");
+
+      if (sec === 'workspaces') {
+        wsSec.classList.remove("hidden");
+        setSec.classList.add("hidden");
+        tabWs.className = "flex-1 py-2 px-3 text-center th-accent border-b-2 border-indigo-500 flex items-center justify-center gap-1.5 transition";
+        tabSet.className = "flex-1 py-2 px-3 text-center th-text-muted hover:th-text-main border-b-2 border-transparent flex items-center justify-center gap-1.5 transition";
+      } else {
+        wsSec.classList.add("hidden");
+        setSec.classList.remove("hidden");
+        tabSet.className = "flex-1 py-2 px-3 text-center th-accent border-b-2 border-indigo-500 flex items-center justify-center gap-1.5 transition";
+        tabWs.className = "flex-1 py-2 px-3 text-center th-text-muted hover:th-text-main border-b-2 border-transparent flex items-center justify-center gap-1.5 transition";
+      }
+      lucide.createIcons();
+    }
+
+    // ================= WORKSPACE & NOTEBOOK ENGINE =================
+    function renderWorkspaces() {
+      const select = document.getElementById("workspace-select");
+      select.innerHTML = "";
+
+      workspaces.forEach(ws => {
+        const opt = document.createElement("option");
+        opt.value = ws.id;
+        opt.textContent = `${ws.name} (${ws.notebooks.length})`;
+        opt.selected = (ws.id === activeWorkspaceId);
+        select.appendChild(opt);
+      });
+
+      renderSidebarNotebooks();
+    }
+
+    function handleWorkspaceChange(wsId) {
+      activeWorkspaceId = wsId;
+      const currentWs = workspaces.find(w => w.id === wsId);
+      document.getElementById("header-ws-name").textContent = currentWs.name;
+
+      if (currentWs.notebooks.length > 0) {
+        selectNotebook(currentWs.notebooks[0].id);
+      }
+      renderSidebarNotebooks();
+    }
+
+    function renderSidebarNotebooks(filterQuery = "") {
+      const container = document.getElementById("sidebar-notebooks-list");
+      container.innerHTML = "";
+
+      const currentWs = workspaces.find(w => w.id === activeWorkspaceId);
+      if (!currentWs) return;
+
+      const filtered = currentWs.notebooks.filter(n => n.name.toLowerCase().includes(filterQuery.toLowerCase()));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-6 th-text-faint text-xs">No notebooks found</div>`;
+        return;
+      }
+
+      filtered.forEach(nb => {
+        const item = document.createElement("div");
+        const isActive = (nb.id === activeNotebookId);
+        
+        item.className = `group px-2.5 py-2 rounded-xl flex items-center justify-between cursor-pointer active:scale-98 transition ${
+          isActive 
+            ? 'bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-semibold' 
+            : 'th-text-muted hover:th-elevated hover:th-text-main border border-transparent'
+        }`;
+        
+        item.onclick = () => {
+          selectNotebook(nb.id);
+          if (window.innerWidth < 1024) closeSidebar();
+        };
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate">
+            <i data-lucide="file-code" class="w-4 h-4 shrink-0 ${isActive ? 'text-indigo-400' : 'th-text-faint'}"></i>
+            <span class="truncate text-xs font-mono">${nb.name}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono opacity-60">${nb.cells} cells</span>
+            ${isActive ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>' : ''}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function filterNotebooksList(q) {
+      renderSidebarNotebooks(q);
+    }
+
+    function createNewNotebook() {
+      const currentWs = workspaces.find(w => w.id === activeWorkspaceId);
+      const newName = `experiment_${currentWs.notebooks.length + 1}.ipynb`;
+      const newId = `nb-${Date.now()}`;
+
+      currentWs.notebooks.push({ id: newId, name: newName, cells: 1, active: true });
+      selectNotebook(newId);
+    }
+
+    function selectNotebook(nbId) {
+      activeNotebookId = nbId;
+      const currentWs = workspaces.find(w => w.id === activeWorkspaceId);
+      currentWs.notebooks.forEach(n => n.active = (n.id === nbId));
+      
+      const nb = currentWs.notebooks.find(n => n.id === nbId);
+      if (nb) {
+        document.getElementById("header-notebook-title").textContent = nb.name;
+      }
+      renderSidebarNotebooks();
+    }
+
+    function openCreateWorkspaceModal() {
+      document.getElementById("modal-create-workspace").classList.remove("hidden");
+    }
+
+    function closeCreateWorkspaceModal() {
+      document.getElementById("modal-create-workspace").classList.add("hidden");
+    }
+
+    function submitCreateWorkspace() {
+      const input = document.getElementById("input-ws-name");
+      const name = input.value.trim();
+      if (!name) return;
+
+      const newWs = {
+        id: `ws-${Date.now()}`,
+        name: name,
+        notebooks: [{ id: `nb-${Date.now()}`, name: "main.ipynb", cells: 2, active: true }]
+      };
+      workspaces.push(newWs);
+      input.value = "";
+      closeCreateWorkspaceModal();
+      renderWorkspaces();
+      handleWorkspaceChange(newWs.id);
+    }
+
+    // ================= CODE CELL & SYNTAX RENDERING =================
+    function renderCell2() {
+      const container = document.getElementById("editor-lines");
+      container.innerHTML = "";
+      const activeLine = isCellDebugging ? debugSteps[currentStep]?.line : null;
+
+      cellCode.forEach(item => {
+        const hasBreakpoint = breakpoints.has(item.line);
+        const isCurrentLine = isCellDebugging && (item.line === activeLine);
+
+        const row = document.createElement("div");
+        row.className = `flex items-center min-h-[30px] leading-relaxed transition-colors ${
+          isCurrentLine ? 'active-line-indicator' : 'hover:bg-slate-500/5'
+        }`;
+
+        // Breakpoint Gutter
+        const gutter = document.createElement("div");
+        gutter.className = "w-11 text-right pr-2 py-1 select-none cursor-pointer flex items-center justify-end gap-1.5 shrink-0";
+        gutter.onclick = () => toggleBreakpoint(item.line);
+
+        const bpCircle = document.createElement("span");
+        bpCircle.className = `w-2.5 h-2.5 rounded-full inline-block transition-transform ${
+          hasBreakpoint ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] scale-110' : 'bg-transparent border border-slate-700 hover:border-slate-500'
+        }`;
+
+        const lineNum = document.createElement("span");
+        lineNum.className = `text-[11px] font-mono ${isCurrentLine ? 'font-bold text-indigo-400' : 'th-text-faint'}`;
+        lineNum.textContent = item.line;
+
+        gutter.appendChild(bpCircle);
+        gutter.appendChild(lineNum);
+
+        const codeText = document.createElement("div");
+        codeText.className = "flex-1 pl-3 th-text-main whitespace-pre font-mono text-[11.5px]";
+        codeText.innerHTML = highlightPythonSyntax(item.text);
+
+        row.appendChild(gutter);
+        row.appendChild(codeText);
+
+        if (isCurrentLine) {
+          const arrow = document.createElement("div");
+          arrow.className = "pr-3 text-indigo-400 text-[10px] font-bold shrink-0 animate-bounce";
+          arrow.innerHTML = "◀";
+          row.appendChild(arrow);
+        }
+
+        container.appendChild(row);
+      });
+
+      renderInspector();
+      lucide.createIcons();
+    }
+
+    function highlightPythonSyntax(code) {
+      if (!code) return "&nbsp;";
+      return code
+        .replace(/(def|return|if|else|for|in)\b/g, '<span class="text-purple-400 font-semibold">$1</span>')
+        .replace(/('VIP'|'FREE'|'id'|'tier'|'bonus')/g, '<span class="text-amber-300">$1</span>')
+        .replace(/\b(\d+(\.\d+)?)\b/g, '<span class="text-emerald-400">$1</span>')
+        .replace(/(#.*$)/g, '<span class="text-slate-500 italic">$1</span>');
+    }
+
+    function renderInspector() {
+      if (!isCellDebugging) return;
+      const data = debugSteps[currentStep];
+      document.getElementById("stack-line").innerText = `line ${data.line}`;
+      document.getElementById("debug-pill-line").innerText = data.line;
+      document.getElementById("stack-top-frame").innerHTML = `<span>&gt; ${data.frame}</span><span class="th-text-faint text-[10px]">line ${data.line}</span>`;
+      document.getElementById("inspector-frame-name").innerText = `frame: ${data.frame}`;
+
+      const varList = document.getElementById("variables-list");
+      varList.innerHTML = "";
+
+      for (const [key, val] of Object.entries(data.vars)) {
+        const row = document.createElement("div");
+        row.className = "px-3 py-2 flex justify-between items-center text-xs";
+        row.innerHTML = `
+          <span class="text-indigo-400 font-semibold font-mono">${key}</span>
+          <span class="th-text-muted font-mono text-[10.5px] th-elevated px-2 py-0.5 rounded border th-border truncate max-w-[170px]">${val}</span>
+        `;
+        varList.appendChild(row);
+      }
+    }
+
+    // ================= DEBUG CONTROLLER =================
+    function startDebuggingCell(cellId) {
+      if (foldState["group-1"]) toggleGroupFold("group-1");
+      isCellDebugging = true;
+      currentStep = 0;
+
+      document.getElementById("mobile-debug-dock").classList.remove("hidden");
+      document.getElementById("debug-pill").classList.remove("hidden");
+      document.getElementById("inspector-badge").classList.remove("hidden");
+      document.getElementById("cell-2-output").innerHTML = `<span class="text-amber-400 font-mono">// Stepper paused. Use the floating debug bar to step through code.</span>`;
+      
+      renderCell2();
+    }
+
+    function stopDebugging() {
+      isCellDebugging = false;
+      document.getElementById("mobile-debug-dock").classList.add("hidden");
+      document.getElementById("debug-pill").classList.add("hidden");
+      document.getElementById("inspector-badge").classList.add("hidden");
+      renderCell2();
+    }
+
+    function dbgStepOver() {
+      if (currentStep < debugSteps.length - 1) {
+        currentStep++;
+        renderCell2();
+      } else {
+        stopDebugging();
+      }
+    }
+
+    function dbgStepIn() { dbgStepOver(); }
+    
+    function dbgStepOut() {
+      currentStep = Math.min(currentStep + 2, debugSteps.length - 1);
+      renderCell2();
+    }
+
+    function dbgResume() {
+      let nextBp = debugSteps.findIndex((s, i) => i > currentStep && breakpoints.has(s.line));
+      if (nextBp !== -1) {
+        currentStep = nextBp;
+        renderCell2();
+      } else {
+        stopDebugging();
+      }
+    }
+
+    function toggleBreakpoint(line) {
+      if (breakpoints.has(line)) breakpoints.delete(line);
+      else breakpoints.add(line);
+      renderCell2();
+    }
+
+    function runCellNormally(cellId) {
+      stopDebugging();
+      const out = document.getElementById("cell-2-output");
+      out.innerHTML = `<span class="th-accent animate-pulse font-mono">Executing cell...</span>`;
+      setTimeout(() => {
+        out.innerHTML = `<pre class="th-text-main text-[11.5px] font-mono leading-relaxed">[
+  { "id": 101, "bonus": 150.0 },
+  { "id": 102, "bonus": 30.0 }
+]</pre>`;
+        document.getElementById("output-badge").classList.remove("hidden");
+      }, 180);
+    }
+
+    function runAllNotebook() {
+      runCellNormally(2);
+    }
+
+    function restartKernel() {
+      const prompt = document.getElementById("cell-2-output");
+      prompt.innerHTML = `<span class="text-amber-400 font-mono">Restarting Kernel...</span>`;
+      setTimeout(() => {
+        prompt.innerHTML = `<span class="text-emerald-400 font-mono">Kernel ready. Memory flushed.</span>`;
+      }, 350);
+    }
+
+    function toggleGlobalDebugger() {
+      isGlobalDebugActive = !isGlobalDebugActive;
+      const label = document.getElementById("debugger-toggle-label");
+      const icon = document.getElementById("global-bug-icon");
+
+      if (isGlobalDebugActive) {
+        label.innerText = "Debugging";
+        label.classList.add("text-indigo-400");
+        icon.classList.add("text-indigo-400");
+        startDebuggingCell(2);
+      } else {
+        label.innerText = "Debug Mode";
+        label.classList.remove("text-indigo-400");
+        icon.classList.remove("text-indigo-400");
+        stopDebugging();
+      }
+    }
+
+    function toggleInspectorDrawer() {
+      const drawer = document.getElementById("inspector-drawer");
+      isInspectorOpen = !isInspectorOpen;
+      if (isInspectorOpen) drawer.classList.remove("translate-x-full");
+      else drawer.classList.add("translate-x-full");
+      lucide.createIcons();
+    }
+
+    // ================= FOLDING & PINNING =================
+    function toggleGroupFold(groupId) {
+      foldState[groupId] = !foldState[groupId];
+      const isFolded = foldState[groupId];
+      const container = document.getElementById(`${groupId}-cells`);
+      const msg = document.getElementById(`${groupId}-collapsed-msg`);
+      const chevron = document.getElementById(`${groupId}-chevron`);
+
+      if (isFolded) {
+        container.classList.add("hidden");
+        msg.classList.remove("hidden");
+        chevron.classList.add("-rotate-90");
+      } else {
+        container.classList.remove("hidden");
+        msg.classList.add("hidden");
+        chevron.classList.remove("-rotate-90");
+      }
+    }
+
+    function toggleGroupPin(groupId) {
+      pinState[groupId] = !pinState[groupId];
+      const isPinned = pinState[groupId];
+      const btn = document.getElementById(`${groupId}-pin-btn`);
+      const label = document.getElementById(`${groupId}-pin-label`);
+
+      if (isPinned) {
+        btn.className = "px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1 active:scale-95 transition";
+        label.innerText = "Pinned";
+      } else {
+        btn.className = "px-2 py-0.5 rounded-md text-[10px] font-semibold th-subtle th-text-muted border th-border flex items-center gap-1 active:scale-95 transition";
+        label.innerText = "Unpinned";
+      }
+      lucide.createIcons();
+    }
+
+    // ================= THEME SWITCHER =================
+    function changeTheme(themeName) {
+      document.body.setAttribute("data-theme", themeName);
+      ["slate-dark", "dracula-dark", "jupyter-light", "warm-light"].forEach(t => {
+        const badge = document.getElementById(`theme-badge-${t}`);
+        if (t === themeName) badge.classList.remove("hidden");
+        else badge.classList.add("hidden");
+      });
+      renderCell2();
+      lucide.createIcons();
+    }
+
+    // Initialize
+    window.addEventListener("DOMContentLoaded", () => {
+      renderWorkspaces();
+      renderCell2();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
