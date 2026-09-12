@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Maker — LocalStorage Mock</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full flex overflow-hidden font-sans antialiased text-sm">
+
+  <!-- ================= SIDEBAR: HIERARCHY TREE ================= -->
+  <aside class="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0">
+    <!-- Header -->
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
+          <i data-lucide="git-fork" class="w-4 h-4 rotate-180"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 leading-tight">Tree Maker</h1>
+          <p class="text-[11px] text-slate-400">localStorage API Mock</p>
+        </div>
+      </div>
+      <button onclick="openCreateModal(null)" title="New Root Tree" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition">
+        <i data-lucide="folder-plus" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Search (read_all) -->
+    <div class="px-3 py-2 border-b border-slate-100 bg-slate-50/50">
+      <div class="relative">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
+        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search notes..."
+               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-brand-500">
+      </div>
+    </div>
+
+    <!-- Tree Navigation -->
+    <div class="flex-1 overflow-y-auto p-2" id="treeContainer">
+      <div class="text-center text-xs text-slate-400 py-8">Loading tree...</div>
+    </div>
+
+    <!-- Footer / LocalStorage reset -->
+    <div class="p-3 border-t border-slate-100 bg-slate-50 text-[11px] flex items-center justify-between text-slate-500">
+      <span class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Synced to LocalStorage
+      </span>
+      <button onclick="resetStorage()" class="text-rose-600 hover:underline">Reset Demo</button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN WORKSPACE: ACTIVE NODE ================= -->
+  <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+    
+    <!-- Top Bar & Breadcrumbs -->
+    <header class="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0">
+      <nav class="flex items-center gap-1 text-xs text-slate-500 overflow-x-auto" id="breadcrumbs">
+        <span>Roots</span>
+      </nav>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2" id="nodeActionsBar">
+        <button onclick="openCreateModal(state.activeNodeId)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-sm transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Child
+        </button>
+        <button onclick="openMoveModal(state.activeNodeId)" class="p-1.5 rounded-md border border-slate-200 hover:bg-slate-100 text-slate-600 transition" title="Move Subtree">
+          <i data-lucide="folder-symlink" class="w-4 h-4"></i>
+        </button>
+        <button onclick="handleCopy(state.activeNodeId)" class="p-1.5 rounded-md border border-slate-200 hover:bg-slate-100 text-slate-600 transition" title="Deep Clone Subtree">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+        </button>
+        <button onclick="handleDelete(state.activeNodeId)" class="p-1.5 rounded-md border border-rose-200 hover:bg-rose-50 text-rose-600 transition" title="Cascade Delete">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+      <div class="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto w-full flex flex-col gap-5">
+        
+        <!-- Metadata pills -->
+        <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500" id="nodeMetaPills"></div>
+
+        <!-- Editable Title -->
+        <input id="noteTitle" oninput="markDirty()" type="text" placeholder="Note Title..."
+               class="text-3xl font-extrabold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-brand-500 focus:outline-none transition py-1">
+
+        <!-- Editable Content -->
+        <div class="flex-1 flex flex-col">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Content</label>
+          <textarea id="noteContent" oninput="markDirty()" placeholder="Type plain text or markdown..."
+                    class="w-full flex-1 min-h-[260px] p-4 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 resize-y font-mono leading-relaxed shadow-sm"></textarea>
+        </div>
+
+        <!-- Save Button Bar -->
+        <div class="flex items-center justify-between pt-1">
+          <span id="saveStatus" class="text-xs text-slate-400">All changes saved.</span>
+          <button id="saveBtn" onclick="saveActiveNode()" class="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-medium rounded-md shadow transition disabled:opacity-40" disabled>
+            Save Changes
+          </button>
+        </div>
+
+        <!-- Sub-notes Grid -->
+        <div class="pt-6 border-t border-slate-200">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sub-notes / Children</h2>
+            <button onclick="openCreateModal(state.activeNodeId)" class="text-xs text-brand-600 hover:underline">+ New child</button>
+          </div>
+          <div id="subnotesList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal: Create Node -->
+  <div id="createModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 flex flex-col gap-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-slate-900" id="createModalTitle">Create Note</h3>
+        <button onclick="closeModal('createModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Title</label>
+        <input id="newNoteTitle" type="text" class="w-full px-3 py-2 border rounded-md text-xs focus:ring-1 focus:ring-brand-500 outline-none" placeholder="e.g. System Design">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Content (optional)</label>
+        <textarea id="newNoteContent" rows="3" class="w-full px-3 py-2 border rounded-md text-xs focus:ring-1 focus:ring-brand-500 outline-none" placeholder="Add some notes..."></textarea>
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button onclick="closeModal('createModal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-md">Cancel</button>
+        <button onclick="submitCreateNode()" class="px-3 py-1.5 text-xs bg-brand-600 text-white rounded-md hover:bg-brand-700">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Move Subtree -->
+  <div id="moveModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 flex flex-col gap-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-slate-900">Move Subtree</h3>
+        <button onclick="closeModal('moveModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-500">Pick a new parent. Moving under itself or a descendant is prevented.</p>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Target Parent</label>
+        <select id="moveTargetSelect" class="w-full px-3 py-2 border rounded-md text-xs bg-white focus:ring-1 focus:ring-brand-500 outline-none"></select>
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button onclick="closeModal('moveModal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-md">Cancel</button>
+        <button onclick="submitMoveNode()" class="px-3 py-1.5 text-xs bg-brand-600 text-white rounded-md hover:bg-brand-700">Move</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    /* -------------------------------------------------------------
+       1. LOCALSTORAGE MOCK BACKEND
+       Implements POST /api/tree/<action> with {"help": {}, "response": ...}
+    ------------------------------------------------------------- */
+    const STORAGE_KEY = 'TREE_MAKER_DATA';
+
+    const DEFAULT_DATA = [
+      { id: 1, parent: null, title: 'Engineering Roadmap', content: 'Main hub for engineering goals.', depth: 0, child_count: 2, date_created: '2026-09-01', date_updated: '2026-09-02' },
+      { id: 2, parent: 1, title: 'Database Optimization', content: 'Partitioning & indexes strategy.', depth: 1, child_count: 1, date_created: '2026-09-03', date_updated: '2026-09-03' },
+      { id: 3, parent: 2, title: 'Cache Layer', content: 'Local persistent client caching.', depth: 2, child_count: 0, date_created: '2026-09-04', date_updated: '2026-09-04' },
+      { id: 4, parent: 1, title: 'Frontend Design', content: 'Component cleanup and tokens.', depth: 1, child_count: 0, date_created: '2026-09-05', date_updated: '2026-09-05' },
+      { id: 5, parent: null, title: 'Personal Notes', content: 'Quick thoughts and ideas.', depth: 0, child_count: 0, date_created: '2026-09-06', date_updated: '2026-09-06' }
+    ];
+
+    const MockAPI = {
+      getNodes() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
+          return DEFAULT_DATA;
+        }
+        return JSON.parse(stored);
+      },
+
+      saveNodes(nodes) {
+        // Auto-recalculate depth and child_count before saving
+        const getDepth = (n) => n.parent ? (getDepth(nodes.find(x => x.id === n.parent)) + 1) : 0;
+        nodes.forEach(n => {
+          n.depth = getDepth(n);
+          n.child_count = nodes.filter(c => c.parent === n.id).length;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes));
+      },
+
+      getDescendants(nodes, nodeId) {
+        let list = [];
+        const children = nodes.filter(n => n.parent === nodeId);
+        for (const child of children) {
+          list.push(child.id);
+          list = list.concat(this.getDescendants(nodes, child.id));
+        }
+        return list;
+      },
+
+      getMaxDepth(nodes, nodeId) {
+        const children = nodes.filter(n => n.parent === nodeId);
+        if (!children.length) return 0;
+        return 1 + Math.max(...children.map(c => this.getMaxDepth(nodes, c.id)));
+      },
+
+      // Simulates POST /api/tree/<action>
+      async request(action, body = {}) {
+        let nodes = this.getNodes();
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        switch (action) {
+          case 'create': {
+            const nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+            const newNode = {
+              id: nextId,
+              parent: body.parent ?? null,
+              title: body.title || 'Untitled',
+              content: body.content || '',
+              depth: 0,
+              child_count: 0,
+              date_created: dateStr,
+              date_updated: dateStr
+            };
+            nodes.push(newNode);
+            this.saveNodes(nodes);
+            return { help: {}, response: newNode };
+          }
+
+          case 'read': {
+            const found = nodes.find(n => n.id === body.node);
+            if (!found) throw new Error('404 Node Not Found');
+            return { help: {}, response: found };
+          }
+
+          case 'read_all': {
+            let res = [...nodes];
+            if (body.search) {
+              const q = body.search.toLowerCase();
+              res = res.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
+            }
+            if (body.filters) {
+              if (body.filters.parent !== undefined) res = res.filter(n => n.parent === body.filters.parent);
+              if (body.filters.depth !== undefined) res = res.filter(n => n.depth === body.filters.depth);
+            }
+            if (body.columns && Array.isArray(body.columns)) {
+              res = res.map(row => {
+                const projected = {};
+                body.columns.forEach(col => projected[col] = row[col]);
+                return projected;
+              });
+            }
+            return { help: {}, response: res };
+          }
+
+          case 'children': {
+            const parentId = body.node ?? null;
+            const children = nodes.filter(n => n.parent === parentId);
+            return { help: {}, response: children };
+          }
+
+          case 'subtree': {
+            const rootId = body.node ?? null;
+            const depthLimit = body.depth ?? 10;
+
+            const buildSubtree = (parentId, currentLvl) => {
+              const children = nodes.filter(n => n.parent === parentId);
+              return children.map(child => {
+                const nested = currentLvl < depthLimit ? buildSubtree(child.id, currentLvl + 1) : [];
+                return {
+                  ...child,
+                  children: nested,
+                  descendant_count: this.getDescendants(nodes, child.id).length,
+                  max_subtree_depth: this.getMaxDepth(nodes, child.id)
+                };
+              });
+            };
+
+            const result = buildSubtree(rootId, 1);
+            return { help: {}, response: result };
+          }
+
+          case 'update': {
+            const node = nodes.find(n => n.id === body.id);
+            if (!node) throw new Error('404 Node Not Found');
+            if (body.title !== undefined) node.title = body.title;
+            if (body.content !== undefined) node.content = body.content;
+            node.date_updated = dateStr;
+            this.saveNodes(nodes);
+            return { help: {}, response: node };
+          }
+
+          case 'move': {
+            const node = nodes.find(n => n.id === body.id);
+            if (!node) throw new Error('404 Node Not Found');
+            const targetParent = body.parent ?? null;
+
+            // Cycle check: can't move under itself or any descendant
+            if (targetParent === node.id || this.getDescendants(nodes, node.id).includes(targetParent)) {
+              throw new Error('400 Invalid Operation: Cycle detected');
+            }
+
+            node.parent = targetParent;
+            node.date_updated = dateStr;
+            this.saveNodes(nodes);
+            return { help: {}, response: node };
+          }
+
+          case 'copy': {
+            const source = nodes.find(n => n.id === body.node);
+            if (!source) throw new Error('404 Node Not Found');
+
+            let currentMaxId = nodes.reduce((max, n) => Math.max(max, n.id), 0);
+
+            const cloneTree = (id, targetParent) => {
+              const orig = nodes.find(x => x.id === id);
+              currentMaxId++;
+              const clonedNode = {
+                ...orig,
+                id: currentMaxId,
+                parent: targetParent,
+                title: targetParent === (body.parent ?? null) ? `${orig.title} (Copy)` : orig.title,
+                date_created: dateStr,
+                date_updated: dateStr
+              };
+              nodes.push(clonedNode);
+              const kids = nodes.filter(k => k.parent === id && k.id !== clonedNode.id);
+              kids.forEach(k => cloneTree(k.id, clonedNode.id));
+              return clonedNode;
+            };
+
+            const newRoot = cloneTree(source.id, body.parent ?? null);
+            this.saveNodes(nodes);
+            return { help: {}, response: newRoot };
+          }
+
+          case 'delete': {
+            const toDelete = [body.node, ...this.getDescendants(nodes, body.node)];
+            nodes = nodes.filter(n => !toDelete.includes(n.id));
+            this.saveNodes(nodes);
+            return { help: {}, response: { id: body.node, deleted: true, deleted_count: toDelete.length } };
+          }
+
+          default:
+            throw new Error(`404 Unknown Action: ${action}`);
+        }
+      }
+    };
+
+    /* Contract caller wrapper */
+    async function apiCall(action, body = {}) {
+      const envelope = await MockAPI.request(action, body);
+      return envelope.response;
+    }
+
+    /* -------------------------------------------------------------
+       2. UI STATE & CONTROLLERS
+    ------------------------------------------------------------- */
+    const state = {
+      activeNodeId: null,
+      activeNode: null,
+      treeData: [],
+      allNodesFlat: [],
+      expandedNodes: new Set(),
+      pendingParentId: null,
+      isDirty: false
+    };
+
+    async function loadWorkspace() {
+      // 1. Fetch subtree view for sidebar
+      state.treeData = await apiCall('subtree', { node: null, depth: 4 });
+      // 2. Fetch flat list for lookups
+      state.allNodesFlat = await apiCall('read_all', {});
+
+      if (!state.activeNodeId && state.treeData.length > 0) {
+        state.activeNodeId = state.treeData[0].id;
+        state.expandedNodes.add(state.treeData[0].id);
+      }
+
+      renderTree();
+      await loadActiveNode();
+    }
+
+    async function loadActiveNode() {
+      if (!state.activeNodeId) {
+        renderEmptyState();
+        return;
+      }
+      try {
+        const node = await apiCall('read', { node: state.activeNodeId });
+        state.activeNode = node;
+
+        document.getElementById('noteTitle').value = node.title;
+        document.getElementById('noteContent').value = node.content;
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('saveStatus').innerText = `Last updated: ${node.date_updated}`;
+
+        // Metadata badges
+        document.getElementById('nodeMetaPills').innerHTML = `
+          <span class="px-2 py-0.5 rounded bg-slate-200/60 font-mono text-[10px]">ID: ${node.id}</span>
+          <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">Depth ${node.depth}</span>
+          <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">${node.child_count} Direct Children</span>
+          <span class="text-slate-400">Created: ${node.date_created}</span>
+        `;
+
+        renderBreadcrumbs();
+        renderSubnotes();
+      } catch (err) {
+        console.error(err);
+      }
+      lucide.createIcons();
+    }
+
+    function renderTree() {
+      const container = document.getElementById('treeContainer');
+      if (!state.treeData.length) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">No notes found. Create your first note above!</div>`;
+        return;
+      }
+      container.innerHTML = state.treeData.map(node => renderNodeBranch(node)).join('');
+      lucide.createIcons();
+    }
+
+    function renderNodeBranch(node) {
+      const isSelected = node.id === state.activeNodeId;
+      const hasChildren = node.children && node.children.length > 0;
+      const isExpanded = state.expandedNodes.has(node.id);
+
+      return `
+        <div class="select-none text-xs">
+          <div class="group flex items-center gap-1.5 py-1.5 px-2 rounded-md transition cursor-pointer ${
+            isSelected ? 'bg-indigo-50 text-brand-700 font-semibold' : 'hover:bg-slate-100 text-slate-700'
+          }" onclick="selectNode(${node.id})">
+            
+            <span class="w-4 h-4 flex items-center justify-center text-slate-400 hover:text-slate-700"
+                  onclick="event.stopPropagation(); toggleExpand(${node.id})">
+              ${hasChildren 
+                ? `<i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3.5 h-3.5"></i>`
+                : `<span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>`
+              }
+            </span>
+
+            <span class="truncate flex-1">${escapeHtml(node.title)}</span>
+
+            ${node.descendant_count > 0 ? `
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 group-hover:bg-white text-slate-500 border border-slate-200">
+                ${node.descendant_count}
+              </span>
+            ` : ''}
+
+            <button onclick="event.stopPropagation(); openCreateModal(${node.id})" title="Add Sub-note"
+                    class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 p-0.5 rounded">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          ${hasChildren && isExpanded ? `
+            <div class="pl-4 ml-2 border-l border-slate-200 space-y-0.5">
+              ${node.children.map(child => renderNodeBranch(child)).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderBreadcrumbs() {
+      const container = document.getElementById('breadcrumbs');
+      if (!state.activeNode) {
+        container.innerHTML = '<span>Roots</span>';
+        return;
+      }
+      const path = [];
+      let cur = state.activeNode;
+      while (cur) {
+        path.unshift(cur);
+        cur = state.allNodesFlat.find(n => n.id === cur.parent);
+      }
+      container.innerHTML = `
+        <span class="hover:text-slate-800 cursor-pointer" onclick="selectNode(null)">Roots</span>
+        ${path.map((n, i) => `
+          <i data-lucide="chevron-right" class="w-3 h-3 text-slate-300 inline"></i>
+          <span class="truncate max-w-[120px] ${i === path.length - 1 ? 'font-bold text-slate-900' : 'cursor-pointer hover:underline'}"
+                onclick="selectNode(${n.id})">${escapeHtml(n.title)}</span>
+        `).join('')}
+      `;
+    }
+
+    function renderSubnotes() {
+      const container = document.getElementById('subnotesList');
+      const directChildren = state.allNodesFlat.filter(n => n.parent === state.activeNodeId);
+      if (!directChildren.length) {
+        container.innerHTML = `<div class="col-span-2 py-4 text-xs text-slate-400 border border-dashed rounded-lg text-center">No child notes nested here yet.</div>`;
+        return;
+      }
+      container.innerHTML = directChildren.map(c => `
+        <div onclick="selectNode(${c.id})" class="p-3 bg-white rounded-lg border border-slate-200 hover:border-brand-500 hover:shadow-sm cursor-pointer transition flex flex-col justify-between">
+          <div class="font-semibold text-slate-800 text-xs mb-1 flex items-center justify-between">
+            <span class="truncate">${escapeHtml(c.title)}</span>
+            <i data-lucide="arrow-right" class="w-3 h-3 text-slate-300"></i>
+          </div>
+          <p class="text-[11px] text-slate-500 line-clamp-2">${escapeHtml(c.content || 'No content.')}</p>
+          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+            <span>${c.child_count} children</span>
+            <span>${c.date_updated}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderEmptyState() {
+      document.getElementById('noteTitle').value = '';
+      document.getElementById('noteContent').value = '';
+      document.getElementById('nodeMetaPills').innerHTML = '';
+      document.getElementById('subnotesList').innerHTML = '';
+      document.getElementById('breadcrumbs').innerHTML = '<span>No note selected</span>';
+      document.getElementById('saveBtn').disabled = true;
+    }
+
+    /* -------------------------------------------------------------
+       3. MUTATION HANDLERS
+    ------------------------------------------------------------- */
+    function selectNode(id) {
+      state.activeNodeId = id;
+      if (id) state.expandedNodes.add(id);
+      loadWorkspace();
+    }
+
+    function toggleExpand(id) {
+      if (state.expandedNodes.has(id)) {
+        state.expandedNodes.delete(id);
+      } else {
+        state.expandedNodes.add(id);
+      }
+      renderTree();
+    }
+
+    function markDirty() {
+      state.isDirty = true;
+      document.getElementById('saveBtn').disabled = false;
+      document.getElementById('saveStatus').innerText = 'Unsaved changes...';
+    }
+
+    async function saveActiveNode() {
+      const title = document.getElementById('noteTitle').value.trim();
+      const content = document.getElementById('noteContent').value;
+      if (!title) return alert('Title cannot be empty');
+
+      await apiCall('update', { id: state.activeNodeId, title, content });
+      state.isDirty = false;
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveStatus').innerText = 'Saved to LocalStorage!';
+      loadWorkspace();
+    }
+
+    function openCreateModal(parentId = null) {
+      state.pendingParentId = parentId;
+      document.getElementById('createModalTitle').innerText = parentId ? 'Create Child Note' : 'Create Root Tree';
+      document.getElementById('newNoteTitle').value = '';
+      document.getElementById('newNoteContent').value = '';
+      document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    async function submitCreateNode() {
+      const title = document.getElementById('newNoteTitle').value.trim();
+      const content = document.getElementById('newNoteContent').value;
+      if (!title) return alert('Please enter a note title');
+
+      const created = await apiCall('create', { parent: state.pendingParentId, title, content });
+      closeModal('createModal');
+      state.activeNodeId = created.id;
+      if (state.pendingParentId) state.expandedNodes.add(state.pendingParentId);
+      loadWorkspace();
+    }
+
+    function openMoveModal(id) {
+      if (!id) return;
+      const select = document.getElementById('moveTargetSelect');
+      select.innerHTML = '<option value="">(Root Level - parent=null)</option>';
+      const available = state.allNodesFlat.filter(n => n.id !== id);
+      available.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${escapeHtml(p.title)} (ID: ${p.id}, Depth: ${p.depth})</option>`;
+      });
+      document.getElementById('moveModal').classList.remove('hidden');
+    }
+
+    async function submitMoveNode() {
+      const val = document.getElementById('moveTargetSelect').value;
+      const targetParent = val === "" ? null : parseInt(val);
+      try {
+        await apiCall('move', { id: state.activeNodeId, parent: targetParent });
+        closeModal('moveModal');
+        loadWorkspace();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function handleCopy(id) {
+      if (!id) return;
+      const res = await apiCall('copy', { node: id, parent: state.activeNode.parent });
+      state.activeNodeId = res.id;
+      loadWorkspace();
+    }
+
+    async function handleDelete(id) {
+      if (!id) return;
+      if (!confirm('Delete this note?\nWARNING: All descendant sub-notes will be deleted (cascade).')) return;
+      const res = await apiCall('delete', { node: id });
+      alert(`Deleted node (cascade removed ${res.deleted_count} items).`);
+      state.activeNodeId = null;
+      loadWorkspace();
+    }
+
+    async function handleSearch(val) {
+      const q = val.trim();
+      if (!q) {
+        loadWorkspace();
+        return;
+      }
+      const results = await apiCall('read_all', { search: q });
+      const container = document.getElementById('treeContainer');
+      if (!results.length) {
+        container.innerHTML = `<div class="p-4 text-xs text-slate-400 text-center">No search matches.</div>`;
+        return;
+      }
+      container.innerHTML = `
+        <div class="px-2 py-1 text-[10px] uppercase font-semibold text-slate-400">Search Results (${results.length})</div>
+        ${results.map(r => `
+          <div onclick="selectNode(${r.id})" class="p-2 rounded hover:bg-slate-100 cursor-pointer text-xs flex justify-between items-center">
+            <span class="font-medium text-slate-800">${escapeHtml(r.title)}</span>
+            <span class="text-[10px] text-slate-400">d:${r.depth}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function resetStorage() {
+      if (confirm('Reset localStorage back to default sample notes?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        state.activeNodeId = null;
+        loadWorkspace();
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    window.addEventListener('DOMContentLoaded', loadWorkspace);
+  </script>
+</body>
+</html>

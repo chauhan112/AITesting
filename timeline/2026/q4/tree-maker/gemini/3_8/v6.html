@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full theme-paper select-none font-sans antialiased text-sm">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tree Maker — Themes</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ================= THEME DESIGN SYSTEM (CSS VARIABLES) ================= */
+    :root.theme-paper {
+      --bg-body: #F8F6F0;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #F1ECE2;
+      --border: #E8E3D7;
+      --border-subtle: #F0ECE4;
+      --text-main: #2C2621;
+      --text-muted: #7A7067;
+      --accent: #B45309;
+      --accent-hover: #92400E;
+      --accent-soft: #FEF3C7;
+      --accent-text: #78350F;
+    }
+
+    :root.theme-nordic {
+      --bg-body: #F2F5F4;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #E6EDEB;
+      --border: #DCE3E0;
+      --border-subtle: #EBF0EE;
+      --text-main: #182522;
+      --text-muted: #63736F;
+      --accent: #15803D;
+      --accent-hover: #166534;
+      --accent-soft: #DCFCE7;
+      --accent-text: #14532D;
+    }
+
+    :root.theme-twilight {
+      --bg-body: #0B0F19;
+      --bg-surface: #161F30;
+      --bg-subtle: #202B42;
+      --border: #26334D;
+      --border-subtle: #1D283E;
+      --text-main: #F0F4FA;
+      --text-muted: #8D9CB8;
+      --accent: #6366F1;
+      --accent-hover: #4F46E5;
+      --accent-soft: #1E2548;
+      --accent-text: #C7D2FE;
+    }
+
+    :root.theme-espresso {
+      --bg-body: #151312;
+      --bg-surface: #221F1D;
+      --bg-subtle: #2E2A27;
+      --border: #383330;
+      --border-subtle: #2B2724;
+      --text-main: #EDE7E1;
+      --text-muted: #A19890;
+      --accent: #D97706;
+      --accent-hover: #B45309;
+      --accent-soft: #342410;
+      --accent-text: #FDE68A;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .theme-surface { background-color: var(--bg-surface); }
+    .theme-subtle { background-color: var(--bg-subtle); }
+    .theme-border { border-color: var(--border); }
+    .theme-border-subtle { border-color: var(--border-subtle); }
+    .theme-text { color: var(--text-main); }
+    .theme-text-muted { color: var(--text-muted); }
+    .theme-accent { color: var(--accent); }
+    .theme-accent-bg { background-color: var(--accent); }
+    .theme-accent-soft { background-color: var(--accent-soft); color: var(--accent-text); }
+
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="theme-surface border-b theme-border shrink-0 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
+      
+      <!-- App Brand -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="w-8 h-8 rounded-lg theme-accent-bg text-white flex items-center justify-center font-bold shadow-xs">
+          <i data-lucide="git-fork" class="w-4 h-4 rotate-180"></i>
+        </div>
+        <h1 class="font-bold text-sm sm:text-base tracking-tight hidden sm:block theme-text">Tree Maker</h1>
+      </div>
+
+      <!-- Controls: Theme Selector + Badge Mode + Search + Add Root -->
+      <div class="flex items-center gap-1.5">
+        
+        <!-- Theme Dropdown Switcher -->
+        <div class="relative">
+          <button onclick="toggleThemeMenu()" id="themeMenuBtn" 
+                  class="flex items-center gap-1 px-2 py-1.5 rounded-lg border theme-border theme-subtle theme-text text-xs font-medium transition"
+                  title="Switch theme">
+            <i data-lucide="palette" class="w-3.5 h-3.5 theme-text-muted"></i>
+            <span id="currentThemeLabel" class="text-xs font-semibold capitalize hidden xs:inline">Paper</span>
+          </button>
+          
+          <div id="themeMenu" class="absolute right-0 mt-1.5 w-44 theme-surface border theme-border rounded-xl shadow-xl p-1 z-50 hidden text-xs">
+            <div class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider theme-text-muted">Light Themes</div>
+            <button onclick="setTheme('paper')" class="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5">
+              <span>Warm Paper</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#B45309]"></span>
+            </button>
+            <button onclick="setTheme('nordic')" class="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5">
+              <span>Nordic Mist</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#15803D]"></span>
+            </button>
+            <div class="px-2 py-1 mt-1 text-[10px] font-bold uppercase tracking-wider theme-text-muted border-t theme-border-subtle">Dark Themes</div>
+            <button onclick="setTheme('twilight')" class="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5">
+              <span>Twilight Slate</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#6366F1]"></span>
+            </button>
+            <button onclick="setTheme('espresso')" class="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5">
+              <span>Warm Espresso</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#D97706]"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Badge Mode Toggle -->
+        <button onclick="cycleBadgeMode()" id="badgeToggleBtn" 
+                class="flex items-center gap-1 px-2 py-1.5 rounded-lg border theme-border theme-subtle theme-text text-xs font-medium transition"
+                title="Badge: Count → Depth → None">
+          <span id="badgeModeIcon"><i data-lucide="hash" class="w-3.5 h-3.5 theme-text-muted"></i></span>
+          <span id="badgeModeLabel" class="text-xs font-semibold capitalize">Count</span>
+        </button>
+
+        <button onclick="openSearchModal()" class="p-2 theme-text-muted hover:theme-text rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="openCreateModal(null)" class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg theme-accent-bg text-white font-semibold text-xs shadow-sm transition">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">New Root</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <div class="border-t theme-border-subtle theme-subtle px-4 py-2">
+      <div class="max-w-4xl mx-auto flex items-center gap-1.5 text-xs theme-text-muted overflow-x-auto scrollbar-none whitespace-nowrap" id="breadcrumbsTrack"></div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 overflow-y-auto px-3 py-4 max-w-4xl mx-auto w-full pb-24" id="mainScroll">
+    <div id="treeContainer" class="space-y-1">
+      <div class="text-center text-xs theme-text-muted py-12">Loading notes tree...</div>
+    </div>
+  </main>
+
+  <!-- ================= FLOATING CLIPBOARD BAR ================= -->
+  <div id="clipboardBar" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto theme-surface border theme-border rounded-2xl shadow-2xl p-3 px-4 z-40 hidden flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <span id="clipboardIcon" class="w-7 h-7 rounded-lg theme-subtle flex items-center justify-center theme-accent shrink-0">
+        <i data-lucide="copy" class="w-4 h-4"></i>
+      </span>
+      <div class="truncate">
+        <p id="clipboardOpText" class="text-[10px] theme-text-muted font-bold uppercase tracking-wider">Copied</p>
+        <p id="clipboardTitle" class="text-xs font-semibold truncate theme-text">Note title</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button onclick="pasteClipboard(null)" class="px-2.5 py-1.5 rounded-lg border theme-border theme-subtle text-xs font-medium theme-text transition">
+        Paste as Root
+      </button>
+      <button onclick="clearClipboard()" class="p-1.5 theme-text-muted hover:theme-text rounded-lg transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= OTHER OPS MODAL (3-DOTS) ================= -->
+  <div id="actionSheet" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex flex-col justify-end" onclick="closeModal('actionSheet')">
+    <div class="theme-surface rounded-t-2xl p-4 w-full max-w-md mx-auto shadow-2xl space-y-3 border-t theme-border" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-2 border-b theme-border-subtle">
+        <div class="truncate pr-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted" id="actionSheetSubtitle">Other Operations</span>
+          <h3 class="font-bold text-sm theme-text truncate" id="actionSheetTitle">Note Title</h3>
+        </div>
+        <button onclick="closeModal('actionSheet')" class="p-1.5 theme-text-muted hover:theme-text rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-2 text-xs">
+        <button id="actionSheetPasteBtn" onclick="pasteClipboard(state.targetActionNodeId)" class="hidden flex items-center gap-2.5 p-3 rounded-xl theme-accent-soft font-semibold">
+          <i data-lucide="clipboard-paste" class="w-4 h-4"></i> Paste Inside This Note
+        </button>
+        <button onclick="executeCut(state.targetActionNodeId)" class="flex items-center gap-2.5 p-3 rounded-xl theme-subtle hover:brightness-95 font-medium theme-text">
+          <i data-lucide="scissors" class="w-4 h-4 theme-accent"></i> Cut (Move Subtree)
+        </button>
+        <button onclick="executeCopy(state.targetActionNodeId)" class="flex items-center gap-2.5 p-3 rounded-xl theme-subtle hover:brightness-95 font-medium theme-text">
+          <i data-lucide="copy" class="w-4 h-4 theme-accent"></i> Deep Copy Subtree
+        </button>
+        <button onclick="executeDelete(state.targetActionNodeId)" class="flex items-center gap-2.5 p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-medium transition">
+          <i data-lucide="trash-2" class="w-4 h-4 text-rose-500"></i> Cascade Delete Subtree
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SLIDE-OVER: VIEW & EDIT NOTE ================= -->
+  <div id="editorSheet" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex justify-end">
+    <div class="theme-surface w-full max-w-xl h-full flex flex-col shadow-2xl border-l theme-border">
+      <div class="h-14 px-4 border-b theme-border flex items-center justify-between shrink-0">
+        <button onclick="closeModal('editorSheet')" class="flex items-center gap-1 text-xs theme-text-muted hover:theme-text font-medium">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Tree
+        </button>
+        <div class="flex items-center gap-2">
+          <span id="editorSaveStatus" class="text-[11px] theme-text-muted">Up to date</span>
+          <button id="editorSaveBtn" onclick="saveActiveNote()" class="px-3 py-1.5 theme-accent-bg text-white rounded-lg text-xs font-semibold disabled:opacity-40" disabled>
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="flex flex-wrap items-center gap-1.5 text-[11px] theme-text-muted" id="editorPills"></div>
+
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1">Title</label>
+          <input id="editTitle" oninput="markDirty()" type="text" class="w-full text-xl font-bold theme-text bg-transparent border-b theme-border pb-1 focus:border-amber-600 outline-none">
+        </div>
+
+        <div class="flex-1 flex flex-col">
+          <label class="block text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1">Content</label>
+          <textarea id="editContent" oninput="markDirty()" rows="10" placeholder="Type notes..." class="w-full p-3 text-sm theme-subtle border theme-border rounded-xl focus:ring-1 focus:ring-amber-500 outline-none resize-y font-mono theme-text leading-relaxed"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CREATE NOTE ================= -->
+  <div id="createModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="theme-surface rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-4 border theme-border">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sm theme-text" id="createModalTitle">Create Note</h3>
+        <button onclick="closeModal('createModal')" class="theme-text-muted hover:theme-text"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">Title</label>
+          <input id="newNoteTitle" type="text" class="w-full px-3 py-2 border theme-border theme-subtle rounded-lg text-xs outline-none theme-text" placeholder="Title...">
+        </div>
+        <div>
+          <label class="block text-xs font-medium theme-text-muted mb-1">Content (optional)</label>
+          <textarea id="newNoteContent" rows="3" class="w-full px-3 py-2 border theme-border theme-subtle rounded-lg text-xs outline-none theme-text" placeholder="Content..."></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="closeModal('createModal')" class="px-3 py-1.5 text-xs theme-text-muted hover:theme-text rounded-lg">Cancel</button>
+        <button onclick="submitCreateNode()" class="px-3 py-1.5 text-xs theme-accent-bg text-white rounded-lg font-semibold">Create Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SEARCH ================= -->
+  <div id="searchModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-start justify-center p-4 pt-16" onclick="closeModal('searchModal')">
+    <div class="theme-surface rounded-2xl shadow-2xl w-full max-w-md p-4 space-y-3 border theme-border" onclick="event.stopPropagation()">
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 theme-text-muted"></i>
+        <input id="modalSearchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search title or content..."
+               class="w-full pl-9 pr-3 py-2 theme-subtle border theme-border rounded-xl text-xs outline-none theme-text">
+      </div>
+      <div id="searchResults" class="max-h-64 overflow-y-auto space-y-1 text-xs">
+        <p class="theme-text-muted text-center py-4">Type to search notes...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCRIPT & ENGINE ================= -->
+  <script>
+    const STORAGE_KEY = 'TREE_MAKER_THEMES_DATA';
+    const THEME_KEY = 'TREE_MAKER_THEME_ID';
+    const BADGE_KEY = 'TREE_MAKER_BADGE_MODE';
+
+    const SEED_DATA = [
+      { id: 1, parent: null, title: 'Projects & Strategy', content: 'Design systems and architecture overview.', depth: 0, child_count: 2, date_created: '2026-09-01', date_updated: '2026-09-02' },
+      { id: 2, parent: 1, title: 'Color Palette Tokens', content: 'Warm Paper, Nordic Mist, Twilight Slate, Warm Espresso.', depth: 1, child_count: 1, date_created: '2026-09-02', date_updated: '2026-09-03' },
+      { id: 3, parent: 2, title: 'Contrast Verification', content: 'Ensure all themes pass WCAG AAA standards (> 7:1 ratio).', depth: 2, child_count: 0, date_created: '2026-09-03', date_updated: '2026-09-03' },
+      { id: 4, parent: 1, title: 'Mobile Gestures', content: 'Refined touch targets and breadcrumbs handling.', depth: 1, child_count: 0, date_created: '2026-09-04', date_updated: '2026-09-04' },
+      { id: 5, parent: null, title: 'Reading Notes', content: 'Excerpts and thoughts on engineering and design.', depth: 0, child_count: 1, date_created: '2026-09-05', date_updated: '2026-09-05' },
+      { id: 6, parent: 5, title: 'Typography and Contrast', content: 'Why pure blacks cause halation on dark OLED displays.', depth: 1, child_count: 0, date_created: '2026-09-06', date_updated: '2026-09-06' }
+    ];
+
+    const MockAPI = {
+      getNodes() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
+          return SEED_DATA;
+        }
+        return JSON.parse(stored);
+      },
+
+      saveNodes(nodes) {
+        const getDepth = (n) => n.parent ? (getDepth(nodes.find(x => x.id === n.parent)) + 1) : 0;
+        nodes.forEach(n => {
+          n.depth = getDepth(n);
+          n.child_count = nodes.filter(c => c.parent === n.id).length;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes));
+      },
+
+      getDescendants(nodes, nodeId) {
+        let list = [];
+        const children = nodes.filter(n => n.parent === nodeId);
+        for (const c of children) {
+          list.push(c.id);
+          list = list.concat(this.getDescendants(nodes, c.id));
+        }
+        return list;
+      },
+
+      getMaxDepth(nodes, nodeId) {
+        const children = nodes.filter(n => n.parent === nodeId);
+        if (!children.length) return 0;
+        return 1 + Math.max(...children.map(c => this.getMaxDepth(nodes, c.id)));
+      },
+
+      async request(action, body = {}) {
+        let nodes = this.getNodes();
+        const today = new Date().toISOString().split('T')[0];
+
+        switch (action) {
+          case 'create': {
+            const nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+            const newNode = {
+              id: nextId,
+              parent: body.parent ?? null,
+              title: body.title || 'Untitled',
+              content: body.content || '',
+              depth: 0,
+              child_count: 0,
+              date_created: today,
+              date_updated: today
+            };
+            nodes.push(newNode);
+            this.saveNodes(nodes);
+            return { help: {}, response: newNode };
+          }
+          case 'read': {
+            const found = nodes.find(n => n.id === body.node);
+            if (!found) throw new Error('404 Node Not Found');
+            return { help: {}, response: found };
+          }
+          case 'read_all': {
+            let res = [...nodes];
+            if (body.search) {
+              const q = body.search.toLowerCase();
+              res = res.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
+            }
+            return { help: {}, response: res };
+          }
+          case 'subtree': {
+            const rootId = body.node ?? null;
+            const maxDepth = body.depth ?? 10;
+            const buildTree = (pId, lvl) => {
+              return nodes.filter(n => n.parent === pId).map(child => ({
+                ...child,
+                children: lvl < maxDepth ? buildTree(child.id, lvl + 1) : [],
+                descendant_count: this.getDescendants(nodes, child.id).length,
+                max_subtree_depth: this.getMaxDepth(nodes, child.id)
+              }));
+            };
+            return { help: {}, response: buildTree(rootId, 1) };
+          }
+          case 'update': {
+            const node = nodes.find(n => n.id === body.id);
+            if (!node) throw new Error('404 Node Not Found');
+            if (body.title !== undefined) node.title = body.title;
+            if (body.content !== undefined) node.content = body.content;
+            node.date_updated = today;
+            this.saveNodes(nodes);
+            return { help: {}, response: node };
+          }
+          case 'move': {
+            const node = nodes.find(n => n.id === body.id);
+            if (!node) throw new Error('404 Node Not Found');
+            const targetParent = body.parent ?? null;
+            if (targetParent === node.id || this.getDescendants(nodes, node.id).includes(targetParent)) {
+              throw new Error('400 Cycle detected');
+            }
+            node.parent = targetParent;
+            node.date_updated = today;
+            this.saveNodes(nodes);
+            return { help: {}, response: node };
+          }
+          case 'copy': {
+            const source = nodes.find(n => n.id === body.node);
+            if (!source) throw new Error('404 Node Not Found');
+            let maxId = nodes.reduce((max, n) => Math.max(max, n.id), 0);
+            const clone = (origId, targetP) => {
+              const orig = nodes.find(x => x.id === origId);
+              maxId++;
+              const cloned = {
+                ...orig,
+                id: maxId,
+                parent: targetP,
+                title: targetP === (body.parent ?? null) ? `${orig.title} (Copy)` : orig.title,
+                date_created: today,
+                date_updated: today
+              };
+              nodes.push(cloned);
+              const kids = nodes.filter(k => k.parent === origId && k.id !== cloned.id);
+              kids.forEach(k => clone(k.id, cloned.id));
+              return cloned;
+            };
+            const newRoot = clone(source.id, body.parent ?? null);
+            this.saveNodes(nodes);
+            return { help: {}, response: newRoot };
+          }
+          case 'delete': {
+            const toDelete = [body.node, ...this.getDescendants(nodes, body.node)];
+            nodes = nodes.filter(n => !toDelete.includes(n.id));
+            this.saveNodes(nodes);
+            return { help: {}, response: { id: body.node, deleted: true, deleted_count: toDelete.length } };
+          }
+        }
+      }
+    };
+
+    async function apiCall(action, body = {}) {
+      const envelope = await MockAPI.request(action, body);
+      return envelope.response;
+    }
+
+    /* -------------------------------------------------------------
+       THEME MANAGEMENT
+    ------------------------------------------------------------- */
+    const state = {
+      theme: localStorage.getItem(THEME_KEY) || 'paper',
+      badgeMode: localStorage.getItem(BADGE_KEY) || 'count',
+      activeNodeId: null,
+      treeData: [],
+      allNodesFlat: [],
+      expandedNodes: new Set([1]),
+      targetActionNodeId: null,
+      clipboard: null,
+      pendingParentId: null
+    };
+
+    function setTheme(name) {
+      state.theme = name;
+      localStorage.setItem(THEME_KEY, name);
+      document.documentElement.className = `h-full select-none font-sans antialiased text-sm theme-${name}`;
+      
+      const labelMap = { paper: 'Paper', nordic: 'Nordic', twilight: 'Twilight', espresso: 'Espresso' };
+      document.getElementById('currentThemeLabel').innerText = labelMap[name];
+      closeModal('themeMenu');
+    }
+
+    function toggleThemeMenu() {
+      const menu = document.getElementById('themeMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    /* -------------------------------------------------------------
+       WORKSPACE LOADER
+    ------------------------------------------------------------- */
+    async function loadApp() {
+      setTheme(state.theme);
+      state.treeData = await apiCall('subtree', { node: null, depth: 6 });
+      state.allNodesFlat = await apiCall('read_all', {});
+      
+      if (!state.activeNodeId && state.treeData.length > 0) {
+        state.activeNodeId = state.treeData[0].id;
+      }
+
+      updateBadgeToggleBtn();
+      renderTree();
+      renderBreadcrumbs();
+      updateClipboardBar();
+      lucide.createIcons();
+    }
+
+    function cycleBadgeMode() {
+      const modes = ['count', 'depth', 'none'];
+      const nextIndex = (modes.indexOf(state.badgeMode) + 1) % modes.length;
+      state.badgeMode = modes[nextIndex];
+      localStorage.setItem(BADGE_KEY, state.badgeMode);
+      
+      updateBadgeToggleBtn();
+      renderTree();
+      lucide.createIcons();
+    }
+
+    function updateBadgeToggleBtn() {
+      const label = document.getElementById('badgeModeLabel');
+      const icon = document.getElementById('badgeModeIcon');
+      label.innerText = state.badgeMode;
+
+      if (state.badgeMode === 'count') {
+        icon.innerHTML = '<i data-lucide="hash" class="w-3.5 h-3.5 theme-accent"></i>';
+      } else if (state.badgeMode === 'depth') {
+        icon.innerHTML = '<i data-lucide="layers" class="w-3.5 h-3.5 theme-accent"></i>';
+      } else {
+        icon.innerHTML = '<i data-lucide="eye-off" class="w-3.5 h-3.5 theme-text-muted"></i>';
+      }
+    }
+
+    function renderTree() {
+      const container = document.getElementById('treeContainer');
+      if (!state.treeData.length) {
+        container.innerHTML = `<div class="p-8 text-center text-xs theme-text-muted">No notes found. Create a root tree to begin.</div>`;
+        return;
+      }
+      container.innerHTML = state.treeData.map(node => renderNodeBranch(node)).join('');
+    }
+
+    function renderNodeBranch(node) {
+      const isSelected = node.id === state.activeNodeId;
+      const isExpanded = state.expandedNodes.has(node.id);
+      const hasChildren = node.children && node.children.length > 0;
+      const isCuttingThis = state.clipboard && state.clipboard.op === 'cut' && state.clipboard.id === node.id;
+
+      let badgeHtml = '';
+      if (state.badgeMode === 'count') {
+        if (node.descendant_count > 0) {
+          badgeHtml = `<span class="text-[10px] px-1.5 py-0.2 rounded-full theme-subtle theme-text-muted border theme-border" title="${node.descendant_count} descendants">${node.descendant_count}</span>`;
+        }
+      } else if (state.badgeMode === 'depth') {
+        badgeHtml = `<span class="text-[10px] px-1.5 py-0.2 rounded-full theme-accent-soft font-mono font-semibold" title="Depth: ${node.depth}">d:${node.depth}</span>`;
+      }
+
+      return `
+        <div class="text-xs transition-opacity ${isCuttingThis ? 'opacity-30' : ''}">
+          <div class="group flex items-center gap-1.5 p-1.5 sm:p-2 rounded-xl transition ${
+            isSelected ? 'theme-accent-soft border theme-border font-semibold shadow-xs' : 'theme-surface border theme-border hover:brightness-95'
+          }">
+            <!-- Expand/Collapse Chevron -->
+            <button onclick="event.stopPropagation(); toggleExpand(${node.id})" 
+                    class="w-7 h-7 flex items-center justify-center rounded-lg theme-text-muted hover:theme-text transition shrink-0">
+              ${hasChildren 
+                ? `<i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-4 h-4"></i>` 
+                : `<span class="w-1.5 h-1.5 rounded-full bg-slate-400/40"></span>`
+              }
+            </button>
+
+            <!-- Clickable Title & Dynamic Badge -->
+            <div onclick="selectNode(${node.id})" class="flex-1 min-w-0 cursor-pointer flex items-center gap-2 py-0.5">
+              <span class="truncate text-sm font-medium ${isSelected ? 'font-bold' : 'theme-text'}">${escapeHtml(node.title)}</span>
+              ${badgeHtml}
+            </div>
+
+            <!-- Inline Icon Actions Cluster -->
+            <div class="flex items-center gap-0.5 shrink-0">
+              <!-- View / Edit Note -->
+              <button onclick="event.stopPropagation(); openEditorSheet(${node.id})" 
+                      title="View / Edit Note"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg theme-text-muted hover:theme-accent hover:bg-black/5 dark:hover:bg-white/5 transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Create Sub-note -->
+              <button onclick="event.stopPropagation(); openCreateModal(${node.id})" 
+                      title="Add Sub-note"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg theme-text-muted hover:theme-accent hover:bg-black/5 dark:hover:bg-white/5 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+
+              <!-- 3 Dots (Other Ops) -->
+              <button onclick="event.stopPropagation(); openActionSheet(${node.id})" 
+                      title="More operations"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg theme-text-muted hover:theme-text hover:bg-black/5 dark:hover:bg-white/5 transition">
+                <i data-lucide="more-vertical" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Indented Subtree -->
+          ${hasChildren && isExpanded ? `
+            <div class="pl-4 ml-3 border-l-2 theme-border-subtle my-1 space-y-1">
+              ${node.children.map(child => renderNodeBranch(child)).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderBreadcrumbs() {
+      const container = document.getElementById('breadcrumbsTrack');
+      if (!state.activeNodeId) {
+        container.innerHTML = `<span class="px-2 py-1 rounded theme-subtle text-[11px] font-medium">Roots</span>`;
+        return;
+      }
+
+      const path = [];
+      let current = state.allNodesFlat.find(n => n.id === state.activeNodeId);
+      while (current) {
+        path.unshift(current);
+        current = state.allNodesFlat.find(n => n.id === current.parent);
+      }
+
+      container.innerHTML = `
+        <button onclick="selectNode(null)" class="px-2 py-1 rounded-md theme-text-muted hover:theme-text font-medium shrink-0 flex items-center gap-1">
+          <i data-lucide="home" class="w-3.5 h-3.5"></i> <span>Roots</span>
+        </button>
+        ${path.map((node, index) => {
+          const isLast = index === path.length - 1;
+          return `
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 theme-text-muted shrink-0 opacity-40"></i>
+            <button onclick="selectNode(${node.id})" 
+                    title="${escapeHtml(node.title)}"
+                    class="px-2 py-1 rounded-md font-medium shrink-0 max-w-[140px] truncate ${
+                      isLast ? 'theme-surface shadow-xs theme-accent font-bold border theme-border' : 'theme-text-muted hover:theme-text'
+                    }">
+              ${escapeHtml(node.title)}
+            </button>
+          `;
+        }).join('')}
+      `;
+
+      setTimeout(() => {
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      }, 50);
+    }
+
+    function selectNode(id) {
+      state.activeNodeId = id;
+      if (id) state.expandedNodes.add(id);
+      renderTree();
+      renderBreadcrumbs();
+      lucide.createIcons();
+    }
+
+    function toggleExpand(id) {
+      if (state.expandedNodes.has(id)) {
+        state.expandedNodes.delete(id);
+      } else {
+        state.expandedNodes.add(id);
+      }
+      renderTree();
+      lucide.createIcons();
+    }
+
+    function openActionSheet(nodeId) {
+      state.targetActionNodeId = nodeId;
+      const node = state.allNodesFlat.find(n => n.id === nodeId);
+      document.getElementById('actionSheetTitle').innerText = node ? node.title : '';
+      document.getElementById('actionSheetSubtitle').innerText = `ID: ${nodeId} • Depth: ${node.depth}`;
+      
+      const pasteBtn = document.getElementById('actionSheetPasteBtn');
+      if (state.clipboard && state.clipboard.id !== nodeId) {
+        pasteBtn.classList.remove('hidden');
+      } else {
+        pasteBtn.classList.add('hidden');
+      }
+
+      document.getElementById('actionSheet').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function executeCut(id) {
+      const node = state.allNodesFlat.find(n => n.id === id);
+      state.clipboard = { op: 'cut', id, title: node.title };
+      closeModal('actionSheet');
+      updateClipboardBar();
+      renderTree();
+    }
+
+    function executeCopy(id) {
+      const node = state.allNodesFlat.find(n => n.id === id);
+      state.clipboard = { op: 'copy', id, title: node.title };
+      closeModal('actionSheet');
+      updateClipboardBar();
+    }
+
+    async function pasteClipboard(targetParentId) {
+      if (!state.clipboard) return;
+      const { op, id } = state.clipboard;
+
+      try {
+        if (op === 'cut') {
+          await apiCall('move', { id, parent: targetParentId });
+        } else if (op === 'copy') {
+          await apiCall('copy', { node: id, parent: targetParentId });
+        }
+        clearClipboard();
+        closeModal('actionSheet');
+        if (targetParentId) state.expandedNodes.add(targetParentId);
+        loadApp();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function clearClipboard() {
+      state.clipboard = null;
+      updateClipboardBar();
+      renderTree();
+      lucide.createIcons();
+    }
+
+    function updateClipboardBar() {
+      const bar = document.getElementById('clipboardBar');
+      if (!state.clipboard) {
+        bar.classList.add('hidden');
+        return;
+      }
+      bar.classList.remove('hidden');
+      document.getElementById('clipboardOpText').innerText = state.clipboard.op === 'cut' ? 'Ready to Move (Cut)' : 'Ready to Copy';
+      document.getElementById('clipboardTitle').innerText = state.clipboard.title;
+      document.getElementById('clipboardIcon').innerHTML = state.clipboard.op === 'cut' 
+        ? '<i data-lucide="scissors" class="w-4 h-4"></i>' 
+        : '<i data-lucide="copy" class="w-4 h-4"></i>';
+      lucide.createIcons();
+    }
+
+    async function executeDelete(id) {
+      closeModal('actionSheet');
+      if (!confirm('Cascade delete this note and ALL nested sub-notes?')) return;
+      await apiCall('delete', { node: id });
+      if (state.activeNodeId === id) state.activeNodeId = null;
+      loadApp();
+    }
+
+    function openCreateModal(parentId = null) {
+      state.pendingParentId = parentId;
+      document.getElementById('createModalTitle').innerText = parentId ? 'Add Sub-note' : 'Add Root Note';
+      document.getElementById('newNoteTitle').value = '';
+      document.getElementById('newNoteContent').value = '';
+      closeModal('actionSheet');
+      document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    async function submitCreateNode() {
+      const title = document.getElementById('newNoteTitle').value.trim();
+      const content = document.getElementById('newNoteContent').value;
+      if (!title) return alert('Please enter a note title.');
+
+      await apiCall('create', { parent: state.pendingParentId, title, content });
+      closeModal('createModal');
+
+      if (state.pendingParentId) {
+        state.expandedNodes.add(state.pendingParentId);
+      }
+      loadApp();
+    }
+
+    async function openEditorSheet(id) {
+      closeModal('actionSheet');
+      const node = await apiCall('read', { node: id });
+      state.targetActionNodeId = id;
+      document.getElementById('editTitle').value = node.title;
+      document.getElementById('editContent').value = node.content;
+      document.getElementById('editorSaveBtn').disabled = true;
+      document.getElementById('editorSaveStatus').innerText = `Updated ${node.date_updated}`;
+
+      document.getElementById('editorPills').innerHTML = `
+        <span class="px-2 py-0.5 rounded theme-subtle font-mono text-[10px]">ID: ${node.id}</span>
+        <span class="px-2 py-0.5 rounded theme-accent-soft font-semibold">Depth ${node.depth}</span>
+        <span class="px-2 py-0.5 rounded theme-subtle">${node.child_count} Direct Children</span>
+      `;
+
+      document.getElementById('editorSheet').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function markDirty() {
+      document.getElementById('editorSaveBtn').disabled = false;
+      document.getElementById('editorSaveStatus').innerText = 'Unsaved changes...';
+    }
+
+    async function saveActiveNote() {
+      const title = document.getElementById('editTitle').value.trim();
+      const content = document.getElementById('editContent').value;
+      if (!title) return alert('Title cannot be empty');
+
+      await apiCall('update', { id: state.targetActionNodeId, title, content });
+      document.getElementById('editorSaveBtn').disabled = true;
+      document.getElementById('editorSaveStatus').innerText = 'Saved!';
+      loadApp();
+    }
+
+    function openSearchModal() {
+      document.getElementById('searchModal').classList.remove('hidden');
+      document.getElementById('modalSearchInput').focus();
+    }
+
+    async function handleSearch(query) {
+      const q = query.trim();
+      const container = document.getElementById('searchResults');
+      if (!q) {
+        container.innerHTML = '<p class="theme-text-muted text-center py-4">Type to search notes...</p>';
+        return;
+      }
+      const results = await apiCall('read_all', { search: q });
+      if (!results.length) {
+        container.innerHTML = '<p class="theme-text-muted text-center py-4">No results found.</p>';
+        return;
+      }
+      container.innerHTML = results.map(n => `
+        <div onclick="selectNode(${n.id}); closeModal('searchModal')" class="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex justify-between items-center border theme-border">
+          <div class="truncate">
+            <p class="font-semibold theme-text">${escapeHtml(n.title)}</p>
+            <p class="text-[10px] theme-text-muted truncate">${escapeHtml(n.content || 'No content')}</p>
+          </div>
+          <span class="text-[10px] theme-text-muted theme-subtle px-1.5 py-0.5 rounded ml-2 shrink-0">d:${n.depth}</span>
+        </div>
+      `).join('');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    // Close theme menu if clicking outside
+    document.addEventListener('click', (e) => {
+      const btn = document.getElementById('themeMenuBtn');
+      const menu = document.getElementById('themeMenu');
+      if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', loadApp);
+  </script>
+</body>
+</html>
